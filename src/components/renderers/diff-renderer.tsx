@@ -15,6 +15,7 @@ type DiffRendererProps = {
 export function DiffRenderer({ artifact }: DiffRendererProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const mobileDefault = typeof window !== "undefined" ? window.innerWidth < 960 : false;
   const [mode, setMode] = useState<DiffModeEnum>(
     artifact.view === "split" && !mobileDefault ? DiffModeEnum.Split : DiffModeEnum.Unified,
@@ -69,6 +70,16 @@ export function DiffRenderer({ artifact }: DiffRendererProps) {
     });
   }, [artifact, resolvedTheme]);
 
+  useEffect(() => {
+    setActiveFileId(diffFiles[0]?.meta.id ?? null);
+  }, [diffFiles]);
+
+  const handleFileSelect = (fileId: string) => {
+    setActiveFileId(fileId);
+    const section = document.getElementById(`patch-file-${fileId}`);
+    section?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="diff-renderer-shell">
       <div className="diff-renderer-toolbar">
@@ -100,10 +111,15 @@ export function DiffRenderer({ artifact }: DiffRendererProps) {
           <div className="patch-bundle-shell">
             <nav className="patch-bundle-nav">
               {diffFiles.map(({ meta }) => (
-                <a key={meta.id} href={`#patch-file-${meta.id}`} className="patch-bundle-link">
+                <button
+                  key={meta.id}
+                  type="button"
+                  className={`patch-bundle-link ${activeFileId === meta.id ? "is-active" : ""}`}
+                  onClick={() => handleFileSelect(meta.id)}
+                >
                   <span className="mono-pill">{meta.status}</span>
                   <span className="truncate">{meta.displayPath}</span>
-                </a>
+                </button>
               ))}
             </nav>
             <div className="patch-bundle-files">

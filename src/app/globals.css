@@ -627,6 +627,12 @@ select {
   border-radius: var(--radius-md);
   padding: 0.85rem 0.9rem;
   background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  text-align: left;
+  }
+
+.patch-bundle-link.is-active {
+  border-color: color-mix(in srgb, var(--accent-secondary) 56%, var(--border));
+  background: color-mix(in srgb, var(--accent-secondary) 10%, var(--surface-strong));
 }
 
 .patch-bundle-files {
