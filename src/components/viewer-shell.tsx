@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowUpRight,
+  Download,
   FileCode2,
   FileDiff,
   FileJson2,
@@ -14,9 +15,11 @@ import {
   Hash,
   Layers3,
   LockKeyhole,
+  Printer,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { MarkdownRenderer } from "@/components/renderers/markdown-renderer";
 import { sampleEnvelopes, sampleLinks } from "@/lib/payload/examples";
 import { decodeFragment } from "@/lib/payload/fragment";
 import {
@@ -25,6 +28,7 @@ import {
   artifactKinds,
   type ArtifactKind,
   type ArtifactPayload,
+  type MarkdownArtifact,
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
@@ -59,6 +63,10 @@ function getArtifactBody(artifact: ArtifactPayload): string {
 }
 
 function getArtifactSubtitle(artifact: ArtifactPayload): string {
+  if (artifact.kind === "markdown") {
+    return "GFM markdown artifact";
+  }
+
   if (artifact.kind === "code") {
     return artifact.language ? `${artifact.language} source artifact` : "Source artifact";
   }
@@ -99,6 +107,18 @@ function getArtifactDetailRows(artifact: ArtifactPayload) {
 
 function getPreviewText(artifact: ArtifactPayload): string {
   return getArtifactBody(artifact).trim().slice(0, 960) || "Artifact contents will appear here once a renderer is attached.";
+}
+
+function getDownloadFilename(artifact: ArtifactPayload): string {
+  if (artifact.filename) {
+    return artifact.filename;
+  }
+
+  if (artifact.kind === "markdown") {
+    return `${artifact.id}.md`;
+  }
+
+  return `${artifact.id}.txt`;
 }
 
 function getHashPreview(hash: string): string {
@@ -161,19 +181,57 @@ export function ViewerShell() {
   const fragmentLength = hash.startsWith("#") ? hash.length - 1 : hash.length;
   const envelope = parsed.ok ? parsed.envelope : null;
   const activeArtifact = envelope ? getActiveArtifact(envelope) : null;
+  const markdownArtifact: MarkdownArtifact | null = activeArtifact?.kind === "markdown" ? activeArtifact : null;
   const budgetRatio = Math.min(fragmentLength / MAX_FRAGMENT_LENGTH, 1);
   const statusTone = getStatusTone(parsed);
 
+  const handleMarkdownDownload = useCallback(() => {
+    if (!markdownArtifact) {
+      return;
+    }
+
+    const blob = new Blob([markdownArtifact.content], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = url;
+    anchor.download = getDownloadFilename(markdownArtifact);
+    anchor.click();
+
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 0);
+  }, [markdownArtifact]);
+
+  const handleMarkdownPrint = useCallback(() => {
+    if (!markdownArtifact) {
+      return;
+    }
+
+    const cleanup = () => {
+      delete document.body.dataset.printMode;
+      window.removeEventListener("afterprint", cleanup);
+    };
+
+    document.body.dataset.printMode = "markdown";
+    window.addEventListener("afterprint", cleanup);
+    window.requestAnimationFrame(() => {
+      window.print();
+    });
+  }, [markdownArtifact]);
+
   return (
-    <main className="min-h-screen px-4 pb-10 pt-5 sm:px-6 sm:pb-12 lg:px-10 lg:pt-7">
+    <main className="app-shell min-h-screen px-4 pb-10 pt-5 sm:px-6 sm:pb-12 lg:px-10 lg:pt-7">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <header className="panel fade-up sticky top-4 z-30 flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <header className="panel print-hide-on-markdown fade-up sticky top-4 z-30 flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="grid h-12 w-12 place-items-center rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-strong)] shadow-[var(--shadow-md)]">
               <Layers3 className="h-5 w-5 text-[color:var(--accent)]" />
             </div>
             <div>
-              <p className="section-kicker">Sprint 0 public shell</p>
+              <p className="section-kicker">Sprint 1 markdown shell</p>
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <h1 className="font-display text-xl font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>
                 <span className="mono-pill">single exported route</span>
@@ -195,7 +253,7 @@ export function ViewerShell() {
         </header>
 
         <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-          <div className="flex flex-col gap-6">
+          <div className="print-hide-on-markdown flex flex-col gap-6">
             <section className="panel panel-hero fade-up px-6 py-7 sm:px-8 sm:py-8" style={getAnimationStyle(80)}>
               <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr] xl:items-end">
                 <div>
@@ -204,7 +262,7 @@ export function ViewerShell() {
                     Share artifacts in the URL, keep the server out of the payload.
                   </h2>
                   <p className="mt-5 max-w-2xl text-base leading-7 text-[color:var(--text-muted)] sm:text-lg">
-                    This Sprint 0 shell gives `agent-render` a public-safe landing surface, a mobile-ready viewer frame, and a fragment inspector that decodes the current envelope before later markdown, code, diff, CSV, and JSON renderers arrive.
+                    Sprint 1 turns the shell into a polished markdown artifact reader with GFM support, productized code fences, and client-side export flows that stay fully fragment-native.
                   </p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     <span className="mono-pill">
@@ -324,7 +382,7 @@ export function ViewerShell() {
           </div>
 
           <section className="panel panel-strong fade-up overflow-hidden px-5 py-5 sm:px-6" style={getAnimationStyle(260)}>
-            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--border)] pb-5">
+              <div className="print-hide-on-markdown flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--border)] pb-5">
               <div>
                 <p className="section-kicker">Viewer shell</p>
                 <h3 className="font-display mt-2 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
@@ -332,7 +390,7 @@ export function ViewerShell() {
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)]">
                   {activeArtifact
-                    ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. Renderer work can plug into this frame without changing the route model.`
+                    ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. Markdown now renders directly in-frame while the shell stays ready for the remaining artifact kinds.`
                     : "No artifact is active yet. Choose a sample fragment to populate the payload inspector and viewer metadata."}
                 </p>
               </div>
@@ -367,24 +425,50 @@ export function ViewerShell() {
               <div className="mt-5 grid gap-5 xl:grid-cols-[1.18fr_0.82fr]">
                 <div className="flex flex-col gap-5">
                   <div className="viewer-frame">
-                    <div className="viewer-head">
+                    <div className="viewer-head print-hide-on-markdown">
                       <div>
                         <p className="metric-label">Active artifact metadata</p>
                         <h4 className="mt-2 text-lg font-semibold">{activeArtifact.filename ?? activeArtifact.id}</h4>
                       </div>
-                      <span className="mono-pill">{activeArtifact.kind}</span>
+                      <div className="viewer-toolbar">
+                        {markdownArtifact ? (
+                          <>
+                            <button type="button" className="artifact-action is-primary" onClick={handleMarkdownDownload}>
+                              <Download className="h-3.5 w-3.5" />
+                              Download
+                            </button>
+                            <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
+                              <Printer className="h-3.5 w-3.5" />
+                              Print / PDF
+                            </button>
+                          </>
+                        ) : null}
+                        <span className="mono-pill">{activeArtifact.kind}</span>
+                      </div>
                     </div>
 
-                    <div className="artifact-preview">
-                      <div className="mb-4 flex flex-wrap items-center gap-2">
-                        <span className="mono-pill !border-[color:var(--accent-secondary)] !text-[color:var(--accent-secondary)]">renderer slot reserved</span>
-                        <span className="mono-pill !border-[color:var(--border)]">safe text preview only</span>
-                      </div>
-                      <pre>{getPreviewText(activeArtifact)}</pre>
+                    <div className={cn("artifact-preview", markdownArtifact && "is-markdown print-markdown-target")}>
+                      {markdownArtifact ? (
+                        <>
+                          <div className="print-hide-on-markdown mb-4 flex flex-wrap items-center gap-2">
+                            <span className="mono-pill !border-[color:var(--accent-secondary)] !text-[color:var(--accent-secondary)]">remark-gfm enabled</span>
+                            <span className="mono-pill !border-[color:var(--border)]">raw html disabled</span>
+                          </div>
+                          <MarkdownRenderer artifact={markdownArtifact} />
+                        </>
+                      ) : (
+                        <>
+                          <div className="mb-4 flex flex-wrap items-center gap-2">
+                            <span className="mono-pill !border-[color:var(--accent-secondary)] !text-[color:var(--accent-secondary)]">renderer slot reserved</span>
+                            <span className="mono-pill !border-[color:var(--border)]">safe text preview only</span>
+                          </div>
+                          <pre>{getPreviewText(activeArtifact)}</pre>
+                        </>
+                      )}
                     </div>
                   </div>
 
-                  <div className="grid gap-3 md:grid-cols-3">
+                  <div className="print-hide-on-markdown grid gap-3 md:grid-cols-3">
                     <div className="metric-card">
                       <p className="metric-label">Bundle title</p>
                       <p className="metric-value">{envelope.title ?? "Untitled envelope"}</p>
@@ -400,7 +484,7 @@ export function ViewerShell() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-5">
+                <div className="print-hide-on-markdown flex flex-col gap-5">
                   <div className="rounded-[var(--radius-xl)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-4 sm:p-5">
                     <p className="section-kicker">Decoded envelope</p>
                     <div className="mt-4 grid gap-3">
@@ -453,7 +537,7 @@ export function ViewerShell() {
             ) : (
               <div className="mt-5 grid gap-4">
                 <div className="viewer-frame">
-                  <div className="viewer-head">
+                  <div className="viewer-head print-hide-on-markdown">
                     <div>
                       <p className="metric-label">Ready for fragment decode</p>
                       <h4 className="mt-2 text-lg font-semibold">Choose a sample payload to populate this shell</h4>
@@ -465,10 +549,10 @@ export function ViewerShell() {
                   </div>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="print-hide-on-markdown grid gap-3 md:grid-cols-3">
                   <div className="metric-card">
                     <p className="metric-label">Security posture</p>
-                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Payloads stay in the hash and render as plain text until format-specific renderers land.</p>
+                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Payloads stay in the hash, markdown renders safely in-browser, and future artifact-specific viewers can land without changing transport semantics.</p>
                   </div>
                   <div className="metric-card">
                     <p className="metric-label">Route model</p>
@@ -476,7 +560,7 @@ export function ViewerShell() {
                   </div>
                   <div className="metric-card">
                     <p className="metric-label">Next up</p>
-                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Markdown, code, diff, CSV, and JSON renderers can mount into this shell without changing payload semantics.</p>
+                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Markdown is now live in the viewer frame; code, diff, CSV, and JSON can follow with the same shell contracts.</p>
                   </div>
                 </div>
               </div>

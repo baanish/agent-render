@@ -14,7 +14,7 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
         title: "Sprint roadmap",
         filename: "roadmap.md",
         content:
-          "# Sprint roadmap\n\n- Ship the static viewer shell\n- Keep payloads in the URL fragment\n- Land dedicated renderers in later sprints",
+          "# Sprint roadmap\n\n> The public shell now needs a renderer that feels like a first-class artifact, not a fallback preview.\n\n## Sprint 1 scope\n\n- [x] Render markdown directly in the viewer\n- [x] Support GitHub Flavored Markdown tables and task lists\n- [x] Keep raw HTML disabled by default\n- [x] Add markdown download and print flows\n\n## Launch checklist\n\n| Surface | Status | Notes |\n| --- | --- | --- |\n| Viewer shell | Ready | Editorial chrome stays intact |\n| Code fences | Ready | Productized framing with language chips |\n| Print output | Ready | Browser print only, no server path |\n\n### Example fenced block\n\n```ts\nexport function decodeEnvelope(fragment: string) {\n  return fragment.startsWith(\"agent-render=\") ? \"ready\" : \"missing\";\n}\n```\n\nKeep the markdown renderer crisp on mobile and intentional on paper.",
       },
     ],
   },
