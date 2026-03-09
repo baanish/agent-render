@@ -6,8 +6,8 @@ Phase 1 focuses on fragment-based sharing for markdown, code, diffs, CSV, and JS
 
 ## Status
 
-- Sprint 1 complete: markdown renderer, markdown download, and print-to-PDF flow
-- Planned next renderers: code, diff, CSV, and JSON
+- Sprint 2 complete: markdown renderer, markdown download and print flow, plus read-only code rendering
+- Planned next renderers: diff, CSV, and JSON
 - Deployment target: GitHub Pages by default, with support for other static hosts
 
 ## Principles

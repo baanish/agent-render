@@ -71,3 +71,26 @@ Two sample envelopes live in `src/lib/payload/examples.ts` for local development
 ```
 
 Markdown artifacts use the `content` field and currently support client-side download and browser print-to-PDF from the viewer shell.
+
+### Code artifact example
+
+```json
+{
+  "v": 1,
+  "codec": "plain",
+  "title": "Viewer bootstrap",
+  "activeArtifactId": "viewer-shell",
+  "artifacts": [
+    {
+      "id": "viewer-shell",
+      "kind": "code",
+      "title": "viewer-shell.tsx",
+      "filename": "viewer-shell.tsx",
+      "language": "tsx",
+      "content": "export function ViewerShell() {\n  return <main />;\n}"
+    }
+  ]
+}
+```
+
+Code artifacts use the same `content` transport, plus optional `language` and `filename` hints for syntax-aware rendering and download naming.
