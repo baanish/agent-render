@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -13,7 +14,6 @@ import {
   FileSpreadsheet,
   FileText,
   FolderKanban,
-  Layers3,
   Printer,
   ShieldCheck,
   Sparkles,
@@ -304,7 +304,7 @@ export function ViewerShell() {
         <header className="panel print-hide-on-markdown fade-up sticky top-4 z-30 flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-strong)] shadow-[var(--shadow-md)]">
-              <Layers3 className="h-5 w-5 text-[color:var(--accent)]" />
+              <Image src="/icon.svg" alt="" width={24} height={24} className="h-6 w-6" priority unoptimized />
             </div>
             <div>
               <h1 className="font-display text-xl font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>

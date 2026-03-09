@@ -362,7 +362,7 @@ select {
 }
 
 .viewer-frame-primary {
-  min-height: 74vh;
+  min-height: 0;
 }
 
 .viewer-frame-hero {
@@ -387,7 +387,7 @@ select {
 }
 
 .artifact-preview {
-  min-height: 420px;
+  min-height: 0;
   padding: 1rem;
   background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
 }
@@ -652,7 +652,15 @@ select {
 }
 
 .code-renderer-host {
-  min-height: 360px;
+  min-height: 0;
+}
+
+.code-renderer-shell:not(.is-compact) .cm-scroller {
+  max-height: min(72vh, 56rem);
+}
+
+.code-renderer-shell.is-compact .cm-scroller {
+  max-height: min(24rem, 52vh);
 }
 
 .diff-renderer-shell,
@@ -752,6 +760,7 @@ select {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  max-height: min(68vh, 42rem);
 }
 
 .csv-table {
@@ -1090,7 +1099,7 @@ select {
   }
 
   .artifact-preview {
-    min-height: 240px;
+    min-height: 0;
     padding: 1rem;
   }
 
@@ -1134,7 +1143,7 @@ select {
   }
 
   .viewer-frame-primary {
-    min-height: 62vh;
+    min-height: 0;
   }
 
   .artifact-meta-grid,
