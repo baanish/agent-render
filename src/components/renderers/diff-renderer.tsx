@@ -4,27 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Columns2, Rows3 } from "lucide-react";
 import { DiffFile, DiffModeEnum, DiffView } from "@git-diff-view/react";
 import { useTheme } from "next-themes";
+import { detectCodeLanguage } from "@/lib/code/language";
 import { parseGitPatchBundle } from "@/lib/diff/git-patch";
 import type { DiffArtifact } from "@/lib/payload/schema";
 
 type DiffRendererProps = {
   artifact: DiffArtifact;
 };
-
-function detectLanguage(filename?: string, fallback?: string) {
-  const explicit = fallback?.trim().toLowerCase();
-  if (explicit) return explicit;
-
-  const lower = filename?.toLowerCase() ?? "";
-  if (lower.endsWith(".tsx")) return "tsx";
-  if (lower.endsWith(".ts")) return "typescript";
-  if (lower.endsWith(".jsx") || lower.endsWith(".js")) return "javascript";
-  if (lower.endsWith(".json")) return "json";
-  if (lower.endsWith(".py")) return "python";
-  if (lower.endsWith(".css")) return "css";
-  if (lower.endsWith(".html")) return "html";
-  return "text";
-}
 
 export function DiffRenderer({ artifact }: DiffRendererProps) {
   const { resolvedTheme } = useTheme();
@@ -55,7 +41,7 @@ export function DiffRenderer({ artifact }: DiffRendererProps) {
 
     if (!artifact.patch && artifact.oldContent !== undefined && artifact.newContent !== undefined) {
       const fileName = artifact.filename ?? artifact.id;
-      const language = detectLanguage(fileName, artifact.language);
+      const language = detectCodeLanguage(fileName, artifact.language);
       const diffFile = new DiffFile(`a/${fileName}`, artifact.oldContent, `b/${fileName}`, artifact.newContent, [], language, language);
       diffFile.initTheme(resolvedTheme === "dark" ? "dark" : "light");
       diffFile.init();
@@ -65,7 +51,7 @@ export function DiffRenderer({ artifact }: DiffRendererProps) {
     }
 
     return patchFiles.map((patchFile) => {
-      const language = detectLanguage(patchFile.newPath ?? patchFile.oldPath ?? undefined, artifact.language);
+      const language = detectCodeLanguage(patchFile.newPath ?? patchFile.oldPath ?? undefined, artifact.language);
       const diffFile = new DiffFile(
         patchFile.oldPath ? `a/${patchFile.oldPath}` : "/dev/null",
         "",

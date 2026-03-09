@@ -1,6 +1,7 @@
 import { Children, isValidElement, type ReactNode } from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
@@ -78,7 +79,7 @@ export function MarkdownRenderer({ artifact }: MarkdownRendererProps) {
       <article className="markdown-article">
         <ReactMarkdown
           components={markdownComponents}
-          rehypePlugins={[[rehypeSanitize, markdownSchema]]}
+          rehypePlugins={[[rehypeSanitize, markdownSchema], rehypeHighlight]}
           remarkPlugins={[remarkGfm]}
           skipHtml
         >

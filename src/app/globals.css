@@ -737,6 +737,48 @@ select {
   line-height: 1.78;
 }
 
+.markdown-code .hljs-keyword,
+.markdown-code .hljs-selector-tag,
+.markdown-code .hljs-literal,
+.markdown-code .hljs-title,
+.markdown-code .hljs-section,
+.markdown-code .hljs-link {
+  color: #efb360;
+}
+
+.markdown-code .hljs-string,
+.markdown-code .hljs-attr,
+.markdown-code .hljs-template-tag,
+.markdown-code .hljs-template-variable {
+  color: #7fd7a4;
+}
+
+.markdown-code .hljs-number,
+.markdown-code .hljs-symbol,
+.markdown-code .hljs-bullet,
+.markdown-code .hljs-variable,
+.markdown-code .hljs-variable.constant_ {
+  color: #f29c8f;
+}
+
+.markdown-code .hljs-comment,
+.markdown-code .hljs-quote {
+  color: rgba(239, 243, 247, 0.48);
+}
+
+.markdown-code .hljs-function,
+.markdown-code .hljs-title.function_,
+.markdown-code .hljs-title.class_ {
+  color: #9eb3ff;
+}
+
+.markdown-code .hljs-property,
+.markdown-code .hljs-attribute,
+.markdown-code .hljs-built_in,
+.markdown-code .hljs-type {
+  color: #69d1dd;
+}
+
 .markdown-table-wrap {
   margin: 1.5rem 0;
   overflow-x: auto;

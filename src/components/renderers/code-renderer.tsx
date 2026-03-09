@@ -22,17 +22,14 @@ import {
   indentUnit,
   syntaxHighlighting,
 } from "@codemirror/language";
-import { css } from "@codemirror/lang-css";
-import { html } from "@codemirror/lang-html";
-import { javascript } from "@codemirror/lang-javascript";
-import { json } from "@codemirror/lang-json";
-import { python } from "@codemirror/lang-python";
+import { detectCodeLanguage, getLanguageSupport } from "@/lib/code/language";
 import type { CodeArtifact } from "@/lib/payload/schema";
 
 type CodeRendererProps = {
   artifact: CodeArtifact;
 };
 
+const MAX_DECORATED_CONTENT_LENGTH = 120000;
 const rainbowColors = ["#f08d5e", "#efb360", "#69d1dd", "#80c193", "#9eb3ff", "#d799ff"];
 const indentGuideColors = [
   "rgba(240, 141, 94, 0.28)",
@@ -42,51 +39,6 @@ const indentGuideColors = [
   "rgba(158, 179, 255, 0.28)",
   "rgba(215, 153, 255, 0.28)",
 ];
-
-function detectLanguage(artifact: CodeArtifact) {
-  const explicit = artifact.language?.trim().toLowerCase();
-  if (explicit) {
-    return explicit;
-  }
-
-  const filename = artifact.filename?.toLowerCase() ?? "";
-
-  if (filename.endsWith(".tsx")) return "tsx";
-  if (filename.endsWith(".jsx")) return "jsx";
-  if (filename.endsWith(".ts") || filename.endsWith(".mts") || filename.endsWith(".cts")) return "ts";
-  if (filename.endsWith(".js") || filename.endsWith(".mjs") || filename.endsWith(".cjs")) return "js";
-  if (filename.endsWith(".json")) return "json";
-  if (filename.endsWith(".css")) return "css";
-  if (filename.endsWith(".html") || filename.endsWith(".htm")) return "html";
-  if (filename.endsWith(".py")) return "python";
-
-  return "text";
-}
-
-function languageSupport(language: string) {
-  switch (language) {
-    case "tsx":
-      return javascript({ jsx: true, typescript: true });
-    case "ts":
-      return javascript({ typescript: true });
-    case "jsx":
-      return javascript({ jsx: true });
-    case "js":
-    case "javascript":
-      return javascript();
-    case "json":
-      return json();
-    case "css":
-      return css();
-    case "html":
-      return html();
-    case "python":
-    case "py":
-      return python();
-    default:
-      return null;
-  }
-}
 
 const editorTheme = EditorView.theme({
   "&": {
@@ -147,7 +99,7 @@ const rainbowDecorations = ViewPlugin.fromClass(
     }
 
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) {
+      if (update.docChanged) {
         this.decorations = buildDecorations(update.state.doc.toString());
       }
     }
@@ -270,7 +222,7 @@ function buildDecorations(text: string): DecorationSet {
 export function CodeRenderer({ artifact }: CodeRendererProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [wrapLines, setWrapLines] = useState(false);
-  const language = useMemo(() => detectLanguage(artifact), [artifact]);
+  const language = useMemo(() => detectCodeLanguage(artifact.filename, artifact.language), [artifact.filename, artifact.language]);
 
   useEffect(() => {
     if (!hostRef.current) {
@@ -290,16 +242,19 @@ export function CodeRenderer({ artifact }: CodeRendererProps) {
       EditorState.readOnly.of(true),
       EditorView.editable.of(false),
       editorTheme,
-      rainbowDecorations,
     ];
 
     if (wrapLines) {
       extensions.push(EditorView.lineWrapping);
     }
 
-    const support = languageSupport(language);
+    const support = getLanguageSupport(language);
     if (support) {
       extensions.push(support);
+    }
+
+    if (artifact.content.length <= MAX_DECORATED_CONTENT_LENGTH) {
+      extensions.push(rainbowDecorations);
     }
 
     const view = new EditorView({
