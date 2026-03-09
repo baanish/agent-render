@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "preview": "node scripts/serve-export.mjs",
+    "start": "npm run preview",
     "lint": "eslint .",
     "test": "vitest run",
     "typecheck": "node scripts/ensure-next-types.mjs && tsc --noEmit",
