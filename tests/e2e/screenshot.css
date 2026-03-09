@@ -3,3 +3,8 @@
   transition: none !important;
   caret-color: transparent !important;
 }
+
+.fade-up {
+  opacity: 1 !important;
+  transform: none !important;
+}

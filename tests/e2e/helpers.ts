@@ -38,4 +38,22 @@ export async function waitForRendererReady(page: Page, kind: "markdown" | "code"
   };
 
   await expect(page.locator(readinessSelectorByKind[kind]).first()).toBeVisible();
+
+  await page.waitForLoadState("load");
+  await page.waitForFunction(async () => {
+    if (!document.fonts) {
+      return true;
+    }
+
+    await document.fonts.ready;
+    return document.fonts.status === "loaded";
+  });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      }),
+  );
 }
