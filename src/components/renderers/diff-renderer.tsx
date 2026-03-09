@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Columns2, Rows3 } from "lucide-react";
-import { DiffModeEnum, DiffView } from "@git-diff-view/react";
-import { generateDiffFile } from "@git-diff-view/file";
+import { DiffFile, DiffModeEnum, DiffView } from "@git-diff-view/react";
 import { useTheme } from "next-themes";
+import { parseGitPatchBundle } from "@/lib/diff/git-patch";
 import type { DiffArtifact } from "@/lib/payload/schema";
 
 type DiffRendererProps = {
@@ -26,64 +26,6 @@ function detectLanguage(filename?: string, fallback?: string) {
   return "text";
 }
 
-function materializePatch(artifact: DiffArtifact) {
-  if (artifact.oldContent !== undefined || artifact.newContent !== undefined) {
-    return {
-      oldFileName: `a/${artifact.filename ?? "before.txt"}`,
-      newFileName: `b/${artifact.filename ?? "after.txt"}`,
-      oldContent: artifact.oldContent ?? "",
-      newContent: artifact.newContent ?? "",
-    };
-  }
-
-  const patch = artifact.patch ?? "";
-  const lines = patch.replace(/\r\n/g, "\n").split("\n");
-  let oldFileName = "a/before.txt";
-  let newFileName = artifact.filename ? `b/${artifact.filename}` : "b/after.txt";
-  const oldLines: string[] = [];
-  const newLines: string[] = [];
-  let inHunk = false;
-
-  for (const line of lines) {
-    if (line.startsWith("--- ")) {
-      oldFileName = line.slice(4).trim() || oldFileName;
-      continue;
-    }
-    if (line.startsWith("+++ ")) {
-      newFileName = line.slice(4).trim() || newFileName;
-      continue;
-    }
-    if (line.startsWith("@@")) {
-      inHunk = true;
-      continue;
-    }
-    if (!inHunk || !line || line.startsWith("diff --git") || line.startsWith("index ")) {
-      continue;
-    }
-    if (line === "\\ No newline at end of file") {
-      continue;
-    }
-
-    const marker = line[0];
-    const value = line.slice(1);
-    if (marker === " ") {
-      oldLines.push(value);
-      newLines.push(value);
-    } else if (marker === "-") {
-      oldLines.push(value);
-    } else if (marker === "+") {
-      newLines.push(value);
-    }
-  }
-
-  return {
-    oldFileName,
-    newFileName,
-    oldContent: oldLines.join("\n"),
-    newContent: newLines.join("\n"),
-  };
-}
-
 export function DiffRenderer({ artifact }: DiffRendererProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -96,15 +38,49 @@ export function DiffRenderer({ artifact }: DiffRendererProps) {
     setMounted(true);
   }, []);
 
-  const diffFile = useMemo(() => {
-    const { oldFileName, newFileName, oldContent, newContent } = materializePatch(artifact);
-    const language = detectLanguage(newFileName, artifact.language);
-    const file = generateDiffFile(oldFileName, oldContent, newFileName, newContent, language, language);
-    file.initTheme(resolvedTheme === "dark" ? "dark" : "light");
-    file.init();
-    file.buildSplitDiffLines();
-    file.buildUnifiedDiffLines();
-    return file;
+  const diffFiles = useMemo(() => {
+    const patchFiles = artifact.patch
+      ? parseGitPatchBundle(artifact.patch)
+      : [
+          {
+            id: artifact.id,
+            patch: artifact.patch ?? "",
+            oldPath: artifact.filename ?? null,
+            newPath: artifact.filename ?? null,
+            displayPath: artifact.filename ?? artifact.id,
+            status: "modified" as const,
+            isBinary: false,
+          },
+        ];
+
+    if (!artifact.patch && artifact.oldContent !== undefined && artifact.newContent !== undefined) {
+      const fileName = artifact.filename ?? artifact.id;
+      const language = detectLanguage(fileName, artifact.language);
+      const diffFile = new DiffFile(`a/${fileName}`, artifact.oldContent, `b/${fileName}`, artifact.newContent, [], language, language);
+      diffFile.initTheme(resolvedTheme === "dark" ? "dark" : "light");
+      diffFile.init();
+      diffFile.buildSplitDiffLines();
+      diffFile.buildUnifiedDiffLines();
+      return [{ meta: patchFiles[0], diffFile }];
+    }
+
+    return patchFiles.map((patchFile) => {
+      const language = detectLanguage(patchFile.newPath ?? patchFile.oldPath ?? undefined, artifact.language);
+      const diffFile = new DiffFile(
+        patchFile.oldPath ? `a/${patchFile.oldPath}` : "/dev/null",
+        "",
+        patchFile.newPath ? `b/${patchFile.newPath}` : "/dev/null",
+        "",
+        [patchFile.patch],
+        language,
+        language,
+      );
+      diffFile.initTheme(resolvedTheme === "dark" ? "dark" : "light");
+      diffFile.init();
+      diffFile.buildSplitDiffLines();
+      diffFile.buildUnifiedDiffLines();
+      return { meta: patchFile, diffFile };
+    });
   }, [artifact, resolvedTheme]);
 
   return (
@@ -135,13 +111,42 @@ export function DiffRenderer({ artifact }: DiffRendererProps) {
       </div>
       <div className="diff-renderer-frame">
         {mounted ? (
-          <DiffView
-            diffFile={diffFile}
-            diffViewMode={mode}
-            diffViewTheme={resolvedTheme === "dark" ? "dark" : "light"}
-            diffViewHighlight
-            diffViewWrap
-          />
+          <div className="patch-bundle-shell">
+            <nav className="patch-bundle-nav">
+              {diffFiles.map(({ meta }) => (
+                <a key={meta.id} href={`#patch-file-${meta.id}`} className="patch-bundle-link">
+                  <span className="mono-pill">{meta.status}</span>
+                  <span className="truncate">{meta.displayPath}</span>
+                </a>
+              ))}
+            </nav>
+            <div className="patch-bundle-files">
+              {diffFiles.map(({ meta, diffFile }) => (
+                <section key={meta.id} id={`patch-file-${meta.id}`} className="patch-file-section">
+                  <header className="patch-file-header">
+                    <div>
+                      <p className="section-kicker">{meta.status}</p>
+                      <h4>{meta.displayPath}</h4>
+                    </div>
+                    {meta.oldPath && meta.newPath && meta.oldPath !== meta.newPath ? (
+                      <span className="mono-pill">{meta.oldPath} -&gt; {meta.newPath}</span>
+                    ) : null}
+                  </header>
+                  {meta.isBinary ? (
+                    <div className="artifact-empty-state">Binary patch preview is not expanded. Download the patch to inspect the raw binary diff headers.</div>
+                  ) : (
+                    <DiffView
+                      diffFile={diffFile}
+                      diffViewMode={mode}
+                      diffViewTheme={resolvedTheme === "dark" ? "dark" : "light"}
+                      diffViewHighlight
+                      diffViewWrap
+                    />
+                  )}
+                </section>
+              ))}
+            </div>
+          </div>
         ) : null}
       </div>
     </div>

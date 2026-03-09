@@ -560,6 +560,53 @@ select {
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
 }
 
+.patch-bundle-shell {
+  display: grid;
+  grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+}
+
+.patch-bundle-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem;
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+}
+
+.patch-bundle-link {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 0.9rem;
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+}
+
+.patch-bundle-files {
+  display: flex;
+  flex-direction: column;
+}
+
+.patch-file-section + .patch-file-section {
+  border-top: 1px solid var(--border);
+}
+
+.patch-file-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.8rem;
+}
+
+.patch-file-header h4 {
+  margin: 0.25rem 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
 .diff-renderer-frame [data-theme="light"] {
   --diff-bgColor-default: color-mix(in srgb, var(--surface-strong) 96%, white 4%);
 }
@@ -732,6 +779,15 @@ select {
 
   .code-renderer-toolbar {
     align-items: flex-start;
+  }
+
+  .patch-bundle-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .patch-bundle-nav {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
   }
 
   .viewer-head {
