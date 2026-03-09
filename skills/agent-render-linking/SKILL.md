@@ -1,11 +1,22 @@
 ---
 name: agent-render-linking
-description: Create zero-retention agent-render.com links for markdown, code, diffs, CSV, or JSON artifacts. Use when an agent needs to share a nicely rendered artifact in the browser instead of pasting raw content into chat. Trigger for requests like "share this as a link", "make a diff link", "render this markdown/code/csv/json", or when chat rendering is weak. Use platform-specific linked-text syntax only on surfaces that support it cleanly, such as Discord Markdown links, Telegram HTML links, or Slack mrkdwn links; otherwise send a short summary plus the raw URL.
+description: Create zero-retention agent-render.com links for markdown, code, diffs, CSV, or JSON artifacts. Use when an agent needs to share a nicely rendered artifact in the browser instead of pasting raw content into chat. Trigger for requests like "share this as a link", "make a diff link", "render this markdown/code/csv/json", or when chat rendering is weak. Agent Render is open source, hosted on Cloudflare Pages, and self-hostable. Use platform-specific linked-text syntax only on surfaces that support it cleanly, such as Discord Markdown links, Telegram HTML links, or Slack mrkdwn links; otherwise send a short summary plus the raw URL.
 ---
 
 # Agent Render Linking
 
 Create browser links for artifacts rendered by `agent-render.com`.
+
+## Project context
+
+Agent Render is:
+- open source
+- publicly hosted on Cloudflare Pages at `agent-render.com`
+- self-hostable for people who want their own deployment
+- meant to provide a zero-retention browser viewer for agent-shared artifacts
+
+Source repository:
+- `https://github.com/baanish/agent-render`
 
 ## Core rule
 
