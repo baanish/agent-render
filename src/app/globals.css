@@ -328,6 +328,12 @@ select {
   color: var(--accent-secondary);
 }
 
+.artifact-action.is-code {
+  border-color: rgba(239, 243, 247, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(239, 243, 247, 0.86);
+}
+
 .markdown-document {
   width: 100%;
 }
@@ -490,6 +496,37 @@ select {
   line-height: inherit;
 }
 
+.code-renderer-shell {
+  border-radius: calc(var(--radius-xl) - 6px);
+  overflow: hidden;
+  background: var(--surface-code);
+  box-shadow: inset 0 0 0 1px rgba(239, 243, 247, 0.05);
+}
+
+.code-renderer-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(239, 243, 247, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+    var(--surface-code-raised);
+}
+
+.code-renderer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.code-renderer-host {
+  min-height: 360px;
+}
+
 .markdown-code {
   display: block;
   min-width: max-content;
@@ -583,6 +620,10 @@ select {
   .artifact-preview {
     min-height: 240px;
     padding: 1rem;
+  }
+
+  .code-renderer-toolbar {
+    align-items: flex-start;
   }
 
   .viewer-head {

@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { CodeRenderer } from "@/components/renderers/code-renderer";
 import { MarkdownRenderer } from "@/components/renderers/markdown-renderer";
 import { sampleEnvelopes, sampleLinks } from "@/lib/payload/examples";
 import { decodeFragment } from "@/lib/payload/fragment";
@@ -28,6 +29,7 @@ import {
   artifactKinds,
   type ArtifactKind,
   type ArtifactPayload,
+  type CodeArtifact,
   type MarkdownArtifact,
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
@@ -182,28 +184,40 @@ export function ViewerShell() {
   const envelope = parsed.ok ? parsed.envelope : null;
   const activeArtifact = envelope ? getActiveArtifact(envelope) : null;
   const markdownArtifact: MarkdownArtifact | null = activeArtifact?.kind === "markdown" ? activeArtifact : null;
+  const codeArtifact: CodeArtifact | null = activeArtifact?.kind === "code" ? activeArtifact : null;
   const budgetRatio = Math.min(fragmentLength / MAX_FRAGMENT_LENGTH, 1);
   const statusTone = getStatusTone(parsed);
 
-  const handleMarkdownDownload = useCallback(() => {
-    if (!markdownArtifact) {
+  const handleArtifactDownload = useCallback(() => {
+    if (!activeArtifact) {
       return;
     }
 
-    const blob = new Blob([markdownArtifact.content], {
-      type: "text/markdown;charset=utf-8",
+    const mimeType =
+      activeArtifact.kind === "markdown"
+        ? "text/markdown;charset=utf-8"
+        : activeArtifact.kind === "json"
+          ? "application/json;charset=utf-8"
+          : activeArtifact.kind === "csv"
+            ? "text/csv;charset=utf-8"
+            : activeArtifact.kind === "diff"
+              ? "text/x-diff;charset=utf-8"
+              : "text/plain;charset=utf-8";
+
+    const blob = new Blob([getArtifactBody(activeArtifact)], {
+      type: mimeType,
     });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
 
     anchor.href = url;
-    anchor.download = getDownloadFilename(markdownArtifact);
+    anchor.download = getDownloadFilename(activeArtifact);
     anchor.click();
 
     window.setTimeout(() => {
       URL.revokeObjectURL(url);
     }, 0);
-  }, [markdownArtifact]);
+  }, [activeArtifact]);
 
   const handleMarkdownPrint = useCallback(() => {
     if (!markdownArtifact) {
@@ -231,7 +245,7 @@ export function ViewerShell() {
               <Layers3 className="h-5 w-5 text-[color:var(--accent)]" />
             </div>
             <div>
-              <p className="section-kicker">Sprint 1 markdown shell</p>
+              <p className="section-kicker">Sprint 2 artifact shell</p>
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <h1 className="font-display text-xl font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>
                 <span className="mono-pill">single exported route</span>
@@ -262,7 +276,7 @@ export function ViewerShell() {
                     Share artifacts in the URL, keep the server out of the payload.
                   </h2>
                   <p className="mt-5 max-w-2xl text-base leading-7 text-[color:var(--text-muted)] sm:text-lg">
-                    Sprint 1 turns the shell into a polished markdown artifact reader with GFM support, productized code fences, and client-side export flows that stay fully fragment-native.
+                    The shell now supports polished markdown reading plus a read-only code viewer, while keeping fragment-native sharing and static hosting constraints intact.
                   </p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     <span className="mono-pill">
@@ -390,7 +404,7 @@ export function ViewerShell() {
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)]">
                   {activeArtifact
-                    ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. Markdown now renders directly in-frame while the shell stays ready for the remaining artifact kinds.`
+                    ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. Markdown and code now render directly in-frame while the shell stays ready for the remaining artifact kinds.`
                     : "No artifact is active yet. Choose a sample fragment to populate the payload inspector and viewer metadata."}
                 </p>
               </div>
@@ -431,32 +445,36 @@ export function ViewerShell() {
                         <h4 className="mt-2 text-lg font-semibold">{activeArtifact.filename ?? activeArtifact.id}</h4>
                       </div>
                       <div className="viewer-toolbar">
-                        {markdownArtifact ? (
-                          <>
-                            <button type="button" className="artifact-action is-primary" onClick={handleMarkdownDownload}>
-                              <Download className="h-3.5 w-3.5" />
-                              Download
-                            </button>
-                            <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
-                              <Printer className="h-3.5 w-3.5" />
-                              Print / PDF
-                            </button>
-                          </>
-                        ) : null}
+                         {activeArtifact ? (
+                           <>
+                             <button type="button" className="artifact-action is-primary" onClick={handleArtifactDownload}>
+                               <Download className="h-3.5 w-3.5" />
+                               Download
+                             </button>
+                             {markdownArtifact ? (
+                               <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
+                                 <Printer className="h-3.5 w-3.5" />
+                                 Print / PDF
+                               </button>
+                             ) : null}
+                           </>
+                         ) : null}
                         <span className="mono-pill">{activeArtifact.kind}</span>
                       </div>
                     </div>
 
                     <div className={cn("artifact-preview", markdownArtifact && "is-markdown print-markdown-target")}>
-                      {markdownArtifact ? (
-                        <>
+                       {markdownArtifact ? (
+                         <>
                           <div className="print-hide-on-markdown mb-4 flex flex-wrap items-center gap-2">
                             <span className="mono-pill !border-[color:var(--accent-secondary)] !text-[color:var(--accent-secondary)]">remark-gfm enabled</span>
                             <span className="mono-pill !border-[color:var(--border)]">raw html disabled</span>
                           </div>
-                          <MarkdownRenderer artifact={markdownArtifact} />
-                        </>
-                      ) : (
+                           <MarkdownRenderer artifact={markdownArtifact} />
+                         </>
+                       ) : codeArtifact ? (
+                         <CodeRenderer artifact={codeArtifact} />
+                       ) : (
                         <>
                           <div className="mb-4 flex flex-wrap items-center gap-2">
                             <span className="mono-pill !border-[color:var(--accent-secondary)] !text-[color:var(--accent-secondary)]">renderer slot reserved</span>
@@ -560,7 +578,7 @@ export function ViewerShell() {
                   </div>
                   <div className="metric-card">
                     <p className="metric-label">Next up</p>
-                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Markdown is now live in the viewer frame; code, diff, CSV, and JSON can follow with the same shell contracts.</p>
+                     <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Markdown and code are now live in the viewer frame; diff, CSV, and JSON can follow with the same shell contracts.</p>
                   </div>
                 </div>
               </div>
