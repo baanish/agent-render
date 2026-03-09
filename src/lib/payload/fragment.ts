@@ -1,4 +1,19 @@
-import { MAX_FRAGMENT_LENGTH, PAYLOAD_FRAGMENT_KEY, type ParsedPayload, type PayloadEnvelope, isPayloadEnvelope } from "@/lib/payload/schema";
+import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
+import { normalizeEnvelope } from "@/lib/payload/envelope";
+import {
+  MAX_DECODED_PAYLOAD_LENGTH,
+  MAX_FRAGMENT_LENGTH,
+  PAYLOAD_FRAGMENT_KEY,
+  type ParsedPayload,
+  type PayloadCodec,
+  type PayloadEnvelope,
+  isPayloadEnvelope,
+} from "@/lib/payload/schema";
+
+type EncodeOptions = {
+  codec?: PayloadCodec;
+  preferCompressed?: boolean;
+};
 
 function toBase64Url(input: string): string {
   const bytes = new TextEncoder().encode(input);
@@ -15,9 +30,40 @@ function fromBase64Url(input: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-export function encodeEnvelope(envelope: PayloadEnvelope): string {
-  const json = JSON.stringify(envelope);
-  return `${PAYLOAD_FRAGMENT_KEY}=v1.${envelope.codec}.${toBase64Url(json)}`;
+function encodePayload(json: string, codec: PayloadCodec): string {
+  if (codec === "lz") {
+    return compressToEncodedURIComponent(json);
+  }
+
+  return toBase64Url(json);
+}
+
+function decodePayload(encoded: string, codec: PayloadCodec): string | null {
+  if (codec === "lz") {
+    return decompressFromEncodedURIComponent(encoded);
+  }
+
+  return fromBase64Url(encoded);
+}
+
+function buildFragment(envelope: PayloadEnvelope, codec: PayloadCodec): string {
+  const payloadEnvelope = { ...envelope, codec };
+  const json = JSON.stringify(payloadEnvelope);
+  return `${PAYLOAD_FRAGMENT_KEY}=v1.${codec}.${encodePayload(json, codec)}`;
+}
+
+export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions = {}): string {
+  if (options.codec) {
+    return buildFragment(envelope, options.codec);
+  }
+
+  const plainFragment = buildFragment(envelope, "plain");
+  if (options.preferCompressed === false) {
+    return plainFragment;
+  }
+
+  const compressedFragment = buildFragment(envelope, "lz");
+  return compressedFragment.length < plainFragment.length ? compressedFragment : plainFragment;
 }
 
 export function decodeFragment(hash: string): ParsedPayload {
@@ -59,18 +105,31 @@ export function decodeFragment(hash: string): ParsedPayload {
     };
   }
 
-  if (codec !== "plain") {
+  if (codec !== "plain" && codec !== "lz") {
     return {
       ok: false,
       code: "invalid-format",
-      message: `Unsupported codec \"${codec}\". Phase 1 currently supports plain payloads only.`,
+      message: `Unsupported codec "${codec}". Supported codecs are plain and lz.`,
     };
   }
 
   let parsed: unknown;
 
   try {
-    parsed = JSON.parse(fromBase64Url(encoded));
+    const decodedJson = decodePayload(encoded, codec);
+    if (decodedJson === null) {
+      throw new Error("Decoded payload was empty.");
+    }
+
+    if (decodedJson.length > MAX_DECODED_PAYLOAD_LENGTH) {
+      return {
+        ok: false,
+        code: "decoded-too-large",
+        message: `The decoded payload exceeds the supported limit of ${MAX_DECODED_PAYLOAD_LENGTH.toLocaleString()} characters.`,
+      };
+    }
+
+    parsed = JSON.parse(decodedJson);
   } catch {
     return {
       ok: false,
@@ -83,13 +142,22 @@ export function decodeFragment(hash: string): ParsedPayload {
     return {
       ok: false,
       code: "invalid-envelope",
-      message: "The decoded JSON did not match the Phase 1 payload envelope.",
+      message: "The decoded JSON did not match the payload envelope.",
+    };
+  }
+
+  const normalized = normalizeEnvelope(parsed);
+  if (!normalized.ok) {
+    return {
+      ok: false,
+      code: "invalid-envelope",
+      message: normalized.message,
     };
   }
 
   return {
     ok: true,
-    envelope: parsed,
+    envelope: normalized.envelope,
     rawLength: fragment.length,
   };
 }

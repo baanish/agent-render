@@ -1,4 +1,5 @@
 export const MAX_FRAGMENT_LENGTH = 8000;
+export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 
 export const artifactKinds = ["markdown", "code", "diff", "csv", "json"] as const;
@@ -61,7 +62,11 @@ export type PayloadEnvelope = {
 
 export type ParsedPayload =
   | { ok: true; envelope: PayloadEnvelope; rawLength: number }
-  | { ok: false; code: "empty" | "missing-key" | "too-large" | "invalid-format" | "invalid-json" | "invalid-envelope"; message: string };
+  | {
+      ok: false;
+      code: "empty" | "missing-key" | "too-large" | "decoded-too-large" | "invalid-format" | "invalid-json" | "invalid-envelope";
+      message: string;
+    };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
