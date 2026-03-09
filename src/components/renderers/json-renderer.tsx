@@ -4,12 +4,12 @@ import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { Braces, ChevronRight, ListTree } from "lucide-react";
 import type { JsonArtifact } from "@/lib/payload/schema";
+import { exceedsTreeLimits, MAX_TREE_DEPTH, MAX_TREE_NODES } from "@/lib/json/tree-limits";
+import type { JsonValue } from "@/lib/json/tree-limits";
 
 type JsonRendererProps = {
   artifact: JsonArtifact;
 };
-
-type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
 const EmbeddedCodeRenderer = dynamic(
   () => import("@/components/renderers/code-renderer").then((module) => module.CodeRenderer),
@@ -49,7 +49,12 @@ export function JsonRenderer({ artifact }: JsonRendererProps) {
   const [view, setView] = useState<"tree" | "raw">("tree");
   const parsed = useMemo(() => {
     try {
-      return { ok: true as const, json: JSON.parse(artifact.content) as JsonValue };
+      const json = JSON.parse(artifact.content) as JsonValue;
+      return {
+        ok: true as const,
+        json,
+        treeTooLarge: exceedsTreeLimits(json, MAX_TREE_DEPTH, MAX_TREE_NODES),
+      };
     } catch (error) {
       return { ok: false as const, message: error instanceof Error ? error.message : "Invalid JSON payload." };
     }
@@ -83,7 +88,18 @@ export function JsonRenderer({ artifact }: JsonRendererProps) {
       </div>
       {view === "tree" ? (
         <div className="json-tree-shell">
-          <JsonNode value={parsed.json} />
+          {parsed.treeTooLarge ? (
+            <>
+              <div className="artifact-empty-state">
+                Tree view is unavailable for this payload because it exceeds safe rendering limits. Switch to Raw view.
+              </div>
+              <div className="mt-4">
+                <EmbeddedCodeRenderer compact artifact={{ ...artifact, kind: "code", language: "json" }} />
+              </div>
+            </>
+          ) : (
+            <JsonNode value={parsed.json} />
+          )}
         </div>
       ) : (
         <EmbeddedCodeRenderer compact artifact={{ ...artifact, kind: "code", language: "json" }} />
