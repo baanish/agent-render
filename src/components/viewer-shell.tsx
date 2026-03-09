@@ -475,12 +475,12 @@ export function ViewerShell() {
             <section className="panel panel-hero fade-up px-6 py-7 sm:px-8 sm:py-8" style={getAnimationStyle(80)}>
               <div className="grid gap-8 xl:grid-cols-[minmax(0,1.14fr)_minmax(19rem,0.86fr)] xl:items-end">
                 <div>
-                  <p className="section-kicker">Editorial technical viewer</p>
+                  <p className="section-kicker">Artifact viewer</p>
                   <h2 className="font-display mt-3 max-w-3xl text-4xl font-semibold leading-none tracking-[-0.05em] sm:text-5xl lg:text-6xl">
                     Share artifacts in the URL, keep the server out of the payload.
                   </h2>
                   <p className="mt-5 max-w-2xl text-base leading-7 text-[color:var(--text-muted)] sm:text-lg">
-                    agent-render is a fully static landing surface for markdown, code, diff, CSV, and JSON bundles. It exists so a first-time viewer can open one link, understand the artifact, and inspect it without uploading the payload anywhere.
+                    agent-render opens markdown, code, diff, CSV, and JSON artifacts from a single static link, so someone can understand the payload without uploading it anywhere.
                   </p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     <span className="mono-pill">
@@ -508,7 +508,7 @@ export function ViewerShell() {
                   <div className="metric-card">
                     <p className="metric-label">Why it exists</p>
                     <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
-                      AI agents often produce artifacts that get flattened inside chat. This shell keeps those outputs reviewable, portable, and public-safe on static hosting.
+                      Agent outputs get flattened in chat. agent-render keeps them readable, portable, and static-host friendly.
                     </p>
                   </div>
                 </div>
@@ -530,7 +530,7 @@ export function ViewerShell() {
                   <span className="hero-link-eyebrow">How to try it</span>
                   <span className="hero-link-title">Load any sample fragment below</span>
                   <p className="hero-link-body">
-                    The hash updates in place, the viewer shell wakes up, and the host still never receives the artifact body in the page request.
+                      Pick a sample, update the hash, and the viewer opens without sending the artifact body to the host.
                   </p>
                 </div>
               </div>
