@@ -34,7 +34,7 @@ The preview server intentionally preserves the fragment payload and does not rel
 
 ## Hosting model
 
-Phase 1 does not require a Node.js runtime. Any static host that can serve HTML, CSS, and JavaScript is sufficient.
+The project does not require a Node.js runtime. Any static host that can serve HTML, CSS, and JavaScript is sufficient.
 
 ## GitHub Actions flow
 

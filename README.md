@@ -2,11 +2,11 @@
 
 `agent-render` is a fully static, zero-retention artifact viewer for AI-generated outputs.
 
-Phase 1 focuses on fragment-based sharing for markdown, code, diffs, CSV, and JSON so the payload stays in the browser URL fragment instead of being sent to a server.
+`agent-render` focuses on fragment-based sharing for markdown, code, diffs, CSV, and JSON so the payload stays in the browser URL fragment instead of being sent to a server.
 
 ## Status
 
-- Phase 1 viewer complete: markdown, code, diff, CSV, and JSON all render in the static shell
+- Markdown, code, diff, CSV, and JSON all render in the static shell
 - Fragment transport now supports `plain` and compressed `lz` codecs, with compression chosen automatically when it helps
 - Markdown supports download plus browser print-to-PDF
 - Deployment target: GitHub Pages by default, with support for other static hosts
@@ -62,14 +62,16 @@ The shell keeps first load lean and defers renderer-heavy code until needed. The
 
 ## Docs
 
-- `docs/architecture.md` - Phase 1 architecture and tradeoffs
+- `docs/architecture.md` - architecture and tradeoffs
 - `docs/payload-format.md` - fragment protocol, limits, and examples
 - `docs/deployment.md` - GitHub Pages deployment notes
 - `docs/dependency-notes.md` - major dependency and license notes
 
 ## Zero Retention
 
-Phase 1 keeps artifact contents in the URL fragment so the static host does not receive the payload during the page request. This improves privacy for shared artifacts, but the link still lives in browser history, copied URLs, and any client-side telemetry you add later.
+The project keeps artifact contents in the URL fragment so the static host does not receive the payload during the page request. This improves privacy for shared artifacts, but the link still lives in browser history, copied URLs, and any client-side telemetry you add later.
+
+`Zero Data Retention by design` means the deployed static host does not receive artifact contents as part of the request. It does not mean the data disappears from places like browser history, copied links, screenshots, or any client-side analytics you may add later.
 
 ## License
 

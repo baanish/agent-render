@@ -1,8 +1,8 @@
 # Architecture
 
-## Phase 1 shape
+## Project shape
 
-Phase 1 is a single exported client-side shell built with Next.js 15, React 19, and Tailwind CSS 4.
+`agent-render` is a single exported client-side shell built with Next.js 15, React 19, and Tailwind CSS 4.
 
 - The application ships as static files only.
 - All artifact data lives in the URL fragment.
@@ -64,7 +64,7 @@ The JSON and markdown paths are now substantially lighter because:
 
 ## Diff choice
 
-Phase 1 uses `@git-diff-view/react` plus git-diff `DiffFile` instances instead of `@codemirror/merge`.
+`agent-render` uses `@git-diff-view/react` plus git-diff `DiffFile` instances instead of `@codemirror/merge`.
 
 - `@git-diff-view/*` matches the product goal better because it is already shaped like a GitHub-style review surface
 - split and unified views are built in
@@ -72,7 +72,7 @@ Phase 1 uses `@git-diff-view/react` plus git-diff `DiffFile` instances instead o
 - individual file patches can be rendered as a sequence while preserving filenames and boundaries
 - CodeMirror remains the better fit for raw source and raw JSON views
 
-`@codemirror/merge` stays a reasonable future option if Phase 2 needs a more editor-centric comparison workflow, but it is not the best Phase 1 default for shareable review artifacts.
+`@codemirror/merge` stays a reasonable future option if the project ever needs a more editor-centric comparison workflow, but it is not the best default for shareable review artifacts.
 
 ## Security posture
 
@@ -92,7 +92,7 @@ The fragment protocol keeps the JSON envelope stable and treats compression stri
 
 ## Zero-retention boundaries
 
-The static host does not receive fragment contents as part of the request, but Phase 1 is not absolute secrecy.
+The static host does not receive fragment contents as part of the request, but that is not absolute secrecy.
 
 - artifact data still exists in copied links
 - artifact data can remain in browser history

@@ -312,7 +312,7 @@ export function ViewerShell() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <span className="mono-pill shell-pill">zdr</span>
+            <span className="mono-pill shell-pill">Zero Data Retention by design</span>
             <ThemeToggle />
           </div>
         </header>

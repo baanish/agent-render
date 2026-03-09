@@ -2,7 +2,7 @@
 
 ## Goals
 
-Phase 1 uses a fragment-based payload so the raw artifact content stays in the browser and is not sent to the server during the request.
+The project uses a fragment-based payload so the raw artifact content stays in the browser and is not sent to the server during the request.
 
 ## Fragment shape
 
@@ -37,7 +37,7 @@ Supported codecs:
 }
 ```
 
-## Required support in Phase 1
+## Required support
 
 - `kind`
 - optional `title`
