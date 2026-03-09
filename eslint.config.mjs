@@ -11,4 +11,8 @@ const compat = new FlatCompat({
 
 const config = [...compat.extends("next/core-web-vitals")];
 
+config.push({
+  ignores: ["out/**", ".next/**"],
+});
+
 export default config;
