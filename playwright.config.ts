@@ -7,6 +7,12 @@ export default defineConfig({
   fullyParallel: false,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["html", { open: "never" }], ["github"]] : [["list"]],
+  expect: {
+    toHaveScreenshot: {
+      // Keep per-project snapshot names while removing platform-specific suffixes.
+      pathTemplate: "{snapshotDir}/{testFilePath}-snapshots/{arg}{-projectName}{ext}",
+    },
+  },
   use: {
     baseURL: `http://127.0.0.1:${port}/agent-render/`,
     locale: "en-US",
