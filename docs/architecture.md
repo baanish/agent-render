@@ -25,6 +25,8 @@ GitHub Pages is strongest when the application behaves like a static shell inste
 - `csv` - table-focused data grid
 - `json` - tree and raw-code views
 
+Sprint 1 ships the markdown renderer first so the viewer shell already supports one complete public-facing artifact path before the remaining renderers land.
+
 ## Security posture
 
 - Treat every payload as untrusted input

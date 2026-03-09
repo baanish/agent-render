@@ -49,3 +49,25 @@ The fragment protocol includes version and codec in the outer format so unsuppor
 ## Examples
 
 Two sample envelopes live in `src/lib/payload/examples.ts` for local development and documentation.
+
+### Markdown artifact example
+
+```json
+{
+  "v": 1,
+  "codec": "plain",
+  "title": "Maintainer kickoff",
+  "activeArtifactId": "roadmap",
+  "artifacts": [
+    {
+      "id": "roadmap",
+      "kind": "markdown",
+      "title": "Sprint roadmap",
+      "filename": "roadmap.md",
+      "content": "# Sprint roadmap\n\n- Render markdown directly in the viewer"
+    }
+  ]
+}
+```
+
+Markdown artifacts use the `content` field and currently support client-side download and browser print-to-PDF from the viewer shell.
