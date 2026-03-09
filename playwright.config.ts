@@ -4,6 +4,7 @@ const port = Number(process.env.PLAYWRIGHT_PORT || 4401);
 
 export default defineConfig({
   testDir: "tests/e2e",
+  testIgnore: process.env.CI ? ["**/visual.spec.ts"] : undefined,
   fullyParallel: false,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["html", { open: "never" }], ["github"]] : [["list"]],

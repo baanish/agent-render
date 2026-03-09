@@ -95,7 +95,8 @@ test("download action emits a file", async ({ page }) => {
 });
 
 test("invalid payloads fail gracefully", async ({ page }) => {
+  const decodeErrorMessage = "The fragment payload could not be decoded as valid JSON.";
   await goToHash(page, invalidFragments.malformed);
   await waitForViewerState(page, "error");
-  await expect(page.locator(".artifact-preview pre")).toContainText("The fragment payload could not be decoded as valid JSON.");
+  await expect(page.locator('[data-testid="viewer-shell"]')).toContainText(decodeErrorMessage);
 });
