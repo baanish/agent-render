@@ -54,6 +54,29 @@ const sampleCards = sampleLinks.map((link, index) => ({
   fragmentLength: link.hash.length - 1,
 }));
 
+const iconPath = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/icon.svg`;
+
+const ecosystemLinks = [
+  {
+    href: "https://github.com/baanish/agent-render",
+    kicker: "Source",
+    title: "Browse the GitHub repo",
+    description: "Inspect the payload format, renderer shell, and deployment notes behind the static viewer.",
+  },
+  {
+    href: "https://clawdhub.com/skills/agent-render-linking",
+    kicker: "Ecosystem",
+    title: "Use the ClawdHub skill",
+    description: "Help OpenClaw agents emit `agent-render` links intentionally across chat surfaces and workflows.",
+  },
+] as const;
+
+const emptyStateSteps = [
+  "Pick a sample fragment to update the hash in place.",
+  "The shell decodes the envelope client-side and activates the chosen artifact.",
+  "Artifact-specific renderers take over this stage without sending the payload to a server.",
+] as const;
+
 const MarkdownRenderer = dynamic(
   () => import("@/components/renderers/markdown-renderer").then((module) => module.MarkdownRenderer),
   { ssr: false },
@@ -335,7 +358,7 @@ export function ViewerShell() {
         <header className="panel print-hide-on-markdown fade-up sticky top-4 z-30 flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-strong)] shadow-[var(--shadow-md)]">
-              <Image src="/icon.svg" alt="" width={24} height={24} className="h-6 w-6" priority unoptimized />
+              <Image src={iconPath} alt="" width={24} height={24} className="h-6 w-6" priority unoptimized />
             </div>
             <div>
               <h1 className="font-display text-xl font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>
@@ -448,17 +471,16 @@ export function ViewerShell() {
             </section>
           </section>
         ) : (
-          <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-            <div className="print-hide-on-markdown flex flex-col gap-6">
+          <section className="empty-state-layout">
             <section className="panel panel-hero fade-up px-6 py-7 sm:px-8 sm:py-8" style={getAnimationStyle(80)}>
-              <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr] xl:items-end">
+              <div className="grid gap-8 xl:grid-cols-[minmax(0,1.14fr)_minmax(19rem,0.86fr)] xl:items-end">
                 <div>
                   <p className="section-kicker">Editorial technical viewer</p>
                   <h2 className="font-display mt-3 max-w-3xl text-4xl font-semibold leading-none tracking-[-0.05em] sm:text-5xl lg:text-6xl">
                     Share artifacts in the URL, keep the server out of the payload.
                   </h2>
                   <p className="mt-5 max-w-2xl text-base leading-7 text-[color:var(--text-muted)] sm:text-lg">
-                    The shell now supports markdown, code, diff, CSV, and JSON artifacts while keeping fragment-native sharing and static hosting constraints intact.
+                    agent-render is a fully static landing surface for markdown, code, diff, CSV, and JSON bundles. It exists so a first-time viewer can open one link, understand the artifact, and inspect it without uploading the payload anywhere.
                   </p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     <span className="mono-pill">
@@ -467,7 +489,7 @@ export function ViewerShell() {
                     </span>
                     <span className="mono-pill">
                       <Sparkles className="h-3.5 w-3.5" />
-                      contributor-friendly shell
+                      product-minded shell
                     </span>
                     <span className="mono-pill">
                       <FolderKanban className="h-3.5 w-3.5" />
@@ -476,7 +498,7 @@ export function ViewerShell() {
                   </div>
                 </div>
 
-                <div className="grid gap-3">
+                <div className="hero-metric-stack">
                   <div className="metric-card">
                     <p className="metric-label">Protocol shape</p>
                     <p className="font-mono mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
@@ -484,16 +506,37 @@ export function ViewerShell() {
                     </p>
                   </div>
                   <div className="metric-card">
-                    <p className="metric-label">Hosting model</p>
+                    <p className="metric-label">Why it exists</p>
                     <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
-                      One route, fragment-only payloads, and a shell that stays portable across GitHub Pages and other static hosts.
+                      AI agents often produce artifacts that get flattened inside chat. This shell keeps those outputs reviewable, portable, and public-safe on static hosting.
                     </p>
                   </div>
                 </div>
               </div>
+
+              <div className="hero-callout-row mt-8 print-hide-on-markdown">
+                {ecosystemLinks.map((link) => (
+                  <a key={link.href} href={link.href} target="_blank" rel="noreferrer" className="hero-link-card">
+                    <span className="hero-link-eyebrow">{link.kicker}</span>
+                    <span className="hero-link-title">
+                      {link.title}
+                      <ArrowUpRight className="h-4 w-4 shrink-0 text-[color:var(--accent-secondary)]" />
+                    </span>
+                    <p className="hero-link-body">{link.description}</p>
+                  </a>
+                ))}
+
+                <div className="hero-link-card is-static">
+                  <span className="hero-link-eyebrow">How to try it</span>
+                  <span className="hero-link-title">Load any sample fragment below</span>
+                  <p className="hero-link-body">
+                    The hash updates in place, the viewer shell wakes up, and the host still never receives the artifact body in the page request.
+                  </p>
+                </div>
+              </div>
             </section>
 
-            <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
+            <div className="empty-state-lower-grid print-hide-on-markdown">
               <section className="panel fade-up px-5 py-5 sm:px-6" style={getAnimationStyle(140)}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -502,8 +545,11 @@ export function ViewerShell() {
                   </div>
                   <span className="mono-pill">{sampleCards.length} presets</span>
                 </div>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-[color:var(--text-muted)]">
+                  Each preset uses the same fragment transport as the live product, so you can try the viewer shell with realistic payload sizes and renderer combinations in one click.
+                </p>
 
-                <div className="mt-5 grid gap-3">
+                <div className="sample-link-grid mt-5">
                   {sampleCards.map((sample) => {
                     const Icon = kindIcons[sample.kind];
                     const isActive = hash === sample.hash;
@@ -567,87 +613,122 @@ export function ViewerShell() {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-4">
-                  <p className="metric-label">Hash preview</p>
-                  <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">
-                    {getHashPreview(hash)}
-                  </pre>
+                <div className="mt-5 grid gap-3">
+                  <div className="rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-4">
+                    <p className="metric-label">Hash preview</p>
+                    <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">
+                      {getHashPreview(hash)}
+                    </pre>
+                  </div>
+
+                  <div className="metric-card">
+                    <p className="metric-label">What happens next</p>
+                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
+                      Once a fragment is present, the shell decodes the envelope in-browser, selects the active artifact, and swaps this empty state for the renderer-specific stage without changing the route model.
+                    </p>
+                  </div>
                 </div>
               </section>
             </div>
-          </div>
 
-          <section className="panel panel-strong fade-up overflow-hidden px-5 py-5 sm:px-6" style={getAnimationStyle(260)}>
+            <section className="panel panel-strong fade-up overflow-hidden px-5 py-5 sm:px-6" style={getAnimationStyle(260)}>
               <div className="print-hide-on-markdown flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--border)] pb-5">
-              <div>
-                <p className="section-kicker">Viewer shell</p>
-                <h3 className="font-display mt-2 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-                  {activeArtifact?.title ?? envelope?.title ?? "Renderer staging area"}
-                </h3>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)]">
-                  {activeArtifact
-                    ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. Multiple artifact-specific viewers now render directly in-frame while the shell stays ready for future polish.`
-                    : "No artifact is active yet. Choose a sample fragment to populate the payload inspector and viewer metadata."}
-                </p>
+                <div>
+                  <p className="section-kicker">Viewer shell</p>
+                  <h3 className="font-display mt-2 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                    {activeArtifact?.title ?? envelope?.title ?? "Renderer staging area"}
+                  </h3>
+                  <p className="mt-3 max-w-3xl text-sm leading-7 text-[color:var(--text-muted)]">
+                    {activeArtifact
+                      ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. Multiple artifact-specific viewers now render directly in-frame while the shell stays ready for future polish.`
+                      : "This stage becomes the live artifact surface once a fragment is active. The payload stays in the URL hash, the route stays export-friendly, and each artifact kind can render inside the same shell."}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {artifactKinds.map((kind) => {
+                    const Icon = kindIcons[kind];
+                    const isCurrent = activeArtifact?.kind === kind;
+
+                    return (
+                      <span
+                        key={kind}
+                        className="mono-pill"
+                        style={
+                          isCurrent
+                            ? {
+                                borderColor: "var(--accent-secondary)",
+                                color: "var(--accent-secondary)",
+                              }
+                            : undefined
+                        }
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {kind}
+                      </span>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {artifactKinds.map((kind) => {
-                  const Icon = kindIcons[kind];
-                  const isCurrent = activeArtifact?.kind === kind;
-
-                  return (
-                    <span
-                      key={kind}
-                      className="mono-pill"
-                      style={
-                        isCurrent
-                          ? {
-                              borderColor: "var(--accent-secondary)",
-                              color: "var(--accent-secondary)",
-                            }
-                          : undefined
-                      }
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {kind}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4">
-                <div className="viewer-frame">
+              <div className="viewer-shell-empty-grid mt-5">
+                <div className="viewer-frame viewer-frame-home">
                   <div className="viewer-head print-hide-on-markdown">
                     <div>
                       <p className="metric-label">Ready for fragment decode</p>
-                      <h4 className="mt-2 text-lg font-semibold">Choose a sample payload to populate this shell</h4>
+                      <h4 className="mt-2 text-xl font-semibold tracking-[-0.03em]">Choose a sample payload to populate this shell</h4>
                     </div>
                     <span className="mono-pill">public-safe</span>
                   </div>
-                  <div className="artifact-preview">
-                    <pre>{parsed.ok ? "" : parsed.message}</pre>
+                  <div className="artifact-preview viewer-empty-preview">
+                    <div className="viewer-empty-content">
+                      <div>
+                        <p className="section-kicker">First-run flow</p>
+                        <h4 className="font-display mt-3 text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-[2.35rem]">
+                          The live renderer stage appears here as soon as a fragment is selected.
+                        </h4>
+                        <p className="mt-4 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)]">
+                          {parsed.ok
+                            ? "A decoded fragment is already present, so the active artifact can take over this frame immediately."
+                            : parsed.message}
+                        </p>
+                      </div>
+
+                      <div className="viewer-step-grid">
+                        {emptyStateSteps.map((step, index) => (
+                          <div key={step} className="metric-card">
+                            <p className="metric-label">Step {index + 1}</p>
+                            <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">{step}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="print-hide-on-markdown grid gap-3 md:grid-cols-3">
+                <div className="viewer-shell-side-grid print-hide-on-markdown">
                   <div className="metric-card">
                     <p className="metric-label">Security posture</p>
-                     <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Payloads stay in the hash, renderers stay client-side, and artifact-specific viewers can land without changing transport semantics.</p>
+                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
+                      Payloads stay in the hash, renderers stay client-side, and artifact-specific viewers can land without changing fragment transport semantics.
+                    </p>
                   </div>
                   <div className="metric-card">
                     <p className="metric-label">Route model</p>
-                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">The app remains a single export-friendly route for GitHub Pages and other static hosts.</p>
+                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
+                      The app remains a single export-friendly route for Cloudflare Pages and other static hosts, even as richer artifact viewers plug into the shell.
+                    </p>
                   </div>
                   <div className="metric-card">
-                    <p className="metric-label">Next up</p>
-                      <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Markdown, code, diff, CSV, and JSON now share the same viewer shell and fragment contract.</p>
+                    <p className="metric-label">Supported artifacts</p>
+                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
+                      Markdown, code, diff, CSV, and JSON all share the same shell contract, so the homepage can explain the product before the first payload ever lands.
+                    </p>
                   </div>
                 </div>
-            </div>
+              </div>
+            </section>
           </section>
-        </section>
         )}
       </div>
     </main>
