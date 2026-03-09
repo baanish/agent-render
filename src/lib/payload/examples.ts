@@ -46,8 +46,9 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
         kind: "diff",
         title: "hello.ts diff",
         filename: "hello.patch",
-        patch: "diff --git a/hello.ts b/hello.ts\nindex 1111111..2222222 100644\n--- a/hello.ts\n+++ b/hello.ts\n@@ -1 +1 @@\n-console.log('hello')\n+console.log('hello, world')\n",
-        view: "unified",
+        patch:
+          "diff --git a/hello.ts b/hello.ts\nindex 1111111..2222222 100644\n--- a/hello.ts\n+++ b/hello.ts\n@@ -1,3 +1,5 @@\n-export function greet() {\n-  return 'hello';\n+export function greet(name: string) {\n+  const target = name || 'world';\n+\n+  return `hello, ${target}`;\n }\n",
+        view: "split",
       },
     ],
   },
@@ -62,7 +63,8 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
         kind: "csv",
         title: "Metrics snapshot",
         filename: "metrics.csv",
-        content: "artifact,kind,chars\nroadmap,markdown,124\nviewer-shell,code,95\npatch,diff,173",
+        content:
+          'artifact,kind,summary\nroadmap,markdown,"Launch checklist, print-ready"\nviewer-shell,code,"tsx source, line-numbered"\npatch,diff,"review diff, split view"',
       },
     ],
   },
@@ -85,7 +87,7 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
         title: "Artifact manifest",
         filename: "manifest.json",
         content:
-          '{\n  "release": "0.1.0",\n  "artifacts": ["overview", "manifest", "metrics"],\n  "transport": "fragment"\n}',
+          '{\n  "release": "0.1.0",\n  "artifacts": ["overview", "manifest", "metrics"],\n  "transport": "fragment",\n  "ready": true\n}',
       },
       {
         id: "metrics",
@@ -93,6 +95,21 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
         title: "Bundle metrics",
         filename: "metrics.csv",
         content: "name,status\noverview,ready\nmanifest,ready\nmetrics,ready",
+      },
+    ],
+  },
+  {
+    v: 1,
+    codec: "plain",
+    title: "Malformed manifest",
+    activeArtifactId: "broken-manifest",
+    artifacts: [
+      {
+        id: "broken-manifest",
+        kind: "json",
+        title: "Broken manifest",
+        filename: "broken-manifest.json",
+        content: '{\n  "release": "0.1.0",\n  "transport": "fragment",\n  "ready": true,\n',
       },
     ],
   },

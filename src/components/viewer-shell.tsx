@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -19,8 +20,6 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { CodeRenderer } from "@/components/renderers/code-renderer";
-import { MarkdownRenderer } from "@/components/renderers/markdown-renderer";
 import { sampleEnvelopes, sampleLinks } from "@/lib/payload/examples";
 import { decodeFragment } from "@/lib/payload/fragment";
 import {
@@ -30,6 +29,9 @@ import {
   type ArtifactKind,
   type ArtifactPayload,
   type CodeArtifact,
+  type CsvArtifact,
+  type DiffArtifact,
+  type JsonArtifact,
   type MarkdownArtifact,
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
@@ -51,6 +53,24 @@ const sampleCards = sampleLinks.map((link, index) => ({
   envelope: sampleEnvelopes[index],
   fragmentLength: link.hash.length - 1,
 }));
+
+const MarkdownRenderer = dynamic(
+  () => import("@/components/renderers/markdown-renderer").then((module) => module.MarkdownRenderer),
+  { ssr: false },
+);
+const CodeRenderer = dynamic(() => import("@/components/renderers/code-renderer").then((module) => module.CodeRenderer), {
+  ssr: false,
+});
+const DiffRenderer = dynamic(() => import("@/components/renderers/diff-renderer").then((module) => module.DiffRenderer), {
+  ssr: false,
+});
+const CsvRenderer = dynamic(() => import("@/components/renderers/csv-renderer").then((module) => module.CsvRenderer), {
+  ssr: false,
+});
+const JsonRenderer = dynamic(
+  () => import("@/components/renderers/json-renderer").then((module) => module.JsonRenderer),
+  { ssr: false },
+);
 
 function getActiveArtifact(envelope: PayloadEnvelope): ArtifactPayload {
   return envelope.artifacts.find((artifact) => artifact.id === envelope.activeArtifactId) ?? envelope.artifacts[0];
@@ -120,6 +140,18 @@ function getDownloadFilename(artifact: ArtifactPayload): string {
     return `${artifact.id}.md`;
   }
 
+  if (artifact.kind === "csv") {
+    return `${artifact.id}.csv`;
+  }
+
+  if (artifact.kind === "json") {
+    return `${artifact.id}.json`;
+  }
+
+  if (artifact.kind === "diff") {
+    return `${artifact.id}.patch`;
+  }
+
   return `${artifact.id}.txt`;
 }
 
@@ -185,6 +217,9 @@ export function ViewerShell() {
   const activeArtifact = envelope ? getActiveArtifact(envelope) : null;
   const markdownArtifact: MarkdownArtifact | null = activeArtifact?.kind === "markdown" ? activeArtifact : null;
   const codeArtifact: CodeArtifact | null = activeArtifact?.kind === "code" ? activeArtifact : null;
+  const diffArtifact: DiffArtifact | null = activeArtifact?.kind === "diff" ? activeArtifact : null;
+  const csvArtifact: CsvArtifact | null = activeArtifact?.kind === "csv" ? activeArtifact : null;
+  const jsonArtifact: JsonArtifact | null = activeArtifact?.kind === "json" ? activeArtifact : null;
   const budgetRatio = Math.min(fragmentLength / MAX_FRAGMENT_LENGTH, 1);
   const statusTone = getStatusTone(parsed);
 
@@ -404,7 +439,7 @@ export function ViewerShell() {
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)]">
                   {activeArtifact
-                    ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. Markdown and code now render directly in-frame while the shell stays ready for the remaining artifact kinds.`
+                    ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. Multiple artifact-specific viewers now render directly in-frame while the shell stays ready for future polish.`
                     : "No artifact is active yet. Choose a sample fragment to populate the payload inspector and viewer metadata."}
                 </p>
               </div>
@@ -474,6 +509,12 @@ export function ViewerShell() {
                          </>
                        ) : codeArtifact ? (
                          <CodeRenderer artifact={codeArtifact} />
+                       ) : diffArtifact ? (
+                         <DiffRenderer artifact={diffArtifact} />
+                       ) : csvArtifact ? (
+                         <CsvRenderer artifact={csvArtifact} />
+                       ) : jsonArtifact ? (
+                         <JsonRenderer artifact={jsonArtifact} />
                        ) : (
                         <>
                           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -570,7 +611,7 @@ export function ViewerShell() {
                 <div className="print-hide-on-markdown grid gap-3 md:grid-cols-3">
                   <div className="metric-card">
                     <p className="metric-label">Security posture</p>
-                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Payloads stay in the hash, markdown renders safely in-browser, and future artifact-specific viewers can land without changing transport semantics.</p>
+                     <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Payloads stay in the hash, renderers stay client-side, and artifact-specific viewers can land without changing transport semantics.</p>
                   </div>
                   <div className="metric-card">
                     <p className="metric-label">Route model</p>
@@ -578,7 +619,7 @@ export function ViewerShell() {
                   </div>
                   <div className="metric-card">
                     <p className="metric-label">Next up</p>
-                     <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Markdown and code are now live in the viewer frame; diff, CSV, and JSON can follow with the same shell contracts.</p>
+                      <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Markdown, code, diff, CSV, and JSON now share the same viewer shell and fragment contract.</p>
                   </div>
                 </div>
               </div>

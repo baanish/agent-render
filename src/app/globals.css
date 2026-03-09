@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@git-diff-view/react/styles/diff-view-pure.css";
+@import "vanilla-jsoneditor/themes/jse-theme-dark.css";
 
 :root {
   --page-bg: #f3ede2;
@@ -525,6 +527,112 @@ select {
 
 .code-renderer-host {
   min-height: 360px;
+}
+
+.diff-renderer-shell,
+.csv-renderer-shell,
+.json-renderer-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.diff-renderer-toolbar,
+.csv-renderer-toolbar,
+.json-renderer-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.diff-view-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.diff-renderer-frame {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+}
+
+.diff-renderer-frame [data-theme="light"] {
+  --diff-bgColor-default: color-mix(in srgb, var(--surface-strong) 96%, white 4%);
+}
+
+.diff-renderer-frame [data-theme="dark"] {
+  --diff-bgColor-default: #0f1721;
+}
+
+.csv-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+}
+
+.csv-table {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.csv-table th,
+.csv-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.csv-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: color-mix(in srgb, var(--surface) 96%, white 4%);
+  color: var(--text-soft);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.csv-table td {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.csv-table tr:last-child td {
+  border-bottom: none;
+}
+
+.artifact-empty-state {
+  border: 1px solid color-mix(in srgb, var(--danger) 38%, var(--border));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-strong));
+  padding: 1rem 1.1rem;
+  color: var(--text-primary);
+}
+
+.json-tree-shell {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+}
+
+.json-editor-host {
+  min-height: 360px;
+}
+
+.dark .json-tree-shell {
+  --jse-theme: dark;
 }
 
 .markdown-code {
