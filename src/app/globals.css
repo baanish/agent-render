@@ -244,6 +244,48 @@ select {
   background: color-mix(in srgb, var(--accent) 8%, var(--surface-strong));
 }
 
+.viewer-focused-layout {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+}
+
+.viewer-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 5.5rem;
+}
+
+.artifact-switcher {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  transition:
+    transform var(--duration-base) ease,
+    border-color var(--duration-base) ease,
+    background-color var(--duration-base) ease,
+    box-shadow var(--duration-base) ease;
+}
+
+.artifact-switcher:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent-secondary) 46%, var(--border));
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--accent-secondary) 14%, transparent);
+}
+
+.artifact-switcher.is-active {
+  border-color: color-mix(in srgb, var(--accent-secondary) 56%, var(--border));
+  background: color-mix(in srgb, var(--accent-secondary) 10%, var(--surface-strong));
+}
+
 .viewer-frame {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
@@ -251,6 +293,10 @@ select {
     linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 92%, transparent), color-mix(in srgb, var(--surface) 100%, transparent)),
     linear-gradient(135deg, color-mix(in srgb, var(--accent-secondary) 8%, transparent), transparent 45%);
   overflow: hidden;
+}
+
+.viewer-frame-primary {
+  min-height: 68vh;
 }
 
 .viewer-head {
@@ -775,6 +821,14 @@ select {
   .artifact-preview {
     min-height: 240px;
     padding: 1rem;
+  }
+
+  .viewer-focused-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .viewer-sidebar {
+    position: static;
   }
 
   .code-renderer-toolbar {

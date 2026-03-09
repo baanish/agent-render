@@ -44,10 +44,10 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
       {
         id: "patch",
         kind: "diff",
-        title: "hello.ts diff",
-        filename: "hello.patch",
+        title: "release.patch",
+        filename: "release.patch",
         patch:
-          "diff --git a/hello.ts b/hello.ts\nindex 1111111..2222222 100644\n--- a/hello.ts\n+++ b/hello.ts\n@@ -1,3 +1,5 @@\n-export function greet() {\n-  return 'hello';\n+export function greet(name: string) {\n+  const target = name || 'world';\n+\n+  return `hello, ${target}`;\n }\n",
+          "diff --git a/src/hello.ts b/src/hello.ts\nindex 1111111..2222222 100644\n--- a/src/hello.ts\n+++ b/src/hello.ts\n@@ -1,3 +1,5 @@\n-export function greet() {\n-  return 'hello';\n+export function greet(name: string) {\n+  const target = name || 'world';\n+\n+  return `hello, ${target}`;\n }\ndiff --git a/src/version.ts b/src/version.ts\nnew file mode 100644\nindex 0000000..3333333\n--- /dev/null\n+++ b/src/version.ts\n@@ -0,0 +1 @@\n+export const version = '0.1.0';\n",
         view: "split",
       },
     ],

@@ -7,6 +7,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   ArrowUpRight,
   Download,
+  ChevronRight,
   FileCode2,
   FileDiff,
   FileJson2,
@@ -21,7 +22,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { sampleEnvelopes, sampleLinks } from "@/lib/payload/examples";
-import { decodeFragment } from "@/lib/payload/fragment";
+import { decodeFragment, encodeEnvelope } from "@/lib/payload/fragment";
 import {
   MAX_FRAGMENT_LENGTH,
   PAYLOAD_FRAGMENT_KEY,
@@ -223,6 +224,27 @@ export function ViewerShell() {
   const budgetRatio = Math.min(fragmentLength / MAX_FRAGMENT_LENGTH, 1);
   const statusTone = getStatusTone(parsed);
 
+  const setFragmentHash = useCallback((nextHash: string) => {
+    if (window.location.hash === nextHash) {
+      return;
+    }
+
+    window.history.replaceState(null, "", nextHash);
+    setHash(nextHash);
+  }, []);
+
+  const handleArtifactSelect = useCallback(
+    (artifactId: string) => {
+      if (!envelope || envelope.activeArtifactId === artifactId) {
+        return;
+      }
+
+      const nextHash = `#${encodeEnvelope({ ...envelope, activeArtifactId: artifactId }, { codec: envelope.codec })}`;
+      setFragmentHash(nextHash);
+    },
+    [envelope, setFragmentHash],
+  );
+
   const handleArtifactDownload = useCallback(() => {
     if (!activeArtifact) {
       return;
@@ -301,8 +323,181 @@ export function ViewerShell() {
           </div>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-          <div className="print-hide-on-markdown flex flex-col gap-6">
+        {activeArtifact && envelope ? (
+          <section className="viewer-focused-layout">
+            <aside className="viewer-sidebar print-hide-on-markdown">
+              <div className="panel px-5 py-5 sm:px-6">
+                <p className="section-kicker">Artifact bundle</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">{envelope.title ?? "Untitled bundle"}</h2>
+                <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
+                  {envelope.artifacts.length} artifact{envelope.artifacts.length === 1 ? "" : "s"} in this fragment bundle. Selecting one updates the active artifact in the URL.
+                </p>
+
+                <div className="mt-5 grid gap-3">
+                  {envelope.artifacts.map((artifact) => {
+                    const Icon = kindIcons[artifact.kind];
+                    const isCurrent = artifact.id === activeArtifact.id;
+
+                    return (
+                      <button
+                        key={artifact.id}
+                        type="button"
+                        className={cn("artifact-switcher", isCurrent && "is-active")}
+                        onClick={() => handleArtifactSelect(artifact.id)}
+                      >
+                        <div className="min-w-0 flex-1 text-left">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="mono-pill !px-2.5 !py-1">
+                              <Icon className="h-3.5 w-3.5" />
+                              {artifact.kind}
+                            </span>
+                            {isCurrent ? <span className="section-kicker">active</span> : null}
+                          </div>
+                          <p className="mt-3 truncate text-sm font-semibold leading-6">{artifact.title ?? artifact.filename ?? artifact.id}</p>
+                          <p className="mt-1 truncate text-sm leading-6 text-[color:var(--text-muted)]">{artifact.id}</p>
+                        </div>
+                        <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-[color:var(--text-soft)]" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="panel px-5 py-5 sm:px-6">
+                <p className="section-kicker">Fragment inspector</p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <h3 className="text-xl font-semibold tracking-[-0.03em]">Current URL state</h3>
+                  <span className="mono-pill" style={{ borderColor: statusTone.color, color: statusTone.color }}>
+                    {statusTone.label}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{statusTone.message}</p>
+                <div className="metric-grid mt-5">
+                  <div className="metric-card">
+                    <p className="metric-label">Fragment budget</p>
+                    <p className="metric-value">{numberFormatter.format(fragmentLength)} / {numberFormatter.format(MAX_FRAGMENT_LENGTH)}</p>
+                  </div>
+                  <div className="metric-card">
+                    <p className="metric-label">Codec</p>
+                    <p className="metric-value">{parsed.ok ? parsed.envelope.codec : "plain"}</p>
+                  </div>
+                </div>
+                <div className="mt-5 rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-4">
+                  <p className="metric-label">Hash preview</p>
+                  <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">
+                    {getHashPreview(hash)}
+                  </pre>
+                </div>
+              </div>
+            </aside>
+
+            <section className="panel panel-strong fade-up overflow-hidden px-5 py-5 sm:px-6" style={getAnimationStyle(120)}>
+              <div className="print-hide-on-markdown flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--border)] pb-5">
+                <div>
+                  <p className="section-kicker">Viewer shell</p>
+                  <h3 className="font-display mt-2 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                    {activeArtifact.title ?? envelope.title ?? "Artifact viewer"}
+                  </h3>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)]">
+                    {`${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. The viewer now prioritizes the active artifact and keeps bundle navigation alongside it.`}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className="artifact-action is-primary" onClick={handleArtifactDownload}>
+                    <Download className="h-3.5 w-3.5" />
+                    Download
+                  </button>
+                  {markdownArtifact ? (
+                    <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
+                      <Printer className="h-3.5 w-3.5" />
+                      Print / PDF
+                    </button>
+                  ) : null}
+                  <span className="mono-pill">{activeArtifact.kind}</span>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-5 xl:grid-cols-[1.22fr_0.78fr]">
+                <div className="flex flex-col gap-5">
+                  <div className="viewer-frame viewer-frame-primary">
+                    <div className="viewer-head print-hide-on-markdown">
+                      <div>
+                        <p className="metric-label">Active artifact metadata</p>
+                        <h4 className="mt-2 text-lg font-semibold">{activeArtifact.filename ?? activeArtifact.id}</h4>
+                      </div>
+                      <div className="viewer-toolbar">
+                        <span className="mono-pill">{activeArtifact.kind}</span>
+                      </div>
+                    </div>
+
+                    <div className={cn("artifact-preview", markdownArtifact && "is-markdown print-markdown-target")}>
+                      {markdownArtifact ? (
+                        <>
+                          <div className="print-hide-on-markdown mb-4 flex flex-wrap items-center gap-2">
+                            <span className="mono-pill !border-[color:var(--accent-secondary)] !text-[color:var(--accent-secondary)]">remark-gfm enabled</span>
+                            <span className="mono-pill !border-[color:var(--border)]">raw html disabled</span>
+                          </div>
+                          <MarkdownRenderer artifact={markdownArtifact} />
+                        </>
+                      ) : codeArtifact ? (
+                        <CodeRenderer artifact={codeArtifact} />
+                      ) : diffArtifact ? (
+                        <DiffRenderer artifact={diffArtifact} />
+                      ) : csvArtifact ? (
+                        <CsvRenderer artifact={csvArtifact} />
+                      ) : jsonArtifact ? (
+                        <JsonRenderer artifact={jsonArtifact} />
+                      ) : (
+                        <pre>{getPreviewText(activeArtifact)}</pre>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="print-hide-on-markdown flex flex-col gap-5">
+                  <div className="rounded-[var(--radius-xl)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-4 sm:p-5">
+                    <p className="section-kicker">Decoded envelope</p>
+                    <div className="mt-4 grid gap-3">
+                      {getArtifactDetailRows(activeArtifact).map((row) => (
+                        <div key={row.label} className="flex items-start justify-between gap-4 border-b border-[color:var(--border)] pb-3 last:border-none last:pb-0">
+                          <span className="metric-label">{row.label}</span>
+                          <span className="max-w-[60%] text-right text-sm font-medium leading-6 text-[color:var(--text-primary)]">{row.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[var(--radius-xl)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-4 sm:p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="section-kicker">Bundle summary</p>
+                        <h4 className="mt-2 text-lg font-semibold">Viewer-first state</h4>
+                      </div>
+                      <span className="mono-pill">{envelope.artifacts.length}</span>
+                    </div>
+                    <div className="mt-4 grid gap-3 md:grid-cols-1">
+                      <div className="metric-card">
+                        <p className="metric-label">Bundle title</p>
+                        <p className="metric-value">{envelope.title ?? "Untitled envelope"}</p>
+                      </div>
+                      <div className="metric-card">
+                        <p className="metric-label">Active artifact id</p>
+                        <p className="metric-value">{envelope.activeArtifactId ?? activeArtifact.id}</p>
+                      </div>
+                      <div className="metric-card">
+                        <p className="metric-label">Transport</p>
+                        <p className="metric-value">Fragment only</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </section>
+        ) : (
+          <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+            <div className="print-hide-on-markdown flex flex-col gap-6">
             <section className="panel panel-hero fade-up px-6 py-7 sm:px-8 sm:py-8" style={getAnimationStyle(80)}>
               <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr] xl:items-end">
                 <div>
@@ -470,131 +665,7 @@ export function ViewerShell() {
               </div>
             </div>
 
-            {activeArtifact && envelope ? (
-              <div className="mt-5 grid gap-5 xl:grid-cols-[1.18fr_0.82fr]">
-                <div className="flex flex-col gap-5">
-                  <div className="viewer-frame">
-                    <div className="viewer-head print-hide-on-markdown">
-                      <div>
-                        <p className="metric-label">Active artifact metadata</p>
-                        <h4 className="mt-2 text-lg font-semibold">{activeArtifact.filename ?? activeArtifact.id}</h4>
-                      </div>
-                      <div className="viewer-toolbar">
-                         {activeArtifact ? (
-                           <>
-                             <button type="button" className="artifact-action is-primary" onClick={handleArtifactDownload}>
-                               <Download className="h-3.5 w-3.5" />
-                               Download
-                             </button>
-                             {markdownArtifact ? (
-                               <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
-                                 <Printer className="h-3.5 w-3.5" />
-                                 Print / PDF
-                               </button>
-                             ) : null}
-                           </>
-                         ) : null}
-                        <span className="mono-pill">{activeArtifact.kind}</span>
-                      </div>
-                    </div>
-
-                    <div className={cn("artifact-preview", markdownArtifact && "is-markdown print-markdown-target")}>
-                       {markdownArtifact ? (
-                         <>
-                          <div className="print-hide-on-markdown mb-4 flex flex-wrap items-center gap-2">
-                            <span className="mono-pill !border-[color:var(--accent-secondary)] !text-[color:var(--accent-secondary)]">remark-gfm enabled</span>
-                            <span className="mono-pill !border-[color:var(--border)]">raw html disabled</span>
-                          </div>
-                           <MarkdownRenderer artifact={markdownArtifact} />
-                         </>
-                       ) : codeArtifact ? (
-                         <CodeRenderer artifact={codeArtifact} />
-                       ) : diffArtifact ? (
-                         <DiffRenderer artifact={diffArtifact} />
-                       ) : csvArtifact ? (
-                         <CsvRenderer artifact={csvArtifact} />
-                       ) : jsonArtifact ? (
-                         <JsonRenderer artifact={jsonArtifact} />
-                       ) : (
-                        <>
-                          <div className="mb-4 flex flex-wrap items-center gap-2">
-                            <span className="mono-pill !border-[color:var(--accent-secondary)] !text-[color:var(--accent-secondary)]">renderer slot reserved</span>
-                            <span className="mono-pill !border-[color:var(--border)]">safe text preview only</span>
-                          </div>
-                          <pre>{getPreviewText(activeArtifact)}</pre>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="print-hide-on-markdown grid gap-3 md:grid-cols-3">
-                    <div className="metric-card">
-                      <p className="metric-label">Bundle title</p>
-                      <p className="metric-value">{envelope.title ?? "Untitled envelope"}</p>
-                    </div>
-                    <div className="metric-card">
-                      <p className="metric-label">Active artifact id</p>
-                      <p className="metric-value">{envelope.activeArtifactId ?? activeArtifact.id}</p>
-                    </div>
-                    <div className="metric-card">
-                      <p className="metric-label">Transport</p>
-                      <p className="metric-value">Fragment only</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="print-hide-on-markdown flex flex-col gap-5">
-                  <div className="rounded-[var(--radius-xl)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-4 sm:p-5">
-                    <p className="section-kicker">Decoded envelope</p>
-                    <div className="mt-4 grid gap-3">
-                      {getArtifactDetailRows(activeArtifact).map((row) => (
-                        <div key={row.label} className="flex items-start justify-between gap-4 border-b border-[color:var(--border)] pb-3 last:border-none last:pb-0">
-                          <span className="metric-label">{row.label}</span>
-                          <span className="max-w-[60%] text-right text-sm font-medium leading-6 text-[color:var(--text-primary)]">{row.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-[var(--radius-xl)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-4 sm:p-5">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="section-kicker">Artifact lineup</p>
-                        <h4 className="mt-2 text-lg font-semibold">Envelope contents</h4>
-                      </div>
-                      <span className="mono-pill">{envelope.artifacts.length}</span>
-                    </div>
-
-                    <div className="mt-4 grid gap-3">
-                      {envelope.artifacts.map((artifact) => {
-                        const Icon = kindIcons[artifact.kind];
-                        const isCurrent = artifact.id === activeArtifact.id;
-
-                        return (
-                          <div key={artifact.id} className={cn("artifact-list-item", isCurrent && "is-active")}>
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="mono-pill !px-2.5 !py-1">
-                                    <Icon className="h-3.5 w-3.5" />
-                                    {artifact.kind}
-                                  </span>
-                                  {isCurrent ? <span className="section-kicker">active</span> : null}
-                                </div>
-                                <p className="mt-3 text-sm font-semibold leading-6">{artifact.title ?? artifact.filename ?? artifact.id}</p>
-                                <p className="mt-1 text-sm leading-6 text-[color:var(--text-muted)]">{artifact.id}</p>
-                              </div>
-                              <span className="font-mono text-xs text-[color:var(--text-soft)]">{numberFormatter.format(getArtifactBody(artifact).length)}c</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-5 grid gap-4">
+            <div className="mt-5 grid gap-4">
                 <div className="viewer-frame">
                   <div className="viewer-head print-hide-on-markdown">
                     <div>
@@ -622,10 +693,10 @@ export function ViewerShell() {
                       <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">Markdown, code, diff, CSV, and JSON now share the same viewer shell and fragment contract.</p>
                   </div>
                 </div>
-              </div>
-            )}
+            </div>
           </section>
         </section>
+        )}
       </div>
     </main>
   );
