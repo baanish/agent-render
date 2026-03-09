@@ -9,7 +9,7 @@
 - Markdown, code, diff, CSV, and JSON all render in the static shell
 - Fragment transport now supports `plain` and compressed `lz` codecs, with compression chosen automatically when it helps
 - Markdown supports download plus browser print-to-PDF
-- Deployment target: GitHub Pages by default, with support for other static hosts
+- Deployment target: static hosting, including Cloudflare Pages
 
 ## Included Renderers
 
@@ -42,7 +42,7 @@ npm run build
 npm run preview
 ```
 
-Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a project-pages style subpath export.
+Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a subpath deployment locally.
 
 ## Verification
 
@@ -64,7 +64,7 @@ The shell keeps first load lean and defers renderer-heavy code until needed. The
 
 - `docs/architecture.md` - architecture and tradeoffs
 - `docs/payload-format.md` - fragment protocol, limits, and examples
-- `docs/deployment.md` - GitHub Pages deployment notes
+- `docs/deployment.md` - deployment notes
 - `docs/dependency-notes.md` - major dependency and license notes
 
 ## Zero Retention

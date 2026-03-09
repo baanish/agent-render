@@ -1,15 +1,15 @@
 # Deployment
 
-## GitHub Pages
+## Static hosting
 
-The repository includes `.github/workflows/deploy.yml` for static deployment to GitHub Pages.
+`agent-render` is a static export and can be deployed to any host that serves files from `out/`.
 
 Key details:
 
-- Builds with `npm ci` and `npm run build`
-- Sets `NEXT_PUBLIC_BASE_PATH` to the repository name during CI
-- Uploads the `out` directory as the Pages artifact
-- Includes `.nojekyll` for project-pages compatibility
+- Build with `npm ci` and `npm run build`
+- Upload the generated `out/` directory to your static host
+- Set `NEXT_PUBLIC_BASE_PATH` only when you need a subpath deployment
+- `.nojekyll` remains harmless for hosts that ignore it
 
 ## Local verification
 
@@ -21,7 +21,7 @@ npm run check
 
 Then serve the exported output from `out/` with any static file server.
 
-For a GitHub Pages-style subpath check, build with:
+For a subpath deployment check, build with:
 
 ```bash
 NEXT_PUBLIC_BASE_PATH=/agent-render npm run build
@@ -36,8 +36,12 @@ The preview server intentionally preserves the fragment payload and does not rel
 
 The project does not require a Node.js runtime. Any static host that can serve HTML, CSS, and JavaScript is sufficient.
 
-## GitHub Actions flow
+## Cloudflare Pages
 
-The included workflow runs on pushes to `main` and on manual dispatch. It installs dependencies with `npm ci`, performs the static build with the repository name as `NEXT_PUBLIC_BASE_PATH`, uploads `out/`, and deploys that artifact with the official Pages actions.
+Cloudflare Pages works well with the current project shape.
 
-If GitHub Pages is not enabled for the repository, the workflow will fail at the Pages setup step even when the app build itself is healthy.
+- Build command: `npm run build`
+- Build output directory: `out`
+- Environment variable: set `NEXT_PUBLIC_BASE_PATH` only if you intentionally deploy under a subpath
+
+If you deploy at the domain root on Cloudflare Pages, leave `NEXT_PUBLIC_BASE_PATH` unset.
