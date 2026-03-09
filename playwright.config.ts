@@ -1,0 +1,31 @@
+import { defineConfig, devices } from "@playwright/test";
+
+const port = Number(process.env.PLAYWRIGHT_PORT || 4401);
+
+export default defineConfig({
+  testDir: "tests/e2e",
+  fullyParallel: false,
+  retries: process.env.CI ? 2 : 0,
+  reporter: process.env.CI ? [["html", { open: "never" }], ["github"]] : [["list"]],
+  use: {
+    baseURL: `http://127.0.0.1:${port}/agent-render/`,
+    locale: "en-US",
+    timezoneId: "America/New_York",
+    colorScheme: "light",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+  },
+  webServer: {
+    command: `NEXT_PUBLIC_BASE_PATH=/agent-render npm run build && PORT=${port} NEXT_PUBLIC_BASE_PATH=/agent-render npm run preview`,
+    port,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
+  },
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
+});
