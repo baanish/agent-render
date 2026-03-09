@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { WrapText } from "lucide-react";
 import { EditorState, RangeSetBuilder } from "@codemirror/state";
+import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import {
   Decoration,
   type DecorationSet,
@@ -16,29 +17,17 @@ import {
 } from "@codemirror/view";
 import { defaultKeymap } from "@codemirror/commands";
 import { searchKeymap } from "@codemirror/search";
-import {
-  bracketMatching,
-  defaultHighlightStyle,
-  indentUnit,
-  syntaxHighlighting,
-} from "@codemirror/language";
-import { detectCodeLanguage, getLanguageSupport } from "@/lib/code/language";
+import { bracketMatching, defaultHighlightStyle, syntaxTree, syntaxHighlighting } from "@codemirror/language";
+import { detectCodeLanguage, loadLanguageSupport } from "@/lib/code/language";
 import type { CodeArtifact } from "@/lib/payload/schema";
 
 type CodeRendererProps = {
   artifact: CodeArtifact;
+  compact?: boolean;
 };
 
 const MAX_DECORATED_CONTENT_LENGTH = 120000;
 const rainbowColors = ["#f08d5e", "#efb360", "#69d1dd", "#80c193", "#9eb3ff", "#d799ff"];
-const indentGuideColors = [
-  "rgba(240, 141, 94, 0.28)",
-  "rgba(239, 179, 96, 0.28)",
-  "rgba(105, 209, 221, 0.28)",
-  "rgba(128, 193, 147, 0.28)",
-  "rgba(158, 179, 255, 0.28)",
-  "rgba(215, 153, 255, 0.28)",
-];
 
 const editorTheme = EditorView.theme({
   "&": {
@@ -75,32 +64,79 @@ const editorTheme = EditorView.theme({
   ".cm-selectionBackground": {
     backgroundColor: "rgba(105, 209, 221, 0.18) !important",
   },
-  ".cm-indent-guide": {
-    boxSizing: "border-box",
-    borderLeft: "2px solid transparent",
-  },
   ".cm-rainbow-bracket": {
     fontWeight: "700",
   },
   ...Object.fromEntries(
-    indentGuideColors.map((color, index) => [
-      `.cm-content .cm-ig-${index}`,
-      { borderLeft: `2px solid ${color} !important` },
+    rainbowColors.map((color, index) => [
+      `.cm-rb-${index}`,
+      {
+        color: `${color} !important`,
+      },
     ]),
   ),
 });
 
-const rainbowDecorations = ViewPlugin.fromClass(
+function buildIgnoredRanges(state: EditorState) {
+  const ignored: Array<{ from: number; to: number }> = [];
+
+  syntaxTree(state).iterate({
+    enter(node) {
+      if (/(Comment|String|Template|RegExp)/i.test(node.name)) {
+        ignored.push({ from: node.from, to: node.to });
+      }
+    },
+  });
+
+  return ignored.sort((left, right) => left.from - right.from);
+}
+
+function buildRainbowDecorations(state: EditorState): DecorationSet {
+  const builder = new RangeSetBuilder<Decoration>();
+  const text = state.doc.toString();
+  const ignored = buildIgnoredRanges(state);
+
+  let ignoredIndex = 0;
+  const stack: number[] = [];
+
+  for (let index = 0; index < text.length; index += 1) {
+    while (ignoredIndex < ignored.length && index >= ignored[ignoredIndex]!.to) {
+      ignoredIndex += 1;
+    }
+
+    const currentIgnored = ignored[ignoredIndex];
+    if (currentIgnored && index >= currentIgnored.from && index < currentIgnored.to) {
+      continue;
+    }
+
+    const char = text[index];
+    if (char === "{" || char === "[" || char === "(") {
+      const level = stack.length % rainbowColors.length;
+      stack.push(level);
+      builder.add(index, index + 1, Decoration.mark({ class: `cm-rainbow-bracket cm-rb-${level}` }));
+      continue;
+    }
+
+    if (char === "}" || char === "]" || char === ")") {
+      const level = stack.length > 0 ? stack.pop() ?? 0 : 0;
+      builder.add(index, index + 1, Decoration.mark({ class: `cm-rainbow-bracket cm-rb-${level}` }));
+    }
+  }
+
+  return builder.finish();
+}
+
+const rainbowBrackets = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
 
     constructor(view: EditorView) {
-      this.decorations = buildDecorations(view.state.doc.toString());
+      this.decorations = buildRainbowDecorations(view.state);
     }
 
     update(update: ViewUpdate) {
       if (update.docChanged) {
-        this.decorations = buildDecorations(update.state.doc.toString());
+        this.decorations = buildRainbowDecorations(update.state);
       }
     }
   },
@@ -109,120 +145,25 @@ const rainbowDecorations = ViewPlugin.fromClass(
   },
 );
 
-function buildDecorations(text: string): DecorationSet {
-  const builder = new RangeSetBuilder<Decoration>();
-  const ranges: { from: number; to: number; decoration: Decoration }[] = [];
-
-  let inString = false;
-  let stringChar = "";
-  let escaped = false;
-  const stack: number[] = [];
-
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text[index];
-
-    if ((char === '"' || char === "'" || char === "`") && !escaped) {
-      if (!inString) {
-        inString = true;
-        stringChar = char;
-      } else if (stringChar === char) {
-        inString = false;
-        stringChar = "";
-      }
-      escaped = false;
-      continue;
-    }
-
-    if (char === "\\" && !escaped) {
-      escaped = true;
-      continue;
-    }
-
-    if (inString) {
-      escaped = false;
-      continue;
-    }
-
-    if (char === "{" || char === "[" || char === "(") {
-      const level = stack.length % rainbowColors.length;
-      stack.push(level);
-      ranges.push({
-        from: index,
-        to: index + 1,
-        decoration: Decoration.mark({
-          class: "cm-rainbow-bracket",
-          attributes: { style: `color: ${rainbowColors[level]} !important` },
-        }),
-      });
-      escaped = false;
-      continue;
-    }
-
-    if (char === "}" || char === "]" || char === ")") {
-      const level = stack.length > 0 ? stack.pop() ?? 0 : 0;
-      ranges.push({
-        from: index,
-        to: index + 1,
-        decoration: Decoration.mark({
-          class: "cm-rainbow-bracket",
-          attributes: { style: `color: ${rainbowColors[level]} !important` },
-        }),
-      });
-    }
-
-    escaped = false;
-  }
-
-  let lineStart = 0;
-  while (lineStart <= text.length) {
-    const lineEnd = text.indexOf("\n", lineStart);
-    const end = lineEnd === -1 ? text.length : lineEnd;
-    const lineText = text.slice(lineStart, end);
-
-    let leading = 0;
-    for (let index = 0; index < lineText.length; index += 1) {
-      const char = lineText[index];
-      if (char === " ") {
-        leading += 1;
-        continue;
-      }
-      if (char === "\t") {
-        leading += 2;
-        continue;
-      }
-      break;
-    }
-
-    const levelCount = Math.floor(leading / 2);
-    for (let level = 0; level < levelCount; level += 1) {
-      const target = lineStart + Math.min(level * 2, Math.max(0, lineText.length - 1));
-      if (target < end) {
-        ranges.push({
-          from: target,
-          to: target + 1,
-          decoration: Decoration.mark({ class: `cm-indent-guide cm-ig-${level % indentGuideColors.length}` }),
-        });
-      }
-    }
-
-    if (lineEnd === -1) {
-      break;
-    }
-    lineStart = lineEnd + 1;
-  }
-
-  ranges.sort((left, right) => (left.from === right.from ? left.to - right.to : left.from - right.from));
-  for (const range of ranges) {
-    builder.add(range.from, range.to, range.decoration);
-  }
-
-  return builder.finish();
-}
-
-export function CodeRenderer({ artifact }: CodeRendererProps) {
+export function CodeRenderer({ artifact, compact = false }: CodeRendererProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [wrapLines, setWrapLines] = useState(false);
+  const [wrapLines, setWrapLines] = useState(compact);
+  const [languageExtension, setLanguageExtension] = useState<Awaited<ReturnType<typeof loadLanguageSupport>>>(null);
   const language = useMemo(() => detectCodeLanguage(artifact.filename, artifact.language), [artifact.filename, artifact.language]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void loadLanguageSupport(language).then((extension) => {
+      if (!cancelled) {
+        setLanguageExtension(extension);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [language]);
 
   useEffect(() => {
     if (!hostRef.current) {
@@ -238,7 +179,18 @@ export function CodeRenderer({ artifact }: CodeRendererProps) {
       keymap.of([...defaultKeymap, ...searchKeymap]),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
       bracketMatching(),
-      indentUnit.of("  "),
+      indentationMarkers({
+        markerType: "codeOnly",
+        thickness: 2,
+        hideFirstIndent: true,
+        highlightActiveBlock: false,
+        colors: {
+          light: "rgba(70, 92, 129, 0.14)",
+          dark: "rgba(239, 243, 247, 0.08)",
+          activeLight: "rgba(105, 209, 221, 0.18)",
+          activeDark: "rgba(105, 209, 221, 0.22)",
+        },
+      }),
       EditorState.readOnly.of(true),
       EditorView.editable.of(false),
       editorTheme,
@@ -248,13 +200,12 @@ export function CodeRenderer({ artifact }: CodeRendererProps) {
       extensions.push(EditorView.lineWrapping);
     }
 
-    const support = getLanguageSupport(language);
-    if (support) {
-      extensions.push(support);
+    if (languageExtension) {
+      extensions.push(languageExtension);
     }
 
     if (artifact.content.length <= MAX_DECORATED_CONTENT_LENGTH) {
-      extensions.push(rainbowDecorations);
+      extensions.push(rainbowBrackets);
     }
 
     const view = new EditorView({
@@ -268,22 +219,24 @@ export function CodeRenderer({ artifact }: CodeRendererProps) {
     return () => {
       view.destroy();
     };
-  }, [artifact.content, language, wrapLines]);
+  }, [artifact.content, languageExtension, wrapLines]);
 
   return (
-    <div className="code-renderer-shell">
-      <div className="code-renderer-toolbar">
-        <div className="code-renderer-meta">
-          <span className="mono-pill !border-[rgba(239,243,247,0.12)] !bg-[rgba(255,255,255,0.04)] !text-[rgba(239,243,247,0.86)]">
-            {language}
-          </span>
-          <span className="section-kicker !text-[rgba(239,243,247,0.56)]">read-only codemirror</span>
+    <div className={compact ? "code-renderer-shell is-compact" : "code-renderer-shell"}>
+      {compact ? null : (
+        <div className="code-renderer-toolbar">
+          <div className="code-renderer-meta">
+            <span className="mono-pill !border-[rgba(239,243,247,0.12)] !bg-[rgba(255,255,255,0.04)] !text-[rgba(239,243,247,0.86)]">
+              {language}
+            </span>
+            <span className="section-kicker !text-[rgba(239,243,247,0.56)]">read-only codemirror</span>
+          </div>
+          <button type="button" className="artifact-action is-code" onClick={() => setWrapLines((value) => !value)}>
+            <WrapText className="h-3.5 w-3.5" />
+            {wrapLines ? "Disable wrap" : "Enable wrap"}
+          </button>
         </div>
-        <button type="button" className="artifact-action is-code" onClick={() => setWrapLines((value) => !value)}>
-          <WrapText className="h-3.5 w-3.5" />
-          {wrapLines ? "Disable wrap" : "Enable wrap"}
-        </button>
-      </div>
+      )}
       <div ref={hostRef} className="code-renderer-host" />
     </div>
   );

@@ -1,7 +1,9 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { Children, isValidElement, type ReactNode } from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
-import rehypeHighlight from "rehype-highlight";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
@@ -11,15 +13,31 @@ type MarkdownRendererProps = {
   artifact: MarkdownArtifact;
 };
 
-function getCodeLanguage(children: ReactNode): string {
-  const firstChild = Children.toArray(children).find((child) => isValidElement(child));
+const EmbeddedCodeRenderer = dynamic(
+  () => import("@/components/renderers/code-renderer").then((module) => module.CodeRenderer),
+  { ssr: false },
+);
 
-  if (!firstChild || !isValidElement<{ className?: string }>(firstChild)) {
-    return "text";
-  }
+function getCodeLanguage(className?: string): string {
+  const match = /language-([\w-]+)/.exec(className ?? "");
+  return match?.[1]?.toLowerCase() ?? "text";
+}
 
-  const match = /language-([\w-]+)/.exec(firstChild.props.className ?? "");
-  return match?.[1]?.replace(/[-_]/g, " ") ?? "text";
+function getCodeContents(children: ReactNode): string {
+  return Children.toArray(children)
+    .map((child) => {
+      if (typeof child === "string") {
+        return child;
+      }
+
+      if (isValidElement<{ children?: ReactNode }>(child)) {
+        return getCodeContents(child.props.children);
+      }
+
+      return "";
+    })
+    .join("")
+    .replace(/\n$/, "");
 }
 
 const markdownSchema = {
@@ -40,21 +58,36 @@ const markdownComponents: Components = {
   a({ node: _node, className, ...props }) {
     return <a {...props} className={cn("markdown-link", className)} rel="noreferrer" target="_blank" />;
   },
-  code({ node: _node, className, ...props }) {
+  code({ node: _node, className, children, ...props }) {
     const isBlock = typeof className === "string" && className.includes("language-");
 
-    return <code {...props} className={cn(isBlock ? "markdown-code" : "markdown-inline-code", className)} />;
-  },
-  pre({ node: _node, children }) {
+    if (!isBlock) {
+      return <code {...props} className={cn("markdown-inline-code", className)}>{children}</code>;
+    }
+
+    const language = getCodeLanguage(className);
+    const code = getCodeContents(children);
+
     return (
       <div className="markdown-code-frame">
         <div className="markdown-code-head">
-          <span className="markdown-code-chip">{getCodeLanguage(children)}</span>
-          <span className="markdown-code-caption">fenced block</span>
+          <span className="markdown-code-chip">{language}</span>
+          <span className="markdown-code-caption">premium fence</span>
         </div>
-        <pre className="markdown-code-pre">{children}</pre>
+        <EmbeddedCodeRenderer
+          compact
+          artifact={{
+            id: `markdown-code-${language}`,
+            kind: "code",
+            content: code,
+            language,
+          }}
+        />
       </div>
     );
+  },
+  pre({ node: _node, children }) {
+    return <>{children}</>;
   },
   table({ node: _node, className, ...props }) {
     return (
@@ -77,12 +110,7 @@ export function MarkdownRenderer({ artifact }: MarkdownRendererProps) {
       </header>
 
       <article className="markdown-article">
-        <ReactMarkdown
-          components={markdownComponents}
-          rehypePlugins={[[rehypeSanitize, markdownSchema], rehypeHighlight]}
-          remarkPlugins={[remarkGfm]}
-          skipHtml
-        >
+        <ReactMarkdown components={markdownComponents} rehypePlugins={[[rehypeSanitize, markdownSchema]]} remarkPlugins={[remarkGfm]} skipHtml>
           {artifact.content}
         </ReactMarkdown>
       </article>

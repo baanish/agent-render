@@ -26,6 +26,7 @@
     "@codemirror/search": "^6.5.10",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.2",
+    "@replit/codemirror-indentation-markers": "^6.5.3",
     "@git-diff-view/file": "^0.1.1",
     "@git-diff-view/react": "^0.1.1",
     "@tanstack/react-table": "^8.21.3",
@@ -38,11 +39,9 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
-    "rehype-highlight": "^7.0.2",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
-    "tailwind-merge": "^3.4.0",
-    "vanilla-jsoneditor": "^3.11.0"
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.6",

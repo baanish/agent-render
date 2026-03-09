@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "@git-diff-view/react/styles/diff-view-pure.css";
-@import "vanilla-jsoneditor/themes/jse-theme-dark.css";
 
 :root {
   --page-bg: #f3ede2;
@@ -724,14 +723,77 @@ select {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+  padding: 0.75rem 0;
 }
 
-.json-editor-host {
-  min-height: 360px;
+.json-node {
+  border-left: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  margin-left: 0.8rem;
 }
 
-.dark .json-tree-shell {
-  --jse-theme: dark;
+.json-summary,
+.json-leaf-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2rem;
+  padding-right: 1rem;
+  color: var(--text-primary);
+}
+
+.json-summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.json-summary::-webkit-details-marker {
+  display: none;
+}
+
+.json-summary-icon {
+  transition: transform var(--duration-base) ease;
+}
+
+.json-node[open] > .json-summary .json-summary-icon {
+  transform: rotate(90deg);
+}
+
+.json-key {
+  font-family: var(--font-mono), monospace;
+  color: var(--text-soft);
+}
+
+.json-key::after {
+  content: ":";
+  margin-left: 0.2rem;
+}
+
+.json-structure {
+  color: var(--text-muted);
+}
+
+.json-value {
+  font-family: var(--font-mono), monospace;
+}
+
+.json-string {
+  color: #7fd7a4;
+}
+
+.json-number {
+  color: #f29c8f;
+}
+
+.json-boolean {
+  color: #69d1dd;
+}
+
+.json-null {
+  color: #9eb3ff;
+}
+
+.json-children {
+  padding-bottom: 0.25rem;
 }
 
 .markdown-code {

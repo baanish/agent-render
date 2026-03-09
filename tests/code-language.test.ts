@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectCodeLanguage, getLanguageSupport } from "@/lib/code/language";
+import { detectCodeLanguage, loadLanguageSupport } from "@/lib/code/language";
 
 describe("code language detection", () => {
   it("prefers explicit language hints", () => {
@@ -12,7 +12,7 @@ describe("code language detection", () => {
     expect(detectCodeLanguage("README.md")).toBe("markdown");
   });
 
-  it("returns null support for unknown languages", () => {
-    expect(getLanguageSupport("unknown-language")).toBeNull();
+  it("returns null support for unknown languages", async () => {
+    await expect(loadLanguageSupport("unknown-language")).resolves.toBeNull();
   });
 });

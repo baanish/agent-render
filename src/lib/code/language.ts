@@ -1,10 +1,4 @@
-import { css } from "@codemirror/lang-css";
-import { html } from "@codemirror/lang-html";
-import { javascript } from "@codemirror/lang-javascript";
-import { json } from "@codemirror/lang-json";
-import { markdown } from "@codemirror/lang-markdown";
-import { python } from "@codemirror/lang-python";
-import { yaml } from "@codemirror/lang-yaml";
+import type { Extension } from "@codemirror/state";
 
 export function detectCodeLanguage(filename?: string, explicit?: string) {
   const normalized = explicit?.trim().toLowerCase();
@@ -29,32 +23,51 @@ export function detectCodeLanguage(filename?: string, explicit?: string) {
   return "text";
 }
 
-export function getLanguageSupport(language: string) {
+export async function loadLanguageSupport(language: string): Promise<Extension | null> {
   switch (language) {
-    case "tsx":
+    case "tsx": {
+      const { javascript } = await import("@codemirror/lang-javascript");
       return javascript({ jsx: true, typescript: true });
-    case "ts":
+    }
+    case "ts": {
+      const { javascript } = await import("@codemirror/lang-javascript");
       return javascript({ typescript: true });
-    case "jsx":
+    }
+    case "jsx": {
+      const { javascript } = await import("@codemirror/lang-javascript");
       return javascript({ jsx: true });
+    }
     case "js":
-    case "javascript":
-    case "shell":
+    case "javascript": {
+      const { javascript } = await import("@codemirror/lang-javascript");
       return javascript();
-    case "json":
+    }
+    case "json": {
+      const { json } = await import("@codemirror/lang-json");
       return json();
-    case "css":
+    }
+    case "css": {
+      const { css } = await import("@codemirror/lang-css");
       return css();
-    case "html":
+    }
+    case "html": {
+      const { html } = await import("@codemirror/lang-html");
       return html();
+    }
     case "python":
-    case "py":
+    case "py": {
+      const { python } = await import("@codemirror/lang-python");
       return python();
-    case "markdown":
+    }
+    case "markdown": {
+      const { markdown } = await import("@codemirror/lang-markdown");
       return markdown();
+    }
     case "yaml":
-    case "yml":
+    case "yml": {
+      const { yaml } = await import("@codemirror/lang-yaml");
       return yaml();
+    }
     default:
       return null;
   }
