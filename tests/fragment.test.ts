@@ -53,7 +53,7 @@ describe("fragment payload transport", () => {
     expect(parsed.code).toBe("invalid-json");
   });
 
-  it("uses compressed transport when it is smaller", () => {
+  it("always emits plain transport", () => {
     const repetitiveEnvelope: PayloadEnvelope = {
       ...envelope,
       artifacts: [
@@ -68,9 +68,23 @@ describe("fragment payload transport", () => {
 
     const hash = encodeEnvelope(repetitiveEnvelope);
 
-    expect(hash.startsWith("agent-render=v1.lz.")).toBe(true);
+    expect(hash.startsWith("agent-render=v1.plain.")).toBe(true);
     const parsed = decodeFragment(`#${hash}`);
     expect(parsed.ok).toBe(true);
+  });
+
+  it("rejects lz transport fragments", () => {
+    const hash = encodeEnvelope(envelope, { codec: "lz" });
+
+    expect(hash.startsWith("agent-render=v1.plain.")).toBe(true);
+
+    const parsed = decodeFragment("#agent-render=v1.lz.abcd");
+    expect(parsed.ok).toBe(false);
+    if (parsed.ok) {
+      return;
+    }
+
+    expect(parsed.code).toBe("invalid-format");
   });
 
   it("normalizes an invalid active artifact id to the first artifact", () => {

@@ -1,4 +1,3 @@
-import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import {
   MAX_DECODED_PAYLOAD_LENGTH,
@@ -30,17 +29,13 @@ function fromBase64Url(input: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-function encodePayload(json: string, codec: PayloadCodec): string {
-  if (codec === "lz") {
-    return compressToEncodedURIComponent(json);
-  }
-
+function encodePayload(json: string): string {
   return toBase64Url(json);
 }
 
 function decodePayload(encoded: string, codec: PayloadCodec): string | null {
   if (codec === "lz") {
-    return decompressFromEncodedURIComponent(encoded);
+    return null;
   }
 
   return fromBase64Url(encoded);
@@ -49,10 +44,14 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
 function buildFragment(envelope: PayloadEnvelope, codec: PayloadCodec): string {
   const payloadEnvelope = { ...envelope, codec };
   const json = JSON.stringify(payloadEnvelope);
-  return `${PAYLOAD_FRAGMENT_KEY}=v1.${codec}.${encodePayload(json, codec)}`;
+  return `${PAYLOAD_FRAGMENT_KEY}=v1.${codec}.${encodePayload(json)}`;
 }
 
 export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions = {}): string {
+  if (options.codec === "lz") {
+    return buildFragment(envelope, "plain");
+  }
+
   if (options.codec) {
     return buildFragment(envelope, options.codec);
   }
@@ -62,8 +61,7 @@ export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions
     return plainFragment;
   }
 
-  const compressedFragment = buildFragment(envelope, "lz");
-  return compressedFragment.length < plainFragment.length ? compressedFragment : plainFragment;
+  return plainFragment;
 }
 
 export function decodeFragment(hash: string): ParsedPayload {
@@ -110,6 +108,14 @@ export function decodeFragment(hash: string): ParsedPayload {
       ok: false,
       code: "invalid-format",
       message: `Unsupported codec "${codec}". Supported codecs are plain and lz.`,
+    };
+  }
+
+  if (codec === "lz") {
+    return {
+      ok: false,
+      code: "invalid-format",
+      message: 'Unsupported codec "lz". Please re-share using codec "plain".',
     };
   }
 
