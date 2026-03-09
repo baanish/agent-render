@@ -66,6 +66,7 @@ The shell keeps first load lean and defers renderer-heavy code until needed. The
 - `docs/payload-format.md` - fragment protocol, limits, and examples
 - `docs/deployment.md` - deployment notes
 - `docs/dependency-notes.md` - major dependency and license notes
+- `docs/testing.md` - test commands, screenshot workflow, and CI notes
 
 ## Zero Retention
 
