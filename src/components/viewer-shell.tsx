@@ -307,13 +307,12 @@ export function ViewerShell() {
               <Layers3 className="h-5 w-5 text-[color:var(--accent)]" />
             </div>
             <div>
-              <p className="section-kicker">Phase 1 artifact shell</p>
-              <h1 className="font-display mt-1 text-xl font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>
+              <h1 className="font-display text-xl font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <p className="hidden text-sm text-[color:var(--text-muted)] sm:block">Zero-retention fragment viewer</p>
+            <span className="mono-pill shell-pill">zdr</span>
             <ThemeToggle />
           </div>
         </header>
