@@ -30,6 +30,8 @@ npm run preview
 
 Then serve `out/` under `/agent-render/` and open the sample fragment links from the landing page.
 
+The preview server intentionally preserves the fragment payload and does not rely on hash-based in-page navigation for diff files.
+
 ## Hosting model
 
 Phase 1 does not require a Node.js runtime. Any static host that can serve HTML, CSS, and JavaScript is sufficient.

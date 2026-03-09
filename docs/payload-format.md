@@ -56,6 +56,8 @@ Supported codecs:
 
 The envelope can carry multiple artifacts. The shell uses `activeArtifactId` to decide which artifact opens first, and switching artifacts updates the fragment so the shared link stays truthful.
 
+Internal viewer navigation, such as moving between files inside a multi-file diff, does not mutate the fragment. The fragment is reserved for payload transport and bundle-level state only.
+
 ## Examples
 
 Two sample envelopes live in `src/lib/payload/examples.ts` for local development and documentation.

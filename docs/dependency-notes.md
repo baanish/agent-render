@@ -6,14 +6,13 @@
 - `react` / `react-dom` - MIT
 - `tailwindcss` / `@tailwindcss/postcss` - MIT
 - `react-markdown` - MIT
-- `rehype-highlight` - MIT
 - `remark-gfm` - MIT
 - `rehype-sanitize` - MIT
 - `@codemirror/*` - MIT
+- `@replit/codemirror-indentation-markers` - MIT
 - `@git-diff-view/*` - MIT
 - `papaparse` - MIT
 - `@tanstack/react-table` - MIT
-- `vanilla-jsoneditor` - ISC
 - `lz-string` - MIT
 
 ## Notes
@@ -25,8 +24,12 @@
 ## Why these libraries
 
 - `react-markdown` plus `remark-gfm` plus `rehype-sanitize` covers the markdown path without introducing unsafe raw HTML by default.
-- `rehype-highlight` upgrades markdown code fences without changing the safe markdown model.
 - CodeMirror handles raw source and raw JSON well because it is excellent at read-only code presentation.
+- `@replit/codemirror-indentation-markers` replaces custom indent-guide logic with a maintained CM6 extension.
 - `@git-diff-view/*` fits review-style diffs better than a generic merge editor for Phase 1.
 - `papaparse` plus `@tanstack/react-table` keeps CSV parsing and rendering readable without coupling to a heavyweight data-grid framework.
-- `vanilla-jsoneditor` provides a mature JSON tree view while still working in a static client-only setup.
+
+## Notable removals
+
+- `rehype-highlight` was removed after review because markdown fences now reuse the CodeMirror viewer stack directly.
+- `vanilla-jsoneditor` was removed because its bundle cost was too high for the default JSON tree-view use case in a viewer-first product.

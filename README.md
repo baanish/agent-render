@@ -13,11 +13,11 @@ Phase 1 focuses on fragment-based sharing for markdown, code, diffs, CSV, and JS
 
 ## Included Renderers
 
-- `markdown` - GFM rendering with safe sanitization, download, and print flow
-- `code` - read-only CodeMirror view with line numbers, wrap toggle, rainbow brackets, and indent guides
+- `markdown` - GFM rendering with safe sanitization, download, print flow, and premium code fences that reuse the CodeMirror viewer stack
+- `code` - read-only CodeMirror view with line numbers, wrap toggle, syntax-tree-aware rainbow brackets, and maintained indentation markers
 - `diff` - review-style multi-file git patch viewer with unified and split modes
 - `csv` - parsed table view with sticky headers and horizontal overflow handling
-- `json` - read-only tree view plus raw code view, with graceful malformed JSON fallback
+- `json` - lightweight read-only tree view plus raw code view, with graceful malformed JSON fallback
 
 ## Principles
 
@@ -55,6 +55,10 @@ NEXT_PUBLIC_BASE_PATH=/agent-render npm run build
 The home page includes sample fragment presets for every artifact type, including a malformed JSON case for error handling.
 
 The fragment examples are encoded with the same transport used by the app, so larger samples will naturally switch to compressed `lz` transport.
+
+## Bundle Notes
+
+The shell keeps first load lean and defers renderer-heavy code until needed. The remaining largest deferred dependency is the diff stack, which stays because it still delivers the strongest review-style unified/split UX for real git patches.
 
 ## Docs
 

@@ -19,15 +19,48 @@ GitHub Pages is strongest when the application behaves like a static shell inste
 
 ## Renderer implementation
 
-- `markdown` - formatted document view with download and print-to-PDF flow
+- `markdown` - formatted document view with download and print-to-PDF flow plus embedded premium code fences
 - `code` - read-only CodeMirror view with syntax-aware rendering and code affordances
 - `diff` - review-style diff view with unified and split modes
 - `csv` - table-focused data grid built from parsed rows and dynamic columns
-- `json` - read-only tree view backed by `vanilla-jsoneditor` plus a raw CodeMirror view
+- `json` - lightweight read-only tree view plus a raw CodeMirror view
 
 The viewer shell now routes all five artifact kinds through dynamically imported client-only renderers so the landing shell stays light and static-host friendly.
 
 When a valid fragment is present, the shell switches into a viewer-first layout with bundle navigation beside the active artifact. The landing/samples experience is only the empty state.
+
+Diff file navigation is intentionally internal UI state now. The URL fragment remains reserved for payload transport and active-artifact selection instead of being reused as an in-page file anchor system.
+
+## Markdown fence choice
+
+This round explicitly evaluated Shiki and rejected it for now.
+
+- Shiki is MIT and technically viable in a fully static app.
+- The current app already ships a premium read-only CodeMirror stack for source viewing.
+- Reusing that stack for markdown fences keeps them visually strong while avoiding a second async highlighting system and an additional code/theme/language runtime.
+- That choice also removes the weaker `rehype-highlight` plus `highlight.js` path instead of carrying both.
+
+If markdown fence fidelity becomes a repeated product problem after these bundle reductions, Shiki remains the next serious candidate, but it should replace rather than supplement the current fence path.
+
+## Raw code renderer choice
+
+The raw code viewer now keeps CodeMirror, but the architecture is cleaner:
+
+- language modules load on demand instead of being statically imported together
+- indentation guides come from the maintained `@replit/codemirror-indentation-markers` extension
+- rainbow brackets stay custom, but now operate as a syntax-tree-aware decoration pass instead of naive quote tracking
+
+That keeps the viewer static-hosting friendly while removing the brittle parts of the earlier implementation.
+
+## Bundle tradeoffs
+
+The largest remaining deferred cost is still the diff renderer stack, primarily `@git-diff-view/*` and its highlighting internals. It remains because it still provides the best review-style UX for multi-file git patches, split/unified modes, and syntax-aware rendering with less product code than a bespoke replacement.
+
+The JSON and markdown paths are now substantially lighter because:
+
+- `vanilla-jsoneditor` was removed in favor of a lighter read-only tree view
+- `rehype-highlight` and its Highlight.js stack were removed
+- CodeMirror language support now loads on demand per active language
 
 ## Diff choice
 
