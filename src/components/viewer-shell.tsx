@@ -280,7 +280,7 @@ export function ViewerShell() {
               <Layers3 className="h-5 w-5 text-[color:var(--accent)]" />
             </div>
             <div>
-              <p className="section-kicker">Sprint 2 artifact shell</p>
+              <p className="section-kicker">Phase 1 artifact shell</p>
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <h1 className="font-display text-xl font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>
                 <span className="mono-pill">single exported route</span>
@@ -311,7 +311,7 @@ export function ViewerShell() {
                     Share artifacts in the URL, keep the server out of the payload.
                   </h2>
                   <p className="mt-5 max-w-2xl text-base leading-7 text-[color:var(--text-muted)] sm:text-lg">
-                    The shell now supports polished markdown reading plus a read-only code viewer, while keeping fragment-native sharing and static hosting constraints intact.
+                    The shell now supports markdown, code, diff, CSV, and JSON artifacts while keeping fragment-native sharing and static hosting constraints intact.
                   </p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     <span className="mono-pill">

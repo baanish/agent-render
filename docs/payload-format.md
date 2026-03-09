@@ -94,3 +94,64 @@ Markdown artifacts use the `content` field and currently support client-side dow
 ```
 
 Code artifacts use the same `content` transport, plus optional `language` and `filename` hints for syntax-aware rendering and download naming.
+
+### Diff artifact example
+
+```json
+{
+  "v": 1,
+  "codec": "plain",
+  "title": "Patch review",
+  "activeArtifactId": "patch",
+  "artifacts": [
+    {
+      "id": "patch",
+      "kind": "diff",
+      "title": "hello.ts diff",
+      "filename": "hello.patch",
+      "patch": "diff --git a/hello.ts b/hello.ts\n--- a/hello.ts\n+++ b/hello.ts\n@@ -1 +1 @@\n-console.log('hello')\n+console.log('hello, world')\n",
+      "view": "split"
+    }
+  ]
+}
+```
+
+### CSV artifact example
+
+```json
+{
+  "v": 1,
+  "codec": "plain",
+  "title": "Metrics snapshot",
+  "activeArtifactId": "metrics",
+  "artifacts": [
+    {
+      "id": "metrics",
+      "kind": "csv",
+      "filename": "metrics.csv",
+      "content": "artifact,kind,summary\nroadmap,markdown,launch-ready"
+    }
+  ]
+}
+```
+
+### JSON artifact example
+
+```json
+{
+  "v": 1,
+  "codec": "plain",
+  "title": "Artifact manifest",
+  "activeArtifactId": "manifest",
+  "artifacts": [
+    {
+      "id": "manifest",
+      "kind": "json",
+      "filename": "manifest.json",
+      "content": "{\n  \"ready\": true\n}"
+    }
+  ]
+}
+```
+
+Malformed JSON should still use `kind: "json"`; the viewer will show the parse error and a raw fallback instead of crashing.

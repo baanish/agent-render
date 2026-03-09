@@ -6,8 +6,17 @@ Phase 1 focuses on fragment-based sharing for markdown, code, diffs, CSV, and JS
 
 ## Status
 
-- Sprint 2 complete: markdown renderer, markdown download and print flow, plus read-only code rendering
-- Planned next renderers: diff, CSV, and JSON
+- Phase 1 viewer complete: markdown, code, diff, CSV, and JSON all render in the static shell
+- Markdown supports download plus browser print-to-PDF
+- Deployment target: GitHub Pages by default, with support for other static hosts
+
+## Included Renderers
+
+- `markdown` - GFM rendering with safe sanitization, download, and print flow
+- `code` - read-only CodeMirror view with line numbers, wrap toggle, rainbow brackets, and indent guides
+- `diff` - review-style diff viewer with unified and split modes
+- `csv` - parsed table view with sticky headers and horizontal overflow handling
+- `json` - read-only tree view plus raw code view, with graceful malformed JSON fallback
 - Deployment target: GitHub Pages by default, with support for other static hosts
 
 ## Principles
@@ -24,12 +33,26 @@ npm install
 npm run dev
 ```
 
+## Verification
+
+```bash
+npm run lint
+npm run typecheck
+NEXT_PUBLIC_BASE_PATH=/agent-render npm run build
+```
+
+The home page includes sample fragment presets for every artifact type, including a malformed JSON case for error handling.
+
 ## Docs
 
 - `docs/architecture.md` - Phase 1 architecture and tradeoffs
 - `docs/payload-format.md` - fragment protocol, limits, and examples
 - `docs/deployment.md` - GitHub Pages deployment notes
 - `docs/dependency-notes.md` - major dependency and license notes
+
+## Zero Retention
+
+Phase 1 keeps artifact contents in the URL fragment so the static host does not receive the payload during the page request. This improves privacy for shared artifacts, but the link still lives in browser history, copied URLs, and any client-side telemetry you add later.
 
 ## License
 
