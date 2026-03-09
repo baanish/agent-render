@@ -6,6 +6,7 @@
 - `react` / `react-dom` - MIT
 - `tailwindcss` / `@tailwindcss/postcss` - MIT
 - `react-markdown` - MIT
+- `rehype-highlight` - MIT
 - `remark-gfm` - MIT
 - `rehype-sanitize` - MIT
 - `@codemirror/*` - MIT
@@ -24,6 +25,7 @@
 ## Why these libraries
 
 - `react-markdown` plus `remark-gfm` plus `rehype-sanitize` covers the markdown path without introducing unsafe raw HTML by default.
+- `rehype-highlight` upgrades markdown code fences without changing the safe markdown model.
 - CodeMirror handles raw source and raw JSON well because it is excellent at read-only code presentation.
 - `@git-diff-view/*` fits review-style diffs better than a generic merge editor for Phase 1.
 - `papaparse` plus `@tanstack/react-table` keeps CSV parsing and rendering readable without coupling to a heavyweight data-grid framework.

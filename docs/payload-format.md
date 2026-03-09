@@ -7,10 +7,15 @@ Phase 1 uses a fragment-based payload so the raw artifact content stays in the b
 ## Fragment shape
 
 ```text
-#agent-render=v1.plain.<base64url-encoded-json>
+#agent-render=v1.<codec>.<payload>
 ```
 
 The fragment protocol includes version and codec in the outer format so unsupported formats fail cleanly.
+
+Supported codecs:
+
+- `plain` - base64url-encoded JSON
+- `lz` - `lz-string` compressed JSON encoded for URL-safe transport
 
 ## Envelope
 
@@ -43,8 +48,13 @@ The fragment protocol includes version and codec in the outer format so unsuppor
 ## Limits
 
 - Supported fragment budget: 8,000 characters
+- Supported decoded payload budget: 200,000 characters
 - Larger payloads should fail with a clear error before rendering
-- Compression is reserved for a future `codec` such as `lz`
+- Compression is enabled now and selected automatically when the `lz` form is shorter than `plain`
+
+## Active artifact behavior
+
+The envelope can carry multiple artifacts. The shell uses `activeArtifactId` to decide which artifact opens first, and switching artifacts updates the fragment so the shared link stays truthful.
 
 ## Examples
 
@@ -115,6 +125,8 @@ Code artifacts use the same `content` transport, plus optional `language` and `f
   ]
 }
 ```
+
+Real diff artifacts can contain multiple `diff --git` sections inside one `patch` string. The viewer parses that unified patch into a sequence of file diffs and preserves per-file boundaries.
 
 ### CSV artifact example
 

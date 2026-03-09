@@ -27,13 +27,16 @@ GitHub Pages is strongest when the application behaves like a static shell inste
 
 The viewer shell now routes all five artifact kinds through dynamically imported client-only renderers so the landing shell stays light and static-host friendly.
 
+When a valid fragment is present, the shell switches into a viewer-first layout with bundle navigation beside the active artifact. The landing/samples experience is only the empty state.
+
 ## Diff choice
 
-Phase 1 uses `@git-diff-view/react` plus `@git-diff-view/file` instead of `@codemirror/merge`.
+Phase 1 uses `@git-diff-view/react` plus git-diff `DiffFile` instances instead of `@codemirror/merge`.
 
 - `@git-diff-view/*` matches the product goal better because it is already shaped like a GitHub-style review surface
 - split and unified views are built in
 - syntax highlighting and diff affordances are stronger out of the box for artifact viewing
+- individual file patches can be rendered as a sequence while preserving filenames and boundaries
 - CodeMirror remains the better fit for raw source and raw JSON views
 
 `@codemirror/merge` stays a reasonable future option if Phase 2 needs a more editor-centric comparison workflow, but it is not the best Phase 1 default for shareable review artifacts.
@@ -44,6 +47,15 @@ Phase 1 uses `@git-diff-view/react` plus `@git-diff-view/file` instead of `@code
 - Disable raw HTML in markdown by default
 - Keep artifact text out of `dangerouslySetInnerHTML`
 - Sanitize any content pipeline that can introduce markup
+
+## Transport
+
+The fragment protocol keeps the JSON envelope stable and treats compression strictly as transport.
+
+- `plain` stores base64url-encoded JSON for compatibility and debugging
+- `lz` stores compressed JSON via `lz-string` when it produces a smaller fragment
+- decode enforces both fragment length and decoded payload size ceilings before UI rendering
+- invalid bundle state is normalized or rejected before renderers mount
 
 ## Zero-retention boundaries
 

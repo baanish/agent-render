@@ -528,7 +528,7 @@ export function ViewerShell() {
                   <div className="metric-card">
                     <p className="metric-label">Protocol shape</p>
                     <p className="font-mono mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
-                      #{PAYLOAD_FRAGMENT_KEY}=v1.plain.&lt;base64url-encoded-json&gt;
+                      #{PAYLOAD_FRAGMENT_KEY}=v1.&lt;codec&gt;.&lt;payload&gt;
                     </p>
                   </div>
                   <div className="metric-card">

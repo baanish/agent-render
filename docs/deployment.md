@@ -25,6 +25,7 @@ For a GitHub Pages-style subpath check, build with:
 
 ```bash
 NEXT_PUBLIC_BASE_PATH=/agent-render npm run build
+npm run preview
 ```
 
 Then serve `out/` under `/agent-render/` and open the sample fragment links from the landing page.
@@ -36,3 +37,5 @@ Phase 1 does not require a Node.js runtime. Any static host that can serve HTML,
 ## GitHub Actions flow
 
 The included workflow runs on pushes to `main` and on manual dispatch. It installs dependencies with `npm ci`, performs the static build with the repository name as `NEXT_PUBLIC_BASE_PATH`, uploads `out/`, and deploys that artifact with the official Pages actions.
+
+If GitHub Pages is not enabled for the repository, the workflow will fail at the Pages setup step even when the app build itself is healthy.

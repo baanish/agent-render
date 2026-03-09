@@ -7,6 +7,7 @@ Phase 1 focuses on fragment-based sharing for markdown, code, diffs, CSV, and JS
 ## Status
 
 - Phase 1 viewer complete: markdown, code, diff, CSV, and JSON all render in the static shell
+- Fragment transport now supports `plain` and compressed `lz` codecs, with compression chosen automatically when it helps
 - Markdown supports download plus browser print-to-PDF
 - Deployment target: GitHub Pages by default, with support for other static hosts
 
@@ -14,10 +15,9 @@ Phase 1 focuses on fragment-based sharing for markdown, code, diffs, CSV, and JS
 
 - `markdown` - GFM rendering with safe sanitization, download, and print flow
 - `code` - read-only CodeMirror view with line numbers, wrap toggle, rainbow brackets, and indent guides
-- `diff` - review-style diff viewer with unified and split modes
+- `diff` - review-style multi-file git patch viewer with unified and split modes
 - `csv` - parsed table view with sticky headers and horizontal overflow handling
 - `json` - read-only tree view plus raw code view, with graceful malformed JSON fallback
-- Deployment target: GitHub Pages by default, with support for other static hosts
 
 ## Principles
 
@@ -33,6 +33,17 @@ npm install
 npm run dev
 ```
 
+## Local Preview
+
+For the real export-only runtime story:
+
+```bash
+npm run build
+npm run preview
+```
+
+Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a project-pages style subpath export.
+
 ## Verification
 
 ```bash
@@ -42,6 +53,8 @@ NEXT_PUBLIC_BASE_PATH=/agent-render npm run build
 ```
 
 The home page includes sample fragment presets for every artifact type, including a malformed JSON case for error handling.
+
+The fragment examples are encoded with the same transport used by the app, so larger samples will naturally switch to compressed `lz` transport.
 
 ## Docs
 
