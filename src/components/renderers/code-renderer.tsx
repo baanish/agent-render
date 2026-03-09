@@ -24,6 +24,7 @@ import type { CodeArtifact } from "@/lib/payload/schema";
 type CodeRendererProps = {
   artifact: CodeArtifact;
   compact?: boolean;
+  onReady?: () => void;
 };
 
 const MAX_DECORATED_CONTENT_LENGTH = 120000;
@@ -145,10 +146,11 @@ const rainbowBrackets = ViewPlugin.fromClass(
   },
 );
 
-export function CodeRenderer({ artifact, compact = false }: CodeRendererProps) {
+export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendererProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [wrapLines, setWrapLines] = useState(compact);
   const [languageExtension, setLanguageExtension] = useState<Awaited<ReturnType<typeof loadLanguageSupport>>>(null);
+  const [isReady, setIsReady] = useState(false);
   const language = useMemo(() => detectCodeLanguage(artifact.filename, artifact.language), [artifact.filename, artifact.language]);
 
   useEffect(() => {
@@ -170,6 +172,7 @@ export function CodeRenderer({ artifact, compact = false }: CodeRendererProps) {
       return;
     }
 
+    setIsReady(false);
     hostRef.current.replaceChildren();
 
     const extensions = [
@@ -216,13 +219,27 @@ export function CodeRenderer({ artifact, compact = false }: CodeRendererProps) {
       parent: hostRef.current,
     });
 
+    let cancelled = false;
+    const animationFrame = window.requestAnimationFrame(() => {
+      if (!cancelled) {
+        setIsReady(true);
+        onReady?.();
+      }
+    });
+
     return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(animationFrame);
       view.destroy();
     };
-  }, [artifact.content, languageExtension, wrapLines]);
+  }, [artifact.content, languageExtension, onReady, wrapLines]);
 
   return (
-    <div className={compact ? "code-renderer-shell is-compact" : "code-renderer-shell"}>
+    <div
+      className={compact ? "code-renderer-shell is-compact" : "code-renderer-shell"}
+      data-testid="renderer-code"
+      data-renderer-ready={isReady ? "true" : "false"}
+    >
       {compact ? null : (
         <div className="code-renderer-toolbar">
           <div className="code-renderer-meta">

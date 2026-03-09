@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Children, isValidElement, type ReactNode } from "react";
+import { Children, isValidElement, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
@@ -11,6 +11,7 @@ import type { MarkdownArtifact } from "@/lib/payload/schema";
 
 type MarkdownRendererProps = {
   artifact: MarkdownArtifact;
+  onReady?: () => void;
 };
 
 const EmbeddedCodeRenderer = dynamic(
@@ -54,55 +55,73 @@ const markdownSchema = {
   },
 };
 
-const markdownComponents: Components = {
-  a({ node: _node, className, ...props }) {
-    return <a {...props} className={cn("markdown-link", className)} rel="noreferrer" target="_blank" />;
-  },
-  code({ node: _node, className, children, ...props }) {
-    const isBlock = typeof className === "string" && className.includes("language-");
-
-    if (!isBlock) {
-      return <code {...props} className={cn("markdown-inline-code", className)}>{children}</code>;
-    }
-
-    const language = getCodeLanguage(className);
-    const code = getCodeContents(children);
-
-    return (
-      <div className="markdown-code-frame">
-        <div className="markdown-code-head">
-          <span className="markdown-code-chip">{language}</span>
-          <span className="markdown-code-caption">premium fence</span>
-        </div>
-        <EmbeddedCodeRenderer
-          compact
-          artifact={{
-            id: `markdown-code-${language}`,
-            kind: "code",
-            content: code,
-            language,
-          }}
-        />
-      </div>
-    );
-  },
-  pre({ node: _node, children }) {
-    return <>{children}</>;
-  },
-  table({ node: _node, className, ...props }) {
-    return (
-      <div className="markdown-table-wrap">
-        <table {...props} className={cn("markdown-table", className)} />
-      </div>
-    );
-  },
-};
-
-export function MarkdownRenderer({ artifact }: MarkdownRendererProps) {
+export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   const heading = artifact.title ?? artifact.filename ?? artifact.id;
+  const embeddedBlockCount = useMemo(() => (artifact.content.match(/```[\s\S]*?```/g) ?? []).length, [artifact.content]);
+  const [readyBlockIds, setReadyBlockIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setReadyBlockIds([]);
+  }, [artifact.content, artifact.id]);
+
+  useEffect(() => {
+    if (readyBlockIds.length >= embeddedBlockCount) {
+      onReady?.();
+    }
+  }, [embeddedBlockCount, onReady, readyBlockIds.length]);
+
+  let blockIndex = 0;
+  const markdownComponents: Components = {
+    a({ node: _node, className, ...props }) {
+      return <a {...props} className={cn("markdown-link", className)} rel="noreferrer" target="_blank" />;
+    },
+    code({ node: _node, className, children, ...props }) {
+      const isBlock = typeof className === "string" && className.includes("language-");
+
+      if (!isBlock) {
+        return <code {...props} className={cn("markdown-inline-code", className)}>{children}</code>;
+      }
+
+      const language = getCodeLanguage(className);
+      const code = getCodeContents(children);
+      const blockId = `${artifact.id}-code-${blockIndex}`;
+      blockIndex += 1;
+
+      return (
+        <div className="markdown-code-frame">
+          <div className="markdown-code-head">
+            <span className="markdown-code-chip">{language}</span>
+            <span className="markdown-code-caption">premium fence</span>
+          </div>
+          <EmbeddedCodeRenderer
+            compact
+            artifact={{
+              id: blockId,
+              kind: "code",
+              content: code,
+              language,
+            }}
+            onReady={() => {
+              setReadyBlockIds((current) => (current.includes(blockId) ? current : [...current, blockId]));
+            }}
+          />
+        </div>
+      );
+    },
+    pre({ node: _node, children }) {
+      return <>{children}</>;
+    },
+    table({ node: _node, className, ...props }) {
+      return (
+        <div className="markdown-table-wrap">
+          <table {...props} className={cn("markdown-table", className)} />
+        </div>
+      );
+    },
+  };
 
   return (
-    <div className="markdown-document">
+    <div className="markdown-document" data-testid="renderer-markdown" data-renderer-ready={readyBlockIds.length >= embeddedBlockCount ? "true" : "false"}>
       <header className="markdown-print-heading">
         <p className="section-kicker">Markdown artifact</p>
         <h1>{heading}</h1>

@@ -1,12 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Braces, ChevronRight, ListTree } from "lucide-react";
 import type { JsonArtifact } from "@/lib/payload/schema";
 
 type JsonRendererProps = {
   artifact: JsonArtifact;
+  onReady?: () => void;
 };
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
@@ -45,7 +46,7 @@ function JsonNode({ label, value, level = 0 }: { label?: string; value: JsonValu
   );
 }
 
-export function JsonRenderer({ artifact }: JsonRendererProps) {
+export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
   const [view, setView] = useState<"tree" | "raw">("tree");
   const parsed = useMemo(() => {
     try {
@@ -55,9 +56,13 @@ export function JsonRenderer({ artifact }: JsonRendererProps) {
     }
   }, [artifact.content]);
 
+  useEffect(() => {
+    onReady?.();
+  }, [artifact.id, onReady, parsed.ok, view]);
+
   if (!parsed.ok) {
     return (
-      <div className="json-renderer-shell">
+      <div className="json-renderer-shell" data-testid="renderer-json" data-renderer-ready="true">
         <div className="artifact-empty-state">{parsed.message}</div>
         <div className="mt-4">
           <EmbeddedCodeRenderer compact artifact={{ ...artifact, kind: "code", language: "json" }} />
@@ -67,7 +72,7 @@ export function JsonRenderer({ artifact }: JsonRendererProps) {
   }
 
   return (
-    <div className="json-renderer-shell">
+    <div className="json-renderer-shell" data-testid="renderer-json" data-renderer-ready="true">
       <div className="json-renderer-toolbar">
         <div className="diff-view-toggle">
           <button type="button" className={`artifact-action ${view === "tree" ? "is-primary" : ""}`} onClick={() => setView("tree")}>

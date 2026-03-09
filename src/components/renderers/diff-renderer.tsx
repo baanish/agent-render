@@ -10,11 +10,13 @@ import type { DiffArtifact } from "@/lib/payload/schema";
 
 type DiffRendererProps = {
   artifact: DiffArtifact;
+  onReady?: () => void;
 };
 
-export function DiffRenderer({ artifact }: DiffRendererProps) {
+export function DiffRenderer({ artifact, onReady }: DiffRendererProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const mobileDefault = typeof window !== "undefined" ? window.innerWidth < 960 : false;
   const [mode, setMode] = useState<DiffModeEnum>(
@@ -71,8 +73,24 @@ export function DiffRenderer({ artifact }: DiffRendererProps) {
   }, [artifact, resolvedTheme]);
 
   useEffect(() => {
+    setIsReady(false);
     setActiveFileId(diffFiles[0]?.meta.id ?? null);
   }, [diffFiles]);
+
+  useEffect(() => {
+    if (!mounted || diffFiles.length === 0) {
+      return;
+    }
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      setIsReady(true);
+      onReady?.();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [diffFiles.length, mounted, onReady]);
 
   const handleFileSelect = (fileId: string) => {
     setActiveFileId(fileId);
@@ -81,7 +99,7 @@ export function DiffRenderer({ artifact }: DiffRendererProps) {
   };
 
   return (
-    <div className="diff-renderer-shell">
+    <div className="diff-renderer-shell" data-testid="renderer-diff" data-renderer-ready={isReady ? "true" : "false"}>
       <div className="diff-renderer-toolbar">
         <div className="code-renderer-meta">
           <span className="mono-pill">review-style diff</span>

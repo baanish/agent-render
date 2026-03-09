@@ -205,6 +205,7 @@ function getAnimationStyle(delay: number): CSSProperties {
 
 export function ViewerShell() {
   const [hash, setHash] = useState("");
+  const [rendererReady, setRendererReady] = useState(true);
 
   useEffect(() => {
     const syncHash = () => {
@@ -228,9 +229,29 @@ export function ViewerShell() {
   const diffArtifact: DiffArtifact | null = activeArtifact?.kind === "diff" ? activeArtifact : null;
   const csvArtifact: CsvArtifact | null = activeArtifact?.kind === "csv" ? activeArtifact : null;
   const jsonArtifact: JsonArtifact | null = activeArtifact?.kind === "json" ? activeArtifact : null;
+  const hasKnownRenderer = Boolean(markdownArtifact || codeArtifact || diffArtifact || csvArtifact || jsonArtifact);
   const budgetRatio = Math.min(fragmentLength / MAX_FRAGMENT_LENGTH, 1);
   const statusTone = getStatusTone(parsed);
   const viewerState = activeArtifact && envelope ? "artifact" : parsed.ok ? "decoded-no-artifact" : parsed.code === "empty" ? "empty" : "error";
+
+  useEffect(() => {
+    if (!activeArtifact) {
+      setRendererReady(true);
+      return;
+    }
+
+    setRendererReady(false);
+  }, [activeArtifact]);
+
+  useEffect(() => {
+    if (activeArtifact && !hasKnownRenderer) {
+      setRendererReady(true);
+    }
+  }, [activeArtifact, hasKnownRenderer]);
+
+  const markRendererReady = useCallback(() => {
+    setRendererReady(true);
+  }, []);
 
   const setFragmentHash = useCallback((nextHash: string) => {
     if (window.location.hash === nextHash) {
@@ -308,6 +329,7 @@ export function ViewerShell() {
       data-viewer-state={viewerState}
       data-active-kind={activeArtifact?.kind ?? "none"}
       data-active-artifact-id={activeArtifact?.id ?? "none"}
+      data-renderer-ready={rendererReady ? "true" : "false"}
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <header className="panel print-hide-on-markdown fade-up sticky top-4 z-30 flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
@@ -389,15 +411,15 @@ export function ViewerShell() {
               <div className="viewer-frame viewer-frame-primary viewer-frame-hero">
                 <div className={cn("artifact-preview", markdownArtifact && "is-markdown print-markdown-target")}>
                   {markdownArtifact ? (
-                    <MarkdownRenderer artifact={markdownArtifact} />
+                    <MarkdownRenderer artifact={markdownArtifact} onReady={markRendererReady} />
                   ) : codeArtifact ? (
-                    <CodeRenderer artifact={codeArtifact} />
+                    <CodeRenderer artifact={codeArtifact} onReady={markRendererReady} />
                   ) : diffArtifact ? (
-                    <DiffRenderer artifact={diffArtifact} />
+                    <DiffRenderer artifact={diffArtifact} onReady={markRendererReady} />
                   ) : csvArtifact ? (
-                    <CsvRenderer artifact={csvArtifact} />
+                    <CsvRenderer artifact={csvArtifact} onReady={markRendererReady} />
                   ) : jsonArtifact ? (
-                    <JsonRenderer artifact={jsonArtifact} />
+                    <JsonRenderer artifact={jsonArtifact} onReady={markRendererReady} />
                   ) : (
                     <pre>{getPreviewText(activeArtifact)}</pre>
                   )}

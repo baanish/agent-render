@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 export async function goToHash(page: Page, hash = "") {
   await page.goto(`.${hash}`);
@@ -24,4 +24,18 @@ export async function stabilizePage(page: Page) {
 
 export async function waitForViewerState(page: Page, state: string) {
   await page.locator(`[data-testid="viewer-shell"][data-viewer-state="${state}"]`).waitFor();
+}
+
+export async function waitForRendererReady(page: Page, kind: "markdown" | "code" | "diff" | "csv" | "json") {
+  await expect(page.locator(`[data-testid="viewer-shell"][data-viewer-state="artifact"][data-active-kind="${kind}"][data-renderer-ready="true"]`)).toBeVisible();
+
+  const readinessSelectorByKind: Record<typeof kind, string> = {
+    markdown: "[data-testid='renderer-markdown'][data-renderer-ready='true'] .markdown-article",
+    code: "[data-testid='renderer-code'][data-renderer-ready='true'] .cm-editor",
+    diff: "[data-testid='renderer-diff'][data-renderer-ready='true'] .patch-file-section",
+    csv: "[data-testid='renderer-csv'][data-renderer-ready='true'] table.csv-table tbody tr",
+    json: "[data-testid='renderer-json'][data-renderer-ready='true'] .json-tree-shell",
+  };
+
+  await expect(page.locator(readinessSelectorByKind[kind]).first()).toBeVisible();
 }

@@ -1,17 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import Papa from "papaparse";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import type { CsvArtifact } from "@/lib/payload/schema";
 
 type CsvRendererProps = {
   artifact: CsvArtifact;
+  onReady?: () => void;
 };
 
 type CsvRow = Record<string, string>;
 
-export function CsvRenderer({ artifact }: CsvRendererProps) {
+export function CsvRenderer({ artifact, onReady }: CsvRendererProps) {
   const parsed = useMemo(() => {
     const result = Papa.parse<string[]>(artifact.content, { skipEmptyLines: true });
 
@@ -31,6 +32,10 @@ export function CsvRenderer({ artifact }: CsvRendererProps) {
     return { error: null, headers, rows };
   }, [artifact.content]);
 
+  useEffect(() => {
+    onReady?.();
+  }, [artifact.id, onReady]);
+
   const columns = useMemo(() => {
     const helper = createColumnHelper<CsvRow>();
     return parsed.headers.map((header) =>
@@ -49,11 +54,15 @@ export function CsvRenderer({ artifact }: CsvRendererProps) {
   });
 
   if (parsed.error) {
-    return <div className="artifact-empty-state">{parsed.error}</div>;
+    return (
+      <div className="artifact-empty-state" data-testid="renderer-csv" data-renderer-ready="true">
+        {parsed.error}
+      </div>
+    );
   }
 
   return (
-    <div className="csv-renderer-shell">
+    <div className="csv-renderer-shell" data-testid="renderer-csv" data-renderer-ready="true">
       <div className="csv-renderer-toolbar">
         <span className="mono-pill">{parsed.rows.length} rows</span>
         <span className="mono-pill">{parsed.headers.length} columns</span>
