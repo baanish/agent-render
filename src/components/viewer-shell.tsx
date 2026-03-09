@@ -34,6 +34,8 @@ import {
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
+import { ArtifactSelector } from "@/components/viewer/artifact-selector";
+import { FragmentDetailsDisclosure } from "@/components/viewer/fragment-details-disclosure";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
@@ -228,6 +230,7 @@ export function ViewerShell() {
   const jsonArtifact: JsonArtifact | null = activeArtifact?.kind === "json" ? activeArtifact : null;
   const budgetRatio = Math.min(fragmentLength / MAX_FRAGMENT_LENGTH, 1);
   const statusTone = getStatusTone(parsed);
+  const viewerState = activeArtifact && envelope ? "artifact" : parsed.ok ? "decoded-no-artifact" : parsed.code === "empty" ? "empty" : "error";
 
   const setFragmentHash = useCallback((nextHash: string) => {
     if (window.location.hash === nextHash) {
@@ -299,7 +302,13 @@ export function ViewerShell() {
   }, [markdownArtifact]);
 
   return (
-    <main className="app-shell min-h-screen px-4 pb-10 pt-5 sm:px-6 sm:pb-12 lg:px-10 lg:pt-7">
+    <main
+      className="app-shell min-h-screen px-4 pb-10 pt-5 sm:px-6 sm:pb-12 lg:px-10 lg:pt-7"
+      data-testid="viewer-shell"
+      data-viewer-state={viewerState}
+      data-active-kind={activeArtifact?.kind ?? "none"}
+      data-active-artifact-id={activeArtifact?.id ?? "none"}
+    >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <header className="panel print-hide-on-markdown fade-up sticky top-4 z-30 flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
@@ -340,32 +349,14 @@ export function ViewerShell() {
                 </div>
               </div>
 
-              <div className="artifact-selector-row">
-                {envelope.artifacts.map((artifact) => {
-                  const Icon = kindIcons[artifact.kind];
-                  const isCurrent = artifact.id === activeArtifact.id;
-
-                  return (
-                    <button
-                      key={artifact.id}
-                      type="button"
-                      className={cn("artifact-switcher", isCurrent && "is-active")}
-                      onClick={() => handleArtifactSelect(artifact.id)}
-                    >
-                      <span className="artifact-switcher-icon">
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className="min-w-0 flex-1 text-left">
-                        <span className="block truncate text-sm font-semibold leading-5">{getArtifactHeading(artifact)}</span>
-                        <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                          <span className="section-kicker !text-[0.64rem] !tracking-[0.1em]">{artifact.kind}</span>
-                          <span className="truncate">{getArtifactSupportingLabel(artifact)}</span>
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <ArtifactSelector
+                artifacts={envelope.artifacts}
+                activeArtifactId={activeArtifact.id}
+                getHeading={getArtifactHeading}
+                getSupportingLabel={getArtifactSupportingLabel}
+                kindIcons={kindIcons}
+                onSelect={handleArtifactSelect}
+              />
             </section>
 
             <section className="panel panel-strong fade-up overflow-hidden px-4 py-4 sm:px-5" style={getAnimationStyle(140)}>
@@ -415,7 +406,7 @@ export function ViewerShell() {
             </section>
 
             <section className="print-hide-on-markdown fade-up" style={getAnimationStyle(200)}>
-              <div className="artifact-meta-grid">
+              <div className="artifact-meta-grid" data-testid="artifact-metadata-grid">
                 {getArtifactDetailRows(activeArtifact).map((row) => (
                   <div key={row.label} className="artifact-meta-card">
                     <p className="metric-label">{row.label}</p>
@@ -424,39 +415,14 @@ export function ViewerShell() {
                 ))}
               </div>
 
-              <details className="artifact-disclosure">
-                <summary className="artifact-disclosure-summary">
-                  <span className="section-kicker">Fragment details</span>
-                  <span className="text-sm font-medium text-[color:var(--text-primary)]">Codec, transport, budget, and hash preview</span>
-                </summary>
-                <div className="artifact-disclosure-body">
-                  <p className="text-sm leading-6 text-[color:var(--text-muted)]">{statusTone.message}</p>
-                  <div className="artifact-disclosure-grid">
-                    <div className="metric-card">
-                      <p className="metric-label">Status</p>
-                      <p className="metric-value">{statusTone.label}</p>
-                    </div>
-                    <div className="metric-card">
-                      <p className="metric-label">Budget</p>
-                      <p className="metric-value">{numberFormatter.format(fragmentLength)} / {numberFormatter.format(MAX_FRAGMENT_LENGTH)}</p>
-                    </div>
-                    <div className="metric-card">
-                      <p className="metric-label">Codec</p>
-                      <p className="metric-value">{parsed.ok ? parsed.envelope.codec : "plain"}</p>
-                    </div>
-                    <div className="metric-card">
-                      <p className="metric-label">Transport</p>
-                      <p className="metric-value">Fragment only</p>
-                    </div>
-                  </div>
-                  <div className="artifact-hash-preview">
-                    <p className="metric-label">Hash preview</p>
-                    <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">
-                      {getHashPreview(hash)}
-                    </pre>
-                  </div>
-                </div>
-              </details>
+              <FragmentDetailsDisclosure
+                codec={parsed.ok ? parsed.envelope.codec : "plain"}
+                fragmentLength={numberFormatter.format(fragmentLength)}
+                hashPreview={getHashPreview(hash)}
+                maxLength={numberFormatter.format(MAX_FRAGMENT_LENGTH)}
+                statusLabel={statusTone.label}
+                statusMessage={statusTone.message}
+              />
             </section>
           </section>
         ) : (

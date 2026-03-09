@@ -91,4 +91,27 @@ describe("fragment payload transport", () => {
 
     expect(parsed.envelope.activeArtifactId).toBe("doc");
   });
+
+  it("rejects an oversized decoded payload even when the compressed fragment is short", () => {
+    const hugeEnvelope: PayloadEnvelope = {
+      v: 1,
+      codec: "lz",
+      activeArtifactId: "doc",
+      artifacts: [
+        {
+          id: "doc",
+          kind: "markdown",
+          content: "a".repeat(250000),
+        },
+      ],
+    };
+
+    const parsed = decodeFragment(`#${encodeEnvelope(hugeEnvelope, { codec: "lz" })}`);
+    expect(parsed.ok).toBe(false);
+    if (parsed.ok) {
+      return;
+    }
+
+    expect(parsed.code).toBe("decoded-too-large");
+  });
 });
