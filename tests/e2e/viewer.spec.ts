@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { getFragmentHash, invalidFragments } from "../fixtures/payloads";
-import { goToHash, stabilizePage, waitForViewerState } from "./helpers";
+import { goToHash, stabilizePage, waitForRendererReady, waitForViewerState } from "./helpers";
 
 declare global {
   interface Window {
@@ -49,6 +49,54 @@ test("renders multi-file diffs without mutating the payload hash", async ({ page
   await expect(page.locator(".patch-file-section")).toHaveCount(2);
   await page.locator("button.patch-bundle-link").nth(1).click();
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(beforeHash);
+});
+
+test.describe("mobile UX", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("defaults narrow diff views to unified and gates split mode", async ({ page }) => {
+    await goToHash(page, getFragmentHash("Phase 1 sample diff"));
+    await waitForViewerState(page, "artifact");
+    await waitForRendererReady(page, "diff");
+
+    const diffRenderer = page.getByTestId("renderer-diff");
+    const patchNav = page.locator(".patch-bundle-nav");
+    await expect(diffRenderer).toHaveAttribute("data-mobile-layout", "true");
+    await expect(diffRenderer).toHaveAttribute("data-diff-mode", "unified");
+    await expect(page.getByRole("button", { name: "Open split columns" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Split$/ })).toHaveCount(0);
+    await expect.poll(() => patchNav.evaluate((element) => window.getComputedStyle(element).flexDirection)).toBe("row");
+
+    await page.getByRole("button", { name: "Open split columns" }).click();
+    await expect(diffRenderer).toHaveAttribute("data-diff-mode", "split");
+    await expect(page.getByRole("button", { name: "Back to unified" })).toBeVisible();
+  });
+
+  test("surfaces the try-it action before supporting links on phones", async ({ page }) => {
+    await waitForViewerState(page, "empty");
+
+    const tryItBox = await page.locator(".home-hero-callouts .hero-link-card.is-static").boundingBox();
+    const sourceBox = await page.getByRole("link", { name: /Browse the GitHub repo/i }).boundingBox();
+    const samplesBox = await page.locator(".home-samples-panel").boundingBox();
+    const inspectorBox = await page.locator(".home-inspector-panel").boundingBox();
+
+    expect(tryItBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(sourceBox?.y ?? 0);
+    expect(samplesBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(inspectorBox?.y ?? 0);
+    await expect(page.getByRole("link", { name: /Maintainer kickoff/i })).toBeVisible();
+  });
+
+  test("keeps homepage and artifact metadata in compact two-column grids", async ({ page }) => {
+    await waitForViewerState(page, "empty");
+
+    const homeMetrics = page.locator(".home-inspector-panel .metric-grid");
+    await expect.poll(() => homeMetrics.evaluate((element) => window.getComputedStyle(element).gridTemplateColumns.split(" ").length)).toBe(2);
+
+    await goToHash(page, getFragmentHash("Release bundle"));
+    await waitForViewerState(page, "artifact");
+
+    const artifactMetrics = page.getByTestId("artifact-metadata-grid");
+    await expect.poll(() => artifactMetrics.evaluate((element) => window.getComputedStyle(element).gridTemplateColumns.split(" ").length)).toBe(2);
+  });
 });
 
 test("renders compact CSV payloads without giant whitespace", async ({ page }) => {

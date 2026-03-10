@@ -20,11 +20,15 @@ export function FragmentDetailsDisclosure({
   return (
     <details className="artifact-disclosure" data-testid="fragment-disclosure">
       <summary className="artifact-disclosure-summary">
-        <span className="section-kicker">Fragment details</span>
-        <span className="text-sm font-medium text-[color:var(--text-primary)]">Codec, transport, budget, and hash preview</span>
+        <span className="artifact-disclosure-summary-copy">
+          <span className="section-kicker">Fragment details</span>
+          <span className="artifact-disclosure-title text-sm font-medium text-[color:var(--text-primary)]">
+            Codec, transport, budget, and hash preview
+          </span>
+        </span>
       </summary>
       <div className="artifact-disclosure-body">
-        <p className="text-sm leading-6 text-[color:var(--text-muted)]">{statusMessage}</p>
+        <p className="artifact-disclosure-status text-sm leading-6 text-[color:var(--text-muted)]">{statusMessage}</p>
         <div className="artifact-disclosure-grid">
           <div className="metric-card">
             <p className="metric-label">Status</p>
@@ -45,7 +49,9 @@ export function FragmentDetailsDisclosure({
         </div>
         <div className="artifact-hash-preview">
           <p className="metric-label">Hash preview</p>
-          <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">{hashPreview}</pre>
+          <pre className="artifact-hash-preview-code font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">
+            {hashPreview}
+          </pre>
         </div>
       </div>
     </details>
