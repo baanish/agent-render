@@ -2,6 +2,7 @@ import React from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { DiffFile } from "@git-diff-view/react";
 import { DiffRenderer } from "@/components/renderers/diff-renderer";
 import type { DiffArtifact } from "@/lib/payload/schema";
 
@@ -38,6 +39,12 @@ index 1111111..2222222 100644
 
 const nonDiffPatch = `this is not a unified diff
 just some text that should stay readable
+`;
+
+const binaryPatch = `diff --git a/assets/logo.png b/assets/logo.png
+new file mode 100644
+index 0000000..1111111
+Binary files /dev/null and b/assets/logo.png differ
 `;
 
 function createArtifact(overrides: Partial<DiffArtifact> = {}): DiffArtifact {
@@ -112,6 +119,32 @@ describe("DiffRenderer", () => {
     expect(renderer).toHaveAttribute("data-diff-state", "fallback");
     expect(screen.getByText(/not a valid unified diff/i)).toBeVisible();
     expect(screen.getByTestId("renderer-diff-fallback-raw")).toHaveTextContent("this is not a unified diff");
+  });
+
+  it("falls back to the raw patch when the diff library throws during parsing", async () => {
+    vi.spyOn(DiffFile.prototype, "init").mockImplementation(() => {
+      throw new Error("Invalid hunk header format");
+    });
+
+    render(<DiffRenderer artifact={createArtifact()} />);
+
+    const renderer = await screen.findByTestId("renderer-diff");
+    expect(renderer).toHaveAttribute("data-diff-state", "fallback");
+    expect(screen.getByText(/could not be rendered as a valid unified diff/i)).toBeVisible();
+    expect(screen.getByText(/parser detail: Invalid hunk header format/i)).toBeVisible();
+    expect(screen.getByTestId("renderer-diff-fallback-raw")).toHaveTextContent('export const hello = "new";');
+  });
+
+  it("skips diff parsing for binary patches and keeps the rich renderer shell", async () => {
+    const initSpy = vi.spyOn(DiffFile.prototype, "init");
+
+    render(<DiffRenderer artifact={createArtifact({ patch: binaryPatch, filename: "assets/logo.png" })} />);
+
+    const renderer = await screen.findByTestId("renderer-diff");
+    expect(renderer).toHaveAttribute("data-diff-state", "rich");
+    expect(initSpy).not.toHaveBeenCalled();
+    expect(screen.getByText(/binary patch preview is not expanded/i)).toBeVisible();
+    expect(screen.queryByText(/could not be rendered as a valid unified diff/i)).not.toBeInTheDocument();
   });
 
   it("copies the raw patch from the fallback view", async () => {

@@ -18,7 +18,7 @@ const MOBILE_DIFF_MEDIA_QUERY = `(max-width: ${NARROW_DIFF_BREAKPOINT}px)`;
 
 type RenderableDiffFile = {
   meta: ReturnType<typeof parseGitPatchBundle>[number];
-  diffFile: DiffFile;
+  diffFile: DiffFile | null;
 };
 
 type DiffRenderState =
@@ -80,6 +80,40 @@ function getFallbackState(artifact: DiffArtifact, message: string, error?: unkno
     message,
     rawPatch: getRawPatch(artifact),
     detail,
+  };
+}
+
+function buildRenderablePatchFile(
+  patchFile: ReturnType<typeof parseGitPatchBundle>[number],
+  artifact: DiffArtifact,
+  resolvedTheme: ReturnType<typeof useTheme>["resolvedTheme"],
+): RenderableDiffFile {
+  if (patchFile.isBinary) {
+    return {
+      meta: patchFile,
+      diffFile: null,
+    };
+  }
+
+  const language = detectCodeLanguage(patchFile.newPath ?? patchFile.oldPath ?? undefined, artifact.language);
+  const diffFile = new DiffFile(
+    patchFile.oldPath ? `a/${patchFile.oldPath}` : "/dev/null",
+    "",
+    patchFile.newPath ? `b/${patchFile.newPath}` : "/dev/null",
+    "",
+    [patchFile.patch],
+    language,
+    language,
+  );
+
+  diffFile.initTheme(resolvedTheme === "dark" ? "dark" : "light");
+  diffFile.init();
+  diffFile.buildSplitDiffLines();
+  diffFile.buildUnifiedDiffLines();
+
+  return {
+    meta: patchFile,
+    diffFile,
   };
 }
 
@@ -257,25 +291,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
 
       try {
         const patchFiles = parseGitPatchBundle(artifact.patch);
-        const diffFiles = patchFiles.map((patchFile) => {
-          const language = detectCodeLanguage(patchFile.newPath ?? patchFile.oldPath ?? undefined, artifact.language);
-          const diffFile = new DiffFile(
-            patchFile.oldPath ? `a/${patchFile.oldPath}` : "/dev/null",
-            "",
-            patchFile.newPath ? `b/${patchFile.newPath}` : "/dev/null",
-            "",
-            [patchFile.patch],
-            language,
-            language,
-          );
-
-          diffFile.initTheme(resolvedTheme === "dark" ? "dark" : "light");
-          diffFile.init();
-          diffFile.buildSplitDiffLines();
-          diffFile.buildUnifiedDiffLines();
-
-          return { meta: patchFile, diffFile };
-        });
+        const diffFiles = patchFiles.map((patchFile) => buildRenderablePatchFile(patchFile, artifact, resolvedTheme));
 
         return { kind: "rich", diffFiles };
       } catch (error) {
@@ -439,7 +455,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
                       <span className="mono-pill">{meta.oldPath} -&gt; {meta.newPath}</span>
                     ) : null}
                   </header>
-                  {meta.isBinary ? (
+                  {meta.isBinary || !diffFile ? (
                     <div className="artifact-empty-state">Binary patch preview is not expanded. Download the patch to inspect the raw binary diff headers.</div>
                   ) : (
                     <DiffView
