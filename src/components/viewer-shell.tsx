@@ -34,6 +34,7 @@ import {
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
+import { LinkCreator } from "@/components/home/link-creator";
 import { ArtifactSelector } from "@/components/viewer/artifact-selector";
 import { FragmentDetailsDisclosure } from "@/components/viewer/fragment-details-disclosure";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -533,6 +534,8 @@ export function ViewerShell() {
                 </div>
               </div>
             </section>
+
+            <LinkCreator onPreviewHash={setFragmentHash} />
 
             <div className="empty-state-lower-grid home-empty-lower-grid print-hide-on-markdown">
               <section className="home-samples-panel panel fade-up px-3 py-3 sm:px-6 sm:py-5" style={getAnimationStyle(140)}>

@@ -18,6 +18,42 @@ test("renders the empty state", async ({ page }) => {
   await expect(page.getByText("Share artifacts in the URL, keep the server out of the payload.")).toBeVisible();
 });
 
+test("creates, copies, and previews a generated homepage link", async ({ page }) => {
+  await waitForViewerState(page, "empty");
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: (value: string) => {
+          window.localStorage.setItem("copied-link", value);
+          return Promise.resolve();
+        },
+      },
+    });
+  });
+
+  await page.getByRole("button", { name: "code" }).click();
+  await page.getByLabel("Title").fill("Homepage snippet");
+  await page.getByLabel("Filename").fill("snippet.ts");
+  await page.getByRole("textbox", { name: "Language", exact: true }).fill("ts");
+  await page.getByRole("textbox", { name: /^Content\b/ }).fill("export const value = 42;\n");
+  await page.getByRole("button", { name: "Generate link" }).click();
+
+  const generatedLink = page.getByLabel("Generated agent-render link");
+  await expect(generatedLink).toHaveValue(/#agent-render=/);
+  await expect(page.getByText(/chars$/).first()).toBeVisible();
+
+  await page.getByRole("button", { name: "Copy link" }).click();
+  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("copied-link"))).toContain("#agent-render=");
+
+  await page.getByRole("button", { name: "Preview here" }).click();
+  await waitForViewerState(page, "artifact");
+  await expect(page.locator("[data-active-kind='code']")).toBeVisible();
+  await expect(page.getByText("Homepage snippet").first()).toBeVisible();
+});
+
 test("renders markdown payloads and triggers print", async ({ page }) => {
   await goToHash(page, getFragmentHash("Maintainer kickoff"));
   await waitForViewerState(page, "artifact");
