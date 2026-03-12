@@ -2,6 +2,7 @@ import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from
 import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
+import { arxCompress, arxCompressUnicode, arxCompressBMP, arxDecompress } from "@/lib/payload/arx-codec";
 import {
   codecs,
   MAX_DECODED_PAYLOAD_LENGTH,
@@ -56,6 +57,8 @@ function encodePayload(json: string, codec: PayloadCodec): string {
       return compressToEncodedURIComponent(json);
     case "deflate":
       return toBase64UrlBytes(deflateSync(strToU8(json)));
+    case "arx":
+      throw new Error("arx codec requires async encoding — use encodeEnvelopeAsync instead.");
   }
 }
 
@@ -67,6 +70,8 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
       return decompressFromEncodedURIComponent(encoded);
     case "deflate":
       return strFromU8(inflateSync(fromBase64UrlBytes(encoded)));
+    case "arx":
+      throw new Error("arx codec requires async decoding — use decodeFragmentAsync instead.");
   }
 }
 
@@ -89,8 +94,25 @@ function getCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
   return requested.filter((codec, index) => requested.indexOf(codec) === index);
 }
 
+function getSyncCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
+  return getCandidateCodecs(options).filter((c) => c !== "arx");
+}
+
+function getAsyncCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
+  if (options.codec) {
+    return [options.codec];
+  }
+
+  if (options.preferCompressed === false) {
+    return ["plain"];
+  }
+
+  const requested = options.codecPriority ?? ["arx", "deflate", "lz", "plain"];
+  return requested.filter((codec, index) => requested.indexOf(codec) === index);
+}
+
 function buildCandidates(envelope: PayloadEnvelope, options: EncodeOptions): CandidateFragment[] {
-  const codecsToTry = getCandidateCodecs(options);
+  const codecsToTry = getSyncCandidateCodecs(options);
   const wireModes = options.preferPacked === false ? [false] : [true, false];
   const candidates: CandidateFragment[] = [];
 
@@ -101,6 +123,43 @@ function buildCandidates(envelope: PayloadEnvelope, options: EncodeOptions): Can
         codec,
         packed,
       });
+    }
+  }
+
+  return candidates;
+}
+
+async function buildArxCandidates(envelope: PayloadEnvelope, packed: boolean): Promise<CandidateFragment[]> {
+  const payloadEnvelope = { ...envelope, codec: "arx" as PayloadCodec };
+  const json = JSON.stringify(packed ? packEnvelope(payloadEnvelope) : payloadEnvelope);
+  const [ascii, unicode, bmp] = await Promise.all([
+    arxCompress(json),
+    arxCompressUnicode(json),
+    arxCompressBMP(json),
+  ]);
+  return [
+    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${ascii}`, codec: "arx", packed },
+    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${unicode}`, codec: "arx", packed },
+    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${bmp}`, codec: "arx", packed },
+  ];
+}
+
+async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {
+  const codecsToTry = getAsyncCandidateCodecs(options);
+  const wireModes = options.preferPacked === false ? [false] : [true, false];
+  const candidates: CandidateFragment[] = [];
+
+  for (const codec of codecsToTry) {
+    for (const packed of wireModes) {
+      if (codec === "arx") {
+        candidates.push(...await buildArxCandidates(envelope, packed));
+      } else {
+        candidates.push({
+          value: buildFragment(envelope, codec, packed),
+          codec,
+          packed,
+        });
+      }
     }
   }
 
@@ -123,6 +182,12 @@ function selectCandidate(candidates: CandidateFragment[], budget?: number): Cand
 
 export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions = {}): string {
   const selected = selectCandidate(buildCandidates(envelope, options), options.targetMaxFragmentLength);
+  return selected.value;
+}
+
+export async function encodeEnvelopeAsync(envelope: PayloadEnvelope, options: EncodeOptions = {}): Promise<string> {
+  const candidates = await buildCandidatesAsync(envelope, options);
+  const selected = selectCandidate(candidates, options.targetMaxFragmentLength);
   return selected.value;
 }
 
@@ -187,6 +252,15 @@ export function decodeFragment(hash: string): ParsedPayload {
   }
 
   const codec = codecRaw as PayloadCodec;
+
+  if (codec === "arx") {
+    return {
+      ok: false,
+      code: "invalid-format",
+      message: "arx codec requires async decoding — use decodeFragmentAsync instead.",
+    };
+  }
+
   let parsed: unknown;
 
   try {
@@ -212,6 +286,10 @@ export function decodeFragment(hash: string): ParsedPayload {
     };
   }
 
+  return resolveEnvelope(parsed, fragment.length);
+}
+
+function resolveEnvelope(parsed: unknown, rawLength: number): ParsedPayload {
   const decodedEnvelope = unpackEnvelope(parsed);
 
   if (!isPayloadEnvelope(decodedEnvelope)) {
@@ -234,6 +312,70 @@ export function decodeFragment(hash: string): ParsedPayload {
   return {
     ok: true,
     envelope: normalized.envelope,
-    rawLength: fragment.length,
+    rawLength,
   };
+}
+
+export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> {
+  const fragment = hash.startsWith("#") ? hash.slice(1) : hash;
+
+  if (!fragment) {
+    return { ok: false, code: "empty", message: "Add a fragment payload to start rendering artifacts." };
+  }
+
+  if (fragment.length > MAX_FRAGMENT_LENGTH) {
+    return { ok: false, code: "too-large", message: `This payload exceeds the supported fragment budget of ${MAX_FRAGMENT_LENGTH.toLocaleString()} characters.` };
+  }
+
+  const [key, value] = fragment.split("=", 2);
+
+  if (key !== PAYLOAD_FRAGMENT_KEY || !value) {
+    return { ok: false, code: "missing-key", message: `Expected a fragment starting with #${PAYLOAD_FRAGMENT_KEY}=...` };
+  }
+
+  const firstDot = value.indexOf(".");
+  const secondDot = value.indexOf(".", firstDot + 1);
+
+  if (firstDot <= 0 || secondDot <= firstDot + 1 || secondDot >= value.length - 1) {
+    return { ok: false, code: "invalid-format", message: "The fragment format is invalid. Expected v1.<codec>.<payload>." };
+  }
+
+  const version = value.slice(0, firstDot);
+  const codecRaw = value.slice(firstDot + 1, secondDot);
+  const encoded = value.slice(secondDot + 1);
+
+  if (version !== "v1") {
+    return { ok: false, code: "invalid-format", message: "The fragment format is invalid. Expected v1.<codec>.<payload>." };
+  }
+
+  if (!codecs.includes(codecRaw as PayloadCodec)) {
+    return { ok: false, code: "invalid-format", message: `Unsupported codec "${codecRaw}". Supported codecs are ${codecs.join(", ")}.` };
+  }
+
+  const codec = codecRaw as PayloadCodec;
+  let parsed: unknown;
+
+  try {
+    let decodedJson: string | null;
+
+    if (codec === "arx") {
+      decodedJson = await arxDecompress(encoded);
+    } else {
+      decodedJson = decodePayload(encoded, codec);
+    }
+
+    if (decodedJson === null) {
+      throw new Error("Decoded payload was empty.");
+    }
+
+    if (decodedJson.length > MAX_DECODED_PAYLOAD_LENGTH) {
+      return { ok: false, code: "decoded-too-large", message: `The decoded payload exceeds the supported limit of ${MAX_DECODED_PAYLOAD_LENGTH.toLocaleString()} characters.` };
+    }
+
+    parsed = JSON.parse(decodedJson);
+  } catch {
+    return { ok: false, code: "invalid-json", message: "The fragment payload could not be decoded as valid JSON." };
+  }
+
+  return resolveEnvelope(parsed, fragment.length);
 }

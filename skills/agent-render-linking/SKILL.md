@@ -32,11 +32,12 @@ Supported codecs:
 - `plain`: base64url-encoded JSON envelope
 - `lz`: `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate`: deflate-compressed UTF-8 JSON bytes encoded as base64url
+- `arx`: domain-dictionary substitution + brotli (quality 11) + base76/base1k/baseBMP encoding (~70% smaller than deflate with baseBMP). Fetch the shared dictionary from `https://agent-render.com/arx-dictionary.json` to apply substitutions locally before brotli compression. Three encoding tiers: baseBMP (~62k safe BMP code points, ~15.92 bits/char, best density), base1k (1774 Unicode code points U+00A1–U+07FF), and base76 (ASCII fallback). The encoder tries all three and picks the shortest.
 - packed wire mode (`p: 1`) may be used automatically to shorten transport keys
 
 Prefer:
 1. shortest valid fragment for the target surface
-2. codec priority `deflate -> lz -> plain` unless explicitly overridden
+2. codec priority `arx -> deflate -> lz -> plain` unless explicitly overridden
 3. packed wire mode when available
 
 ## Envelope shape
@@ -167,6 +168,34 @@ For `deflate`:
 4. Base64url-encode the compressed bytes
 5. Append it after `v1.deflate.`
 
+## Shared arx dictionary
+
+The `arx` codec uses a substitution dictionary to replace common patterns with short byte sequences before brotli compression. The dictionary is served as a static JSON file:
+
+- **Endpoint**: `https://agent-render.com/arx-dictionary.json`
+- **Pre-compressed**: `https://agent-render.com/arx-dictionary.json.br` (brotli, ~929 bytes)
+
+The dictionary contains two arrays:
+
+- `singleByteSlots`: up to 25 patterns mapped to single control bytes (highest compression value)
+- `extendedSlots`: additional patterns mapped to two-byte sequences (0x00 prefix + index)
+
+To use the dictionary for local `arx` encoding:
+
+1. Fetch `https://agent-render.com/arx-dictionary.json`
+2. Apply substitutions in order: for each entry, replace all occurrences of the pattern in the serialized JSON envelope with its corresponding control byte(s)
+3. Brotli-compress the substituted bytes at quality 11
+4. Encode the compressed bytes using **baseBMP** (preferred, smallest), **base1k** (mid-tier), or **base76** (ASCII fallback)
+    - BaseBMP uses ~62k safe BMP code points (U+00A1–U+FFEF, skipping surrogates, combining marks, zero-width chars). Prefix the encoded string with U+FFF0 marker. ~15.92 bits/char
+    - Base1k uses 1774 Unicode code points (U+00A1–U+07FF, skipping combining diacriticals and soft hyphen). ~10.79 bits/char
+    - Base76 uses 77 ASCII fragment-safe characters — use this if the target surface cannot handle Unicode in URL fragments. ~6.27 bits/char
+    - Try all three and pick the shortest
+5. Prepend `v1.arx.` to form the fragment payload
+
+The dictionary includes JSON envelope boilerplate patterns (like `","kind":"markdown","content":"`), JSON-escaped markdown syntax, programming keywords, and common English words. The viewer loads the same dictionary on startup to reverse substitutions during decode.
+
+If the dictionary fetch fails, fall back to `deflate` codec.
+
 ## Practical limits
 
 Respect these limits:
@@ -175,7 +204,7 @@ Respect these limits:
 - strict Discord practical budget for linked text workflows: about 1,500 characters
 
 If a link is getting too large:
-1. try `deflate` first, then `lz`, then `plain`
+1. try `arx` first, then `deflate`, then `lz`, then `plain`
 2. allow packed wire mode
 3. trim unnecessary prose or metadata
 4. prefer a focused artifact over a bloated one
@@ -185,7 +214,7 @@ If a link is getting too large:
 
 When the caller provides a strict budget (for example 1,500 chars):
 
-1. encode using all available candidates (`deflate/lz/plain`, packed and non-packed)
+1. encode using all available candidates (`arx/deflate/lz/plain`, packed and non-packed)
 2. choose the shortest fragment that is within budget
 3. if no candidate fits, return the shortest fragment plus a clear budget failure explanation
 

@@ -17,6 +17,7 @@ Supported codecs:
 - `plain` - base64url-encoded JSON
 - `lz` - `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate` - deflate-compressed UTF-8 JSON bytes encoded as base64url
+- `arx` - domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding. Three encoding tiers are supported: **base76** (ASCII-only, 77 fragment-safe chars), **base1k** (Unicode, 1774 chars from U+00A1–U+07FF), and **baseBMP** (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). The encoder tries all three and picks the shortest. BaseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes. BaseBMP payloads are prefixed with a U+FFF0 marker for detection. The substitution dictionary is served at `/arx-dictionary.json` (with a pre-compressed `/arx-dictionary.json.br` variant) so agents can fetch it for local compression.
 
 The encoder now also supports a packed wire representation (`p: 1`) that shortens key names before compression. Packed mode is transport-only; decoded envelopes normalize back to the standard shape.
 
@@ -79,21 +80,31 @@ Packed key map:
 - Supported decoded payload budget: 200,000 characters
 - Larger payloads should fail with a clear error before rendering
 - Compression is selected automatically by shortest fragment across packed/non-packed candidates
-- Default codec priority is `deflate -> lz -> plain`
+- Default sync codec priority is `deflate -> lz -> plain`
+- Default async codec priority is `arx -> deflate -> lz -> plain`
 - Optional budget-aware encoding can target strict limits like 1,500 chars and returns the shortest fragment when none fit
 
 ### AGENTS.md POC benchmark
 
 Running `npm run codec:poc` (single markdown artifact containing `AGENTS.md`) currently yields:
 
-- `plain`: 10,584 chars
-- `plain+packed`: 10,522 chars
-- `lz`: 5,622 chars
-- `lz+packed`: 5,583 chars
-- `deflate`: 4,328 chars
-- `deflate+packed`: 4,312 chars (best)
+- `plain`: ~10,737 chars
+- `plain+packed`: ~10,676 chars
+- `lz`: ~5,703 chars
+- `lz+packed`: ~5,674 chars
+- `deflate`: ~4,392 chars
+- `deflate+packed`: ~4,375 chars
+- `arx` (base76): ~3,311 chars
+- `arx` (base1k): ~1,923 chars
+- `arx` (baseBMP): ~1,306 chars (best)
 
-Result: aggressive transport improves size materially (~23.3% vs `lz` baseline), but this payload still does not fit a 1,500-char budget.
+Result: `arx` with baseBMP encoding achieves ~70% smaller fragments than `deflate` on this payload (6.13x compression ratio). The improvement comes from brotli compression (~20% better than deflate), baseBMP encoding (~15.92 bits/char using ~62k safe BMP code points), and domain dictionary substitution. Base1k and ASCII base76 remain available as fallbacks for environments that cannot handle wide Unicode in URL fragments.
+
+Timing (AGENTS.md 8000 chars, avg of 10 runs):
+- `deflate+base64url`: ~0.1ms
+- `arx+base76`: ~14.6ms
+- `arx+base1k`: ~11.1ms
+- `arx+baseBMP`: ~9.7ms
 
 ## Active artifact behavior
 

@@ -1,5 +1,5 @@
 import { normalizeEnvelope } from "@/lib/payload/envelope";
-import { encodeEnvelope } from "@/lib/payload/fragment";
+import { encodeEnvelope, encodeEnvelopeAsync } from "@/lib/payload/fragment";
 import { MAX_FRAGMENT_LENGTH, type ArtifactKind, type ArtifactPayload, type DiffArtifact, type PayloadEnvelope } from "@/lib/payload/schema";
 
 export type LinkCreatorDraft = {
@@ -112,6 +112,39 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
   }
 
   const hash = `#${encodeEnvelope(normalized.envelope)}`;
+  const fragmentLength = hash.length - 1;
+
+  if (fragmentLength > MAX_FRAGMENT_LENGTH) {
+    throw new Error(
+      `This link needs ${fragmentLength.toLocaleString()} fragment characters, which is over the ${MAX_FRAGMENT_LENGTH.toLocaleString()} character limit.`,
+    );
+  }
+
+  let url = hash;
+
+  if (baseUrl) {
+    const nextUrl = new URL(baseUrl);
+    nextUrl.hash = hash.slice(1);
+    url = nextUrl.toString();
+  }
+
+  return {
+    envelope: normalized.envelope,
+    artifact: normalized.envelope.artifacts[0],
+    hash,
+    url,
+    fragmentLength,
+  };
+}
+
+export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, baseUrl?: string): Promise<GeneratedArtifactLink> {
+  const normalized = normalizeEnvelope(createDraftEnvelope(draft));
+
+  if (!normalized.ok) {
+    throw new Error(normalized.message);
+  }
+
+  const hash = `#${await encodeEnvelopeAsync(normalized.envelope)}`;
   const fragmentLength = hash.length - 1;
 
   if (fragmentLength > MAX_FRAGMENT_LENGTH) {

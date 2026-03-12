@@ -88,8 +88,10 @@ The fragment protocol keeps the JSON envelope stable and treats compression stri
 - `plain` stores base64url-encoded JSON for compatibility and debugging
 - `lz` stores compressed JSON via `lz-string` when it produces a smaller fragment
 - `deflate` stores deflate-compressed UTF-8 JSON bytes when it outperforms other codecs
+- `arx` applies domain-dictionary substitution, brotli compression (quality 11), and binary-to-text encoding for best-in-class compression. Three encoding tiers are used: base76 (ASCII, 77 fragment-safe chars), base1k (Unicode, 1774 chars from U+00A1–U+07FF), and baseBMP (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). The encoder tries all three and picks the shortest — baseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76, achieving ~70% smaller fragments than deflate on typical payloads (6.13x compression ratio for 8k markdown). Full pipeline timing is ~10ms for 8k payloads. The substitution dictionary is served as a static file at `/arx-dictionary.json` so agents can fetch it for local compression; a pre-compressed `/arx-dictionary.json.br` variant is also available. The viewer loads the dictionary on startup and falls back to a built-in table if the fetch fails.
 - packed wire mode (`p: 1`) shortens transport keys before compression, then unpacks back to the standard envelope during decode
-- automatic codec selection now tries `deflate -> lz -> plain` and compares packed + non-packed candidates
+- automatic async codec selection tries `arx -> deflate -> lz -> plain` and compares packed + non-packed candidates
+- sync codec selection (used by examples and legacy paths) tries `deflate -> lz -> plain`
 - decode enforces both fragment length and decoded payload size ceilings before UI rendering
 - invalid bundle state is normalized or rejected before renderers mount
 

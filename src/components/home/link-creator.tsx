@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight, Check, Copy, ExternalLink, FileCode2, FileDiff, FileJson2, FileSpreadsheet, FileText, Link2 } from "lucide-react";
-import { createGeneratedArtifactLink, defaultLinkCreatorDraft, getBodyFieldLabel, type GeneratedArtifactLink, type LinkCreatorDraft } from "@/lib/payload/link-creator";
+import { createGeneratedArtifactLinkAsync, defaultLinkCreatorDraft, getBodyFieldLabel, type GeneratedArtifactLink, type LinkCreatorDraft } from "@/lib/payload/link-creator";
 import { artifactKinds, type ArtifactKind } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
 
@@ -95,9 +95,9 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
     }));
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     try {
-      const nextGeneratedLink = createGeneratedArtifactLink(draft, getBaseUrl());
+      const nextGeneratedLink = await createGeneratedArtifactLinkAsync(draft, getBaseUrl());
       setGeneratedLink(nextGeneratedLink);
       setGeneratedSignature(draftSignature);
       setError(null);

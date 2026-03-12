@@ -36,6 +36,7 @@
     "@git-diff-view/react": "^0.1.1",
     "@replit/codemirror-indentation-markers": "^6.5.3",
     "@tanstack/react-table": "^8.21.3",
+    "brotli-wasm": "^3.0.1",
     "clsx": "^2.1.1",
     "fflate": "^0.8.2",
     "lucide-react": "^0.577.0",
