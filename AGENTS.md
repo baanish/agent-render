@@ -224,3 +224,11 @@ Be conservative with product claims and precise with protocol changes.
 - readable across chat platforms
 
 Protect that simplicity.
+
+## Cursor Cloud specific instructions
+
+This is a single-service Next.js static-export app. No databases, Docker, or external APIs are needed.
+
+- **Dev server**: `npm run dev` (port 3000). All development commands are listed in the `Development commands` section above.
+- **Playwright E2E**: visual regression screenshot tests (`tests/e2e/visual.spec.ts`) will fail in Cloud VMs due to font-rendering differences from CI. The 8 visual snapshot mismatches are environment-specific, not code bugs. Functional E2E tests should all pass.
+- **Playwright browsers**: `npx playwright install --with-deps chromium` is needed once per fresh VM before running `npm run test:e2e`.
