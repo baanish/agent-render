@@ -32,6 +32,13 @@ describe("fragment payload transport", () => {
     expect(parsed.rawLength).toBeGreaterThan(0);
   });
 
+
+  it("throws a clear error when sync encoding is explicitly asked to use arx", () => {
+    expect(() => encodeEnvelope(envelope, { codec: "arx" })).toThrow(
+      "arx codec requires async encoding — use encodeEnvelopeAsync instead.",
+    );
+  });
+
   it("rejects fragments with the wrong key", () => {
     const parsed = decodeFragment("#not-agent-render=v1.plain.abc");
 

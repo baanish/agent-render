@@ -194,7 +194,7 @@ To use the dictionary for local `arx` encoding:
     - Try all three and pick the shortest
 5. Prepend `v1.arx.<dictVersion>.` to form the fragment payload (use the same dictionary version used for substitution)
 
-The dictionary includes JSON envelope boilerplate patterns (like `","kind":"markdown","content":"`), JSON-escaped markdown syntax, programming keywords, and common English words. The viewer loads the same dictionary on startup to reverse substitutions during decode.
+The dictionary includes JSON envelope boilerplate patterns (like `","kind":"Markdown","content":"`), JSON-escaped Markdown syntax, programming keywords, and common English words. The viewer loads the same dictionary on startup to reverse substitutions during decode.
 
 If the dictionary fetch fails, fall back to `deflate` codec.
 

@@ -95,7 +95,13 @@ function getCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
 }
 
 function getSyncCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
-  return getCandidateCodecs(options).filter((c) => c !== "arx");
+  const candidates = getCandidateCodecs(options);
+
+  if (candidates.length === 1 && candidates[0] === "arx") {
+    return ["arx"];
+  }
+
+  return candidates.filter((c) => c !== "arx");
 }
 
 function getAsyncCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
@@ -325,6 +331,15 @@ function decodeArxEncodedPayload(encoded: string): string {
   }
 }
 
+
+function resolveArxDictVersion(version: number | null): boolean {
+  if (version === null) {
+    return true;
+  }
+
+  return version === getActiveDictVersion();
+}
+
 export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> {
   const fragment = hash.startsWith("#") ? hash.slice(1) : hash;
 
@@ -362,22 +377,41 @@ export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> 
   }
 
   const codec = codecRaw as PayloadCodec;
-  let encoded = remainder;
-
-  if (codec === "arx") {
-    const thirdDot = remainder.indexOf(".");
-    if (thirdDot > 0 && /^\d+$/.test(remainder.slice(0, thirdDot))) {
-      encoded = remainder.slice(thirdDot + 1);
-    }
-    encoded = decodeArxEncodedPayload(encoded);
-  }
   let parsed: unknown;
 
   try {
     let decodedJson: string | null;
 
     if (codec === "arx") {
-      decodedJson = await arxDecompress(encoded);
+      const thirdDot = remainder.indexOf(".");
+      const parsedDictVersion =
+        thirdDot > 0 && /^\d+$/.test(remainder.slice(0, thirdDot))
+          ? Number.parseInt(remainder.slice(0, thirdDot), 10)
+          : null;
+      const versionedPayload = parsedDictVersion === null ? remainder : remainder.slice(thirdDot + 1);
+      const fallbackPayload = remainder;
+      const useVersionedPayload = resolveArxDictVersion(parsedDictVersion);
+      const decodeAttempts = useVersionedPayload
+        ? [decodeArxEncodedPayload(versionedPayload)]
+        : [decodeArxEncodedPayload(fallbackPayload), decodeArxEncodedPayload(versionedPayload)];
+
+      let lastError: Error | null = null;
+      let decodedFromAttempt: string | null = null;
+
+      for (const encodedAttempt of decodeAttempts) {
+        try {
+          decodedFromAttempt = await arxDecompress(encodedAttempt);
+          break;
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error("Unknown arx decode error");
+        }
+      }
+
+      if (decodedFromAttempt === null) {
+        throw lastError ?? new Error("Failed to decode arx fragment");
+      }
+
+      decodedJson = decodedFromAttempt;
     } else {
       decodedJson = decodePayload(encoded, codec);
     }
