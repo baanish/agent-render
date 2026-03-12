@@ -413,7 +413,7 @@ export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> 
 
       decodedJson = decodedFromAttempt;
     } else {
-      decodedJson = decodePayload(encoded, codec);
+      decodedJson = decodePayload(remainder, codec);
     }
 
     if (decodedJson === null) {
