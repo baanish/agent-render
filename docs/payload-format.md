@@ -7,7 +7,8 @@ The project uses a fragment-based payload so the raw artifact content stays in t
 ## Fragment shape
 
 ```text
-#agent-render=v1.<codec>.<payload>
+#agent-render=v1.<codec>.<payload>    (plain | lz | deflate)
+#agent-render=v1.arx.<dictVersion>.<payload>    (arx)
 ```
 
 The fragment protocol includes version and codec in the outer format so unsupported formats fail cleanly.
@@ -17,7 +18,7 @@ Supported codecs:
 - `plain` - base64url-encoded JSON
 - `lz` - `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate` - deflate-compressed UTF-8 JSON bytes encoded as base64url
-- `arx` - domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding. Three encoding tiers are supported: **base76** (ASCII-only, 77 fragment-safe chars), **base1k** (Unicode, 1774 chars from U+00A1–U+07FF), and **baseBMP** (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). The encoder tries all three and picks the shortest. BaseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes. BaseBMP payloads are prefixed with a U+FFF0 marker for detection. The substitution dictionary is served at `/arx-dictionary.json` (with a pre-compressed `/arx-dictionary.json.br` variant) so agents can fetch it for local compression.
+- `arx` - domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding. arx fragments include dictionary version metadata in the outer format (`v1.arx.<dictVersion>.<payload>`) so links stay portable across dictionary updates. Three encoding tiers are supported: **base76** (ASCII-only, 77 fragment-safe chars), **base1k** (Unicode, 1774 chars from U+00A1–U+07FF), and **baseBMP** (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). The encoder tries all three and picks the shortest. BaseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes. BaseBMP payloads are prefixed with a U+FFF0 marker for detection. The substitution dictionary is served at `/arx-dictionary.json` (with a pre-compressed `/arx-dictionary.json.br` variant) so agents can fetch it for local compression.
 
 The encoder now also supports a packed wire representation (`p: 1`) that shortens key names before compression. Packed mode is transport-only; decoded envelopes normalize back to the standard shape.
 

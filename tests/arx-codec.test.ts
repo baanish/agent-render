@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { encodeBase76, decodeBase76, encodeBase1k, decodeBase1k, isBase1kEncoded, encodeBaseBMP, decodeBaseBMP, isBaseBMPEncoded, arxCompress, arxCompressUnicode, arxCompressBMP, arxDecompress } from "@/lib/payload/arx-codec";
+import {
+  encodeBase76,
+  decodeBase76,
+  encodeBase1k,
+  decodeBase1k,
+  isBase1kEncoded,
+  encodeBaseBMP,
+  decodeBaseBMP,
+  isBaseBMPEncoded,
+  arxCompress,
+  arxCompressUnicode,
+  arxCompressBMP,
+  arxDecompress,
+  getActiveDictVersion,
+} from "@/lib/payload/arx-codec";
 import { encodeEnvelopeAsync, decodeFragmentAsync } from "@/lib/payload/fragment";
 import type { PayloadEnvelope } from "@/lib/payload/schema";
 
@@ -181,7 +195,7 @@ describe("arx fragment round-trip", () => {
 
   it("round-trips an envelope through arx codec", async () => {
     const hash = `#${await encodeEnvelopeAsync(envelope, { codec: "arx" })}`;
-    expect(hash).toContain("v1.arx.");
+    expect(hash).toContain(`v1.arx.${getActiveDictVersion()}.`);
 
     const parsed = await decodeFragmentAsync(hash);
     expect(parsed.ok).toBe(true);
@@ -226,6 +240,23 @@ describe("arx fragment round-trip", () => {
     };
 
     const autoHash = await encodeEnvelopeAsync(bigEnvelope);
-    expect(autoHash).toContain("v1.arx.");
+    expect(autoHash).toContain(`v1.arx.${getActiveDictVersion()}.`);
+  });
+
+  it("decodes arx fragments when unicode payload chars are percent-escaped", async () => {
+    const hash = `#${await encodeEnvelopeAsync(envelope, { codec: "arx" })}`;
+    const escapedHash = hash.replace(/[^\x00-\x7F]/g, (char) => encodeURIComponent(char));
+
+    const parsed = await decodeFragmentAsync(escapedHash);
+    expect(parsed.ok).toBe(true);
+  });
+
+  it("decodes legacy arx fragments without dictionary version segment", async () => {
+    const hash = `#${await encodeEnvelopeAsync(envelope, { codec: "arx" })}`;
+    const currentPrefix = `v1.arx.${getActiveDictVersion()}.`;
+    const legacyHash = hash.replace(currentPrefix, "v1.arx.");
+
+    const parsed = await decodeFragmentAsync(legacyHash);
+    expect(parsed.ok).toBe(true);
   });
 });

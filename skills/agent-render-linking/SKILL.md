@@ -25,7 +25,8 @@ Keep the artifact content in the URL fragment, not in normal query params.
 Use this fragment shape:
 
 ```text
-#agent-render=v1.<codec>.<payload>
+#agent-render=v1.<codec>.<payload>                (plain | lz | deflate)
+#agent-render=v1.arx.<dictVersion>.<payload>   (arx)
 ```
 
 Supported codecs:
@@ -148,7 +149,8 @@ Set `activeArtifactId` to the artifact that should open first.
 Construct the final URL as:
 
 ```text
-https://agent-render.com/#agent-render=v1.<codec>.<payload>
+https://agent-render.com/#agent-render=v1.<codec>.<payload>                (plain | lz | deflate)
+https://agent-render.com/#agent-render=v1.arx.<dictVersion>.<payload>       (arx)
 ```
 
 For `plain`:
@@ -190,7 +192,7 @@ To use the dictionary for local `arx` encoding:
     - Base1k uses 1774 Unicode code points (U+00A1–U+07FF, skipping combining diacriticals and soft hyphen). ~10.79 bits/char
     - Base76 uses 77 ASCII fragment-safe characters — use this if the target surface cannot handle Unicode in URL fragments. ~6.27 bits/char
     - Try all three and pick the shortest
-5. Prepend `v1.arx.` to form the fragment payload
+5. Prepend `v1.arx.<dictVersion>.` to form the fragment payload (use the same dictionary version used for substitution)
 
 The dictionary includes JSON envelope boilerplate patterns (like `","kind":"markdown","content":"`), JSON-escaped markdown syntax, programming keywords, and common English words. The viewer loads the same dictionary on startup to reverse substitutions during decode.
 

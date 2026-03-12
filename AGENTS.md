@@ -23,7 +23,7 @@ Core product traits right now:
 Treat these as core constraints unless the owner explicitly changes the product direction.
 
 - The app is a single exported client-side shell, not a backend product.
-- Artifact payloads live in the URL fragment, using `#agent-render=v1.<codec>.<payload>`.
+- Artifact payloads live in the URL fragment, using `#agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`, and `#agent-render=v1.arx.<dictVersion>.<payload>` for `arx`.
 - The deployed host should not receive artifact contents as part of the initial page request.
 - Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.
 - Supported codecs are `plain`, `lz`, `deflate`, and `arx`.
@@ -82,7 +82,7 @@ The fragment transport is part of the product surface, not an implementation det
 
 Current rules:
 - fragment key: `agent-render`
-- format: `v1.<codec>.<payload>`
+- format: `v1.<codec>.<payload>` for `plain|lz|deflate`, and `v1.arx.<dictVersion>.<payload>` for `arx`
 - codecs: `plain`, `lz`, `deflate`, and `arx`
 - fragment size budget: `8000` characters
 - decoded payload budget: `200000` characters

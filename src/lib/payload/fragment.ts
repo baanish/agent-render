@@ -2,7 +2,7 @@ import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from
 import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
-import { arxCompress, arxCompressUnicode, arxCompressBMP, arxDecompress } from "@/lib/payload/arx-codec";
+import { arxCompress, arxCompressUnicode, arxCompressBMP, arxDecompress, getActiveDictVersion } from "@/lib/payload/arx-codec";
 import {
   codecs,
   MAX_DECODED_PAYLOAD_LENGTH,
@@ -132,15 +132,16 @@ function buildCandidates(envelope: PayloadEnvelope, options: EncodeOptions): Can
 async function buildArxCandidates(envelope: PayloadEnvelope, packed: boolean): Promise<CandidateFragment[]> {
   const payloadEnvelope = { ...envelope, codec: "arx" as PayloadCodec };
   const json = JSON.stringify(packed ? packEnvelope(payloadEnvelope) : payloadEnvelope);
+  const dictVersion = getActiveDictVersion();
   const [ascii, unicode, bmp] = await Promise.all([
     arxCompress(json),
     arxCompressUnicode(json),
     arxCompressBMP(json),
   ]);
   return [
-    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${ascii}`, codec: "arx", packed },
-    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${unicode}`, codec: "arx", packed },
-    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${bmp}`, codec: "arx", packed },
+    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${ascii}`, codec: "arx", packed },
+    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${unicode}`, codec: "arx", packed },
+    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${bmp}`, codec: "arx", packed },
   ];
 }
 
@@ -316,6 +317,14 @@ function resolveEnvelope(parsed: unknown, rawLength: number): ParsedPayload {
   };
 }
 
+function decodeArxEncodedPayload(encoded: string): string {
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return encoded;
+  }
+}
+
 export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> {
   const fragment = hash.startsWith("#") ? hash.slice(1) : hash;
 
@@ -342,7 +351,7 @@ export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> 
 
   const version = value.slice(0, firstDot);
   const codecRaw = value.slice(firstDot + 1, secondDot);
-  const encoded = value.slice(secondDot + 1);
+  const remainder = value.slice(secondDot + 1);
 
   if (version !== "v1") {
     return { ok: false, code: "invalid-format", message: "The fragment format is invalid. Expected v1.<codec>.<payload>." };
@@ -353,6 +362,15 @@ export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> 
   }
 
   const codec = codecRaw as PayloadCodec;
+  let encoded = remainder;
+
+  if (codec === "arx") {
+    const thirdDot = remainder.indexOf(".");
+    if (thirdDot > 0 && /^\d+$/.test(remainder.slice(0, thirdDot))) {
+      encoded = remainder.slice(thirdDot + 1);
+    }
+    encoded = decodeArxEncodedPayload(encoded);
+  }
   let parsed: unknown;
 
   try {
