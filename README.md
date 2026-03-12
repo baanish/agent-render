@@ -15,7 +15,7 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 ## Status
 
 - Markdown, code, diff, CSV, and JSON all render in the static shell
-- Fragment transport now supports `plain` and compressed `lz` codecs, with compression chosen automatically when it helps
+- Fragment transport supports `plain`, `lz`, and `deflate`, with automatic shortest-fragment selection across packed/non-packed wire formats
 - Markdown supports download plus browser print-to-PDF
 - Deployment target: static hosting, including Cloudflare Pages
 
@@ -62,7 +62,7 @@ NEXT_PUBLIC_BASE_PATH=/agent-render npm run build
 
 The home page includes sample fragment presets for every artifact type, including a malformed JSON case for error handling.
 
-The fragment examples are encoded with the same transport used by the app, so larger samples will naturally switch to compressed `lz` transport.
+The fragment examples are encoded with the same transport used by the app, so larger samples naturally switch to the shortest available transport.
 
 ## Bundle Notes
 

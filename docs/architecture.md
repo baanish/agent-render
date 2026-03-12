@@ -87,6 +87,9 @@ The fragment protocol keeps the JSON envelope stable and treats compression stri
 
 - `plain` stores base64url-encoded JSON for compatibility and debugging
 - `lz` stores compressed JSON via `lz-string` when it produces a smaller fragment
+- `deflate` stores deflate-compressed UTF-8 JSON bytes when it outperforms other codecs
+- packed wire mode (`p: 1`) shortens transport keys before compression, then unpacks back to the standard envelope during decode
+- automatic codec selection now tries `deflate -> lz -> plain` and compares packed + non-packed candidates
 - decode enforces both fragment length and decoded payload size ceilings before UI rendering
 - invalid bundle state is normalized or rejected before renderers mount
 

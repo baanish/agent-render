@@ -31,10 +31,13 @@ Use this fragment shape:
 Supported codecs:
 - `plain`: base64url-encoded JSON envelope
 - `lz`: `lz-string` compressed JSON encoded for URL-safe transport
+- `deflate`: deflate-compressed UTF-8 JSON bytes encoded as base64url
+- packed wire mode (`p: 1`) may be used automatically to shorten transport keys
 
 Prefer:
-1. `plain` when the payload is small and simplicity matters
-2. `lz` when it materially shortens the link
+1. shortest valid fragment for the target surface
+2. codec priority `deflate -> lz -> plain` unless explicitly overridden
+3. packed wire mode when available
 
 ## Envelope shape
 
@@ -157,16 +160,36 @@ For `lz`:
 2. Compress with `lz-string` URL-safe encoding
 3. Append it after `v1.lz.`
 
+For `deflate`:
+1. Serialize the envelope as compact JSON (or packed wire form)
+2. Encode JSON to UTF-8 bytes
+3. Deflate the bytes
+4. Base64url-encode the compressed bytes
+5. Append it after `v1.deflate.`
+
 ## Practical limits
 
 Respect these limits:
 - target fragment budget: about 8,000 characters
 - target decoded payload budget: about 200,000 characters
+- strict Discord practical budget for linked text workflows: about 1,500 characters
 
 If a link is getting too large:
-1. switch from `plain` to `lz`
-2. trim unnecessary prose or metadata
-3. prefer a focused artifact over a bloated one
+1. try `deflate` first, then `lz`, then `plain`
+2. allow packed wire mode
+3. trim unnecessary prose or metadata
+4. prefer a focused artifact over a bloated one
+5. return a structured failure when the payload cannot fit the requested budget
+
+## Agent budget mode
+
+When the caller provides a strict budget (for example 1,500 chars):
+
+1. encode using all available candidates (`deflate/lz/plain`, packed and non-packed)
+2. choose the shortest fragment that is within budget
+3. if no candidate fits, return the shortest fragment plus a clear budget failure explanation
+
+Do not silently truncate content to force fit.
 
 ## Formatting links in chat
 
@@ -225,7 +248,8 @@ When sharing a link:
 - Prefer `patch` for diffs
 - Prefer readable titles
 - Prefer Markdown link text when supported
-- Prefer `lz` only when it clearly helps link size
+- Prefer shortest-by-measurement instead of human guesses
+- Use budget-aware encoding for Discord-like constraints
 
 ## Avoid
 
@@ -233,3 +257,4 @@ When sharing a link:
 - Do not upload artifact content to a server for this workflow
 - Do not dump giant noisy bundles when a focused artifact is enough
 - Do not invent unsupported fields unless the renderer has added them
+- Do not handcraft packed envelopes manually if helper utilities are available; construct logical envelopes and let transport logic pack automatically

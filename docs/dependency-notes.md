@@ -14,6 +14,7 @@
 - `papaparse` - MIT
 - `@tanstack/react-table` - MIT
 - `lz-string` - MIT
+- `fflate` - MIT
 
 ## Notes
 
@@ -28,6 +29,7 @@
 - `@replit/codemirror-indentation-markers` replaces custom indent-guide logic with a maintained CM6 extension.
 - `@git-diff-view/*` fits review-style diffs better than a generic merge editor for the current viewer.
 - `papaparse` plus `@tanstack/react-table` keeps CSV parsing and rendering readable without coupling to a heavyweight data-grid framework.
+- `fflate` provides portable deflate/inflate support across iOS Safari and Android Chromium without relying on browser-specific compression streams.
 
 ## Notable removals
 

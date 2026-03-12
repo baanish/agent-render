@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { decodeFragment, encodeEnvelope } from "@/lib/payload/fragment";
 import type { PayloadEnvelope } from "@/lib/payload/schema";
+import { packEnvelope } from "@/lib/payload/wire-format";
 
 const envelope: PayloadEnvelope = {
   v: 1,
@@ -68,9 +69,67 @@ describe("fragment payload transport", () => {
 
     const hash = encodeEnvelope(repetitiveEnvelope);
 
-    expect(hash.startsWith("agent-render=v1.lz.")).toBe(true);
+    expect(hash.startsWith("agent-render=v1.plain.")).toBe(false);
     const parsed = decodeFragment(`#${hash}`);
     expect(parsed.ok).toBe(true);
+  });
+
+  it("round-trips a deflate envelope", () => {
+    const hash = `#${encodeEnvelope(envelope, { codec: "deflate" })}`;
+    const parsed = decodeFragment(hash);
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) {
+      return;
+    }
+
+    expect(parsed.envelope).toEqual({
+      ...envelope,
+      codec: "deflate",
+    });
+  });
+
+  it("decodes packed wire envelopes", () => {
+    const packed = packEnvelope({ ...envelope, codec: "deflate" });
+    const encoded = btoa(
+      String.fromCharCode(
+        ...Array.from(new TextEncoder().encode(JSON.stringify(packed))),
+      ),
+    )
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
+    const parsed = decodeFragment(`#agent-render=v1.plain.${encoded}`);
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) {
+      return;
+    }
+
+    expect(parsed.envelope).toEqual({
+      ...envelope,
+      codec: "deflate",
+    });
+  });
+
+  it("supports budget-aware codec selection", () => {
+    const targetEnvelope: PayloadEnvelope = {
+      ...envelope,
+      artifacts: [
+        {
+          id: "doc",
+          kind: "markdown",
+          content: "abc ".repeat(120),
+        },
+      ],
+    };
+    const plainLength = encodeEnvelope(targetEnvelope, { codec: "plain", preferPacked: false }).length;
+    const compressedLength = encodeEnvelope(targetEnvelope, { codec: "deflate" }).length;
+    const budget = compressedLength + 2;
+    const bestEffort = encodeEnvelope(targetEnvelope, { targetMaxFragmentLength: budget });
+
+    expect(bestEffort.length).toBeLessThanOrEqual(budget);
+    expect(plainLength).toBeGreaterThan(budget);
   });
 
   it("normalizes an invalid active artifact id to the first artifact", () => {

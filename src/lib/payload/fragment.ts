@@ -1,6 +1,9 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
+import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
+import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
 import {
+  codecs,
   MAX_DECODED_PAYLOAD_LENGTH,
   MAX_FRAGMENT_LENGTH,
   PAYLOAD_FRAGMENT_KEY,
@@ -13,57 +16,114 @@ import {
 type EncodeOptions = {
   codec?: PayloadCodec;
   preferCompressed?: boolean;
+  preferPacked?: boolean;
+  targetMaxFragmentLength?: number;
+  codecPriority?: PayloadCodec[];
 };
 
-function toBase64Url(input: string): string {
-  const bytes = new TextEncoder().encode(input);
+type CandidateFragment = {
+  value: string;
+  codec: PayloadCodec;
+  packed: boolean;
+};
+
+function toBase64UrlBytes(bytes: Uint8Array): string {
   const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
   const base64 = btoa(binary);
   return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function fromBase64Url(input: string): string {
+function fromBase64UrlBytes(input: string): Uint8Array {
   const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
   const padding = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4));
   const binary = atob(`${normalized}${padding}`);
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+
+function toBase64Url(input: string): string {
+  return toBase64UrlBytes(new TextEncoder().encode(input));
+}
+
+function fromBase64Url(input: string): string {
+  return new TextDecoder().decode(fromBase64UrlBytes(input));
 }
 
 function encodePayload(json: string, codec: PayloadCodec): string {
-  if (codec === "lz") {
-    return compressToEncodedURIComponent(json);
+  switch (codec) {
+    case "plain":
+      return toBase64Url(json);
+    case "lz":
+      return compressToEncodedURIComponent(json);
+    case "deflate":
+      return toBase64UrlBytes(deflateSync(strToU8(json)));
   }
-
-  return toBase64Url(json);
 }
 
 function decodePayload(encoded: string, codec: PayloadCodec): string | null {
-  if (codec === "lz") {
-    return decompressFromEncodedURIComponent(encoded);
+  switch (codec) {
+    case "plain":
+      return fromBase64Url(encoded);
+    case "lz":
+      return decompressFromEncodedURIComponent(encoded);
+    case "deflate":
+      return strFromU8(inflateSync(fromBase64UrlBytes(encoded)));
   }
-
-  return fromBase64Url(encoded);
 }
 
-function buildFragment(envelope: PayloadEnvelope, codec: PayloadCodec): string {
+function buildFragment(envelope: PayloadEnvelope, codec: PayloadCodec, packed: boolean): string {
   const payloadEnvelope = { ...envelope, codec };
-  const json = JSON.stringify(payloadEnvelope);
+  const json = JSON.stringify(packed ? packEnvelope(payloadEnvelope) : payloadEnvelope);
   return `${PAYLOAD_FRAGMENT_KEY}=v1.${codec}.${encodePayload(json, codec)}`;
 }
 
-export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions = {}): string {
+function getCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
   if (options.codec) {
-    return buildFragment(envelope, options.codec);
+    return [options.codec];
   }
 
-  const plainFragment = buildFragment(envelope, "plain");
   if (options.preferCompressed === false) {
-    return plainFragment;
+    return ["plain"];
   }
 
-  const compressedFragment = buildFragment(envelope, "lz");
-  return compressedFragment.length < plainFragment.length ? compressedFragment : plainFragment;
+  const requested = options.codecPriority ?? ["deflate", "lz", "plain"];
+  return requested.filter((codec, index) => requested.indexOf(codec) === index);
+}
+
+function buildCandidates(envelope: PayloadEnvelope, options: EncodeOptions): CandidateFragment[] {
+  const codecsToTry = getCandidateCodecs(options);
+  const wireModes = options.preferPacked === false ? [false] : [true, false];
+  const candidates: CandidateFragment[] = [];
+
+  for (const codec of codecsToTry) {
+    for (const packed of wireModes) {
+      candidates.push({
+        value: buildFragment(envelope, codec, packed),
+        codec,
+        packed,
+      });
+    }
+  }
+
+  return candidates;
+}
+
+function selectCandidate(candidates: CandidateFragment[], budget?: number): CandidateFragment {
+  if (candidates.length === 0) {
+    throw new Error("No payload codec candidates are available.");
+  }
+
+  const sorted = [...candidates].sort((a, b) => a.value.length - b.value.length);
+  if (typeof budget !== "number") {
+    return sorted[0];
+  }
+
+  const inBudget = sorted.find((candidate) => candidate.value.length <= budget);
+  return inBudget ?? sorted[0];
+}
+
+export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions = {}): string {
+  const selected = selectCandidate(buildCandidates(envelope, options), options.targetMaxFragmentLength);
+  return selected.value;
 }
 
 export function decodeFragment(hash: string): ParsedPayload {
@@ -95,9 +155,10 @@ export function decodeFragment(hash: string): ParsedPayload {
     };
   }
 
-  const [version, codec, encoded] = value.split(".", 3);
+  const firstDot = value.indexOf(".");
+  const secondDot = value.indexOf(".", firstDot + 1);
 
-  if (version !== "v1" || !codec || !encoded) {
+  if (firstDot <= 0 || secondDot <= firstDot + 1 || secondDot >= value.length - 1) {
     return {
       ok: false,
       code: "invalid-format",
@@ -105,14 +166,27 @@ export function decodeFragment(hash: string): ParsedPayload {
     };
   }
 
-  if (codec !== "plain" && codec !== "lz") {
+  const version = value.slice(0, firstDot);
+  const codecRaw = value.slice(firstDot + 1, secondDot);
+  const encoded = value.slice(secondDot + 1);
+
+  if (version !== "v1") {
     return {
       ok: false,
       code: "invalid-format",
-      message: `Unsupported codec "${codec}". Supported codecs are plain and lz.`,
+      message: "The fragment format is invalid. Expected v1.<codec>.<payload>.",
     };
   }
 
+  if (!codecs.includes(codecRaw as PayloadCodec)) {
+    return {
+      ok: false,
+      code: "invalid-format",
+      message: `Unsupported codec "${codecRaw}". Supported codecs are ${codecs.join(", ")}.`,
+    };
+  }
+
+  const codec = codecRaw as PayloadCodec;
   let parsed: unknown;
 
   try {
@@ -138,7 +212,9 @@ export function decodeFragment(hash: string): ParsedPayload {
     };
   }
 
-  if (!isPayloadEnvelope(parsed)) {
+  const decodedEnvelope = unpackEnvelope(parsed);
+
+  if (!isPayloadEnvelope(decodedEnvelope)) {
     return {
       ok: false,
       code: "invalid-envelope",
@@ -146,7 +222,7 @@ export function decodeFragment(hash: string): ParsedPayload {
     };
   }
 
-  const normalized = normalizeEnvelope(parsed);
+  const normalized = normalizeEnvelope(decodedEnvelope);
   if (!normalized.ok) {
     return {
       ok: false,

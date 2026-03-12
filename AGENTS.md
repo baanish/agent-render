@@ -26,7 +26,7 @@ Treat these as core constraints unless the owner explicitly changes the product 
 - Artifact payloads live in the URL fragment, using `#agent-render=v1.<codec>.<payload>`.
 - The deployed host should not receive artifact contents as part of the initial page request.
 - Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.
-- Supported codecs are `plain` and `lz`.
+- Supported codecs are `plain`, `lz`, and `deflate`.
 - The product is zero-retention by host design, not secret-safe in an absolute sense.
 - Links may still leak through browser history, copied URLs, screenshots, and any future client-side analytics.
 
@@ -83,9 +83,10 @@ The fragment transport is part of the product surface, not an implementation det
 Current rules:
 - fragment key: `agent-render`
 - format: `v1.<codec>.<payload>`
-- codecs: `plain` and `lz`
+- codecs: `plain`, `lz`, and `deflate`
 - fragment size budget: `8000` characters
 - decoded payload budget: `200000` characters
+- packed wire transport (`p: 1`) is allowed and must decode back to the standard envelope
 - bundles must contain at least one artifact
 - artifact ids must be unique within a bundle
 - invalid `activeArtifactId` values normalize to the first artifact

@@ -16,6 +16,9 @@ Supported codecs:
 
 - `plain` - base64url-encoded JSON
 - `lz` - `lz-string` compressed JSON encoded for URL-safe transport
+- `deflate` - deflate-compressed UTF-8 JSON bytes encoded as base64url
+
+The encoder now also supports a packed wire representation (`p: 1`) that shortens key names before compression. Packed mode is transport-only; decoded envelopes normalize back to the standard shape.
 
 ## Envelope
 
@@ -37,6 +40,31 @@ Supported codecs:
 }
 ```
 
+Packed wire envelopes are also valid on the wire:
+
+```json
+{
+  "p": 1,
+  "v": 1,
+  "c": "deflate",
+  "t": "Artifact bundle title",
+  "a": "artifact-1",
+  "r": [
+    {
+      "i": "artifact-1",
+      "k": "markdown",
+      "f": "weekly-report.md",
+      "c": "# Report"
+    }
+  ]
+}
+```
+
+Packed key map:
+
+- envelope: `codec -> c`, `title -> t`, `activeArtifactId -> a`, `artifacts -> r`
+- artifact: `id -> i`, `kind -> k`, `title -> t`, `filename -> f`, `content -> c`, `language -> l`, `patch -> p`, `oldContent -> o`, `newContent -> n`, `view -> w`
+
 ## Required support
 
 - `kind`
@@ -50,7 +78,22 @@ Supported codecs:
 - Supported fragment budget: 8,000 characters
 - Supported decoded payload budget: 200,000 characters
 - Larger payloads should fail with a clear error before rendering
-- Compression is enabled now and selected automatically when the `lz` form is shorter than `plain`
+- Compression is selected automatically by shortest fragment across packed/non-packed candidates
+- Default codec priority is `deflate -> lz -> plain`
+- Optional budget-aware encoding can target strict limits like 1,500 chars and returns the shortest fragment when none fit
+
+### AGENTS.md POC benchmark
+
+Running `npm run codec:poc` (single markdown artifact containing `AGENTS.md`) currently yields:
+
+- `plain`: 10,584 chars
+- `plain+packed`: 10,522 chars
+- `lz`: 5,622 chars
+- `lz+packed`: 5,583 chars
+- `deflate`: 4,328 chars
+- `deflate+packed`: 4,312 chars (best)
+
+Result: aggressive transport improves size materially (~23.3% vs `lz` baseline), but this payload still does not fit a 1,500-char budget.
 
 ## Active artifact behavior
 
