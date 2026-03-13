@@ -1,5 +1,17 @@
 import type { Extension } from "@codemirror/state";
 
+/**
+ * Determines the code language token used by the viewer.
+ *
+ * Explicit language wins first (trimmed and lowercased); when absent, language is inferred from
+ * the filename extension, and defaults to `text` when no mapping matches.
+ *
+ * @param filename - Optional source filename used for extension-based inference.
+ * @param explicit - Optional user-provided language override.
+ * @returns A normalized language key for syntax selection.
+ *
+ * Failure/fallback: unknown or missing inputs fall back to `text`.
+ */
 export function detectCodeLanguage(filename?: string, explicit?: string) {
   const normalized = explicit?.trim().toLowerCase();
   if (normalized) {
@@ -23,6 +35,17 @@ export function detectCodeLanguage(filename?: string, explicit?: string) {
   return "text";
 }
 
+/**
+ * Lazily loads CodeMirror language support for a normalized language key.
+ *
+ * Returns an extension for supported languages and aliases (for example `js`/`javascript`,
+ * `python`/`py`, `yaml`/`yml`) using dynamic imports to keep base bundles small.
+ *
+ * @param language - Normalized language token from detection or artifact metadata.
+ * @returns A CodeMirror extension for supported languages, or `null` when unsupported.
+ *
+ * Failure/fallback: unsupported language keys return `null` so callers can render plain text.
+ */
 export async function loadLanguageSupport(language: string): Promise<Extension | null> {
   switch (language) {
     case "tsx": {
