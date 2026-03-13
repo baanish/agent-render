@@ -26,7 +26,31 @@ type CandidateFragment = {
   value: string;
   codec: PayloadCodec;
   packed: boolean;
+  transportLength: number;
 };
+
+/**
+ * Computes the serialized length of a fragment value as it would appear in a
+ * URL after browser percent-encoding of non-ASCII characters.
+ * Each non-ASCII UTF-8 byte is encoded as %XX (3 chars per byte).
+ */
+function computeTransportLength(value: string): number {
+  let len = 0;
+  for (let i = 0; i < value.length; i++) {
+    const cp = value.codePointAt(i)!;
+    if (cp < 128) {
+      len += 1;
+    } else if (cp < 0x800) {
+      len += 6; // 2 UTF-8 bytes → %XX%XX
+    } else if (cp < 0x10000) {
+      len += 9; // 3 UTF-8 bytes → %XX%XX%XX
+    } else {
+      len += 12; // 4 UTF-8 bytes → %XX%XX%XX%XX (surrogate pair)
+      i++; // skip low surrogate
+    }
+  }
+  return len;
+}
 
 function toBase64UrlBytes(bytes: Uint8Array): string {
   const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
@@ -75,10 +99,12 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
   }
 }
 
-function buildFragment(envelope: PayloadEnvelope, codec: PayloadCodec, packed: boolean): string {
+function buildFragment(envelope: PayloadEnvelope, codec: PayloadCodec, packed: boolean): CandidateFragment {
   const payloadEnvelope = { ...envelope, codec };
   const json = JSON.stringify(packed ? packEnvelope(payloadEnvelope) : payloadEnvelope);
-  return `${PAYLOAD_FRAGMENT_KEY}=v1.${codec}.${encodePayload(json, codec)}`;
+  const value = `${PAYLOAD_FRAGMENT_KEY}=v1.${codec}.${encodePayload(json, codec)}`;
+  // Non-ARX codecs produce ASCII-only output, so transport length equals string length.
+  return { value, codec, packed, transportLength: value.length };
 }
 
 function getCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
@@ -124,11 +150,7 @@ function buildCandidates(envelope: PayloadEnvelope, options: EncodeOptions): Can
 
   for (const codec of codecsToTry) {
     for (const packed of wireModes) {
-      candidates.push({
-        value: buildFragment(envelope, codec, packed),
-        codec,
-        packed,
-      });
+      candidates.push(buildFragment(envelope, codec, packed));
     }
   }
 
@@ -144,11 +166,11 @@ async function buildArxCandidates(envelope: PayloadEnvelope, packed: boolean): P
     arxCompressUnicode(json),
     arxCompressBMP(json),
   ]);
-  return [
-    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${ascii}`, codec: "arx", packed },
-    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${unicode}`, codec: "arx", packed },
-    { value: `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${bmp}`, codec: "arx", packed },
-  ];
+  const makeCandidate = (payload: string): CandidateFragment => {
+    const value = `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${payload}`;
+    return { value, codec: "arx", packed, transportLength: computeTransportLength(value) };
+  };
+  return [makeCandidate(ascii), makeCandidate(unicode), makeCandidate(bmp)];
 }
 
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {
@@ -161,11 +183,7 @@ async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOp
       if (codec === "arx") {
         candidates.push(...await buildArxCandidates(envelope, packed));
       } else {
-        candidates.push({
-          value: buildFragment(envelope, codec, packed),
-          codec,
-          packed,
-        });
+        candidates.push(buildFragment(envelope, codec, packed));
       }
     }
   }
@@ -178,12 +196,12 @@ function selectCandidate(candidates: CandidateFragment[], budget?: number): Cand
     throw new Error("No payload codec candidates are available.");
   }
 
-  const sorted = [...candidates].sort((a, b) => a.value.length - b.value.length);
+  const sorted = [...candidates].sort((a, b) => a.transportLength - b.transportLength);
   if (typeof budget !== "number") {
     return sorted[0];
   }
 
-  const inBudget = sorted.find((candidate) => candidate.value.length <= budget);
+  const inBudget = sorted.find((candidate) => candidate.transportLength <= budget);
   return inBudget ?? sorted[0];
 }
 
