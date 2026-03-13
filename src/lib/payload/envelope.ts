@@ -17,6 +17,18 @@ function validateArtifact(artifact: ArtifactPayload): string | null {
   return null;
 }
 
+/**
+ * Validates and normalizes a payload envelope before encode/render use.
+ *
+ * Validation guarantees:
+ * - artifact ids are unique within the bundle (duplicate ids fail validation)
+ * - diff artifacts include either a non-empty `patch` or both `oldContent` and `newContent`
+ * - at least one artifact exists
+ *
+ * Normalization behavior:
+ * - `activeArtifactId` is preserved only when it matches an artifact in the bundle
+ * - otherwise `activeArtifactId` is normalized to the first artifact id
+ */
 export function normalizeEnvelope(envelope: PayloadEnvelope): EnvelopeValidationResult {
   const seenIds = new Set<string>();
 
