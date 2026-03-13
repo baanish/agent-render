@@ -19,7 +19,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { sampleEnvelopes, sampleLinks } from "@/lib/payload/examples";
-import { decodeFragment, encodeEnvelope } from "@/lib/payload/fragment";
+import { decodeFragment, decodeFragmentAsync, encodeEnvelope, encodeEnvelopeAsync } from "@/lib/payload/fragment";
+import { loadArxDictionary } from "@/lib/payload/arx-codec";
 import {
   MAX_FRAGMENT_LENGTH,
   PAYLOAD_FRAGMENT_KEY,
@@ -244,7 +245,22 @@ export function ViewerShell() {
     };
   }, []);
 
-  const parsed = useMemo(() => decodeFragment(hash), [hash]);
+  const [dictReady, setDictReady] = useState(false);
+
+  useEffect(() => {
+    loadArxDictionary().then(() => setDictReady(true));
+  }, []);
+
+  const [parsed, setParsed] = useState<ReturnType<typeof decodeFragment>>(() => decodeFragment(hash));
+
+  useEffect(() => {
+    let cancelled = false;
+    decodeFragmentAsync(hash).then((result) => {
+      if (!cancelled) setParsed(result);
+    });
+    return () => { cancelled = true; };
+  }, [hash, dictReady]);
+
   const fragmentLength = hash.startsWith("#") ? hash.length - 1 : hash.length;
   const envelope = parsed.ok ? parsed.envelope : null;
   const activeArtifact = envelope ? getActiveArtifact(envelope) : null;
@@ -292,8 +308,9 @@ export function ViewerShell() {
         return;
       }
 
-      const nextHash = `#${encodeEnvelope({ ...envelope, activeArtifactId: artifactId }, { codec: envelope.codec })}`;
-      setFragmentHash(nextHash);
+      encodeEnvelopeAsync({ ...envelope, activeArtifactId: artifactId }, { codec: envelope.codec }).then((encoded) => {
+        setFragmentHash(`#${encoded}`);
+      });
     },
     [envelope, setFragmentHash],
   );

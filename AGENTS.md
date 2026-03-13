@@ -23,10 +23,10 @@ Core product traits right now:
 Treat these as core constraints unless the owner explicitly changes the product direction.
 
 - The app is a single exported client-side shell, not a backend product.
-- Artifact payloads live in the URL fragment, using `#agent-render=v1.<codec>.<payload>`.
+- Artifact payloads live in the URL fragment, using `#agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`, and `#agent-render=v1.arx.<dictVersion>.<payload>` for `arx`.
 - The deployed host should not receive artifact contents as part of the initial page request.
 - Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.
-- Supported codecs are `plain`, `lz`, and `deflate`.
+- Supported codecs are `plain`, `lz`, `deflate`, and `arx`.
 - The product is zero-retention by host design, not secret-safe in an absolute sense.
 - Links may still leak through browser history, copied URLs, screenshots, and any future client-side analytics.
 
@@ -82,8 +82,8 @@ The fragment transport is part of the product surface, not an implementation det
 
 Current rules:
 - fragment key: `agent-render`
-- format: `v1.<codec>.<payload>`
-- codecs: `plain`, `lz`, and `deflate`
+- format: `v1.<codec>.<payload>` for `plain|lz|deflate`, and `v1.arx.<dictVersion>.<payload>` for `arx`
+- codecs: `plain`, `lz`, `deflate`, and `arx`
 - fragment size budget: `8000` characters
 - decoded payload budget: `200000` characters
 - packed wire transport (`p: 1`) is allowed and must decode back to the standard envelope
@@ -116,6 +116,10 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 ### Payload and protocol
 - `src/lib/payload/schema.ts` - type surface, limits, fragment key, supported kinds/codecs
 - `src/lib/payload/fragment.ts` - encode/decode logic and transport behavior
+- `src/lib/payload/arx-codec.ts` - arx codec: domain dictionary + brotli + base76/base1k/baseBMP encoding
+- `public/arx-dictionary.json` - shared substitution dictionary for the arx codec (served as a static endpoint)
+- `public/arx-dictionary.json.br` - pre-compressed brotli variant of the dictionary
+- `scripts/compress-dictionary.mjs` - minifies and brotli-compresses the dictionary file
 - `src/lib/payload/envelope.ts` - bundle normalization and validation
 - `src/lib/payload/link-creator.ts` - draft-to-link generation helpers
 - `src/lib/payload/examples.ts` - sample envelopes and example fragments
