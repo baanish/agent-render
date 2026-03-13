@@ -9,6 +9,11 @@ type ThemeToggleProps = {
   className?: string;
 };
 
+/**
+ * Provides the viewer header control for switching between dark and light presentation modes.
+ * Uses an optional `className` and next-themes setters to update active theme selection.
+ * Delays interaction until mount so icon/label state remains hydration-safe.
+ */
 export function ThemeToggle({ className }: ThemeToggleProps) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);

@@ -12,6 +12,11 @@ type CsvRendererProps = {
 
 type CsvRow = Record<string, string>;
 
+/**
+ * Displays CSV artifacts as a read-only table grid in the viewer renderer slot.
+ * Takes `artifact` content and optional `onReady` callback for shell-level renderer readiness tracking.
+ * Parses CSV client-side and shows a clear fallback message when parsing fails.
+ */
 export function CsvRenderer({ artifact, onReady }: CsvRendererProps) {
   const parsed = useMemo(() => {
     const result = Papa.parse<string[]>(artifact.content, { skipEmptyLines: true });

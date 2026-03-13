@@ -12,6 +12,11 @@ type ArtifactSelectorProps = {
   getSupportingLabel: (artifact: ArtifactPayload) => string;
 };
 
+/**
+ * Renders artifact tabs in the viewer header so users can switch within a decoded bundle.
+ * Uses `artifacts`, `activeArtifactId`, and `onSelect` to drive selection, plus heading/label formatters.
+ * Keeps navigation in UI state with icon + metadata badges for each artifact kind.
+ */
 export function ArtifactSelector({
   artifacts,
   activeArtifactId,

@@ -9,6 +9,11 @@ type FragmentDetailsDisclosureProps = {
   hashPreview: string;
 };
 
+/**
+ * Shows protocol diagnostics for the current fragment payload in a collapsible viewer panel.
+ * Receives status, codec, length budget, and hash preview props from the shell-level decode state.
+ * Stays read-only and provides quick visibility into transport/fallback conditions.
+ */
 export function FragmentDetailsDisclosure({
   statusLabel,
   statusMessage,
