@@ -1,6 +1,6 @@
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { encodeEnvelope, encodeEnvelopeAsync } from "@/lib/payload/fragment";
-import { MAX_FRAGMENT_LENGTH, type ArtifactKind, type ArtifactPayload, type DiffArtifact, type PayloadEnvelope } from "@/lib/payload/schema";
+import { MAX_FRAGMENT_LENGTH, type ArtifactKind, type ArtifactPayload, type DiffArtifact, type PayloadCodec, type PayloadEnvelope } from "@/lib/payload/schema";
 
 export type LinkCreatorDraft = {
   kind: ArtifactKind;
@@ -9,6 +9,7 @@ export type LinkCreatorDraft = {
   content: string;
   language: string;
   diffView: DiffArtifact["view"];
+  codec: PayloadCodec | "auto";
 };
 
 export type GeneratedArtifactLink = {
@@ -27,6 +28,7 @@ export const defaultLinkCreatorDraft: LinkCreatorDraft = {
     "# Launch note\n\nShare one artifact at a time without uploading it anywhere.\n\n- Markdown stays readable\n- Code keeps its language hint\n- The link works from a static export",
   language: "tsx",
   diffView: "unified",
+  codec: "auto",
 };
 
 function normalizeOptionalField(value: string) {
@@ -144,7 +146,8 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
     throw new Error(normalized.message);
   }
 
-  const hash = `#${await encodeEnvelopeAsync(normalized.envelope)}`;
+  const encodeOptions = draft.codec !== "auto" ? { codec: draft.codec } : {};
+  const hash = `#${await encodeEnvelopeAsync(normalized.envelope, encodeOptions)}`;
   const fragmentLength = hash.length - 1;
 
   if (fragmentLength > MAX_FRAGMENT_LENGTH) {
