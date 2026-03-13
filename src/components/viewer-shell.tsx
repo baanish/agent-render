@@ -228,6 +228,14 @@ function getAnimationStyle(delay: number): CSSProperties {
   return { animationDelay: `${delay}ms` };
 }
 
+/**
+ * Render the main viewer shell for decoding and displaying artifact fragments from the URL hash.
+ *
+ * Manages fragment decoding and ARX dictionary loading, synchronizes component state with the browser hash,
+ * and provides UI and handlers for selecting, downloading, printing, and navigating artifacts or clearing the fragment.
+ *
+ * @returns The root React element for the viewer shell UI
+ */
 export function ViewerShell() {
   const [hash, setHash] = useState("");
   const [rendererReady, setRendererReady] = useState(true);
