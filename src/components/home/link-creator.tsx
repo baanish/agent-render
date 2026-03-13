@@ -244,8 +244,8 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                   <button
                     key={option}
                     type="button"
-                    className={cn("artifact-action", draft.codec === option && "is-primary")}
-                    aria-pressed={draft.codec === option}
+                    className={cn("artifact-action", (draft.codec ?? "auto") === option && "is-primary")}
+                    aria-pressed={(draft.codec ?? "auto") === option}
                     onClick={() => updateDraft("codec", option)}
                   >
                     {option}

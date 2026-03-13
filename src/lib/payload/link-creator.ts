@@ -9,7 +9,7 @@ export type LinkCreatorDraft = {
   content: string;
   language: string;
   diffView: DiffArtifact["view"];
-  codec: PayloadCodec | "auto";
+  codec?: PayloadCodec | "auto";
 };
 
 export type GeneratedArtifactLink = {
@@ -146,7 +146,7 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
     throw new Error(normalized.message);
   }
 
-  const encodeOptions = draft.codec !== "auto" ? { codec: draft.codec } : {};
+  const encodeOptions = draft.codec && draft.codec !== "auto" ? { codec: draft.codec } : {};
   const hash = `#${await encodeEnvelopeAsync(normalized.envelope, encodeOptions)}`;
   const fragmentLength = hash.length - 1;
 
