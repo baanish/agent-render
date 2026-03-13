@@ -72,6 +72,7 @@ function getDraftSignature(draft: LinkCreatorDraft) {
   return JSON.stringify(draft);
 }
 
+/** Public API for `LinkCreator`. */
 export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   const [draft, setDraft] = useState<LinkCreatorDraft>(defaultLinkCreatorDraft);
   const [generatedLink, setGeneratedLink] = useState<GeneratedArtifactLink | null>(null);

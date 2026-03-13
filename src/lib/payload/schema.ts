@@ -92,6 +92,7 @@ function isBaseArtifact(value: unknown): value is BaseArtifact {
   return hasString(value.id) && isArtifactKind(value.kind);
 }
 
+/** Public API for `isPayloadEnvelope`. */
 export function isPayloadEnvelope(value: unknown): value is PayloadEnvelope {
   if (!isRecord(value)) {
     return false;

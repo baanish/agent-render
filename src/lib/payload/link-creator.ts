@@ -92,6 +92,7 @@ function buildArtifact(draft: LinkCreatorDraft): ArtifactPayload {
   };
 }
 
+/** Public API for `createDraftEnvelope`. */
 export function createDraftEnvelope(draft: LinkCreatorDraft): PayloadEnvelope {
   const artifact = buildArtifact(draft);
 
@@ -104,6 +105,7 @@ export function createDraftEnvelope(draft: LinkCreatorDraft): PayloadEnvelope {
   };
 }
 
+/** Public API for `createGeneratedArtifactLink`. */
 export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: string): GeneratedArtifactLink {
   const normalized = normalizeEnvelope(createDraftEnvelope(draft));
 
@@ -137,6 +139,7 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
   };
 }
 
+/** Public API for `createGeneratedArtifactLinkAsync`. */
 export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, baseUrl?: string): Promise<GeneratedArtifactLink> {
   const normalized = normalizeEnvelope(createDraftEnvelope(draft));
 
@@ -170,6 +173,7 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
   };
 }
 
+/** Public API for `getBodyFieldLabel`. */
 export function getBodyFieldLabel(kind: ArtifactKind) {
   return kind === "diff" ? "Patch" : "Content";
 }

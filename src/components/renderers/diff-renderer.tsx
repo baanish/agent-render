@@ -477,6 +477,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
   );
 }
 
+/** Public API for `DiffRenderer`. */
 export function DiffRenderer({ artifact, onReady }: DiffRendererProps) {
   const resetKey = [
     artifact.id,

@@ -55,6 +55,7 @@ const markdownSchema = {
   },
 };
 
+/** Public API for `MarkdownRenderer`. */
 export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   const heading = artifact.title ?? artifact.filename ?? artifact.id;
   const embeddedBlockCount = useMemo(() => (artifact.content.match(/```[\s\S]*?```/g) ?? []).length, [artifact.content]);

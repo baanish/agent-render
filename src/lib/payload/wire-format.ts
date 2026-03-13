@@ -46,6 +46,7 @@ function isRecord(value: unknown): value is RecordValue {
   return typeof value === "object" && value !== null;
 }
 
+/** Public API for `packEnvelope`. */
 export function packEnvelope(envelope: PayloadEnvelope): PackedEnvelope {
   return {
     p: 1,
@@ -161,6 +162,7 @@ function looksLikePackedEnvelope(value: unknown): value is PackedEnvelope {
   return value.r.every(looksLikePackedArtifact);
 }
 
+/** Public API for `unpackEnvelope`. */
 export function unpackEnvelope(value: unknown): unknown {
   if (!looksLikePackedEnvelope(value)) {
     return value;

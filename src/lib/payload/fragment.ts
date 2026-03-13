@@ -205,11 +205,13 @@ function selectCandidate(candidates: CandidateFragment[], budget?: number): Cand
   return inBudget ?? sorted[0];
 }
 
+/** Public API for `encodeEnvelope`. */
 export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions = {}): string {
   const selected = selectCandidate(buildCandidates(envelope, options), options.targetMaxFragmentLength);
   return selected.value;
 }
 
+/** Public API for `encodeEnvelopeAsync`. */
 export async function encodeEnvelopeAsync(envelope: PayloadEnvelope, options: EncodeOptions = {}): Promise<string> {
   const candidates = await buildCandidatesAsync(envelope, options);
   const selected = selectCandidate(candidates, options.targetMaxFragmentLength);
@@ -259,6 +261,7 @@ function parseFragmentHeader(hash: string): ParsedFragmentHeader {
   return { ok: true, fragment, version, codec: codecRaw as PayloadCodec, encoded, fragmentLength: fragment.length };
 }
 
+/** Public API for `decodeFragment`. */
 export function decodeFragment(hash: string): ParsedPayload {
   const header = parseFragmentHeader(hash);
   if (!header.ok) {
@@ -347,6 +350,7 @@ function resolveArxDictVersion(version: number | null): boolean {
   return version === getActiveDictVersion();
 }
 
+/** Public API for `decodeFragmentAsync`. */
 export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> {
   const header = parseFragmentHeader(hash);
   if (!header.ok) {

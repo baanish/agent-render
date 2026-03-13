@@ -9,6 +9,7 @@ type ThemeToggleProps = {
   className?: string;
 };
 
+/** Public API for `ThemeToggle`. */
 export function ThemeToggle({ className }: ThemeToggleProps) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);

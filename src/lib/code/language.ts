@@ -1,5 +1,6 @@
 import type { Extension } from "@codemirror/state";
 
+/** Public API for `detectCodeLanguage`. */
 export function detectCodeLanguage(filename?: string, explicit?: string) {
   const normalized = explicit?.trim().toLowerCase();
   if (normalized) {
@@ -23,6 +24,7 @@ export function detectCodeLanguage(filename?: string, explicit?: string) {
   return "text";
 }
 
+/** Public API for `loadLanguageSupport`. */
 export async function loadLanguageSupport(language: string): Promise<Extension | null> {
   switch (language) {
     case "tsx": {

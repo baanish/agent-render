@@ -17,6 +17,7 @@ function validateArtifact(artifact: ArtifactPayload): string | null {
   return null;
 }
 
+/** Public API for `normalizeEnvelope`. */
 export function normalizeEnvelope(envelope: PayloadEnvelope): EnvelopeValidationResult {
   const seenIds = new Set<string>();
 

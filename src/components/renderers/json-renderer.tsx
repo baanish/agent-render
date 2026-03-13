@@ -46,6 +46,7 @@ function JsonNode({ label, value, level = 0 }: { label?: string; value: JsonValu
   );
 }
 
+/** Public API for `JsonRenderer`. */
 export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
   const [view, setView] = useState<"tree" | "raw">("tree");
   const parsed = useMemo(() => {

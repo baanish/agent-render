@@ -12,6 +12,7 @@ type CsvRendererProps = {
 
 type CsvRow = Record<string, string>;
 
+/** Public API for `CsvRenderer`. */
 export function CsvRenderer({ artifact, onReady }: CsvRendererProps) {
   const parsed = useMemo(() => {
     const result = Papa.parse<string[]>(artifact.content, { skipEmptyLines: true });

@@ -146,6 +146,7 @@ const rainbowBrackets = ViewPlugin.fromClass(
   },
 );
 
+/** Public API for `CodeRenderer`. */
 export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendererProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [wrapLines, setWrapLines] = useState(compact);

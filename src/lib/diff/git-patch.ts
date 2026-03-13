@@ -125,6 +125,7 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
   };
 }
 
+/** Public API for `parseGitPatchBundle`. */
 export function parseGitPatchBundle(patch: string): ParsedPatchFile[] {
   return splitPatchSections(patch).map((section, index) => parsePatchSection(section, index));
 }

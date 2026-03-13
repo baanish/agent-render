@@ -9,6 +9,7 @@ type FragmentDetailsDisclosureProps = {
   hashPreview: string;
 };
 
+/** Public API for `FragmentDetailsDisclosure`. */
 export function FragmentDetailsDisclosure({
   statusLabel,
   statusMessage,

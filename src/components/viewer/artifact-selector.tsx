@@ -12,6 +12,7 @@ type ArtifactSelectorProps = {
   getSupportingLabel: (artifact: ArtifactPayload) => string;
 };
 
+/** Public API for `ArtifactSelector`. */
 export function ArtifactSelector({
   artifacts,
   activeArtifactId,
