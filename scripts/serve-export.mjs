@@ -49,7 +49,27 @@ function toFilePath(urlPath) {
   }
 
   const normalizedPath = relativePath === "/" ? "/index.html" : relativePath;
-  const tentativePath = path.join(outputDirectory, normalizedPath);
+  let decodedPath;
+
+  try {
+    decodedPath = decodeURIComponent(normalizedPath);
+  } catch {
+    return null;
+  }
+
+  if (decodedPath.split("/").includes("..")) {
+    return null;
+  }
+
+  const safeRelativePath = path.posix.normalize(decodedPath).replace(/^\/+/, "");
+  const tentativePath = path.resolve(outputDirectory, safeRelativePath);
+  const isInsideOutputDirectory =
+    tentativePath === outputDirectory || tentativePath.startsWith(`${outputDirectory}${path.sep}`);
+
+  if (!isInsideOutputDirectory) {
+    return null;
+  }
+
   return normalizedPath.endsWith("/") ? path.join(tentativePath, "index.html") : tentativePath;
 }
 
