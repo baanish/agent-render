@@ -125,7 +125,21 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
   };
 }
 
-/** Public API for `parseGitPatchBundle`. */
+/**
+ * Parses a git patch bundle into per-file patch entries.
+ *
+ * Expects a unified git patch string and splits multi-file input on each `diff --git` header;
+ * if no such headers are present, the full input is treated as a single section.
+ * Detects rename/copy metadata and binary markers (`Binary files ... differ` / `GIT binary patch`),
+ * normalizes paths by removing `a/` and `b/` prefixes, and sets `status`/`isBinary` accordingly.
+ * Output IDs are deterministic `${displayPath}-${index}` values so multiple sections with the same
+ * path remain distinct.
+ *
+ * @param patch - Unified git patch text that may include one or many file sections.
+ * @returns Parsed file-level patch records ready for diff rendering.
+ *
+ * Failure/fallback: empty or whitespace-only input returns an empty array.
+ */
 export function parseGitPatchBundle(patch: string): ParsedPatchFile[] {
   return splitPatchSections(patch).map((section, index) => parsePatchSection(section, index));
 }

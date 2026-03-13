@@ -92,7 +92,19 @@ function isBaseArtifact(value: unknown): value is BaseArtifact {
   return hasString(value.id) && isArtifactKind(value.kind);
 }
 
-/** Public API for `isPayloadEnvelope`. */
+/**
+ * Runtime shape guard for payload envelopes decoded from untyped input.
+ *
+ * Validates top-level structure (`v`, `codec`, non-empty `artifacts`) plus per-artifact minimum
+ * requirements: base fields, `content` for non-diff artifacts, and either `patch` or both
+ * `oldContent`/`newContent` for diff artifacts.
+ *
+ * @param value - Unknown value to validate as a payload envelope.
+ * @returns `true` when the value matches the runtime envelope contract, otherwise `false`.
+ *
+ * Failure/fallback: this guard checks structure only and does not perform full semantic
+ * normalization beyond required runtime fields.
+ */
 export function isPayloadEnvelope(value: unknown): value is PayloadEnvelope {
   if (!isRecord(value)) {
     return false;

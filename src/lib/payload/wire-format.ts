@@ -46,7 +46,14 @@ function isRecord(value: unknown): value is RecordValue {
   return typeof value === "object" && value !== null;
 }
 
-/** Public API for `packEnvelope`. */
+/**
+ * Packs a full payload envelope into the compact wire transport shape (`p: 1`) used when
+ * fragment size pressure favors shorter field keys.
+ *
+ * Packed envelopes keep the same semantic content while mapping verbose keys to compact aliases
+ * (`v/c/t/a/r`, etc). This representation is an internal transport optimization and is expected
+ * to round-trip through {@link unpackEnvelope} back to the standard envelope contract.
+ */
 export function packEnvelope(envelope: PayloadEnvelope): PackedEnvelope {
   return {
     p: 1,
@@ -162,7 +169,13 @@ function looksLikePackedEnvelope(value: unknown): value is PackedEnvelope {
   return value.r.every(looksLikePackedArtifact);
 }
 
-/** Public API for `unpackEnvelope`. */
+/**
+ * Expands a decoded value from packed wire transport back into the standard payload envelope
+ * shape when it matches the `p: 1` format.
+ *
+ * If the value does not look like a compatible packed envelope, the input is returned unchanged
+ * so existing non-packed payloads remain fully compatible.
+ */
 export function unpackEnvelope(value: unknown): unknown {
   if (!looksLikePackedEnvelope(value)) {
     return value;

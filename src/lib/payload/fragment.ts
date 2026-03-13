@@ -205,13 +205,33 @@ function selectCandidate(candidates: CandidateFragment[], budget?: number): Cand
   return inBudget ?? sorted[0];
 }
 
-/** Public API for `encodeEnvelope`. */
+/**
+ * Encodes a payload envelope into the fragment body expected after `#`, for example
+ * `agent-render=v1.deflate.<payload>`.
+ *
+ * The sync encoder supports `plain`, `lz`, and `deflate` codecs. If options explicitly
+ * require `arx`, this function throws because `arx` compression is async-only.
+ *
+ * Candidate encodings are generated across enabled codecs (and packed/unpacked wire
+ * transport variants) and the shortest transport length is selected, or the shortest option
+ * that fits `targetMaxFragmentLength` when provided.
+ */
 export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions = {}): string {
   const selected = selectCandidate(buildCandidates(envelope, options), options.targetMaxFragmentLength);
   return selected.value;
 }
 
-/** Public API for `encodeEnvelopeAsync`. */
+/**
+ * Async variant of {@link encodeEnvelope} that also supports `arx` candidates.
+ *
+ * Returns the fragment body string expected after `#`, for example
+ * `agent-render=v1.arx.<dictVersion>.<payload>` for `arx`, or
+ * `agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`.
+ *
+ * Like the sync version, candidate encodings are generated across enabled codecs and packed
+ * transport variants, then the smallest transport representation is selected (or the smallest
+ * candidate within `targetMaxFragmentLength`, when available).
+ */
 export async function encodeEnvelopeAsync(envelope: PayloadEnvelope, options: EncodeOptions = {}): Promise<string> {
   const candidates = await buildCandidatesAsync(envelope, options);
   const selected = selectCandidate(candidates, options.targetMaxFragmentLength);
@@ -261,7 +281,17 @@ function parseFragmentHeader(hash: string): ParsedFragmentHeader {
   return { ok: true, fragment, version, codec: codecRaw as PayloadCodec, encoded, fragmentLength: fragment.length };
 }
 
-/** Public API for `decodeFragment`. */
+/**
+ * Decodes a fragment string (with or without leading `#`) into a parsed payload result.
+ *
+ * Expected fragment format is `#agent-render=v1.<codec>.<payload>`. Validation first enforces
+ * fragment-key and shape checks and the global fragment size budget. On failure, returns a
+ * structured `ParsedPayload` error (`empty`, `missing-key`, `invalid-format`, `too-large`,
+ * `invalid-json`, `decoded-too-large`, or `invalid-envelope`) instead of throwing.
+ *
+ * Sync decoding supports `plain`, `lz`, and `deflate` codecs only. `arx` fragments return an
+ * `invalid-format` result instructing callers to use {@link decodeFragmentAsync}.
+ */
 export function decodeFragment(hash: string): ParsedPayload {
   const header = parseFragmentHeader(hash);
   if (!header.ok) {
@@ -350,7 +380,17 @@ function resolveArxDictVersion(version: number | null): boolean {
   return version === getActiveDictVersion();
 }
 
-/** Public API for `decodeFragmentAsync`. */
+/**
+ * Async fragment decoder that supports all codecs, including `arx`.
+ *
+ * Accepted input follows `#agent-render=v1...` where non-`arx` payloads use
+ * `v1.<codec>.<payload>`, and `arx` supports `v1.arx.<dictVersion>.<payload>` (plus legacy
+ * fallback forms). This decoder applies the same header and fragment-size checks as the sync
+ * path, then enforces decoded payload size limits before JSON parsing and envelope validation.
+ *
+ * Returns structured `ParsedPayload` error responses for malformed fragments or invalid
+ * envelopes, rather than throwing decode errors.
+ */
 export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> {
   const header = parseFragmentHeader(hash);
   if (!header.ok) {

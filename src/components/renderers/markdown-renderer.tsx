@@ -55,7 +55,11 @@ const markdownSchema = {
   },
 };
 
-/** Public API for `MarkdownRenderer`. */
+/**
+ * Displays markdown artifacts in the primary viewer stage using sanitized GFM output.
+ * Consumes `artifact` content and optional `onReady`, which fires after embedded fenced code blocks report ready.
+ * Reuses the CodeMirror renderer for code fences and keeps raw HTML disabled for safer rendering.
+ */
 export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   const heading = artifact.title ?? artifact.filename ?? artifact.id;
   const embeddedBlockCount = useMemo(() => (artifact.content.match(/```[\s\S]*?```/g) ?? []).length, [artifact.content]);

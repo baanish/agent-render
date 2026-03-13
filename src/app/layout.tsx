@@ -27,6 +27,11 @@ export const metadata: Metadata = {
   description: "A static, zero-retention artifact viewer shell for fragment-based markdown, code, diff, CSV, and JSON payloads.",
 };
 
+/**
+ * Root layout for the static shell that installs fonts and global theme context for all viewer states.
+ * Accepts `children` from Next.js app routing and wraps them with the shared `ThemeProvider`.
+ * Sets hydration-safe HTML/body structure used by lazy renderer mounts and fallback screens.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -477,7 +477,11 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
   );
 }
 
-/** Public API for `DiffRenderer`. */
+/**
+ * Renders diff artifacts as review-style unified/split views in the artifact stage.
+ * Uses `artifact` diff payload details and optional `onReady` callback when the active diff UI is mount-ready.
+ * Prefers parsed git patches, supports old/new content diffs, and falls back to raw patch output on parse/runtime errors.
+ */
 export function DiffRenderer({ artifact, onReady }: DiffRendererProps) {
   const resetKey = [
     artifact.id,

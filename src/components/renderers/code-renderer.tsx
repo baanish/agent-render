@@ -146,7 +146,11 @@ const rainbowBrackets = ViewPlugin.fromClass(
   },
 );
 
-/** Public API for `CodeRenderer`. */
+/**
+ * Presents code artifacts in a read-only CodeMirror surface for standalone and embedded renderer flows.
+ * Accepts `artifact`, optional `compact`, and `onReady` to notify parent renderers when mount is complete.
+ * Lazily loads language support, offers optional line wrapping, and falls back to baseline highlighting when needed.
+ */
 export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendererProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [wrapLines, setWrapLines] = useState(compact);
