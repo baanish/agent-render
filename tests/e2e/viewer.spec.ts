@@ -162,6 +162,16 @@ test("switches artifacts within a bundle", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.location.hash)).not.toBe(beforeHash);
 });
 
+test("header icon and name navigate to homepage", async ({ page }) => {
+  await goToHash(page, getFragmentHash("Release bundle"));
+  await waitForViewerState(page, "artifact");
+  await expect(page.locator("[data-active-kind='json']")).toBeVisible();
+
+  await page.getByRole("link", { name: "Go to homepage" }).click();
+  await waitForViewerState(page, "empty");
+  await expect(page.getByText("Share artifacts in the URL, keep the server out of the payload.")).toBeVisible();
+});
+
 test("theme switching works", async ({ page }) => {
   await waitForViewerState(page, "empty");
   await page.getByRole("button", { name: /Switch to dark theme/i }).click();

@@ -46,6 +46,11 @@ function JsonNode({ label, value, level = 0 }: { label?: string; value: JsonValu
   );
 }
 
+/**
+ * Shows JSON artifacts with a toggle between structured tree and raw code views.
+ * Receives `artifact` and optional `onReady`, including readiness updates across parse and view-mode changes.
+ * Falls back to raw-code display with an error notice when JSON parsing fails.
+ */
 export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
   const [view, setView] = useState<"tree" | "raw">("tree");
   const parsed = useMemo(() => {
