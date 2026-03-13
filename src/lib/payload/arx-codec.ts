@@ -218,6 +218,7 @@ for (let i = 0; i < ALPHABET.length; i++) {
   CHAR_TO_INDEX[ALPHABET.charCodeAt(i)] = i;
 }
 
+/** Public API for `encodeBase76`. */
 export function encodeBase76(bytes: Uint8Array): string {
   if (bytes.length === 0) return "";
 
@@ -238,6 +239,7 @@ export function encodeBase76(bytes: Uint8Array): string {
   return ALPHABET[lenHigh] + ALPHABET[lenLow] + chars.join("");
 }
 
+/** Public API for `decodeBase76`. */
 export function decodeBase76(str: string): Uint8Array {
   if (str.length < 2) return new Uint8Array(0);
 
@@ -284,6 +286,7 @@ for (let i = 0; i < UNICODE_ALPHABET.length; i++) {
   UNICODE_CHAR_TO_INDEX.set(UNICODE_ALPHABET[i], i);
 }
 
+/** Public API for `encodeBase1k`. */
 export function encodeBase1k(bytes: Uint8Array): string {
   if (bytes.length === 0) return "";
 
@@ -304,6 +307,7 @@ export function encodeBase1k(bytes: Uint8Array): string {
   return UNICODE_ALPHABET[lenHigh] + UNICODE_ALPHABET[lenLow] + chars.join("");
 }
 
+/** Public API for `decodeBase1k`. */
 export function decodeBase1k(str: string): Uint8Array {
   if (str.length < 2) return new Uint8Array(0);
 
@@ -519,6 +523,7 @@ for (let i = 0; i < BMP_ALPHABET.length; i++) {
  */
 const BMP_MARKER = "\uFFF0";
 
+/** Public API for `encodeBaseBMP`. */
 export function encodeBaseBMP(bytes: Uint8Array): string {
   if (bytes.length === 0) return "";
 
@@ -539,6 +544,7 @@ export function encodeBaseBMP(bytes: Uint8Array): string {
   return BMP_MARKER + BMP_ALPHABET[lenHigh] + BMP_ALPHABET[lenLow] + chars.join("");
 }
 
+/** Public API for `decodeBaseBMP`. */
 export function decodeBaseBMP(str: string): Uint8Array {
   // Strip the BMP_MARKER prefix if present
   const s = str.startsWith(BMP_MARKER) ? str.slice(1) : str;
@@ -588,6 +594,7 @@ async function getBrotli(): Promise<BrotliModule> {
 // Public API
 // ---------------------------------------------------------------------------
 
+/** Public API for `arxCompress`. */
 export async function arxCompress(json: string): Promise<string> {
   const brotli = await getBrotli();
   const substituted = dictEncode(json);
@@ -619,6 +626,7 @@ export async function arxCompressBMP(json: string): Promise<string> {
   return encodeBaseBMP(compressed);
 }
 
+/** Public API for `arxDecompress`. */
 export async function arxDecompress(encoded: string): Promise<string> {
   const brotli = await getBrotli();
   const bytes = isBaseBMPEncoded(encoded)

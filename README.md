@@ -53,6 +53,12 @@ npm run preview
 
 Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a subpath deployment locally.
 
+## Contributing
+
+- Public exported functions/components in `src/lib/**` and `src/components/**` must have a preceding `/** ... */` JSDoc block.
+- Internal helpers are intentionally excluded from this rule to keep documentation noise low.
+- Run `npm run check:public-export-docs` (included in `npm run lint` and `npm run check`) before opening a PR.
+
 ## Verification
 
 ```bash
