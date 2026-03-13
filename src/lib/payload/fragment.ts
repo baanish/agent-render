@@ -216,44 +216,32 @@ export async function encodeEnvelopeAsync(envelope: PayloadEnvelope, options: En
   return selected.value;
 }
 
-export function decodeFragment(hash: string): ParsedPayload {
+type ParsedFragmentHeader =
+  | { ok: false; errorResponse: ParsedPayload }
+  | { ok: true; fragment: string; version: string; codec: PayloadCodec; encoded: string; fragmentLength: number };
+
+function parseFragmentHeader(hash: string): ParsedFragmentHeader {
   const fragment = hash.startsWith("#") ? hash.slice(1) : hash;
 
   if (!fragment) {
-    return {
-      ok: false,
-      code: "empty",
-      message: "Add a fragment payload to start rendering artifacts.",
-    };
+    return { ok: false, errorResponse: { ok: false, code: "empty", message: "Add a fragment payload to start rendering artifacts." } };
   }
 
   if (fragment.length > MAX_FRAGMENT_LENGTH) {
-    return {
-      ok: false,
-      code: "too-large",
-      message: `This payload exceeds the supported fragment budget of ${MAX_FRAGMENT_LENGTH.toLocaleString()} characters.`,
-    };
+    return { ok: false, errorResponse: { ok: false, code: "too-large", message: `This payload exceeds the supported fragment budget of ${MAX_FRAGMENT_LENGTH.toLocaleString()} characters.` } };
   }
 
   const [key, value] = fragment.split("=", 2);
 
   if (key !== PAYLOAD_FRAGMENT_KEY || !value) {
-    return {
-      ok: false,
-      code: "missing-key",
-      message: `Expected a fragment starting with #${PAYLOAD_FRAGMENT_KEY}=...`,
-    };
+    return { ok: false, errorResponse: { ok: false, code: "missing-key", message: `Expected a fragment starting with #${PAYLOAD_FRAGMENT_KEY}=...` } };
   }
 
   const firstDot = value.indexOf(".");
   const secondDot = value.indexOf(".", firstDot + 1);
 
   if (firstDot <= 0 || secondDot <= firstDot + 1 || secondDot >= value.length - 1) {
-    return {
-      ok: false,
-      code: "invalid-format",
-      message: "The fragment format is invalid. Expected v1.<codec>.<payload>.",
-    };
+    return { ok: false, errorResponse: { ok: false, code: "invalid-format", message: "The fragment format is invalid. Expected v1.<codec>.<payload>." } };
   }
 
   const version = value.slice(0, firstDot);
@@ -261,22 +249,23 @@ export function decodeFragment(hash: string): ParsedPayload {
   const encoded = value.slice(secondDot + 1);
 
   if (version !== "v1") {
-    return {
-      ok: false,
-      code: "invalid-format",
-      message: "The fragment format is invalid. Expected v1.<codec>.<payload>.",
-    };
+    return { ok: false, errorResponse: { ok: false, code: "invalid-format", message: "The fragment format is invalid. Expected v1.<codec>.<payload>." } };
   }
 
   if (!codecs.includes(codecRaw as PayloadCodec)) {
-    return {
-      ok: false,
-      code: "invalid-format",
-      message: `Unsupported codec "${codecRaw}". Supported codecs are ${codecs.join(", ")}.`,
-    };
+    return { ok: false, errorResponse: { ok: false, code: "invalid-format", message: `Unsupported codec "${codecRaw}". Supported codecs are ${codecs.join(", ")}.` } };
   }
 
-  const codec = codecRaw as PayloadCodec;
+  return { ok: true, fragment, version, codec: codecRaw as PayloadCodec, encoded, fragmentLength: fragment.length };
+}
+
+export function decodeFragment(hash: string): ParsedPayload {
+  const header = parseFragmentHeader(hash);
+  if (!header.ok) {
+    return header.errorResponse;
+  }
+
+  const { fragment, codec, encoded } = header;
 
   if (codec === "arx") {
     return {
@@ -359,42 +348,12 @@ function resolveArxDictVersion(version: number | null): boolean {
 }
 
 export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> {
-  const fragment = hash.startsWith("#") ? hash.slice(1) : hash;
-
-  if (!fragment) {
-    return { ok: false, code: "empty", message: "Add a fragment payload to start rendering artifacts." };
+  const header = parseFragmentHeader(hash);
+  if (!header.ok) {
+    return header.errorResponse;
   }
 
-  if (fragment.length > MAX_FRAGMENT_LENGTH) {
-    return { ok: false, code: "too-large", message: `This payload exceeds the supported fragment budget of ${MAX_FRAGMENT_LENGTH.toLocaleString()} characters.` };
-  }
-
-  const [key, value] = fragment.split("=", 2);
-
-  if (key !== PAYLOAD_FRAGMENT_KEY || !value) {
-    return { ok: false, code: "missing-key", message: `Expected a fragment starting with #${PAYLOAD_FRAGMENT_KEY}=...` };
-  }
-
-  const firstDot = value.indexOf(".");
-  const secondDot = value.indexOf(".", firstDot + 1);
-
-  if (firstDot <= 0 || secondDot <= firstDot + 1 || secondDot >= value.length - 1) {
-    return { ok: false, code: "invalid-format", message: "The fragment format is invalid. Expected v1.<codec>.<payload>." };
-  }
-
-  const version = value.slice(0, firstDot);
-  const codecRaw = value.slice(firstDot + 1, secondDot);
-  const remainder = value.slice(secondDot + 1);
-
-  if (version !== "v1") {
-    return { ok: false, code: "invalid-format", message: "The fragment format is invalid. Expected v1.<codec>.<payload>." };
-  }
-
-  if (!codecs.includes(codecRaw as PayloadCodec)) {
-    return { ok: false, code: "invalid-format", message: `Unsupported codec "${codecRaw}". Supported codecs are ${codecs.join(", ")}.` };
-  }
-
-  const codec = codecRaw as PayloadCodec;
+  const { fragment, codec, encoded: remainder } = header;
   let parsed: unknown;
 
   try {
@@ -409,9 +368,11 @@ export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> 
       const versionedPayload = parsedDictVersion === null ? remainder : remainder.slice(thirdDot + 1);
       const fallbackPayload = remainder;
       const useVersionedPayload = resolveArxDictVersion(parsedDictVersion);
-      const decodeAttempts = useVersionedPayload
-        ? [decodeArxEncodedPayload(versionedPayload)]
-        : [decodeArxEncodedPayload(fallbackPayload), decodeArxEncodedPayload(versionedPayload)];
+      const decodeAttempts = useVersionedPayload && parsedDictVersion !== null
+        ? [decodeArxEncodedPayload(fallbackPayload), decodeArxEncodedPayload(versionedPayload)]
+        : useVersionedPayload
+          ? [decodeArxEncodedPayload(versionedPayload)]
+          : [decodeArxEncodedPayload(fallbackPayload), decodeArxEncodedPayload(versionedPayload)];
 
       let lastError: Error | null = null;
       let decodedFromAttempt: string | null = null;
