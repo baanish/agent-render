@@ -72,6 +72,11 @@ function getDraftSignature(draft: LinkCreatorDraft) {
   return JSON.stringify(draft);
 }
 
+/**
+ * Builds shareable fragment links from pasted artifact content in the home empty state flow.
+ * Accepts `onPreviewHash` so the parent shell can preview the generated fragment before navigation.
+ * Generates links client-side with validation, and exposes inline copy/error/stale-result states.
+ */
 export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   const [draft, setDraft] = useState<LinkCreatorDraft>(defaultLinkCreatorDraft);
   const [generatedLink, setGeneratedLink] = useState<GeneratedArtifactLink | null>(null);
