@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight, Check, Copy, ExternalLink, FileCode2, FileDiff, FileJson2, FileSpreadsheet, FileText, Link2 } from "lucide-react";
 import { createGeneratedArtifactLinkAsync, defaultLinkCreatorDraft, getBodyFieldLabel, type GeneratedArtifactLink, type LinkCreatorDraft } from "@/lib/payload/link-creator";
-import { artifactKinds, type ArtifactKind } from "@/lib/payload/schema";
+import { artifactKinds, codecs, type ArtifactKind } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
 
 type LinkCreatorProps = {
@@ -238,9 +238,20 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                 <Link2 className="h-3.5 w-3.5" />
                 Generate link
               </button>
-              <p className="text-sm leading-6 text-[color:var(--text-muted)]">
-                Compression is chosen automatically through the same fragment helper used by the viewer.
-              </p>
+              <div className="creator-codec-row" role="group" aria-label="Compression algorithm">
+                <span className="metric-label">Compression</span>
+                {(["auto", ...codecs] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    className={cn("artifact-action", (draft.codec ?? "auto") === option && "is-primary")}
+                    aria-pressed={(draft.codec ?? "auto") === option}
+                    onClick={() => updateDraft("codec", option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
             </div>
           </form>
         </div>
