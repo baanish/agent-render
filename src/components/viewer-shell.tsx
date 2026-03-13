@@ -302,6 +302,12 @@ export function ViewerShell() {
     setHash(nextHash);
   }, []);
 
+  const handleGoHome = useCallback(() => {
+    const url = window.location.pathname + (window.location.search || "");
+    window.history.replaceState(null, "", url);
+    setHash("");
+  }, []);
+
   const handleArtifactSelect = useCallback(
     (artifactId: string) => {
       if (!envelope || envelope.activeArtifactId === artifactId) {
@@ -374,14 +380,20 @@ export function ViewerShell() {
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3.5 sm:gap-6">
         <header className="panel print-hide-on-markdown fade-up sticky top-2 z-30 flex flex-col gap-2 px-3 py-2.5 sm:top-4 sm:gap-4 sm:px-6 sm:py-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              handleGoHome();
+            }}
+            className="flex items-center gap-2.5 sm:gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-secondary)] focus-visible:ring-offset-2 rounded-[var(--radius-lg)] -m-1 p-1"
+            aria-label="Go to homepage"
+          >
             <div className="grid h-9 w-9 place-items-center rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-strong)] shadow-[var(--shadow-md)] sm:h-11 sm:w-11">
               <Image src={iconPath} alt="" width={24} height={24} className="h-5 w-5 sm:h-6 sm:w-6" priority unoptimized />
             </div>
-            <div>
-              <h1 className="font-display text-lg font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>
-            </div>
-          </div>
+            <h1 className="font-display text-lg font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>
+          </a>
 
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
             <span className="mono-pill shell-pill">Zero Data Retention by design</span>
