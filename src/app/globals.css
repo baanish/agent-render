@@ -486,6 +486,13 @@ select {
   padding-top: 0.2rem;
 }
 
+.creator-codec-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .creator-result-shell {
   min-width: 0;
 }
