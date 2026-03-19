@@ -127,7 +127,7 @@ test.describe("mobile UX", () => {
     const homeMetrics = page.locator(".home-inspector-panel .metric-grid");
     await expect.poll(() => homeMetrics.evaluate((element) => window.getComputedStyle(element).gridTemplateColumns.split(" ").length)).toBe(2);
 
-    await goToHash(page, getFragmentHash("Release bundle"));
+    await goToHash(page, getFragmentHash("arx showcase"));
     await waitForViewerState(page, "artifact");
 
     const artifactMetrics = page.getByTestId("artifact-metadata-grid");
@@ -144,7 +144,7 @@ test("renders compact CSV payloads without giant whitespace", async ({ page }) =
 });
 
 test("renders JSON tree and raw views", async ({ page }) => {
-  await goToHash(page, getFragmentHash("Release bundle"));
+  await goToHash(page, getFragmentHash("arx showcase"));
   await waitForViewerState(page, "artifact");
   await page.getByRole("button", { name: /Open artifact Artifact manifest/i }).click();
   await expect(page.locator("[data-active-kind='json']")).toBeVisible();
@@ -154,7 +154,7 @@ test("renders JSON tree and raw views", async ({ page }) => {
 });
 
 test("switches artifacts within a bundle", async ({ page }) => {
-  await goToHash(page, getFragmentHash("Release bundle"));
+  await goToHash(page, getFragmentHash("arx showcase"));
   await waitForViewerState(page, "artifact");
   const beforeHash = await page.evaluate(() => window.location.hash);
   await page.getByRole("button", { name: /Open artifact Bundle metrics/i }).click();
@@ -163,7 +163,7 @@ test("switches artifacts within a bundle", async ({ page }) => {
 });
 
 test("header icon and name navigate to homepage", async ({ page }) => {
-  await goToHash(page, getFragmentHash("Release bundle"));
+  await goToHash(page, getFragmentHash("arx showcase"));
   await waitForViewerState(page, "artifact");
   await expect(page.locator("[data-active-kind='json']")).toBeVisible();
 

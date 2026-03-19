@@ -71,7 +71,7 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
   {
     v: 1,
     codec: "plain",
-    title: "Release bundle",
+    title: "arx showcase",
     activeArtifactId: "manifest",
     artifacts: [
       {
@@ -135,12 +135,19 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
   },
 ];
 
+const sampleDescriptions: Record<string, string> = {
+  "arx showcase":
+    "Dictionary substitution, Brotli, and high-density Unicode encoding compress 5 rich artifacts into a single URL fragment.",
+};
+
 export const sampleLinks = sampleEnvelopes.map((envelope) => {
   const activeArtifact = envelope.artifacts.find((artifact) => artifact.id === envelope.activeArtifactId) ?? envelope.artifacts[0];
+  const title = envelope.title ?? "Sample payload";
 
   return {
-    title: envelope.title ?? "Sample payload",
+    title,
     hash: `#${encodeEnvelope(envelope)}`,
     kind: activeArtifact?.kind ?? "markdown",
+    description: sampleDescriptions[title],
   };
 });

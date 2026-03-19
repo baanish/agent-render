@@ -54,7 +54,7 @@ test("json visual regression", async ({ page }) => {
   await goToHash(page);
   await stabilizePage(page);
   await waitForViewerState(page, "empty");
-  await page.getByRole("link", { name: /Release bundle/i }).click();
+  await page.getByRole("link", { name: /arx showcase/i }).click();
   await waitForViewerState(page, "artifact");
   await page.getByRole("button", { name: /Open artifact Artifact manifest/i }).click();
   await waitForRendererReady(page, "json");
@@ -66,7 +66,7 @@ test("bundle switcher visual regression", async ({ page }) => {
   await goToHash(page);
   await stabilizePage(page);
   await waitForViewerState(page, "empty");
-  await page.getByRole("link", { name: /Release bundle/i }).click();
+  await page.getByRole("link", { name: /arx showcase/i }).click();
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "json");
   await expect(page.locator(".artifact-selector-row")).toHaveScreenshot("bundle-switcher-light.png", { animations: "disabled", stylePath });
