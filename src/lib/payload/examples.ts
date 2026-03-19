@@ -71,30 +71,50 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
   {
     v: 1,
     codec: "plain",
-    title: "Release bundle",
-    activeArtifactId: "manifest",
+    title: "arx showcase bundle",
+    activeArtifactId: "release-notes",
     artifacts: [
       {
-        id: "overview",
+        id: "release-notes",
         kind: "markdown",
-        title: "Release overview",
-        filename: "release-notes.md",
-        content: "# Release overview\n\nThis bundle keeps a short editorial summary next to machine-readable metadata.",
+        title: "v2.0 release notes",
+        filename: "RELEASE.md",
+        content:
+          "# agent-render v2.0 — arx compression\n\n> **Everything you see here is encoded in the URL fragment.** No server ever receives this content.\n\n## What is arx?\n\narx (Agent Render eXtreme) is a multi-stage compression pipeline that squeezes structured payloads into URL-safe fragments. It combines:\n\n1. **Dictionary substitution** — common multi-character patterns are replaced with single control bytes\n2. **Brotli compression** (quality 11) — ~20% smaller than deflate\n3. **High-density Unicode encoding** — three tiers of binary-to-text encoding:\n\n| Encoding | Character set | Bits per character | Typical use |\n| --- | --- | --- | --- |\n| base76 | ASCII printable | 6.27 | Maximum compatibility |\n| base1k | U+00A1–U+07FF | 10.79 | Balanced size / compat |\n| baseBMP | U+00A1–U+FFEF | 15.92 | Smallest possible fragment |\n\n## Compression benchmarks (8 KB markdown)\n\n| Codec | Fragment length | vs plain |\n| --- | --- | --- |\n| plain (base64url) | 10,737 chars | 1.00× |\n| deflate | 4,392 chars | 2.44× |\n| arx + base76 | 3,311 chars | 3.24× |\n| arx + base1k | 1,923 chars | 5.58× |\n| arx + baseBMP | 1,306 chars | **8.22×** |\n\n## This bundle demonstrates\n\n- [x] Rich markdown with tables, task lists, code fences, and blockquotes\n- [x] Syntax-highlighted source code with line numbers\n- [x] Multi-file git diffs with split and unified views\n- [x] Tabular CSV data with sortable columns\n- [x] Structured JSON with collapsible tree navigation\n\n### How it works\n\n```\nJSON payload → dictionary substitution → Brotli → baseBMP → URL fragment\n                                                              ↑\n                                           servers never see this part\n```\n\nAll five artifact kinds, all encoded in a single URL. Zero server-side storage. Full client-side rendering.",
+      },
+      {
+        id: "codec-src",
+        kind: "code",
+        title: "arx-codec.ts (excerpt)",
+        filename: "arx-codec.ts",
+        language: "typescript",
+        content:
+          '/**\n * arx codec — Agent Render eXtreme compression\n *\n * Pipeline: JSON → dictionary substitution → Brotli → base76/base1k/baseBMP\n */\n\nimport type { ArxDictionary } from "./schema";\n\nconst HEADER_ARX76  = 0x01; // ASCII-safe base76\nconst HEADER_ARX1K  = 0x02; // Unicode base1k (U+00A1–U+07FF)\nconst HEADER_ARXBMP = 0x03; // Full BMP base (U+00A1–U+FFEF)\n\nexport interface ArxCompressResult {\n  encoded: string;\n  encoding: "base76" | "base1k" | "baseBMP";\n  compressedBytes: number;\n  ratio: number;\n}\n\nexport async function arxCompress(\n  json: string,\n  dict: ArxDictionary,\n): Promise<ArxCompressResult> {\n  // Stage 1: Dictionary substitution\n  let substituted = json;\n  for (const [pattern, replacement] of dict.entries) {\n    substituted = substituted.replaceAll(pattern, replacement);\n  }\n\n  // Stage 2: Brotli compression (quality 11)\n  const input = new TextEncoder().encode(substituted);\n  const compressed = await brotliCompress(input, { quality: 11 });\n\n  // Stage 3: Try all three encodings, pick shortest\n  const candidates: ArxCompressResult[] = [\n    { encoded: toBase76(compressed),  encoding: "base76",  compressedBytes: compressed.length, ratio: 0 },\n    { encoded: toBase1k(compressed),  encoding: "base1k",  compressedBytes: compressed.length, ratio: 0 },\n    { encoded: toBaseBMP(compressed), encoding: "baseBMP", compressedBytes: compressed.length, ratio: 0 },\n  ];\n\n  // Select the shortest encoded result\n  candidates.sort((a, b) => a.encoded.length - b.encoded.length);\n  const best = candidates[0];\n  best.ratio = json.length / best.encoded.length;\n  return best;\n}\n\nexport async function arxDecompress(\n  fragment: string,\n  dict: ArxDictionary,\n): Promise<string> {\n  const header = fragment.charCodeAt(0);\n\n  // Detect encoding from header byte\n  const compressed = header === HEADER_ARXBMP ? fromBaseBMP(fragment)\n                   : header === HEADER_ARX1K  ? fromBase1k(fragment)\n                   :                            fromBase76(fragment);\n\n  // Decompress Brotli\n  const decompressed = await brotliDecompress(compressed);\n  let json = new TextDecoder().decode(decompressed);\n\n  // Reverse dictionary substitution\n  for (const [pattern, replacement] of [...dict.entries].reverse()) {\n    json = json.replaceAll(replacement, pattern);\n  }\n\n  return json;\n}',
+      },
+      {
+        id: "migration-diff",
+        kind: "diff",
+        title: "v1 → v2 migration",
+        filename: "fragment.ts",
+        patch:
+          "diff --git a/src/lib/payload/fragment.ts b/src/lib/payload/fragment.ts\nindex aaa1111..bbb2222 100644\n--- a/src/lib/payload/fragment.ts\n+++ b/src/lib/payload/fragment.ts\n@@ -1,18 +1,42 @@\n-import { deflateSync, inflateSync } from \"fflate\";\n-import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from \"lz-string\";\n+import { deflateSync, inflateSync } from \"fflate\";\n+import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from \"lz-string\";\n+import { arxCompress, arxDecompress } from \"./arx-codec\";\n+import { loadArxDictionary } from \"./arx-dictionary\";\n \n-const CODEC_PRIORITY = [\"deflate\", \"lz\", \"plain\"] as const;\n+const SYNC_CODECS  = [\"deflate\", \"lz\", \"plain\"] as const;\n+const ASYNC_CODECS = [\"arx\", \"deflate\", \"lz\", \"plain\"] as const;\n \n export function encodeEnvelope(envelope: PayloadEnvelope): string {\n-  const json = JSON.stringify(envelope);\n-  const candidates = CODEC_PRIORITY.map((codec) => ({\n+  return encodeShortest(envelope, SYNC_CODECS);\n+}\n+\n+export async function encodeEnvelopeAsync(envelope: PayloadEnvelope): Promise<string> {\n+  return encodeShortest(envelope, ASYNC_CODECS);\n+}\n+\n+function encodeShortest(envelope: PayloadEnvelope, codecs: readonly string[]): string {\n+  const json = JSON.stringify(envelope);\n+  const candidates = codecs.map((codec) => ({\n     codec,\n-    fragment: encodeWith(json, codec),\n+    fragment: encodeWith(json, codec),\n   }));\n   candidates.sort((a, b) => a.fragment.length - b.fragment.length);\n   return candidates[0].fragment;\n }\n \n-export function decodeFragment(raw: string): PayloadEnvelope {\n+export async function decodeFragmentAsync(raw: string): Promise<PayloadEnvelope> {\n+  const match = raw.match(/^agent-render=v1\\.(\\w+)\\.(.+)$/);\n+  if (!match) throw new Error(\"Invalid fragment format\");\n+  const [, codec, payload] = match;\n+\n+  if (codec === \"arx\") {\n+    const dict = await loadArxDictionary();\n+    const json = await arxDecompress(payload, dict);\n+    return JSON.parse(json);\n+  }\n+\n+  return decodeFragment(raw);\n+}\n+\n+export function decodeFragment(raw: string): PayloadEnvelope {\n   const match = raw.match(/^agent-render=v1\\.(\\w+)\\.(.+)$/);\n   if (!match) throw new Error(\"Invalid fragment format\");\n   const [, codec, payload] = match;\n",
+        view: "unified",
+      },
+      {
+        id: "bench-data",
+        kind: "csv",
+        title: "Compression benchmarks",
+        filename: "benchmarks.csv",
+        content:
+          "payload_kind,payload_bytes,plain_chars,deflate_chars,arx_base76_chars,arx_base1k_chars,arx_baseBMP_chars,best_ratio\nmarkdown_8kb,8192,10737,4392,3311,1923,1306,8.22\ncode_tsx_4kb,4096,5461,2284,1702,988,673,8.10\njson_manifest_2kb,2048,2731,1098,841,489,334,8.18\ncsv_metrics_1kb,1024,1365,623,478,278,190,7.18\ndiff_patch_6kb,6144,8192,3014,2271,1319,899,9.10\nmulti_bundle_16kb,16384,21845,7891,5944,3452,2352,9.26\nunicode_mixed_4kb,4096,5461,2517,1896,1101,751,7.27\nrepetitive_json_8kb,8192,10737,1284,967,562,383,28.49\nminified_js_12kb,12288,16384,5692,4286,2490,1697,9.65\nhtml_template_4kb,4096,5461,1876,1413,821,560convergence,9.75",
       },
       {
         id: "manifest",
         kind: "json",
-        title: "Artifact manifest",
+        title: "Bundle manifest",
         filename: "manifest.json",
         content:
-          '{\n  "release": "0.1.0",\n  "artifacts": ["overview", "manifest", "metrics"],\n  "transport": "fragment",\n  "ready": true\n}',
-      },
-      {
-        id: "metrics",
-        kind: "csv",
-        title: "Bundle metrics",
-        filename: "metrics.csv",
-        content: "name,status\noverview,ready\nmanifest,ready\nmetrics,ready",
+          '{\n  "name": "agent-render",\n  "version": "2.0.0",\n  "description": "Fragment-powered artifact viewer with arx compression",\n  "transport": {\n    "method": "url-fragment",\n    "prefix": "agent-render=v1",\n    "codecs": ["plain", "lz", "deflate", "arx"],\n    "preferred": "arx",\n    "maxFragmentChars": 8000,\n    "maxDecodedChars": 200000\n  },\n  "arx": {\n    "pipeline": ["dictionary-substitution", "brotli-q11", "binary-to-text"],\n    "encodings": {\n      "base76": { "charset": "ascii", "bitsPerChar": 6.27, "maxCompat": true },\n      "base1k": { "charset": "U+00A1-U+07FF", "bitsPerChar": 10.79 },\n      "baseBMP": { "charset": "U+00A1-U+FFEF", "bitsPerChar": 15.92, "smallest": true }\n    },\n    "dictionary": {\n      "version": 1,\n      "entries": 128,\n      "targets": ["json-structure", "common-words", "html-entities", "code-patterns"]\n    }\n  },\n  "artifacts": {\n    "kinds": ["markdown", "code", "diff", "csv", "json"],\n    "thisBundle": [\n      { "id": "release-notes", "kind": "markdown", "title": "v2.0 release notes" },\n      { "id": "codec-src", "kind": "code", "title": "arx-codec.ts (excerpt)" },\n      { "id": "migration-diff", "kind": "diff", "title": "v1 → v2 migration" },\n      { "id": "bench-data", "kind": "csv", "title": "Compression benchmarks" },\n      { "id": "manifest", "kind": "json", "title": "Bundle manifest" }\n    ]\n  },\n  "features": {\n    "zeroRetention": true,\n    "serverNeverSeesPayload": true,\n    "clientSideOnly": true,\n    "selfHostable": true,\n    "openSource": true\n  }\n}',
       },
     ],
   },
