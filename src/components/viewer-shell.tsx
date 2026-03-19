@@ -604,7 +604,7 @@ export function ViewerShell() {
                           </div>
                           <h4 className="mt-3 text-base font-semibold leading-6">{sample.title}</h4>
                           <p className="mt-1 text-sm leading-6 text-[color:var(--text-muted)]">
-                            {sample.envelope.artifacts.length} artifact{sample.envelope.artifacts.length === 1 ? "" : "s"} ready for fragment decode.
+                            {sample.description ?? `${sample.envelope.artifacts.length} artifact${sample.envelope.artifacts.length === 1 ? "" : "s"} ready for fragment decode.`}
                           </p>
                         </div>
                         <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-[color:var(--text-soft)]" />
