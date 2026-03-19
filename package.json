@@ -8,7 +8,7 @@
     "build": "next build",
     "preview": "node scripts/serve-export.mjs",
     "start": "npm run preview",
-    "lint": "eslint .",
+    "lint": "eslint . && npm run check:public-export-docs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -17,7 +17,8 @@
     "test:browsers": "playwright install chromium",
     "codec:poc": "node scripts/codec-poc.mjs",
     "typecheck": "node scripts/ensure-next-types.mjs && tsc --noEmit",
-    "check": "npm run lint && npm run test && npm run typecheck && npm run build"
+    "check": "npm run lint && npm run test && npm run typecheck && npm run build",
+    "check:public-export-docs": "node scripts/check-public-export-docs.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.1",

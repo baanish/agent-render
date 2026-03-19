@@ -94,6 +94,13 @@ function buildArtifact(draft: LinkCreatorDraft): ArtifactPayload {
   };
 }
 
+/**
+ * Builds a single-artifact payload envelope from link-creator draft input.
+ *
+ * Throws when the draft content/body is empty (including whitespace-only input). Returned
+ * envelopes are not yet validated for bundle invariants; callers should run
+ * {@link normalizeEnvelope} before encoding.
+ */
 export function createDraftEnvelope(draft: LinkCreatorDraft): PayloadEnvelope {
   const artifact = buildArtifact(draft);
 
@@ -106,6 +113,16 @@ export function createDraftEnvelope(draft: LinkCreatorDraft): PayloadEnvelope {
   };
 }
 
+/**
+ * Generates a shareable artifact link from draft input using sync codecs.
+ *
+ * Throws when draft content is empty, envelope normalization fails, or the generated fragment
+ * exceeds `MAX_FRAGMENT_LENGTH`. The returned object always includes:
+ * - `hash`: `#agent-render=v1...` fragment string
+ * - `url`: either the hash-only URL or `baseUrl` with hash attached
+ * - `fragmentLength`: character count excluding the leading `#`
+ * - `envelope` and `artifact`: the normalized payload envelope and its single artifact
+ */
 export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: string): GeneratedArtifactLink {
   const normalized = normalizeEnvelope(createDraftEnvelope(draft));
 
@@ -139,6 +156,13 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
   };
 }
 
+/**
+ * Async variant of {@link createGeneratedArtifactLink} that can leverage async codecs (including
+ * `arx`) via {@link encodeEnvelopeAsync}.
+ *
+ * Error and return semantics match the sync variant: throws on invalid draft/normalized payload
+ * or over-budget fragments, and returns `{ hash, url, fragmentLength, envelope, artifact }`.
+ */
 export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, baseUrl?: string): Promise<GeneratedArtifactLink> {
   const normalized = normalizeEnvelope(createDraftEnvelope(draft));
 
@@ -173,6 +197,9 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
   };
 }
 
+/**
+ * Returns the body-field label used by the link creator for the selected artifact kind.
+ */
 export function getBodyFieldLabel(kind: ArtifactKind) {
   return kind === "diff" ? "Patch" : "Content";
 }

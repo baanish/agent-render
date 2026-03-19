@@ -182,6 +182,7 @@ When making changes, preserve the product shape unless the owner explicitly want
 
 ### Do
 - keep the core experience static-host friendly
+- add a preceding `/** ... */` block for public exported functions/components in `src/lib/**` and `src/components/**`
 - keep the fragment transport client-side
 - prefer small, explicit protocol changes
 - update docs when changing user-visible behavior or protocol semantics
