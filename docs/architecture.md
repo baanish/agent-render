@@ -2,20 +2,81 @@
 
 ## Project shape
 
-`agent-render` is a single exported client-side shell built with Next.js 15, React 19, and Tailwind CSS 4.
+`agent-render` now ships in two closely related modes:
 
-- The application ships as static files only.
+1. **Static fragment mode** - the main/default product, exported as static files.
+2. **Self-hosted UUID mode** - an optional server-backed add-on that reuses the same viewer UI.
+
+The static mode remains the core product identity. The self-hosted mode exists for operators who want practical UUID links, local/private deployments, or relief from fragment-length and chat-surface transport issues.
+
+## Static fragment mode
+
+The default app remains a single exported client-side shell built with Next.js 15, React 19, and Tailwind CSS 4.
+
 - All artifact data lives in the URL fragment.
 - The app renders one viewer shell and selects a renderer based on the artifact kind.
-- Renderers stay modular so they can evolve independently without coupling to Next.js routing.
+- Renderers stay modular so they can evolve independently without coupling to route-specific server logic.
+- The deployed static host does not receive artifact contents on the initial request.
 
-## Why a single exported route
+### Why a single exported route
 
-GitHub Pages is strongest when the application behaves like a static shell instead of a path-heavy routed app.
+GitHub Pages and similar hosts are strongest when the application behaves like a static shell instead of a path-heavy routed app.
 
-- Avoids subpath and refresh traps on project pages
-- Keeps payload handling entirely client-side
-- Makes deployment portable to any static host
+- avoids subpath and refresh traps on project pages
+- keeps payload handling entirely client-side
+- makes deployment portable to any static host
+
+## Optional self-hosted UUID mode
+
+Self-hosted mode adds a small Node.js server and SQLite database without replacing the static app.
+
+### Responsibilities
+
+- store the existing `agent-render` payload string as-is under a UUID v4
+- serve `GET /{uuid}` links that reuse the same viewer shell and renderers
+- expose a simple CRUD-style API for create/read/delete and optional update
+- enforce a 24-hour sliding TTL
+
+### Why it exists
+
+This mode is useful when:
+
+- fragment links are too large for a target surface
+- users want a same-machine or private deployment near their agent runtime
+- operators prefer short UUID URLs for temporary artifacts
+- payloads should survive chat-link mangling without introducing a second artifact schema
+
+### Server composition
+
+The optional server:
+
+- serves the exported static viewer assets from `out/`
+- stores `id -> payload_string` in SQLite
+- injects a bootstrap payload into the exported HTML for `/{uuid}` routes
+- reuses the shipped client-side decode/render flow rather than inventing a second viewer
+
+The browser still decodes the same payload string format; the only difference is how the string gets delivered to the page.
+
+## Viewer reuse
+
+The shared viewer shell remains the main frontend surface.
+
+- fragment mode reads `window.location.hash`
+- self-hosted mode reads an injected bootstrap payload when present
+- both modes use the same payload decoder, envelope normalization, artifact selector, renderer toolbar, and renderer components
+
+Artifact switching differs slightly by mode:
+
+- fragment mode updates `activeArtifactId` in the fragment so the link remains truthful
+- self-hosted mode keeps artifact switching in local UI state so the UUID route and stored payload string stay stable
+
+Other viewer features stay aligned across both modes:
+
+- copy to clipboard
+- file download
+- markdown print-to-PDF
+- diff unified/split modes
+- bundle artifact switching
 
 ## Renderer implementation
 
@@ -25,88 +86,84 @@ GitHub Pages is strongest when the application behaves like a static shell inste
 - `csv` - table-focused data grid built from parsed rows and dynamic columns
 - `json` - lightweight read-only tree view plus a raw CodeMirror view
 
-The viewer shell now routes all five artifact kinds through dynamically imported client-only renderers so the landing shell stays light and static-host friendly.
+The viewer shell routes all five artifact kinds through dynamically imported client-only renderers so the landing shell stays light.
 
-When a valid fragment is present, the shell switches into a viewer-first layout with bundle navigation beside the active artifact. The active artifact header includes copy, download, and markdown print actions. The landing/samples experience is only the empty state.
+## Storage model
 
-Diff file navigation is intentionally internal UI state now. The URL fragment remains reserved for payload transport and active-artifact selection instead of being reused as an in-page file anchor system.
+SQLite schema is intentionally minimal:
 
-## Markdown fence choice
+- `id TEXT PRIMARY KEY`
+- `payload TEXT NOT NULL`
+- `created_at`
+- `updated_at`
+- `last_viewed_at`
+- `expires_at`
 
-This round explicitly evaluated Shiki and rejected it for now.
+Indexes exist on `expires_at` and `last_viewed_at` because expiry and refresh are the main operational queries.
 
-- Shiki is MIT and technically viable in a fully static app.
-- The current app already ships a premium read-only CodeMirror stack for source viewing.
-- Reusing that stack for markdown fences keeps them visually strong while avoiding a second async highlighting system and an additional code/theme/language runtime.
-- That choice also removes the weaker `rehype-highlight` plus `highlight.js` path instead of carrying both.
+The stored `payload` value is the existing fragment payload body, such as:
 
-If markdown fence fidelity becomes a repeated product problem after these bundle reductions, Shiki remains the next serious candidate, but it should replace rather than supplement the current fence path.
+```text
+agent-render=v1.deflate.<payload>
+```
 
-## Raw code renderer choice
+No second artifact schema is introduced.
 
-The raw code viewer now keeps CodeMirror, but the architecture is cleaner:
+## TTL behavior
 
-- language modules load on demand instead of being statically imported together
-- indentation guides come from the maintained `@replit/codemirror-indentation-markers` extension
-- rainbow brackets stay custom, but now operate as a syntax-tree-aware decoration pass instead of naive quote tracking
+Self-hosted mode uses a **24-hour sliding TTL**.
 
-That keeps the viewer static-hosting friendly while removing the brittle parts of the earlier implementation.
+- successful `GET /api/artifacts/:id` refreshes expiry
+- successful `GET /:id` refreshes expiry
+- expired rows fail clearly
+- expired rows are deleted lazily on access
+- `npm run cleanup:selfhosted` provides manual/agent-triggered cleanup
 
-## Bundle tradeoffs
-
-The largest remaining deferred cost is still the diff renderer stack, primarily `@git-diff-view/*` and its highlighting internals. It remains because it still provides the best review-style UX for multi-file git patches, split/unified modes, and syntax-aware rendering with less product code than a bespoke replacement.
-
-The JSON and markdown paths are now substantially lighter because:
-
-- `vanilla-jsoneditor` was removed in favor of a lighter read-only tree view
-- `rehype-highlight` and its Highlight.js stack were removed
-- CodeMirror language support now loads on demand per active language
-
-## Diff choice
-
-`agent-render` uses `@git-diff-view/react` plus git-diff `DiffFile` instances instead of `@codemirror/merge`.
-
-- `@git-diff-view/*` matches the product goal better because it is already shaped like a GitHub-style review surface
-- split and unified views are built in
-- syntax highlighting and diff affordances are stronger out of the box for artifact viewing
-- individual file patches can be rendered as a sequence while preserving filenames and boundaries
-- CodeMirror remains the better fit for raw source and raw JSON views
-
-`@codemirror/merge` stays a reasonable future option if the project ever needs a more editor-centric comparison workflow, but it is not the best default for shareable review artifacts.
+Docs recommend that deployments with perimeter auth treat TTL refresh as happening on successful authenticated access. The server itself stays auth-neutral.
 
 ## Security posture
 
-- Treat every payload as untrusted input
-- Disable raw HTML in markdown by default
-- Keep artifact text out of `dangerouslySetInnerHTML`
-- Sanitize any content pipeline that can introduce markup
+### Shared rules
+
+- treat every payload as untrusted input
+- keep artifact text out of `dangerouslySetInnerHTML`
+- preserve markdown sanitization
+- fail clearly on malformed payloads before renderer mount when possible
+
+### Static mode
+
+- zero-retention by host design
+- fragment contents do not reach the initial server request path
+
+### Self-hosted mode
+
+- intentionally server-backed
+- SQLite retention is time-limited, not zero-retention
+- auth is optional and left to deployment perimeter choices
+- Cloudflare Tunnel / Zero Trust, reverse proxy auth, or local-only binding are all valid practical patterns
 
 ## Transport
 
-The fragment protocol keeps the JSON envelope stable and treats compression strictly as transport.
+The fragment protocol remains the canonical payload format across both modes.
 
 - `plain` stores base64url-encoded JSON for compatibility and debugging
 - `lz` stores compressed JSON via `lz-string` when it produces a smaller fragment
 - `deflate` stores deflate-compressed UTF-8 JSON bytes when it outperforms other codecs
-- `arx` applies domain-dictionary substitution, brotli compression (quality 11), and binary-to-text encoding for best-in-class compression. Four wire shapes are candidates: base76 (ASCII, 77 fragment-safe chars), base64url (RFC 4648 `A-Za-z0-9-_` with a `B.` prefix for detection), base1k (Unicode, 1774 chars from U+00A1–U+07FF), and baseBMP (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). The async encoder tries all four and picks the shortest **transport** length (percent-encoded UTF-8 length for non-ASCII), so base64url can win over Unicode encodings on chat-style surfaces. baseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes, achieving ~70% smaller fragments than deflate on typical payloads (~6.1x compression ratio for 8k markdown). Full pipeline timing is on the order of ~8–14ms for 8k payloads depending on the wire encoding. The substitution dictionary is served as a static file at `/arx-dictionary.json` so agents can fetch it for local compression; a pre-compressed `/arx-dictionary.json.br` variant is also available. The viewer loads the dictionary on startup and falls back to a built-in table if the fetch fails.
-- packed wire mode (`p: 1`) shortens transport keys before compression, then unpacks back to the standard envelope during decode
-- automatic async codec selection tries `arx -> deflate -> lz -> plain` and compares packed + non-packed candidates
-- sync codec selection (used by examples and legacy paths) tries `deflate -> lz -> plain`
-- decode enforces both fragment length and decoded payload size ceilings before UI rendering
-- invalid bundle state is normalized or rejected before renderers mount
+- `arx` applies domain-dictionary substitution, brotli compression, and binary-to-text encoding for best-in-class compression
+- packed wire mode (`p: 1`) shortens keys before compression and expands back to the standard envelope during decode
 
-## Zero-retention boundaries
-
-The static host does not receive fragment contents as part of the request, but that is not absolute secrecy.
-
-- artifact data still exists in copied links
-- artifact data can remain in browser history
-- client-side analytics would still be able to observe decoded payloads if added later
-- very large artifacts can exceed practical URL-sharing limits, which is why the shell enforces a fragment budget
+Self-hosted mode stores that same encoded payload string instead of changing the envelope contract.
 
 ## Routing and hosting constraints
 
+### Static mode
+
 - `output: "export"`
 - GitHub Pages-compatible `basePath` and `assetPrefix`
-- `.nojekyll` included for Pages compatibility
-- Fragment size budget enforced before render
+- fragment size budget enforced before render
+
+### Self-hosted mode
+
+- requires a Node.js runtime
+- reuses the exported viewer assets generated by `npm run build`
+- keeps route surface intentionally small: `/`, `/{uuid}`, and `/api/artifacts/*`
