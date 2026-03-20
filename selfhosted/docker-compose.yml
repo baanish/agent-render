@@ -1,0 +1,14 @@
+services:
+  agent-render:
+    build: .
+    ports:
+      - "3001:3001"
+    volumes:
+      - artifact-data:/app/data
+    environment:
+      - NODE_ENV=production
+      - ARTIFACTS_DB_PATH=/app/data/artifacts.db
+    restart: unless-stopped
+
+volumes:
+  artifact-data:

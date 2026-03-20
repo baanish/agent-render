@@ -35,3 +35,12 @@
 
 - `rehype-highlight` was removed after review because markdown fences now reuse the CodeMirror viewer stack directly.
 - `vanilla-jsoneditor` was removed because its bundle cost was too high for the default JSON tree-view use case in a viewer-first product.
+
+## Self-Hosted Variant Dependencies
+
+- `better-sqlite3` - MIT - synchronous SQLite3 bindings for Node.js
+- `uuid` - MIT - UUID v4 generation for artifact identifiers
+- `@types/better-sqlite3` - MIT (dev)
+- `@types/uuid` - MIT (dev)
+
+These dependencies are only installed in the `selfhosted/` directory and do not affect the static app's dependency tree.

@@ -28,12 +28,15 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 - `csv` - parsed table view with sticky headers and horizontal overflow handling
 - `json` - lightweight read-only tree view plus raw code view, with graceful malformed JSON fallback
 
+The self-hosted variant reuses these same renderers.
+
 ## Principles
 
 - Fully static export with Next.js App Router
 - No backend, no database, no server-side persistence
 - Fragment-based payloads (`#...`) so the server never receives artifact contents
 - Public-safe naming and MIT-compatible dependencies
+- Optional self-hosted variant available for UUID-based links with server persistence
 
 ## Local Development
 
@@ -82,6 +85,20 @@ The shell keeps first load lean and defers renderer-heavy code until needed. The
 - `docs/deployment.md` - deployment notes
 - `docs/dependency-notes.md` - major dependency and license notes
 - `docs/testing.md` - test commands, screenshot workflow, and CI notes
+
+## Self-Hosted Variant
+
+An optional self-hosted, server-backed variant lives at `selfhosted/`. It reuses the same viewer and renderers as the static app but stores payloads in SQLite under UUIDs.
+
+- Links use `https://{host}/{uuid}` instead of fragment URLs
+- No fragment length limits
+- 24-hour sliding TTL
+- Simple REST API for create, read, and delete
+- Deployment: `cd selfhosted && npm install && npm run build && npm run start` or Docker Compose
+
+This is an optional add-on, not the default product. The static fragment-based app remains the primary deployment mode.
+
+See `skills/selfhosted-agent-render/SKILL.md` for full deployment and usage guidance.
 
 ## Zero Retention
 

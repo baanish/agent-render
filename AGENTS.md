@@ -18,6 +18,8 @@ Core product traits right now:
 - static-export friendly
 - fragment-based transport so artifact contents stay out of the request URL and off the server request path
 
+The self-hosted variant at `selfhosted/` is an optional add-on that reuses the same viewer with SQLite-backed UUID links. The static fragment-based app remains the primary product.
+
 ## Product contract
 
 Treat these as core constraints unless the owner explicitly changes the product direction.
@@ -128,6 +130,18 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 ### Diff handling
 - `src/lib/diff/git-patch.ts` - patch parsing support for diff rendering
 
+### Self-hosted variant
+- `selfhosted/` - separate Next.js app for the server-backed variant
+- `selfhosted/src/lib/db.ts` - SQLite database initialization
+- `selfhosted/src/lib/artifacts.ts` - artifact CRUD operations with TTL
+- `selfhosted/src/app/api/artifacts/route.ts` - POST create endpoint
+- `selfhosted/src/app/api/artifacts/[id]/route.ts` - GET/DELETE/PUT endpoints
+- `selfhosted/src/app/api/cleanup/route.ts` - expired row cleanup endpoint
+- `selfhosted/src/app/artifact/[id]/page.tsx` - server-rendered artifact viewer page
+- `src/components/selfhosted-viewer-shell.tsx` - client shell accepting envelope prop
+- `selfhosted/docker-compose.yml` - Docker Compose deployment config
+- `skills/selfhosted-agent-render/SKILL.md` - self-hosted skill documentation
+
 ### Docs and external contract
 - `README.md`
 - `docs/architecture.md`
@@ -208,6 +222,7 @@ If any of these change, check the rest in the same pass:
 - renderer capabilities
 - local commands
 - deployment assumptions
+- `skills/selfhosted-agent-render/SKILL.md`
 
 At minimum, verify alignment across:
 - `README.md`
@@ -217,6 +232,7 @@ At minimum, verify alignment across:
 - `docs/dependency-notes.md`
 - `docs/testing.md`
 - `skills/agent-render-linking/SKILL.md`
+- `skills/selfhosted-agent-render/SKILL.md`
 
 ## Default contributor stance
 

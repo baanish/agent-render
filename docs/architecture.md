@@ -110,3 +110,38 @@ The static host does not receive fragment contents as part of the request, but t
 - GitHub Pages-compatible `basePath` and `assetPrefix`
 - `.nojekyll` included for Pages compatibility
 - Fragment size budget enforced before render
+
+## Self-Hosted Variant
+
+A separate Next.js app lives at `selfhosted/` in the same repo. It is an optional add-on; the static fragment-based app remains the primary product.
+
+### Component sharing
+
+The self-hosted app reuses the same viewer renderers and shell components from `src/`. Two webpack aliases make this work:
+
+- `@shared` maps to the parent `src/` so the self-hosted app can import renderers and shell components directly.
+- `@` also maps to parent `src/` so that internal imports inside shared components resolve correctly.
+
+The self-hosted Next.js config sets `transpilePackages` so shared source is compiled without a separate build step.
+
+### Server-rendered viewer route
+
+`selfhosted/src/app/artifact/[id]/page.tsx` is a server-rendered route. It fetches the payload from SQLite, parses it into a `PayloadEnvelope`, and passes it to a new `SelfHostedViewerShell` component at `src/components/selfhosted-viewer-shell.tsx`. That shell accepts a pre-fetched `PayloadEnvelope` prop instead of reading from the URL fragment, which keeps the static app's fragment-driven contract untouched.
+
+### Persistence
+
+SQLite persistence is provided by `better-sqlite3` with a single `artifacts` table.
+
+### REST API
+
+- `POST /api/artifacts` — create a new artifact
+- `GET /api/artifacts` — read an artifact
+- `DELETE /api/artifacts` — delete an artifact
+- `PUT /api/artifacts` — update an artifact
+- `POST /api/cleanup` — remove expired rows
+
+Every successful GET/view extends `expires_at` by 24 hours (sliding TTL). The cleanup endpoint removes rows whose `expires_at` has passed.
+
+### Hosting config
+
+The self-hosted app does **not** use `output: "export"`. It uses `output: "standalone"` so it can run server-rendered routes backed by SQLite.
