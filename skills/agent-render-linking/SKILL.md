@@ -33,7 +33,7 @@ Supported codecs:
 - `plain`: base64url-encoded JSON envelope
 - `lz`: `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate`: deflate-compressed UTF-8 JSON bytes encoded as base64url
-- `arx`: domain-dictionary substitution + brotli (quality 11) + base76/base1k/baseBMP encoding (~70% smaller than deflate with baseBMP). Fetch the shared dictionary from `https://agent-render.com/arx-dictionary.json` to apply substitutions locally before brotli compression. Three encoding tiers: baseBMP (~62k safe BMP code points, ~15.92 bits/char, best density), base1k (1774 Unicode code points U+00A1–U+07FF), and base76 (ASCII fallback). The encoder tries all three and picks the shortest.
+- `arx`: domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding (~70% smaller than deflate with baseBMP). Fetch the shared dictionary from `https://agent-render.com/arx-dictionary.json` to apply substitutions locally before brotli compression. Four wire shapes: baseBMP (~62k safe BMP code points, ~15.92 bits/char, best raw density), base1k (1774 Unicode code points U+00A1–U+07FF), base64url (ASCII `A-Za-z0-9-_`, `B.` prefix — good when Unicode would be percent-encoded), and base76 (77-char ASCII). The product encoder tries all four and picks the shortest **transport** length.
 - packed wire mode (`p: 1`) may be used automatically to shorten transport keys
 
 Prefer:
@@ -187,11 +187,11 @@ To use the dictionary for local `arx` encoding:
 1. Fetch `https://agent-render.com/arx-dictionary.json`
 2. Apply substitutions in order: for each entry, replace all occurrences of the pattern in the serialized JSON envelope with its corresponding control byte(s)
 3. Brotli-compress the substituted bytes at quality 11
-4. Encode the compressed bytes using **baseBMP** (preferred, smallest), **base1k** (mid-tier), or **base76** (ASCII fallback)
+4. Encode the compressed bytes; try **baseBMP**, **base1k**, **base64url**, and **base76**, then pick the shortest transport representation
     - BaseBMP uses ~62k safe BMP code points (U+00A1–U+FFEF, skipping surrogates, combining marks, zero-width chars). Prefix the encoded string with U+FFF0 marker. ~15.92 bits/char
     - Base1k uses 1774 Unicode code points (U+00A1–U+07FF, skipping combining diacriticals and soft hyphen). ~10.79 bits/char
-    - Base76 uses 77 ASCII fragment-safe characters — use this if the target surface cannot handle Unicode in URL fragments. ~6.27 bits/char
-    - Try all three and pick the shortest
+    - Base64url: standard `A-Za-z0-9-_` (no padding), prefix `B.` — ASCII-only, survives Discord/Slack/Teams-style handling better than Unicode-heavy fragments
+    - Base76 uses 77 ASCII fragment-safe characters. ~6.27 bits/char
 5. Prepend `v1.arx.<dictVersion>.` to form the fragment payload (use the same dictionary version used for substitution)
 
 The dictionary includes JSON envelope boilerplate patterns (like `","kind":"Markdown","content":"`), JSON-escaped Markdown syntax, programming keywords, and common English words. The viewer loads the same dictionary on startup to reverse substitutions during decode.

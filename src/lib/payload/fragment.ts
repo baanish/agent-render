@@ -2,7 +2,14 @@ import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from
 import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
-import { arxCompress, arxCompressUnicode, arxCompressBMP, arxDecompress, getActiveDictVersion } from "@/lib/payload/arx-codec";
+import {
+  arxCompress,
+  arxCompressUnicode,
+  arxCompressBMP,
+  arxCompressBase64url,
+  arxDecompress,
+  getActiveDictVersion,
+} from "@/lib/payload/arx-codec";
 import {
   codecs,
   MAX_DECODED_PAYLOAD_LENGTH,
@@ -29,17 +36,23 @@ type CandidateFragment = {
   transportLength: number;
 };
 
+const CHAT_SAFE_ASCII_FRAGMENT_CHARS = /^[A-Za-z0-9\-._~=#]+$/;
+
 /**
- * Computes the serialized length of a fragment value as it would appear in a
- * URL after browser percent-encoding of non-ASCII characters.
- * Each non-ASCII UTF-8 byte is encoded as %XX (3 chars per byte).
+ * Computes the serialized length of a fragment value after conservative transport escaping.
+ *
+ * We count non-ASCII code points by their UTF-8 percent-encoded size, and we also treat
+ * ASCII punctuation outside the URL-unreserved fragment subset as escape-prone because many
+ * chat/link surfaces rewrite those characters even when a browser would accept them in-place.
+ * This keeps auto-selection aligned with the product's chat-safe fragment goal, allowing the
+ * `B.` base64url ARX wire shape to win when punctuation-heavy base76 would grow after sharing.
  */
 function computeTransportLength(value: string): number {
   let len = 0;
   for (let i = 0; i < value.length; i++) {
     const cp = value.codePointAt(i)!;
     if (cp < 128) {
-      len += 1;
+      len += CHAT_SAFE_ASCII_FRAGMENT_CHARS.test(value[i]) ? 1 : 3;
     } else if (cp < 0x800) {
       len += 6; // 2 UTF-8 bytes → %XX%XX
     } else if (cp < 0x10000) {
@@ -161,16 +174,17 @@ async function buildArxCandidates(envelope: PayloadEnvelope, packed: boolean): P
   const payloadEnvelope = { ...envelope, codec: "arx" as PayloadCodec };
   const json = JSON.stringify(packed ? packEnvelope(payloadEnvelope) : payloadEnvelope);
   const dictVersion = getActiveDictVersion();
-  const [ascii, unicode, bmp] = await Promise.all([
+  const [ascii, unicode, bmp, b64url] = await Promise.all([
     arxCompress(json),
     arxCompressUnicode(json),
     arxCompressBMP(json),
+    arxCompressBase64url(json),
   ]);
   const makeCandidate = (payload: string): CandidateFragment => {
     const value = `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${payload}`;
     return { value, codec: "arx", packed, transportLength: computeTransportLength(value) };
   };
-  return [makeCandidate(ascii), makeCandidate(unicode), makeCandidate(bmp)];
+  return [makeCandidate(ascii), makeCandidate(unicode), makeCandidate(bmp), makeCandidate(b64url)];
 }
 
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {

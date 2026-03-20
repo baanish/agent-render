@@ -18,7 +18,7 @@ Supported codecs:
 - `plain` - base64url-encoded JSON
 - `lz` - `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate` - deflate-compressed UTF-8 JSON bytes encoded as base64url
-- `arx` - domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding. arx fragments include dictionary version metadata in the outer format (`v1.arx.<dictVersion>.<payload>`) so links stay portable across dictionary updates. Three encoding tiers are supported: **base76** (ASCII-only, 77 fragment-safe chars), **base1k** (Unicode, 1774 chars from U+00A1–U+07FF), and **baseBMP** (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). The encoder tries all three and picks the shortest. BaseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes. BaseBMP payloads are prefixed with a U+FFF0 marker for detection. The substitution dictionary is served at `/arx-dictionary.json` (with a pre-compressed `/arx-dictionary.json.br` variant) so agents can fetch it for local compression.
+- `arx` - domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding. arx fragments include dictionary version metadata in the outer format (`v1.arx.<dictVersion>.<payload>`) so links stay portable across dictionary updates. Four wire shapes are tried and the shortest **transport** size wins (see `computeTransportLength` in `fragment.ts` — non-ASCII Unicode may count longer after percent-encoding): **base76** (ASCII-only, 77 fragment-safe chars), **base64url** (standard RFC 4648 alphabet `A-Za-z0-9-_`, no padding, prefixed with `B.` for detection), **base1k** (Unicode, 1774 chars from U+00A1–U+07FF), and **baseBMP** (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). BaseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes. BaseBMP payloads are prefixed with a U+FFF0 marker for detection. The viewer’s `arxDecompress` auto-detects the wire shape (including the rare case where a base76 length prefix is also `B.` — it tries base64url first and falls back to base76 if Brotli fails). The substitution dictionary is served at `/arx-dictionary.json` (with a pre-compressed `/arx-dictionary.json.br` variant) so agents can fetch it for local compression.
 
 The encoder now also supports a packed wire representation (`p: 1`) that shortens key names before compression. Packed mode is transport-only; decoded envelopes normalize back to the standard shape.
 
@@ -95,17 +95,19 @@ Running `npm run codec:poc` (single markdown artifact containing `AGENTS.md`) cu
 - `lz+packed`: ~5,674 chars
 - `deflate`: ~4,392 chars
 - `deflate+packed`: ~4,375 chars
-- `arx` (base76): ~3,311 chars
-- `arx` (base1k): ~1,923 chars
-- `arx` (baseBMP): ~1,306 chars (best)
+- `arx` (base76): ~3,336 chars
+- `arx` (base64url): ~3,485 chars
+- `arx` (base1k): ~1,938 chars
+- `arx` (baseBMP): ~1,316 chars (best raw char count)
 
-Result: `arx` with baseBMP encoding achieves ~70% smaller fragments than `deflate` on this payload (6.13x compression ratio). The improvement comes from brotli compression (~20% better than deflate), baseBMP encoding (~15.92 bits/char using ~62k safe BMP code points), and domain dictionary substitution. Base1k and ASCII base76 remain available as fallbacks for environments that cannot handle wide Unicode in URL fragments.
+Result: `arx` with baseBMP encoding achieves ~69% smaller fragments than `deflate` on this payload (~6.1x compression ratio). The improvement comes from brotli compression (~20% better than deflate), baseBMP encoding (~15.92 bits/char using ~62k safe BMP code points), and domain dictionary substitution. **base64url** is an ASCII-only option that can beat base76 on surfaces that percent-encode Unicode (chat apps, some shorteners). Base1k, baseBMP, and base76 remain available; auto-selection compares estimated transport length.
 
 Timing (AGENTS.md 8000 chars, avg of 10 runs):
 - `deflate+base64url`: ~0.1ms
-- `arx+base76`: ~14.6ms
-- `arx+base1k`: ~11.1ms
-- `arx+baseBMP`: ~9.7ms
+- `arx+base76`: ~13.8ms
+- `arx+base64url`: ~8.1ms
+- `arx+base1k`: ~12.0ms
+- `arx+baseBMP`: ~10.8ms
 
 ## Active artifact behavior
 

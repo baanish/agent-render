@@ -195,6 +195,11 @@ function encBaseBMP(bytes) {
   return "\uFFF0" + BMP[Math.floor(bytes.length / BMP.length)] + BMP[bytes.length % BMP.length] + c.join("");
 }
 
+function encBase64url(bytes) {
+  if (!bytes.length) return "B.";
+  return `B.${Buffer.from(bytes).toString("base64url")}`;
+}
+
 // --- Dictionary substitution ---
 const SBC = [1,2,3,4,5,6,7,8,0x0b,0x0e,0x0f,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d];
 const subs = [];
@@ -248,12 +253,18 @@ for (const { name, text } of payloads) {
   const bbmp = encBaseBMP(compressed);
   const msBmp = performance.now() - t0_bmp;
 
+  const t0_b64 = performance.now();
+  const b64u = encBase64url(compressed);
+  const msB64 = performance.now() - t0_b64;
+
   console.log(`  Deflate+base64url:  ${deflateB64.length} chars  (${deflateMs.toFixed(1)}ms)`);
   console.log(`  ARX ASCII (base76): ${b76.length} chars  (brotli ${brotliMs.toFixed(1)}ms + encode ${ms76.toFixed(1)}ms)`);
+  console.log(`  ARX base64url:      ${b64u.length} chars  (brotli ${brotliMs.toFixed(1)}ms + encode ${msB64.toFixed(1)}ms)`);
   console.log(`  ARX Unicode (1k):   ${b1k.length} chars  (brotli ${brotliMs.toFixed(1)}ms + encode ${ms1k.toFixed(1)}ms)`);
   console.log(`  ARX Unicode (BMP):  ${bbmp.length} chars  (brotli ${brotliMs.toFixed(1)}ms + encode ${msBmp.toFixed(1)}ms)`);
   console.log('');
   console.log(`  vs deflate:  base76 ${((1 - b76.length/deflateB64.length)*100).toFixed(1)}% smaller`);
+  console.log(`               base64url ${((1 - b64u.length/deflateB64.length)*100).toFixed(1)}% smaller`);
   console.log(`               base1k ${((1 - b1k.length/deflateB64.length)*100).toFixed(1)}% smaller`);
   console.log(`               baseBMP ${((1 - bbmp.length/deflateB64.length)*100).toFixed(1)}% smaller`);
   console.log(`  Ratio:       ${(text.length/bbmp.length).toFixed(2)}x (baseBMP)`);
@@ -282,6 +293,7 @@ const runs = 10;
 for (const [label, fn] of [
   ['Deflate+base64url', () => { const c = zlib.deflateSync(Buffer.from(timingText), { level: 9 }); Buffer.from(c).toString('base64url'); }],
   ['ARX+base76', () => { const s = dictEncode(timingText); const c = brotli(new TextEncoder().encode(s)); encBase76(c); }],
+  ['ARX+base64url', () => { const s = dictEncode(timingText); const c = brotli(new TextEncoder().encode(s)); encBase64url(c); }],
   ['ARX+base1k', () => { const s = dictEncode(timingText); const c = brotli(new TextEncoder().encode(s)); encBase1k(c); }],
   ['ARX+baseBMP', () => { const s = dictEncode(timingText); const c = brotli(new TextEncoder().encode(s)); encBaseBMP(c); }],
 ]) {
