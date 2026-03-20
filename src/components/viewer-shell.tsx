@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -37,6 +38,7 @@ import {
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
 import { copyTextToClipboard } from "@/lib/copy-text";
+import { getStoredPayloadBootstrap } from "@/lib/selfhosted/bootstrap";
 import { cn } from "@/lib/utils";
 import { LinkCreator } from "@/components/home/link-creator";
 import { ArtifactSelector } from "@/components/viewer/artifact-selector";
@@ -203,6 +205,10 @@ function getHashPreview(hash: string): string {
   return `${hash.slice(0, 160)}...${hash.slice(-44)}`;
 }
 
+function getDisplayPayloadString(payload: string): string {
+  return payload.startsWith("#") ? payload : `#${payload}`;
+}
+
 function getStatusTone(parsed: ReturnType<typeof decodeFragment>) {
   if (parsed.ok) {
     return {
@@ -240,7 +246,9 @@ function getAnimationStyle(delay: number): CSSProperties {
  * @returns The root React element for the viewer shell UI
  */
 export function ViewerShell() {
+  const [storedBootstrap, setStoredBootstrap] = useState(() => getStoredPayloadBootstrap());
   const [hash, setHash] = useState("");
+  const [storedEnvelopeOverride, setStoredEnvelopeOverride] = useState<PayloadEnvelope | null>(null);
   const [rendererReady, setRendererReady] = useState(true);
   const [artifactCopyState, setArtifactCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const activeArtifactRef = useRef<ArtifactPayload | null>(null);
@@ -248,6 +256,14 @@ export function ViewerShell() {
   const artifactCopyTokenRef = useRef(0);
 
   useEffect(() => {
+    setStoredBootstrap(getStoredPayloadBootstrap());
+  }, []);
+
+  useEffect(() => {
+    if (storedBootstrap) {
+      return;
+    }
+
     const syncHash = () => {
       setHash(window.location.hash);
     };
@@ -258,7 +274,7 @@ export function ViewerShell() {
     return () => {
       window.removeEventListener("hashchange", syncHash);
     };
-  }, []);
+  }, [storedBootstrap]);
 
   const [dictReady, setDictReady] = useState(false);
 
@@ -266,18 +282,23 @@ export function ViewerShell() {
     loadArxDictionary().then(() => setDictReady(true));
   }, []);
 
-  const [parsed, setParsed] = useState<ReturnType<typeof decodeFragment>>(() => decodeFragment(hash));
+  const payloadString = storedBootstrap ? getDisplayPayloadString(storedBootstrap.payload) : hash;
+  const [parsed, setParsed] = useState<ReturnType<typeof decodeFragment>>(() => decodeFragment(payloadString));
 
   useEffect(() => {
     let cancelled = false;
-    decodeFragmentAsync(hash).then((result) => {
+    decodeFragmentAsync(payloadString).then((result) => {
       if (!cancelled) setParsed(result);
     });
     return () => { cancelled = true; };
-  }, [hash, dictReady]);
+  }, [dictReady, payloadString]);
 
-  const fragmentLength = hash.startsWith("#") ? hash.length - 1 : hash.length;
-  const envelope = parsed.ok ? parsed.envelope : null;
+  useEffect(() => {
+    setStoredEnvelopeOverride(null);
+  }, [storedBootstrap?.id]);
+
+  const fragmentLength = payloadString.startsWith("#") ? payloadString.length - 1 : payloadString.length;
+  const envelope = storedEnvelopeOverride ?? (parsed.ok ? parsed.envelope : null);
   const activeArtifact = envelope ? getActiveArtifact(envelope) : null;
   activeArtifactRef.current = activeArtifact;
   const markdownArtifact: MarkdownArtifact | null = activeArtifact?.kind === "markdown" ? activeArtifact : null;
@@ -337,10 +358,15 @@ export function ViewerShell() {
   }, []);
 
   const handleGoHome = useCallback(() => {
+    if (storedBootstrap) {
+      window.location.assign("/");
+      return;
+    }
+
     const url = window.location.pathname + (window.location.search || "");
     window.history.replaceState(null, "", url);
     setHash("");
-  }, []);
+  }, [storedBootstrap]);
 
   const handleArtifactSelect = useCallback(
     (artifactId: string) => {
@@ -348,11 +374,16 @@ export function ViewerShell() {
         return;
       }
 
+      if (storedBootstrap) {
+        setStoredEnvelopeOverride({ ...envelope, activeArtifactId: artifactId });
+        return;
+      }
+
       encodeEnvelopeAsync({ ...envelope, activeArtifactId: artifactId }, { codec: envelope.codec }).then((encoded) => {
         setFragmentHash(`#${encoded}`);
       });
     },
-    [envelope, setFragmentHash],
+    [envelope, setFragmentHash, storedBootstrap],
   );
 
   const handleArtifactCopy = useCallback(async () => {
@@ -468,9 +499,12 @@ export function ViewerShell() {
                   <div className="mt-1.5 flex flex-wrap items-center gap-2.5 sm:mt-2 sm:gap-3">
                     <h2 className="text-xl font-semibold leading-tight tracking-[-0.03em] sm:text-2xl">{envelope.title ?? "Untitled bundle"}</h2>
                     <span className="mono-pill">{envelope.artifacts.length} item{envelope.artifacts.length === 1 ? "" : "s"}</span>
+                    {storedBootstrap ? <span className="mono-pill">UUID mode</span> : null}
                   </div>
                   <p className="mt-1.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-2 sm:leading-6">
-                    Selecting an artifact updates the active fragment target while keeping the rendered payload front and center.
+                    {storedBootstrap
+                      ? "Selecting an artifact updates the active viewer state locally while keeping the stored payload and UUID route unchanged."
+                      : "Selecting an artifact updates the active fragment target while keeping the rendered payload front and center."}
                   </p>
                 </div>
 
@@ -559,7 +593,7 @@ export function ViewerShell() {
               <FragmentDetailsDisclosure
                 codec={parsed.ok ? parsed.envelope.codec : "plain"}
                 fragmentLength={numberFormatter.format(fragmentLength)}
-                hashPreview={getHashPreview(hash)}
+                hashPreview={getHashPreview(payloadString)}
                 maxLength={numberFormatter.format(MAX_FRAGMENT_LENGTH)}
                 statusLabel={statusTone.label}
                 statusMessage={statusTone.message}
@@ -646,7 +680,7 @@ export function ViewerShell() {
                 </p>
 
                 <div className="sample-link-grid mt-3 sm:mt-5">
-                  {sampleCards.map((sample) => {
+                      {sampleCards.map((sample) => {
                     const Icon = kindIcons[sample.kind];
                     const isActive = hash === sample.hash;
 
@@ -713,7 +747,7 @@ export function ViewerShell() {
                   <div className="rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-3 sm:p-4">
                     <p className="metric-label">Hash preview</p>
                     <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">
-                      {getHashPreview(hash)}
+                      {getHashPreview(payloadString)}
                     </pre>
                   </div>
 

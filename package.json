@@ -18,7 +18,10 @@
     "codec:poc": "node scripts/codec-poc.mjs",
     "typecheck": "node scripts/ensure-next-types.mjs && tsc --noEmit",
     "check": "npm run lint && npm run test && npm run typecheck && npm run build",
-    "check:public-export-docs": "node scripts/check-public-export-docs.mjs"
+    "check:public-export-docs": "node scripts/check-public-export-docs.mjs",
+    "start:selfhosted": "node --experimental-strip-types server/selfhosted.ts",
+    "cleanup:selfhosted": "node --experimental-strip-types server/cleanup-selfhosted.ts",
+    "build:selfhosted": "npm run build"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.1",
