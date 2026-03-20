@@ -1,0 +1,19 @@
+services:
+  agent-render:
+    build:
+      context: ..
+      dockerfile: selfhosted/Dockerfile
+    ports:
+      - "${PORT:-3001}:3001"
+    volumes:
+      - agent-render-data:/app/selfhosted/data
+    environment:
+      - PORT=3001
+      - STATIC_DIR=/app/out
+      - DB_PATH=/app/selfhosted/data/agent-render.db
+      - BASE_URL=${BASE_URL:-http://localhost:3001}
+      - TTL_HOURS=${TTL_HOURS:-24}
+    restart: unless-stopped
+
+volumes:
+  agent-render-data:

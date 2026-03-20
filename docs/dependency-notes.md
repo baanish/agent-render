@@ -31,6 +31,14 @@
 - `papaparse` plus `@tanstack/react-table` keeps CSV parsing and rendering readable without coupling to a heavyweight data-grid framework.
 - `fflate` provides portable deflate/inflate support across iOS Safari and Android Chromium without relying on browser-specific compression streams.
 
+## Self-hosted mode (optional, in selfhosted/)
+
+- `express` - MIT — minimal HTTP server for the self-hosted variant
+- `better-sqlite3` - MIT — synchronous SQLite bindings for Node.js, used for artifact storage
+- `tsx` - MIT — TypeScript execution for Node.js, used as the dev/runtime runner
+
+These dependencies are only required for the self-hosted server and live in `selfhosted/package.json`, separate from the main app's dependencies.
+
 ## Notable removals
 
 - `rehype-highlight` was removed after review because markdown fences now reuse the CodeMirror viewer stack directly.

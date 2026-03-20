@@ -31,9 +31,24 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 ## Principles
 
 - Fully static export with Next.js App Router
-- No backend, no database, no server-side persistence
+- No backend, no database, no server-side persistence for the default fragment-based mode
 - Fragment-based payloads (`#...`) so the server never receives artifact contents
 - Public-safe naming and MIT-compatible dependencies
+
+## Self-Hosted Mode (Optional)
+
+An optional self-hosted variant is available in `selfhosted/` for use cases where fragment-based links are impractical (payloads too large, chat platforms mangle URLs, or persistent short links are needed).
+
+The self-hosted server:
+- Stores artifact payloads in SQLite under UUID v4 keys
+- Serves the same viewer UI at `/{uuid}` routes
+- Provides a simple CRUD API at `/api/artifacts`
+- Implements 24-hour sliding TTL (each view extends expiry)
+- Supports Docker Compose and daemon/service deployments
+
+This is a separate add-on for power users and agents. The default static fragment-based product is unaffected.
+
+See `docs/deployment.md` for setup instructions and `skills/selfhosted-agent-render/SKILL.md` for agent workflow guidance.
 
 ## Local Development
 
@@ -79,9 +94,10 @@ The shell keeps first load lean and defers renderer-heavy code until needed. The
 
 - `docs/architecture.md` - architecture and tradeoffs
 - `docs/payload-format.md` - fragment protocol, limits, and examples
-- `docs/deployment.md` - deployment notes
+- `docs/deployment.md` - deployment notes (including self-hosted mode)
 - `docs/dependency-notes.md` - major dependency and license notes
 - `docs/testing.md` - test commands, screenshot workflow, and CI notes
+- `skills/selfhosted-agent-render/SKILL.md` - self-hosted agent workflow skill
 
 ## Zero Retention
 

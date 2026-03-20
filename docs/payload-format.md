@@ -226,3 +226,16 @@ Real diff artifacts can contain multiple `diff --git` sections inside one `patch
 ```
 
 Malformed JSON should still use `kind: "json"`; the viewer will show the parse error and a raw fallback instead of crashing.
+
+## Self-hosted payload storage
+
+The optional self-hosted variant (`selfhosted/`) stores the same envelope JSON in SQLite under UUID v4 keys instead of encoding it into URL fragments.
+
+When storing payloads for the self-hosted server:
+- Use the standard envelope format documented above
+- Set `codec` to `"plain"` (no fragment encoding is needed)
+- The `POST /api/artifacts` endpoint accepts the envelope as a JSON object or string in the `payload` field
+- Maximum payload size: 1 MB (vs. 8,000 characters for fragment-based links)
+- The viewer renders the stored payload identically to a fragment-decoded payload
+
+This mode is for use cases where fragment-length limits or URL mangling make fragment-based sharing impractical. See `docs/deployment.md` and `skills/selfhosted-agent-render/SKILL.md` for details.

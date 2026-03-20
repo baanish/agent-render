@@ -44,6 +44,20 @@ The suite is intentionally split by responsibility:
 - component tests protect selector/disclosure UI contracts
 - unit tests protect transport codecs, envelope validation, diff parsing, and language inference
 
+## Self-hosted server tests
+
+Unit tests for the injected envelope resolver live alongside the existing test suite:
+
+```bash
+npm run test -- tests/injected.test.ts
+```
+
+The self-hosted server (`selfhosted/`) can be type-checked separately:
+
+```bash
+cd selfhosted && npm run typecheck
+```
+
 ## CI
 
 The repository includes `.github/workflows/test.yml`, which installs Playwright browsers and runs `npm run test:ci` on pushes, pull requests, and manual dispatch.
