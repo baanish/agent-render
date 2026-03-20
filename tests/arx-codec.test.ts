@@ -296,6 +296,28 @@ describe("arx fragment round-trip", () => {
     expect(autoHash).toContain(`v1.arx.${getActiveDictVersion()}.`);
   });
 
+  it("async arx selection can choose the chat-safe base64url wire form", async () => {
+    const bigEnvelope: PayloadEnvelope = {
+      ...envelope,
+      artifacts: [
+        {
+          id: "doc",
+          kind: "markdown",
+          filename: "doc.md",
+          content: [
+            "# Chat-safe ARX",
+            "",
+            ...Array.from({ length: 120 }, (_, index) => `- item ${index}: The quick brown fox jumps over the lazy dog.`),
+          ].join("\n"),
+        },
+      ],
+    };
+
+    const autoHash = await encodeEnvelopeAsync(bigEnvelope, { codec: "arx" });
+    expect(autoHash).toContain(`v1.arx.${getActiveDictVersion()}.B.`);
+  });
+
+
   it("decodes arx fragments when unicode payload chars are percent-escaped", async () => {
     const hash = `#${await encodeEnvelopeAsync(envelope, { codec: "arx" })}`;
     const escapedHash = hash.replace(/[^\x00-\x7F]/g, (char) => encodeURIComponent(char));
