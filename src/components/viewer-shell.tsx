@@ -7,6 +7,8 @@ import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowUpRight,
+  Check,
+  Copy,
   Download,
   FileCode2,
   FileDiff,
@@ -34,6 +36,7 @@ import {
   type MarkdownArtifact,
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
+import { copyTextToClipboard } from "@/lib/copy-text";
 import { cn } from "@/lib/utils";
 import { LinkCreator } from "@/components/home/link-creator";
 import { ArtifactSelector } from "@/components/viewer/artifact-selector";
@@ -232,13 +235,14 @@ function getAnimationStyle(delay: number): CSSProperties {
  * Render the main viewer shell for decoding and displaying artifact fragments from the URL hash.
  *
  * Manages fragment decoding and ARX dictionary loading, synchronizes component state with the browser hash,
- * and provides UI and handlers for selecting, downloading, printing, and navigating artifacts or clearing the fragment.
+ * and provides UI and handlers for selecting, copying, downloading, printing, and navigating artifacts or clearing the fragment.
  *
  * @returns The root React element for the viewer shell UI
  */
 export function ViewerShell() {
   const [hash, setHash] = useState("");
   const [rendererReady, setRendererReady] = useState(true);
+  const [artifactCopyState, setArtifactCopyState] = useState<"idle" | "copied" | "failed">("idle");
 
   useEffect(() => {
     const syncHash = () => {
@@ -301,6 +305,24 @@ export function ViewerShell() {
     setRendererReady(true);
   }, []);
 
+  useEffect(() => {
+    setArtifactCopyState("idle");
+  }, [activeArtifact?.id]);
+
+  useEffect(() => {
+    if (artifactCopyState !== "copied") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setArtifactCopyState("idle");
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [artifactCopyState]);
+
   const setFragmentHash = useCallback((nextHash: string) => {
     if (window.location.hash === nextHash) {
       return;
@@ -328,6 +350,19 @@ export function ViewerShell() {
     },
     [envelope, setFragmentHash],
   );
+
+  const handleArtifactCopy = useCallback(async () => {
+    if (!activeArtifact) {
+      return;
+    }
+
+    try {
+      await copyTextToClipboard(getArtifactBody(activeArtifact));
+      setArtifactCopyState("copied");
+    } catch {
+      setArtifactCopyState("failed");
+    }
+  }, [activeArtifact]);
 
   const handleArtifactDownload = useCallback(() => {
     if (!activeArtifact) {
@@ -458,6 +493,14 @@ export function ViewerShell() {
                   <button type="button" className="artifact-action is-primary" onClick={handleArtifactDownload}>
                     <Download className="h-3.5 w-3.5" />
                     Download
+                  </button>
+                  <button
+                    type="button"
+                    className={cn("artifact-action", artifactCopyState === "copied" && "is-primary")}
+                    onClick={handleArtifactCopy}
+                  >
+                    {artifactCopyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {artifactCopyState === "copied" ? "Copied" : artifactCopyState === "failed" ? "Copy failed" : "Copy"}
                   </button>
                   {markdownArtifact ? (
                     <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>

@@ -137,7 +137,7 @@ Two sample envelopes live in `src/lib/payload/examples.ts` for local development
 }
 ```
 
-Markdown artifacts use the `content` field and currently support client-side download and browser print-to-PDF from the viewer shell.
+Markdown artifacts use the `content` field and currently support client-side clipboard copy, file download, and browser print-to-PDF from the viewer shell.
 
 ### Code artifact example
 
@@ -160,7 +160,7 @@ Markdown artifacts use the `content` field and currently support client-side dow
 }
 ```
 
-Code artifacts use the same `content` transport, plus optional `language` and `filename` hints for syntax-aware rendering and download naming.
+Code artifacts use the same `content` transport, plus optional `language` and `filename` hints for syntax-aware rendering, download naming, and clipboard copy of the source text.
 
 ### Diff artifact example
 

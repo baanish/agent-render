@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight, Check, Copy, ExternalLink, FileCode2, FileDiff, FileJson2, FileSpreadsheet, FileText, Link2 } from "lucide-react";
+import { copyTextToClipboard } from "@/lib/copy-text";
 import { createGeneratedArtifactLinkAsync, defaultLinkCreatorDraft, getBodyFieldLabel, type GeneratedArtifactLink, type LinkCreatorDraft } from "@/lib/payload/link-creator";
 import { artifactKinds, codecs, type ArtifactKind } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
@@ -34,29 +35,6 @@ const fieldPlaceholders: Record<ArtifactKind, string> = {
   csv: "name,status\nviewer,ready\ncreator,draft",
   json: '{\n  "status": "ready",\n  "artifacts": 1\n}',
 };
-
-async function copyText(value: string) {
-  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
-  }
-
-  const textarea = document.createElement("textarea");
-  textarea.value = value;
-  textarea.setAttribute("readonly", "true");
-  textarea.style.position = "absolute";
-  textarea.style.left = "-9999px";
-  document.body.appendChild(textarea);
-  textarea.select();
-
-  try {
-    if (!document.execCommand("copy")) {
-      throw new Error("Copy command was rejected.");
-    }
-  } finally {
-    document.body.removeChild(textarea);
-  }
-}
 
 function getBaseUrl() {
   if (typeof window === "undefined") {
@@ -121,7 +99,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
     }
 
     try {
-      await copyText(generatedLink.url);
+      await copyTextToClipboard(generatedLink.url);
       setCopyState("copied");
     } catch {
       setCopyState("failed");

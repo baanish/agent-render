@@ -188,6 +188,29 @@ test("download action emits a file", async ({ page }) => {
   await expect(download.suggestedFilename()).toContain("viewer-shell.tsx");
 });
 
+test("copy action copies artifact body to clipboard", async ({ page }) => {
+  await goToHash(page, getFragmentHash("Viewer bootstrap"));
+  await waitForViewerState(page, "artifact");
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: (value: string) => {
+          window.localStorage.setItem("copied-artifact-body", value);
+          return Promise.resolve();
+        },
+      },
+    });
+  });
+
+  await page.getByRole("button", { name: "Copy" }).click();
+  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => window.localStorage.getItem("copied-artifact-body")))
+    .toBe('export function ViewerShell() {\n  return <main>Fragment-powered artifact viewer shell</main>;\n}');
+});
+
 test("invalid payloads fail gracefully", async ({ page }) => {
   const decodeErrorMessage = "The fragment payload could not be decoded as valid JSON.";
   await goToHash(page, invalidFragments.malformed);

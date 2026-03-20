@@ -19,7 +19,7 @@ GitHub Pages is strongest when the application behaves like a static shell inste
 
 ## Renderer implementation
 
-- `markdown` - formatted document view with download and print-to-PDF flow plus embedded premium code fences
+- `markdown` - formatted document view with shell copy, download, and print-to-PDF flows plus embedded premium code fences
 - `code` - read-only CodeMirror view with syntax-aware rendering and code affordances
 - `diff` - review-style diff view with unified and split modes
 - `csv` - table-focused data grid built from parsed rows and dynamic columns
@@ -27,7 +27,7 @@ GitHub Pages is strongest when the application behaves like a static shell inste
 
 The viewer shell now routes all five artifact kinds through dynamically imported client-only renderers so the landing shell stays light and static-host friendly.
 
-When a valid fragment is present, the shell switches into a viewer-first layout with bundle navigation beside the active artifact. The landing/samples experience is only the empty state.
+When a valid fragment is present, the shell switches into a viewer-first layout with bundle navigation beside the active artifact. The active artifact header includes copy, download, and markdown print actions. The landing/samples experience is only the empty state.
 
 Diff file navigation is intentionally internal UI state now. The URL fragment remains reserved for payload transport and active-artifact selection instead of being reused as an in-page file anchor system.
 
