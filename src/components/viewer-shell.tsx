@@ -236,10 +236,12 @@ function getAnimationStyle(delay: number): CSSProperties {
 }
 
 /**
- * Render the main viewer shell for decoding and displaying artifact fragments from the URL hash.
+ * Render the main viewer shell for decoding and displaying artifacts from the URL hash or, when built with
+ * `NEXT_PUBLIC_SELFHOSTED_SERVER=1`, from a UUID path backed by the self-hosted API.
  *
  * Manages fragment decoding and ARX dictionary loading, synchronizes component state with the browser hash,
- * and provides UI and handlers for selecting, copying, downloading, printing, and navigating artifacts or clearing the fragment.
+ * fetches stored payloads when appropriate, and provides UI and handlers for selecting, copying, downloading,
+ * printing, and navigating artifacts or returning to the homepage.
  *
  * @returns The root React element for the viewer shell UI
  */
