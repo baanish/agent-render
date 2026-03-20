@@ -2,7 +2,14 @@ import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from
 import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
-import { arxCompress, arxCompressUnicode, arxCompressBMP, arxDecompress, getActiveDictVersion } from "@/lib/payload/arx-codec";
+import {
+  arxCompress,
+  arxCompressUnicode,
+  arxCompressBMP,
+  arxCompressBase64url,
+  arxDecompress,
+  getActiveDictVersion,
+} from "@/lib/payload/arx-codec";
 import {
   codecs,
   MAX_DECODED_PAYLOAD_LENGTH,
@@ -161,16 +168,17 @@ async function buildArxCandidates(envelope: PayloadEnvelope, packed: boolean): P
   const payloadEnvelope = { ...envelope, codec: "arx" as PayloadCodec };
   const json = JSON.stringify(packed ? packEnvelope(payloadEnvelope) : payloadEnvelope);
   const dictVersion = getActiveDictVersion();
-  const [ascii, unicode, bmp] = await Promise.all([
+  const [ascii, unicode, bmp, b64url] = await Promise.all([
     arxCompress(json),
     arxCompressUnicode(json),
     arxCompressBMP(json),
+    arxCompressBase64url(json),
   ]);
   const makeCandidate = (payload: string): CandidateFragment => {
     const value = `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${payload}`;
     return { value, codec: "arx", packed, transportLength: computeTransportLength(value) };
   };
-  return [makeCandidate(ascii), makeCandidate(unicode), makeCandidate(bmp)];
+  return [makeCandidate(ascii), makeCandidate(unicode), makeCandidate(bmp), makeCandidate(b64url)];
 }
 
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {

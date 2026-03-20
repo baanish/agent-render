@@ -8,9 +8,13 @@ import {
   encodeBaseBMP,
   decodeBaseBMP,
   isBaseBMPEncoded,
+  encodeBase64url,
+  decodeBase64url,
+  isBase64urlEncoded,
   arxCompress,
   arxCompressUnicode,
   arxCompressBMP,
+  arxCompressBase64url,
   arxDecompress,
   getActiveDictVersion,
 } from "@/lib/payload/arx-codec";
@@ -124,6 +128,47 @@ describe("baseBMP encoding", () => {
   });
 });
 
+describe("base64url encoding (ARX wire)", () => {
+  it("round-trips empty input", () => {
+    expect(encodeBase64url(new Uint8Array(0))).toBe("B.");
+    expect(decodeBase64url("B.")).toEqual(new Uint8Array(0));
+  });
+
+  it("round-trips arbitrary byte sequences", () => {
+    const bytes = new Uint8Array([0, 1, 2, 100, 200, 255, 128, 64, 32, 16, 8, 4, 2, 1, 0]);
+    const encoded = encodeBase64url(bytes);
+    const decoded = decodeBase64url(encoded);
+    expect(decoded).toEqual(bytes);
+  });
+
+  it("round-trips a larger payload", () => {
+    const bytes = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) bytes[i] = i;
+    const encoded = encodeBase64url(bytes);
+    const decoded = decodeBase64url(encoded);
+    expect(decoded).toEqual(bytes);
+  });
+
+  it("output uses only URL-safe ASCII (B. prefix plus base64url alphabet)", () => {
+    const bytes = new Uint8Array(100);
+    for (let i = 0; i < 100; i++) bytes[i] = Math.floor(Math.random() * 256);
+    const encoded = encodeBase64url(bytes);
+    expect(encoded).toMatch(/^B\.[A-Za-z0-9_-]*$/);
+  });
+
+  it("isBase64urlEncoded distinguishes base64url wire form from base76", () => {
+    const bytes = new Uint8Array([1, 2, 3]);
+    expect(isBase64urlEncoded(encodeBase64url(bytes))).toBe(true);
+    expect(isBase64urlEncoded(encodeBase76(bytes))).toBe(false);
+    expect(isBase64urlEncoded("B.not!valid")).toBe(false);
+    expect(isBase64urlEncoded("")).toBe(false);
+  });
+
+  it("decodeBase64url rejects missing prefix", () => {
+    expect(() => decodeBase64url("YWJj")).toThrow();
+  });
+});
+
 describe("arx compress/decompress", () => {
   it("round-trips a simple string", async () => {
     const input = '{"hello":"world"}';
@@ -167,6 +212,14 @@ describe("arx compress/decompress", () => {
     const unicode = await arxCompressUnicode(input);
     const bmp = await arxCompressBMP(input);
     expect(bmp.length).toBeLessThan(unicode.length);
+  });
+
+  it("round-trips through base64url arx pipeline", async () => {
+    const input = JSON.stringify({ content: "hello world ".repeat(100) });
+    const compressed = await arxCompressBase64url(input);
+    expect(isBase64urlEncoded(compressed)).toBe(true);
+    const decompressed = await arxDecompress(compressed);
+    expect(decompressed).toBe(input);
   });
 
   it("produces shorter output than base64url for compressible text", async () => {

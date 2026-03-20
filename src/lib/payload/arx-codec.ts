@@ -1,7 +1,8 @@
 /**
  * arx codec — Agent Render eXtreme compression
  *
- * Pipeline:  text → dictionary substitution → brotli (quality 11) → base76 URL-fragment-safe encoding
+ * Pipeline:  text → dictionary substitution → brotli (quality 11) → binary-to-text encoding
+ * (base76, base1k, baseBMP, or base64url with a `B.` wire prefix)
  *
  * Achieves ~26% smaller fragments than deflate+base64url on typical payloads by combining:
  *   1. Dictionary substitution: replaces common multi-char patterns with short control bytes
@@ -567,9 +568,64 @@ export function decodeBaseBMP(str: string): Uint8Array {
   return result;
 }
 
-/** Returns true if the encoded string uses baseBMP encoding (starts with U+FFEE marker). */
+/** Returns true if the encoded string uses baseBMP encoding (starts with U+FFF0 marker). */
 export function isBaseBMPEncoded(str: string): boolean {
   return str.startsWith(BMP_MARKER);
+}
+
+// ---------------------------------------------------------------------------
+// Base64url — ASCII-only, chat/URL-safe (Discord, Slack, Teams)
+//
+// Standard RFC 4648 base64url alphabet (A-Za-z0-9-_) with no padding.
+// Wire prefix `B.` distinguishes this layer from base76 (length prefix),
+// base1k, and baseBMP: base76 can also begin with `B.` for some byte lengths,
+// so {@link arxDecompress} tries base64url first and falls back to base76
+// when Brotli decompression fails.
+// ---------------------------------------------------------------------------
+
+const BASE64URL_WIRE_PREFIX = "B.";
+
+function uint8ArrayToBase64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlToUint8Array(input: string): Uint8Array {
+  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4));
+  const binary = atob(`${normalized}${padding}`);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+
+/** Encodes bytes as base64url (no padding), prefixed with `B.` for ARX wire disambiguation. */
+export function encodeBase64url(bytes: Uint8Array): string {
+  if (bytes.length === 0) {
+    return BASE64URL_WIRE_PREFIX;
+  }
+  return BASE64URL_WIRE_PREFIX + uint8ArrayToBase64Url(bytes);
+}
+
+/** Decodes a string produced by {@link encodeBase64url} (requires the `B.` prefix). */
+export function decodeBase64url(str: string): Uint8Array {
+  if (!str.startsWith(BASE64URL_WIRE_PREFIX)) {
+    throw new Error("Expected base64url ARX payload with B. prefix.");
+  }
+  const body = str.slice(BASE64URL_WIRE_PREFIX.length);
+  if (body.length === 0) {
+    return new Uint8Array(0);
+  }
+  return base64UrlToUint8Array(body);
+}
+
+/** True when the payload uses the base64url ARX wire form (`B.` + optional base64url body). */
+export function isBase64urlEncoded(str: string): boolean {
+  if (!str.startsWith(BASE64URL_WIRE_PREFIX)) return false;
+  const rest = str.slice(BASE64URL_WIRE_PREFIX.length);
+  return /^[A-Za-z0-9_-]*$/.test(rest);
 }
 
 // ---------------------------------------------------------------------------
@@ -626,14 +682,41 @@ export async function arxCompressBMP(json: string): Promise<string> {
   return encodeBaseBMP(compressed);
 }
 
+/**
+ * Compress with the arx pipeline using base64url for the binary-to-text step.
+ * ASCII-only and safe on surfaces that percent-encode non-ASCII (unlike base1k/baseBMP).
+ */
+export async function arxCompressBase64url(json: string): Promise<string> {
+  const brotli = await getBrotli();
+  const substituted = dictEncode(json);
+  const compressed = brotli.compress(new TextEncoder().encode(substituted), { quality: 11 });
+  return encodeBase64url(compressed);
+}
+
 /** Public API for `arxDecompress`. */
 export async function arxDecompress(encoded: string): Promise<string> {
   const brotli = await getBrotli();
-  const bytes = isBaseBMPEncoded(encoded)
-    ? decodeBaseBMP(encoded)
-    : isBase1kEncoded(encoded)
-      ? decodeBase1k(encoded)
-      : decodeBase76(encoded);
-  const decompressed = brotli.decompress(bytes);
-  return dictDecode(new TextDecoder().decode(decompressed));
+
+  const decompressFromBytes = (bytes: Uint8Array): string => {
+    const out = brotli.decompress(bytes);
+    return dictDecode(new TextDecoder().decode(out));
+  };
+
+  if (isBaseBMPEncoded(encoded)) {
+    return decompressFromBytes(decodeBaseBMP(encoded));
+  }
+
+  if (isBase64urlEncoded(encoded)) {
+    try {
+      return decompressFromBytes(decodeBase64url(encoded));
+    } catch {
+      // base76 length prefix can also be `B.` (e.g. 140-byte payloads); retry as base76.
+    }
+  }
+
+  if (isBase1kEncoded(encoded)) {
+    return decompressFromBytes(decodeBase1k(encoded));
+  }
+
+  return decompressFromBytes(decodeBase76(encoded));
 }
