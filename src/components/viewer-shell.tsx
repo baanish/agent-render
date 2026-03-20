@@ -244,6 +244,8 @@ export function ViewerShell() {
   const [rendererReady, setRendererReady] = useState(true);
   const [artifactCopyState, setArtifactCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const activeArtifactRef = useRef<ArtifactPayload | null>(null);
+  /** Incremented on each copy click so stale async completions cannot overwrite state from a newer request. */
+  const artifactCopyTokenRef = useRef(0);
 
   useEffect(() => {
     const syncHash = () => {
@@ -360,16 +362,17 @@ export function ViewerShell() {
     }
 
     const requestArtifactId = artifact.id;
+    const requestToken = ++artifactCopyTokenRef.current;
     const body = getArtifactBody(artifact);
 
     try {
       await copyTextToClipboard(body);
-      if (activeArtifactRef.current?.id !== requestArtifactId) {
+      if (activeArtifactRef.current?.id !== requestArtifactId || artifactCopyTokenRef.current !== requestToken) {
         return;
       }
       setArtifactCopyState("copied");
     } catch {
-      if (activeArtifactRef.current?.id !== requestArtifactId) {
+      if (activeArtifactRef.current?.id !== requestArtifactId || artifactCopyTokenRef.current !== requestToken) {
         return;
       }
       setArtifactCopyState("failed");
