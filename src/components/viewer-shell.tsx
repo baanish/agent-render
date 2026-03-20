@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -243,6 +243,7 @@ export function ViewerShell() {
   const [hash, setHash] = useState("");
   const [rendererReady, setRendererReady] = useState(true);
   const [artifactCopyState, setArtifactCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const activeArtifactIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const syncHash = () => {
@@ -276,6 +277,7 @@ export function ViewerShell() {
   const fragmentLength = hash.startsWith("#") ? hash.length - 1 : hash.length;
   const envelope = parsed.ok ? parsed.envelope : null;
   const activeArtifact = envelope ? getActiveArtifact(envelope) : null;
+  activeArtifactIdRef.current = activeArtifact?.id ?? null;
   const markdownArtifact: MarkdownArtifact | null = activeArtifact?.kind === "markdown" ? activeArtifact : null;
   const codeArtifact: CodeArtifact | null = activeArtifact?.kind === "code" ? activeArtifact : null;
   const diffArtifact: DiffArtifact | null = activeArtifact?.kind === "diff" ? activeArtifact : null;
@@ -356,10 +358,19 @@ export function ViewerShell() {
       return;
     }
 
+    const requestArtifactId = activeArtifact.id;
+    const body = getArtifactBody(activeArtifact);
+
     try {
-      await copyTextToClipboard(getArtifactBody(activeArtifact));
+      await copyTextToClipboard(body);
+      if (activeArtifactIdRef.current !== requestArtifactId) {
+        return;
+      }
       setArtifactCopyState("copied");
     } catch {
+      if (activeArtifactIdRef.current !== requestArtifactId) {
+        return;
+      }
       setArtifactCopyState("failed");
     }
   }, [activeArtifact]);

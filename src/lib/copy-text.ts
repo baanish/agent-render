@@ -1,11 +1,16 @@
 /**
  * Copies a string to the clipboard using the Async Clipboard API when available,
- * with a `document.execCommand("copy")` fallback when `navigator.clipboard` is missing.
+ * with a `document.execCommand("copy")` fallback when `navigator.clipboard` is missing
+ * or `navigator.clipboard.writeText` rejects (e.g. permission errors).
  */
 export async function copyTextToClipboard(value: string): Promise<void> {
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch {
+      // Fall through to document.execCommand("copy") below.
+    }
   }
 
   const textarea = document.createElement("textarea");

@@ -193,6 +193,7 @@ test("copy action copies artifact body to clipboard", async ({ page }) => {
   await waitForViewerState(page, "artifact");
 
   await page.evaluate(() => {
+    window.localStorage.removeItem("copied-artifact-body");
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: {
