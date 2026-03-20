@@ -243,7 +243,7 @@ export function ViewerShell() {
   const [hash, setHash] = useState("");
   const [rendererReady, setRendererReady] = useState(true);
   const [artifactCopyState, setArtifactCopyState] = useState<"idle" | "copied" | "failed">("idle");
-  const activeArtifactIdRef = useRef<string | null>(null);
+  const activeArtifactRef = useRef<ArtifactPayload | null>(null);
 
   useEffect(() => {
     const syncHash = () => {
@@ -277,7 +277,7 @@ export function ViewerShell() {
   const fragmentLength = hash.startsWith("#") ? hash.length - 1 : hash.length;
   const envelope = parsed.ok ? parsed.envelope : null;
   const activeArtifact = envelope ? getActiveArtifact(envelope) : null;
-  activeArtifactIdRef.current = activeArtifact?.id ?? null;
+  activeArtifactRef.current = activeArtifact;
   const markdownArtifact: MarkdownArtifact | null = activeArtifact?.kind === "markdown" ? activeArtifact : null;
   const codeArtifact: CodeArtifact | null = activeArtifact?.kind === "code" ? activeArtifact : null;
   const diffArtifact: DiffArtifact | null = activeArtifact?.kind === "diff" ? activeArtifact : null;
@@ -312,7 +312,7 @@ export function ViewerShell() {
   }, [activeArtifact?.id]);
 
   useEffect(() => {
-    if (artifactCopyState !== "copied") {
+    if (artifactCopyState !== "copied" && artifactCopyState !== "failed") {
       return;
     }
 
@@ -354,26 +354,27 @@ export function ViewerShell() {
   );
 
   const handleArtifactCopy = useCallback(async () => {
-    if (!activeArtifact) {
+    const artifact = activeArtifactRef.current;
+    if (!artifact) {
       return;
     }
 
-    const requestArtifactId = activeArtifact.id;
-    const body = getArtifactBody(activeArtifact);
+    const requestArtifactId = artifact.id;
+    const body = getArtifactBody(artifact);
 
     try {
       await copyTextToClipboard(body);
-      if (activeArtifactIdRef.current !== requestArtifactId) {
+      if (activeArtifactRef.current?.id !== requestArtifactId) {
         return;
       }
       setArtifactCopyState("copied");
     } catch {
-      if (activeArtifactIdRef.current !== requestArtifactId) {
+      if (activeArtifactRef.current?.id !== requestArtifactId) {
         return;
       }
       setArtifactCopyState("failed");
     }
-  }, [activeArtifact]);
+  }, []);
 
   const handleArtifactDownload = useCallback(() => {
     if (!activeArtifact) {
@@ -501,10 +502,6 @@ export function ViewerShell() {
                 </div>
 
                 <div className="viewer-toolbar">
-                  <button type="button" className="artifact-action is-primary" onClick={handleArtifactDownload}>
-                    <Download className="h-3.5 w-3.5" />
-                    Download
-                  </button>
                   <button
                     type="button"
                     className={cn("artifact-action", artifactCopyState === "copied" && "is-primary")}
@@ -512,6 +509,10 @@ export function ViewerShell() {
                   >
                     {artifactCopyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                     {artifactCopyState === "copied" ? "Copied" : artifactCopyState === "failed" ? "Copy failed" : "Copy"}
+                  </button>
+                  <button type="button" className="artifact-action is-primary" onClick={handleArtifactDownload}>
+                    <Download className="h-3.5 w-3.5" />
+                    Download
                   </button>
                   {markdownArtifact ? (
                     <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
