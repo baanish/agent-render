@@ -585,7 +585,7 @@ export function isBaseBMPEncoded(str: string): boolean {
 
 const BASE64URL_WIRE_PREFIX = "B.";
 
-function uint8ArrayToBase64Url(bytes: Uint8Array): string {
+export function uint8ArrayToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);
@@ -594,7 +594,7 @@ function uint8ArrayToBase64Url(bytes: Uint8Array): string {
   return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function base64UrlToUint8Array(input: string): Uint8Array {
+export function base64UrlToUint8Array(input: string): Uint8Array {
   const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
   const padding = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4));
   const binary = atob(`${normalized}${padding}`);
@@ -709,8 +709,12 @@ export async function arxDecompress(encoded: string): Promise<string> {
   if (isBase64urlEncoded(encoded)) {
     try {
       return decompressFromBytes(decodeBase64url(encoded));
-    } catch {
-      // base76 length prefix can also be `B.` (e.g. 140-byte payloads); retry as base76.
+    } catch (_e) {
+      // base76 length prefix can also be `B.` (e.g. 140-byte payloads).
+      // Brotli decompression will fail on mis-detected base76 data — fall through to base76.
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[arx] base64url decode failed, falling back to base76:", _e);
+      }
     }
   }
 

@@ -9,6 +9,8 @@ import {
   arxCompressBase64url,
   arxDecompress,
   getActiveDictVersion,
+  uint8ArrayToBase64Url,
+  base64UrlToUint8Array,
 } from "@/lib/payload/arx-codec";
 import {
   codecs,
@@ -36,7 +38,20 @@ type CandidateFragment = {
   transportLength: number;
 };
 
-const CHAT_SAFE_ASCII_FRAGMENT_CHARS = /^[A-Za-z0-9\-._~=#]+$/;
+/**
+ * Fast lookup: chat-safe ASCII chars that survive transport without percent-encoding.
+ * Covers A-Z, a-z, 0-9, and the punctuation subset `-._~=#`.
+ */
+const CHAT_SAFE = new Uint8Array(128);
+for (let c = 0x30; c <= 0x39; c++) CHAT_SAFE[c] = 1; // 0-9
+for (let c = 0x41; c <= 0x5a; c++) CHAT_SAFE[c] = 1; // A-Z
+for (let c = 0x61; c <= 0x7a; c++) CHAT_SAFE[c] = 1; // a-z
+CHAT_SAFE[0x2d] = 1; // -
+CHAT_SAFE[0x2e] = 1; // .
+CHAT_SAFE[0x5f] = 1; // _
+CHAT_SAFE[0x7e] = 1; // ~
+CHAT_SAFE[0x3d] = 1; // =
+CHAT_SAFE[0x23] = 1; // #
 
 /**
  * Computes the serialized length of a fragment value after conservative transport escaping.
@@ -52,7 +67,7 @@ function computeTransportLength(value: string): number {
   for (let i = 0; i < value.length; i++) {
     const cp = value.codePointAt(i)!;
     if (cp < 128) {
-      len += CHAT_SAFE_ASCII_FRAGMENT_CHARS.test(value[i]) ? 1 : 3;
+      len += CHAT_SAFE[cp] ? 1 : 3;
     } else if (cp < 0x800) {
       len += 6; // 2 UTF-8 bytes → %XX%XX
     } else if (cp < 0x10000) {
@@ -65,25 +80,12 @@ function computeTransportLength(value: string): number {
   return len;
 }
 
-function toBase64UrlBytes(bytes: Uint8Array): string {
-  const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
-  const base64 = btoa(binary);
-  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function fromBase64UrlBytes(input: string): Uint8Array {
-  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4));
-  const binary = atob(`${normalized}${padding}`);
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
-}
-
 function toBase64Url(input: string): string {
-  return toBase64UrlBytes(new TextEncoder().encode(input));
+  return uint8ArrayToBase64Url(new TextEncoder().encode(input));
 }
 
 function fromBase64Url(input: string): string {
-  return new TextDecoder().decode(fromBase64UrlBytes(input));
+  return new TextDecoder().decode(base64UrlToUint8Array(input));
 }
 
 function encodePayload(json: string, codec: PayloadCodec): string {
@@ -93,7 +95,7 @@ function encodePayload(json: string, codec: PayloadCodec): string {
     case "lz":
       return compressToEncodedURIComponent(json);
     case "deflate":
-      return toBase64UrlBytes(deflateSync(strToU8(json)));
+      return uint8ArrayToBase64Url(deflateSync(strToU8(json)));
     case "arx":
       throw new Error("arx codec requires async encoding — use encodeEnvelopeAsync instead.");
   }
@@ -106,7 +108,7 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
     case "lz":
       return decompressFromEncodedURIComponent(encoded);
     case "deflate":
-      return strFromU8(inflateSync(fromBase64UrlBytes(encoded)));
+      return strFromU8(inflateSync(base64UrlToUint8Array(encoded)));
     case "arx":
       throw new Error("arx codec requires async decoding — use decodeFragmentAsync instead.");
   }
