@@ -1,8 +1,8 @@
 # agent-render
 
-`agent-render` is a fully static, zero-retention artifact viewer for AI-generated outputs.
+`agent-render` is a fully static, zero-retention artifact viewer for AI-generated outputs (with an **optional** self-hosted UUID mode for agents who need server-backed links).
 
-Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based sharing for markdown, code, diffs, CSV, and JSON so the payload stays in the browser URL fragment instead of being sent to a server.
+Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based sharing for markdown, code, diffs, CSV, and JSON so the payload stays in the browser URL fragment instead of being sent to a server on the default static path.
 
 ## OpenClaw
 
@@ -30,9 +30,10 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 
 ## Principles
 
-- Fully static export with Next.js App Router
-- No backend, no database, no server-side persistence
-- Fragment-based payloads (`#...`) so the server never receives artifact contents
+- Fully static export with Next.js App Router for the **default** product
+- No backend, no database, and no server-side persistence on the **static** path
+- Fragment-based payloads (`#...`) so the static host never receives artifact contents during the page request
+- Optional **self-hosted** UUID + SQLite mode for agents (separate Node server in `selfhosted/`; see `docs/deployment.md`)
 - Public-safe naming and MIT-compatible dependencies
 
 ## Local Development
@@ -52,6 +53,10 @@ npm run preview
 ```
 
 Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a subpath deployment locally.
+
+## Optional self-hosted mode (UUID links)
+
+Power users can run a small Node server that stores the same `agent-render=v1...` payload string in SQLite and opens it from `https://your-host/{uuid}/`. This **does not** replace the static fragment product: build with `NEXT_PUBLIC_SELFHOSTED_SERVER=1`, then `npm run selfhosted:start` after `npm run build`. Full notes live in `docs/deployment.md` and `skills/selfhosted-agent-render/SKILL.md`.
 
 ## Contributing
 
@@ -85,9 +90,9 @@ The shell keeps first load lean and defers renderer-heavy code until needed. The
 
 ## Zero Retention
 
-The project keeps artifact contents in the URL fragment so the static host does not receive the payload during the page request. This improves privacy for shared artifacts, but the link still lives in browser history, copied URLs, and any client-side telemetry you add later.
+On the **default static deployment**, artifact contents stay in the URL fragment so the static host does not receive the payload during the page request. This improves privacy for shared artifacts, but the link still lives in browser history, copied URLs, and any client-side telemetry you add later.
 
-`Zero Data Retention by design` means the deployed static host does not receive artifact contents as part of the request. It does not mean the data disappears from places like browser history, copied links, screenshots, or any client-side analytics you may add later.
+`Zero Data Retention by design` in the static UI refers to that static-host boundary. The **optional self-hosted** server intentionally stores payloads in SQLite with a sliding TTL; treat that as a different deployment contract (see `docs/deployment.md`).
 
 ## License
 

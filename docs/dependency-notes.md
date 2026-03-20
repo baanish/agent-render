@@ -15,6 +15,7 @@
 - `@tanstack/react-table` - MIT
 - `lz-string` - MIT
 - `fflate` - MIT
+- `better-sqlite3` - MIT (optional; used only by the self-hosted Node server under `selfhosted/`)
 
 ## Notes
 
@@ -30,6 +31,7 @@
 - `@git-diff-view/*` fits review-style diffs better than a generic merge editor for the current viewer.
 - `papaparse` plus `@tanstack/react-table` keeps CSV parsing and rendering readable without coupling to a heavyweight data-grid framework.
 - `fflate` provides portable deflate/inflate support across iOS Safari and Android Chromium without relying on browser-specific compression streams.
+- `better-sqlite3` keeps the optional self-hosted server simple with a local SQLite file and synchronous reads for the CRUD API.
 
 ## Notable removals
 

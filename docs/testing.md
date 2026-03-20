@@ -15,7 +15,10 @@ npm run test:e2e
 npm run test:e2e:update
 npm run test:browsers
 npm run test:ci
+npm run selfhosted:cleanup
 ```
+
+Self-hosted integration is covered by `tests/selfhosted-artifact-db.test.ts` (SQLite store) and fragment decode tests for stored-mode wire lengths. End-to-end Playwright suites target the **static** export only (no `NEXT_PUBLIC_SELFHOSTED_SERVER` flag).
 
 ## Browser install
 

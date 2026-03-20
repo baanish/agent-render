@@ -1,0 +1,24 @@
+FROM node:22-bookworm-slim
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+ARG NEXT_PUBLIC_BASE_PATH=
+ARG NEXT_PUBLIC_SELFHOSTED_SERVER=1
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+ENV NEXT_PUBLIC_SELFHOSTED_SERVER=$NEXT_PUBLIC_SELFHOSTED_SERVER
+
+COPY . .
+RUN npm run build
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV DATABASE_PATH=/data/artifacts.sqlite
+ENV STATIC_ROOT=/app/out
+
+VOLUME ["/data"]
+EXPOSE 3000
+
+CMD ["node", "selfhosted/server.mjs"]

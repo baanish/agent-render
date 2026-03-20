@@ -2,7 +2,11 @@
 
 ## Goals
 
-The project uses a fragment-based payload so the raw artifact content stays in the browser and is not sent to the server during the request.
+The default product uses a fragment-based payload so the raw artifact content stays in the browser and is not sent to the server during the request.
+
+## Optional self-hosted UUID transport
+
+An **optional** deployment (see `docs/deployment.md`) can store the exact same `agent-render=v1...` wire string in SQLite and load it by UUID. That path bypasses the **fragment wire size budget** while decoding, but the **decoded JSON budget** (`MAX_DECODED_PAYLOAD_LENGTH`, currently `200000` characters) still applies in the viewer. This is intended for power users and agents who accept server retention with a sliding TTL.
 
 ## Fragment shape
 

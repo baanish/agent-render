@@ -1,0 +1,17 @@
+services:
+  agent-render-selfhosted:
+    build:
+      context: ..
+      dockerfile: selfhosted/Dockerfile
+      args:
+        NEXT_PUBLIC_SELFHOSTED_SERVER: "1"
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      DATABASE_PATH: /data/artifacts.sqlite
+    volumes:
+      - agent-render-data:/data
+
+volumes:
+  agent-render-data:

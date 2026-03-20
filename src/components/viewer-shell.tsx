@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -23,7 +24,9 @@ import {
 import { sampleEnvelopes, sampleLinks } from "@/lib/payload/examples";
 import { decodeFragment, decodeFragmentAsync, encodeEnvelope, encodeEnvelopeAsync } from "@/lib/payload/fragment";
 import { loadArxDictionary } from "@/lib/payload/arx-codec";
+import { getArtifactIdFromPathname } from "@/lib/selfhosted/artifact-path";
 import {
+  MAX_DECODED_PAYLOAD_LENGTH,
   MAX_FRAGMENT_LENGTH,
   PAYLOAD_FRAGMENT_KEY,
   artifactKinds,
@@ -34,6 +37,7 @@ import {
   type DiffArtifact,
   type JsonArtifact,
   type MarkdownArtifact,
+  type ParsedPayload,
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
 import { copyTextToClipboard } from "@/lib/copy-text";
@@ -203,7 +207,7 @@ function getHashPreview(hash: string): string {
   return `${hash.slice(0, 160)}...${hash.slice(-44)}`;
 }
 
-function getStatusTone(parsed: ReturnType<typeof decodeFragment>) {
+function getStatusTone(parsed: ParsedPayload) {
   if (parsed.ok) {
     return {
       label: "Decoded",
@@ -232,15 +236,34 @@ function getAnimationStyle(delay: number): CSSProperties {
 }
 
 /**
- * Render the main viewer shell for decoding and displaying artifact fragments from the URL hash.
+ * Render the main viewer shell for decoding and displaying artifacts from the URL hash or, when built with
+ * `NEXT_PUBLIC_SELFHOSTED_SERVER=1`, from a UUID path backed by the self-hosted API.
  *
  * Manages fragment decoding and ARX dictionary loading, synchronizes component state with the browser hash,
- * and provides UI and handlers for selecting, copying, downloading, printing, and navigating artifacts or clearing the fragment.
+ * fetches stored payloads when appropriate, and provides UI and handlers for selecting, copying, downloading,
+ * printing, and navigating artifacts or returning to the homepage.
  *
  * @returns The root React element for the viewer shell UI
  */
 export function ViewerShell() {
+  const pathname = usePathname() ?? "/";
+  const selfHostedServerEnabled = process.env.NEXT_PUBLIC_SELFHOSTED_SERVER === "1";
+  const selfHostedArtifactId = useMemo(() => {
+    if (!selfHostedServerEnabled) {
+      return null;
+    }
+
+    return getArtifactIdFromPathname(pathname);
+  }, [pathname, selfHostedServerEnabled]);
+
   const [hash, setHash] = useState("");
+  const [selfHostedPhase, setSelfHostedPhase] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [selfHostedError, setSelfHostedError] = useState<{ code: string; message: string } | null>(null);
+  const [storedEnvelope, setStoredEnvelope] = useState<PayloadEnvelope | null>(null);
+  const [storedWireLength, setStoredWireLength] = useState(0);
+  const [storedWireString, setStoredWireString] = useState("");
+  const [pendingStoredWire, setPendingStoredWire] = useState<string | null>(null);
+  const [storedExpiresAt, setStoredExpiresAt] = useState<string | null>(null);
   const [rendererReady, setRendererReady] = useState(true);
   const [artifactCopyState, setArtifactCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const activeArtifactRef = useRef<ArtifactPayload | null>(null);
@@ -266,7 +289,7 @@ export function ViewerShell() {
     loadArxDictionary().then(() => setDictReady(true));
   }, []);
 
-  const [parsed, setParsed] = useState<ReturnType<typeof decodeFragment>>(() => decodeFragment(hash));
+  const [parsed, setParsed] = useState<ParsedPayload>(() => decodeFragment(hash));
 
   useEffect(() => {
     let cancelled = false;
@@ -276,8 +299,141 @@ export function ViewerShell() {
     return () => { cancelled = true; };
   }, [hash, dictReady]);
 
-  const fragmentLength = hash.startsWith("#") ? hash.length - 1 : hash.length;
-  const envelope = parsed.ok ? parsed.envelope : null;
+  useEffect(() => {
+    if (!selfHostedArtifactId) {
+      setSelfHostedPhase("idle");
+      setSelfHostedError(null);
+      setStoredEnvelope(null);
+      setStoredWireLength(0);
+      setStoredWireString("");
+      setPendingStoredWire(null);
+      setStoredExpiresAt(null);
+      return;
+    }
+
+    let cancelled = false;
+    setSelfHostedPhase("loading");
+    setSelfHostedError(null);
+    setStoredEnvelope(null);
+    setPendingStoredWire(null);
+
+    const apiBase = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
+    const requestUrl = `${apiBase}/api/artifacts/${selfHostedArtifactId}`;
+
+    fetch(requestUrl, {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        if (cancelled) {
+          return;
+        }
+
+        if (!response.ok) {
+          let errorCode = "not_found";
+          try {
+            const body = (await response.json()) as { error?: string };
+            if (body.error === "expired") {
+              errorCode = "expired";
+            }
+          } catch {
+            // ignore malformed error bodies
+          }
+
+          const message =
+            errorCode === "expired"
+              ? "This artifact expired (24h sliding TTL). Create a new link or ask your operator to adjust retention."
+              : "Artifact not found.";
+          setSelfHostedError({ code: errorCode, message });
+          setSelfHostedPhase("error");
+          return;
+        }
+
+        const body = (await response.json()) as { payload?: string; expiresAt?: string };
+        const wire = body.payload;
+
+        if (typeof wire !== "string") {
+          setSelfHostedError({ code: "invalid_payload", message: "Server response was missing a payload string." });
+          setSelfHostedPhase("error");
+          return;
+        }
+
+        setStoredWireLength(wire.length);
+        setStoredWireString(wire);
+        setStoredExpiresAt(body.expiresAt ?? null);
+        setPendingStoredWire(wire);
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setSelfHostedError({ code: "network", message: "Could not load artifact from this server." });
+        setSelfHostedPhase("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selfHostedArtifactId]);
+
+  useEffect(() => {
+    if (!pendingStoredWire || !dictReady) {
+      return;
+    }
+
+    let cancelled = false;
+
+    decodeFragmentAsync(`#${pendingStoredWire}`, { enforceFragmentLengthLimit: false }).then((decoded) => {
+      if (cancelled) {
+        return;
+      }
+
+      if (!decoded.ok) {
+        setSelfHostedError({ code: decoded.code, message: decoded.message });
+        setSelfHostedPhase("error");
+        setPendingStoredWire(null);
+        return;
+      }
+
+      setStoredEnvelope(decoded.envelope);
+      setSelfHostedPhase("ready");
+      setPendingStoredWire(null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dictReady, pendingStoredWire]);
+
+  const viewerParsed: ParsedPayload = useMemo(() => {
+    if (!selfHostedArtifactId) {
+      return parsed;
+    }
+
+    if (selfHostedPhase === "loading") {
+      return { ok: false, code: "empty", message: "Loading stored artifact…" };
+    }
+
+    if (selfHostedPhase === "error" && selfHostedError) {
+      return { ok: false, code: "invalid-envelope", message: selfHostedError.message };
+    }
+
+    if (selfHostedPhase === "ready" && storedEnvelope) {
+      return { ok: true, envelope: storedEnvelope, rawLength: storedWireLength };
+    }
+
+    return { ok: false, code: "empty", message: "Loading stored artifact…" };
+  }, [parsed, selfHostedArtifactId, selfHostedError, selfHostedPhase, storedEnvelope, storedWireLength]);
+
+  const fragmentLength =
+    selfHostedArtifactId && selfHostedPhase === "ready"
+      ? storedWireLength
+      : hash.startsWith("#")
+        ? hash.length - 1
+        : hash.length;
+  const envelope =
+    selfHostedArtifactId && selfHostedPhase === "ready" && storedEnvelope ? storedEnvelope : parsed.ok ? parsed.envelope : null;
   const activeArtifact = envelope ? getActiveArtifact(envelope) : null;
   activeArtifactRef.current = activeArtifact;
   const markdownArtifact: MarkdownArtifact | null = activeArtifact?.kind === "markdown" ? activeArtifact : null;
@@ -286,9 +442,19 @@ export function ViewerShell() {
   const csvArtifact: CsvArtifact | null = activeArtifact?.kind === "csv" ? activeArtifact : null;
   const jsonArtifact: JsonArtifact | null = activeArtifact?.kind === "json" ? activeArtifact : null;
   const hasKnownRenderer = Boolean(markdownArtifact || codeArtifact || diffArtifact || csvArtifact || jsonArtifact);
-  const budgetRatio = Math.min(fragmentLength / MAX_FRAGMENT_LENGTH, 1);
-  const statusTone = getStatusTone(parsed);
-  const viewerState = activeArtifact && envelope ? "artifact" : parsed.ok ? "decoded-no-artifact" : parsed.code === "empty" ? "empty" : "error";
+  const budgetRatio = Math.min(
+    selfHostedArtifactId && selfHostedPhase === "ready" ? fragmentLength / MAX_DECODED_PAYLOAD_LENGTH : fragmentLength / MAX_FRAGMENT_LENGTH,
+    1,
+  );
+  const statusTone = getStatusTone(viewerParsed);
+  const viewerState =
+    activeArtifact && envelope
+      ? "artifact"
+      : viewerParsed.ok
+        ? "decoded-no-artifact"
+        : viewerParsed.code === "empty"
+          ? "empty"
+          : "error";
 
   useEffect(() => {
     if (!activeArtifact) {
@@ -337,13 +503,31 @@ export function ViewerShell() {
   }, []);
 
   const handleGoHome = useCallback(() => {
+    if (selfHostedArtifactId) {
+      const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
+      const homePath = basePath ? `${basePath}/` : "/";
+      window.location.assign(homePath);
+      return;
+    }
+
     const url = window.location.pathname + (window.location.search || "");
     window.history.replaceState(null, "", url);
     setHash("");
-  }, []);
+  }, [selfHostedArtifactId]);
 
   const handleArtifactSelect = useCallback(
     (artifactId: string) => {
+      if (selfHostedArtifactId && selfHostedPhase === "ready") {
+        setStoredEnvelope((previous) => {
+          if (!previous || previous.activeArtifactId === artifactId) {
+            return previous;
+          }
+
+          return { ...previous, activeArtifactId: artifactId };
+        });
+        return;
+      }
+
       if (!envelope || envelope.activeArtifactId === artifactId) {
         return;
       }
@@ -352,7 +536,7 @@ export function ViewerShell() {
         setFragmentHash(`#${encoded}`);
       });
     },
-    [envelope, setFragmentHash],
+    [envelope, selfHostedArtifactId, selfHostedPhase, setFragmentHash],
   );
 
   const handleArtifactCopy = useCallback(async () => {
@@ -431,6 +615,7 @@ export function ViewerShell() {
     <main
       className="app-shell min-h-screen px-2 pb-5 pt-2.5 sm:px-6 sm:pb-12 sm:pt-5 lg:px-10 lg:pt-7"
       data-testid="viewer-shell"
+      data-transport={selfHostedArtifactId ? "stored-uuid" : "fragment"}
       data-viewer-state={viewerState}
       data-active-kind={activeArtifact?.kind ?? "none"}
       data-active-artifact-id={activeArtifact?.id ?? "none"}
@@ -454,7 +639,9 @@ export function ViewerShell() {
           </a>
 
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-            <span className="mono-pill shell-pill">Zero Data Retention by design</span>
+            <span className="mono-pill shell-pill">
+              {selfHostedArtifactId ? "Server-stored · sliding TTL" : "Zero Data Retention by design"}
+            </span>
             <ThemeToggle />
           </div>
         </header>
@@ -470,7 +657,9 @@ export function ViewerShell() {
                     <span className="mono-pill">{envelope.artifacts.length} item{envelope.artifacts.length === 1 ? "" : "s"}</span>
                   </div>
                   <p className="mt-1.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-2 sm:leading-6">
-                    Selecting an artifact updates the active fragment target while keeping the rendered payload front and center.
+                    {selfHostedArtifactId
+                      ? "Selecting an artifact updates the active item in this bundle. The canonical payload stays on the server; UUID links avoid fragment size limits."
+                      : "Selecting an artifact updates the active fragment target while keeping the rendered payload front and center."}
                   </p>
                 </div>
 
@@ -557,14 +746,41 @@ export function ViewerShell() {
               </div>
 
               <FragmentDetailsDisclosure
-                codec={parsed.ok ? parsed.envelope.codec : "plain"}
+                codec={viewerParsed.ok ? viewerParsed.envelope.codec : "plain"}
+                expiresAtLabel={selfHostedArtifactId && selfHostedPhase === "ready" ? storedExpiresAt : null}
                 fragmentLength={numberFormatter.format(fragmentLength)}
-                hashPreview={getHashPreview(hash)}
-                maxLength={numberFormatter.format(MAX_FRAGMENT_LENGTH)}
+                hashPreview={
+                  selfHostedArtifactId && selfHostedPhase === "ready"
+                    ? getHashPreview(`#${storedWireString}`)
+                    : getHashPreview(hash)
+                }
+                maxLength={
+                  selfHostedArtifactId && selfHostedPhase === "ready"
+                    ? "stored (no fragment cap)"
+                    : numberFormatter.format(MAX_FRAGMENT_LENGTH)
+                }
                 statusLabel={statusTone.label}
                 statusMessage={statusTone.message}
+                transportMode={selfHostedArtifactId && selfHostedPhase === "ready" ? "stored" : "fragment"}
               />
             </section>
+          </section>
+        ) : selfHostedArtifactId && selfHostedPhase === "loading" ? (
+          <section className="panel fade-up px-3 py-6 sm:px-8 sm:py-10" data-testid="selfhosted-loading" style={getAnimationStyle(80)}>
+            <p className="section-kicker">Self-hosted artifact</p>
+            <h2 className="font-display mt-2 text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">Loading stored payload…</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)]">
+              Fetching the canonical `agent-render` payload for <span className="font-mono">{selfHostedArtifactId}</span>. Successful views extend the 24h sliding expiry on this server.
+            </p>
+          </section>
+        ) : selfHostedArtifactId && selfHostedPhase === "error" ? (
+          <section className="panel fade-up px-3 py-6 sm:px-8 sm:py-10" data-testid="selfhosted-error" style={getAnimationStyle(80)}>
+            <p className="section-kicker">Self-hosted artifact</p>
+            <h2 className="font-display mt-2 text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">Could not open this link</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)]">{selfHostedError?.message ?? "Something went wrong."}</p>
+            <button type="button" className="artifact-action is-primary mt-5" onClick={handleGoHome}>
+              Back to home
+            </button>
           </section>
         ) : (
           <section className="empty-state-layout">
@@ -691,11 +907,11 @@ export function ViewerShell() {
                   </div>
                   <div className="metric-card">
                     <p className="metric-label">Codec</p>
-                    <p className="metric-value">{parsed.ok ? parsed.envelope.codec : "plain"}</p>
+                    <p className="metric-value">{viewerParsed.ok ? viewerParsed.envelope.codec : "plain"}</p>
                   </div>
                   <div className="metric-card">
                     <p className="metric-label">Artifacts</p>
-                    <p className="metric-value">{parsed.ok ? numberFormatter.format(parsed.envelope.artifacts.length) : "0"}</p>
+                    <p className="metric-value">{viewerParsed.ok ? numberFormatter.format(viewerParsed.envelope.artifacts.length) : "0"}</p>
                   </div>
                 </div>
 
@@ -784,9 +1000,9 @@ export function ViewerShell() {
                           The live renderer stage appears here as soon as a fragment is selected.
                         </h4>
                         <p className="mt-2.5 max-w-2xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-4 sm:leading-7">
-                          {parsed.ok
+                          {viewerParsed.ok
                             ? "A decoded fragment is already present, so the active artifact can take over this frame immediately."
-                            : parsed.message}
+                            : viewerParsed.message}
                         </p>
                       </div>
 
