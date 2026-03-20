@@ -222,7 +222,7 @@ test("copy action shows failure when clipboard API and execCommand fallback fail
       if (commandId === "copy") {
         return false;
       }
-      return origExec(commandId, showUI, value);
+      return origExec(commandId, showUI, value ?? undefined);
     };
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
