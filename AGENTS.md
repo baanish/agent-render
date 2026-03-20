@@ -128,6 +128,14 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 ### Diff handling
 - `src/lib/diff/git-patch.ts` - patch parsing support for diff rendering
 
+### Self-hosted mode (optional add-on)
+- `selfhosted/src/server.ts` - Express server with API routes and viewer route
+- `selfhosted/src/db.ts` - SQLite database setup and queries
+- `selfhosted/src/cleanup.ts` - Standalone expired artifact cleanup script
+- `selfhosted/Dockerfile` - Multi-stage Docker build
+- `selfhosted/docker-compose.yml` - Docker Compose configuration
+- `src/lib/payload/injected.ts` - Injected envelope resolver for the viewer shell
+
 ### Docs and external contract
 - `README.md`
 - `docs/architecture.md`
@@ -136,6 +144,7 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 - `docs/dependency-notes.md`
 - `docs/testing.md`
 - `skills/agent-render-linking/SKILL.md`
+- `skills/selfhosted-agent-render/SKILL.md`
 
 ## Development commands
 

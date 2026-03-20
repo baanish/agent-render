@@ -110,3 +110,44 @@ The static host does not receive fragment contents as part of the request, but t
 - GitHub Pages-compatible `basePath` and `assetPrefix`
 - `.nojekyll` included for Pages compatibility
 - Fragment size budget enforced before render
+
+## Self-hosted mode (optional)
+
+An optional self-hosted variant lives in `selfhosted/` and provides server-backed artifact storage as an add-on to the static product.
+
+### How it differs from the default static mode
+
+| Aspect | Static (default) | Self-hosted |
+|--------|------------------|-------------|
+| Storage | URL fragment only | SQLite + UUID |
+| Server | None (static files) | Express server |
+| Payload limits | 8,000 char fragment budget | 1 MB per artifact |
+| Persistence | None (zero-retention) | 24h sliding TTL |
+| Links | `host/#agent-render=v1...` | `host/{uuid}` |
+| Dependencies | None beyond static hosting | Node.js, SQLite |
+
+### Architecture
+
+The self-hosted server:
+- Builds the same Next.js static export and serves it from `out/`
+- Adds Express API routes (`/api/artifacts`) for CRUD operations
+- Handles `/{uuid}` routes by injecting the stored payload into the static HTML template via `window.__AGENT_RENDER_ENVELOPE__`
+- The viewer shell checks for this injected global on mount and uses it instead of fragment decoding when present
+- SQLite stores `id -> payload` mappings with timestamps and TTL tracking
+- Expired artifacts are filtered at query time and can be cleaned up explicitly
+
+### Viewer integration
+
+The viewer shell (`src/components/viewer-shell.tsx`) checks for `window.__AGENT_RENDER_ENVELOPE__` on mount via the `resolveInjectedEnvelope()` helper in `src/lib/payload/injected.ts`. When present and valid, the injected envelope is used directly, bypassing fragment decoding. When absent, the standard fragment-based path runs as before.
+
+This integration is minimal and non-breaking: the injected path only activates when the self-hosted server has set the global, which never happens in the static export.
+
+### Key files
+
+- `selfhosted/src/server.ts` - Express server with API routes and viewer route
+- `selfhosted/src/db.ts` - SQLite database setup and queries
+- `selfhosted/src/cleanup.ts` - Standalone expired artifact cleanup script
+- `selfhosted/Dockerfile` - Multi-stage Docker build
+- `selfhosted/docker-compose.yml` - Docker Compose configuration
+- `src/lib/payload/injected.ts` - Injected envelope resolver for the viewer shell
+- `skills/selfhosted-agent-render/SKILL.md` - Agent workflow skill

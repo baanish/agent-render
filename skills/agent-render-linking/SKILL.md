@@ -282,10 +282,18 @@ When sharing a link:
 - Prefer shortest-by-measurement instead of human guesses
 - Use budget-aware encoding for Discord-like constraints
 
+## Self-hosted alternative
+
+When fragment links are impractical (payloads too large, chat platforms mangle URLs, or you need persistent short links), consider the self-hosted variant documented in `skills/selfhosted-agent-render/SKILL.md`.
+
+The self-hosted server stores payloads in SQLite under UUID v4 keys and serves them at `https://host/{uuid}` using the same viewer UI. It provides a simple CRUD API and 24-hour sliding TTL.
+
+Use fragment-based links (this skill) for payloads that fit within the 8,000-character budget and do not need persistence. Use self-hosted mode when you need persistent, short, or large-payload artifact links.
+
 ## Avoid
 
 - Do not put raw artifact content in normal query params
-- Do not upload artifact content to a server for this workflow
+- Do not upload artifact content to a server for this workflow (use the self-hosted variant's API instead when server storage is needed)
 - Do not dump giant noisy bundles when a focused artifact is enough
 - Do not invent unsupported fields unless the renderer has added them
 - Do not handcraft packed envelopes manually if helper utilities are available; construct logical envelopes and let transport logic pack automatically
