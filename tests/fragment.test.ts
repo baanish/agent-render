@@ -158,6 +158,45 @@ describe("fragment payload transport", () => {
     expect(parsed.envelope.activeArtifactId).toBe("doc");
   });
 
+  it("decodes stored payloads that exceed the fragment wire budget when opted in", () => {
+    const padding = "p".repeat(12_000);
+    const bigEnvelope: PayloadEnvelope = {
+      ...envelope,
+      artifacts: [
+        {
+          id: "doc",
+          kind: "markdown",
+          filename: "doc.md",
+          content: padding,
+        },
+      ],
+    };
+    const wire = encodeEnvelope(bigEnvelope, { codec: "plain" });
+    const hash = `#${wire}`;
+
+    expect(wire.length).toBeGreaterThan(8000);
+
+    const blocked = decodeFragment(hash);
+    expect(blocked.ok).toBe(false);
+    if (blocked.ok) {
+      return;
+    }
+
+    expect(blocked.code).toBe("too-large");
+
+    const decoded = decodeFragment(hash, { enforceFragmentLengthLimit: false });
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) {
+      return;
+    }
+
+    const artifact = decoded.envelope.artifacts[0];
+    expect(artifact.kind).toBe("markdown");
+    if (artifact.kind === "markdown") {
+      expect(artifact.content).toBe(padding);
+    }
+  });
+
   it("rejects an oversized decoded payload even when the compressed fragment is short", () => {
     const hugeEnvelope: PayloadEnvelope = {
       v: 1,

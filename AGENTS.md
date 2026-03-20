@@ -17,10 +17,13 @@ Core product traits right now:
 - self-hostable
 - static-export friendly
 - fragment-based transport so artifact contents stay out of the request URL and off the server request path
+- optional **separate** self-hosted Node + SQLite server for UUID links (same viewer bundle with `NEXT_PUBLIC_SELFHOSTED_SERVER=1`; see `docs/deployment.md`)
 
 ## Product contract
 
 Treat these as core constraints unless the owner explicitly changes the product direction.
+
+### Default static export (primary product)
 
 - The app is a single exported client-side shell, not a backend product.
 - Artifact payloads live in the URL fragment, using `#agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`, and `#agent-render=v1.arx.<dictVersion>.<payload>` for `arx`.
@@ -30,12 +33,19 @@ Treat these as core constraints unless the owner explicitly changes the product 
 - The product is zero-retention by host design, not secret-safe in an absolute sense.
 - Links may still leak through browser history, copied URLs, screenshots, and any future client-side analytics.
 
-Do not casually introduce:
+Do not casually introduce into the **default static path**:
 - server persistence
 - databases
 - auth requirements for the core viewing path
 - request-body upload flows for the main sharing workflow
 - normal query-param transport for artifact contents
+
+### Optional self-hosted UUID mode (explicit add-on)
+
+- Ships as `selfhosted/server.mjs` + SQLite; stores the canonical `agent-render=v1...` string keyed by UUID v4; sliding 24h TTL on successful `GET /api/artifacts/:id`.
+- Build the static bundle with `NEXT_PUBLIC_SELFHOSTED_SERVER=1` so `/{uuid}` routes fetch from the API; leave unset for normal static deployments.
+- Same artifact kinds, codecs, decode, and renderers as the fragment product; no new envelope schema.
+- Auth is perimeter-only; document Cloudflare Tunnel / Zero Trust as optional hardening, not requirements.
 
 ## Current shipped behavior
 
@@ -102,7 +112,7 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 ## Key files
 
 ### App shell and UI
-- `src/components/viewer-shell.tsx` - main shell, fragment-driven state, empty state, artifact-stage layout
+- `src/components/viewer-shell.tsx` - main shell, fragment-driven state, optional UUID fetch path, empty state, artifact-stage layout
 - `src/components/viewer/artifact-selector.tsx` - bundle artifact switching UI
 - `src/components/viewer/fragment-details-disclosure.tsx` - fragment inspector/status disclosure
 - `src/components/home/link-creator.tsx` - browser-side link creation UX
@@ -114,9 +124,15 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 - `src/components/renderers/csv-renderer.tsx`
 - `src/components/renderers/json-renderer.tsx`
 
+### Optional self-hosted server
+- `selfhosted/server.mjs` - static file + API + `/{uuid}` shell routing
+- `selfhosted/artifact-db.mjs` - SQLite schema, sliding TTL, CRUD
+- `selfhosted/cleanup.mjs` - batch expiry purge
+- `src/lib/selfhosted/artifact-path.ts` - UUID path parsing helper for the client
+
 ### Payload and protocol
 - `src/lib/payload/schema.ts` - type surface, limits, fragment key, supported kinds/codecs
-- `src/lib/payload/fragment.ts` - encode/decode logic and transport behavior
+- `src/lib/payload/fragment.ts` - encode/decode logic and transport behavior (optional stored-mode decode skips fragment wire budget)
 - `src/lib/payload/arx-codec.ts` - arx codec: domain dictionary + brotli + base76/base1k/baseBMP encoding
 - `public/arx-dictionary.json` - shared substitution dictionary for the arx codec (served as a static endpoint)
 - `public/arx-dictionary.json.br` - pre-compressed brotli variant of the dictionary
@@ -136,6 +152,7 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 - `docs/dependency-notes.md`
 - `docs/testing.md`
 - `skills/agent-render-linking/SKILL.md`
+- `skills/selfhosted-agent-render/SKILL.md`
 
 ## Development commands
 
@@ -158,6 +175,13 @@ Subpath preview check:
 ```bash
 NEXT_PUBLIC_BASE_PATH=/agent-render npm run build
 npm run preview
+```
+
+Optional self-hosted server (after `NEXT_PUBLIC_SELFHOSTED_SERVER=1 npm run build`):
+
+```bash
+npm run selfhosted:start
+npm run selfhosted:cleanup
 ```
 
 Validation:
@@ -217,6 +241,7 @@ At minimum, verify alignment across:
 - `docs/dependency-notes.md`
 - `docs/testing.md`
 - `skills/agent-render-linking/SKILL.md`
+- `skills/selfhosted-agent-render/SKILL.md`
 
 ## Default contributor stance
 

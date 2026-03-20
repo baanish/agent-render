@@ -29,6 +29,15 @@ type EncodeOptions = {
   codecPriority?: PayloadCodec[];
 };
 
+/**
+ * Options for decoding fragment-shaped payloads. The static product enforces {@link MAX_FRAGMENT_LENGTH}
+ * on the wire string; server-stored payloads may exceed that budget while still using the same
+ * `agent-render=v1.<codec>.<payload>` shape.
+ */
+export type DecodeFragmentOptions = {
+  enforceFragmentLengthLimit?: boolean;
+};
+
 type CandidateFragment = {
   value: string;
   codec: PayloadCodec;
@@ -256,14 +265,15 @@ type ParsedFragmentHeader =
   | { ok: false; errorResponse: ParsedPayload }
   | { ok: true; fragment: string; version: string; codec: PayloadCodec; encoded: string; fragmentLength: number };
 
-function parseFragmentHeader(hash: string): ParsedFragmentHeader {
+function parseFragmentHeader(hash: string, options?: DecodeFragmentOptions): ParsedFragmentHeader {
   const fragment = hash.startsWith("#") ? hash.slice(1) : hash;
+  const enforceFragmentLengthLimit = options?.enforceFragmentLengthLimit !== false;
 
   if (!fragment) {
     return { ok: false, errorResponse: { ok: false, code: "empty", message: "Add a fragment payload to start rendering artifacts." } };
   }
 
-  if (fragment.length > MAX_FRAGMENT_LENGTH) {
+  if (enforceFragmentLengthLimit && fragment.length > MAX_FRAGMENT_LENGTH) {
     return { ok: false, errorResponse: { ok: false, code: "too-large", message: `This payload exceeds the supported fragment budget of ${MAX_FRAGMENT_LENGTH.toLocaleString()} characters.` } };
   }
 
@@ -305,9 +315,12 @@ function parseFragmentHeader(hash: string): ParsedFragmentHeader {
  *
  * Sync decoding supports `plain`, `lz`, and `deflate` codecs only. `arx` fragments return an
  * `invalid-format` result instructing callers to use {@link decodeFragmentAsync}.
+ *
+ * @param options - When `enforceFragmentLengthLimit` is `false`, the wire string may exceed
+ *   {@link MAX_FRAGMENT_LENGTH} (used for server-stored canonical payloads).
  */
-export function decodeFragment(hash: string): ParsedPayload {
-  const header = parseFragmentHeader(hash);
+export function decodeFragment(hash: string, options?: DecodeFragmentOptions): ParsedPayload {
+  const header = parseFragmentHeader(hash, options);
   if (!header.ok) {
     return header.errorResponse;
   }
@@ -399,14 +412,18 @@ function resolveArxDictVersion(version: number | null): boolean {
  *
  * Accepted input follows `#agent-render=v1...` where non-`arx` payloads use
  * `v1.<codec>.<payload>`, and `arx` supports `v1.arx.<dictVersion>.<payload>` (plus legacy
- * fallback forms). This decoder applies the same header and fragment-size checks as the sync
- * path, then enforces decoded payload size limits before JSON parsing and envelope validation.
+ * fallback forms). This decoder applies the same header checks as the sync path (including
+ * optional fragment-size enforcement via `options`), then enforces decoded payload size limits
+ * before JSON parsing and envelope validation.
  *
  * Returns structured `ParsedPayload` error responses for malformed fragments or invalid
  * envelopes, rather than throwing decode errors.
+ *
+ * @param options - When `enforceFragmentLengthLimit` is `false`, the wire string may exceed
+ *   {@link MAX_FRAGMENT_LENGTH} (used for server-stored canonical payloads).
  */
-export async function decodeFragmentAsync(hash: string): Promise<ParsedPayload> {
-  const header = parseFragmentHeader(hash);
+export async function decodeFragmentAsync(hash: string, options?: DecodeFragmentOptions): Promise<ParsedPayload> {
+  const header = parseFragmentHeader(hash, options);
   if (!header.ok) {
     return header.errorResponse;
   }

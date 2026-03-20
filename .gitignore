@@ -132,6 +132,9 @@ dist
 playwright-report/
 test-results/
 
+# Self-hosted SQLite (local runs)
+/data/
+
 # yarn v2
 .yarn/cache
 .yarn/unplugged

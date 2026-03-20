@@ -4,8 +4,9 @@
 
 `agent-render` is a single exported client-side shell built with Next.js 15, React 19, and Tailwind CSS 4.
 
-- The application ships as static files only.
-- All artifact data lives in the URL fragment.
+- The default product ships as static files only.
+- In the default product, artifact data lives in the URL fragment.
+- An **optional** self-hosted Node server (see `docs/deployment.md`) can store the same canonical payload string in SQLite and serve `GET /{uuid}` with the **same** viewer bundle; this is off by default and requires `NEXT_PUBLIC_SELFHOSTED_SERVER=1` at build time.
 - The app renders one viewer shell and selects a renderer based on the artifact kind.
 - Renderers stay modular so they can evolve independently without coupling to Next.js routing.
 
@@ -92,7 +93,7 @@ The fragment protocol keeps the JSON envelope stable and treats compression stri
 - packed wire mode (`p: 1`) shortens transport keys before compression, then unpacks back to the standard envelope during decode
 - automatic async codec selection tries `arx -> deflate -> lz -> plain` and compares packed + non-packed candidates
 - sync codec selection (used by examples and legacy paths) tries `deflate -> lz -> plain`
-- decode enforces both fragment length and decoded payload size ceilings before UI rendering
+- decode enforces the fragment wire budget and decoded payload size ceilings before UI rendering on the static path; optional server-stored payloads may skip the wire budget while keeping the decoded ceiling
 - invalid bundle state is normalized or rejected before renderers mount
 
 ## Zero-retention boundaries

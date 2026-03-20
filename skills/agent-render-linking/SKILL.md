@@ -7,6 +7,8 @@ description: Create zero-retention agent-render.com links for markdown, code, di
 
 Create browser links for artifacts rendered by `agent-render.com`.
 
+If fragment links are too large or unstable for a chat surface, operators may run the **optional self-hosted** deployment (UUID + SQLite) documented in `skills/selfhosted-agent-render/SKILL.md`. The wire format stays the same; only transport changes.
+
 ## Project context
 
 Agent Render is:
