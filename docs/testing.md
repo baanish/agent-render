@@ -39,7 +39,7 @@ Playwright visual tests live in `tests/e2e/visual.spec.ts`.
 
 The suite is intentionally split by responsibility:
 
-- browser tests protect exported-app behavior, fragment-driven rendering, downloads, print flow, themes, and layout hierarchy
+- browser tests protect exported-app behavior, fragment-driven rendering, downloads, clipboard copy, print flow, themes, and layout hierarchy
 - visual tests protect empty state, artifact views, theme presentation, and compact-content spacing
 - component tests protect selector/disclosure UI contracts
 - unit tests protect transport codecs, envelope validation, diff parsing, and language inference

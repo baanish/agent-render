@@ -47,6 +47,7 @@ Describe and preserve what is already true in the repo today.
 - The empty state explains the product and exposes sample fragment presets.
 - A built-in link creator can generate fragment-based links locally in the browser.
 - When a valid fragment is present, the app switches to a viewer-first artifact layout.
+- The artifact stage toolbar exposes copy-to-clipboard, file download, and (for markdown) browser print-to-PDF.
 - `activeArtifactId` controls which artifact opens first.
 - Internal diff file navigation stays in UI state and does not repurpose the fragment.
 

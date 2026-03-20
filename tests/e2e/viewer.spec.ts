@@ -188,6 +188,54 @@ test("download action emits a file", async ({ page }) => {
   await expect(download.suggestedFilename()).toContain("viewer-shell.tsx");
 });
 
+test("copy action copies artifact body to clipboard", async ({ page }) => {
+  await goToHash(page, getFragmentHash("Viewer bootstrap"));
+  await waitForViewerState(page, "artifact");
+
+  await page.evaluate(() => {
+    window.localStorage.removeItem("copied-artifact-body");
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: (value: string) => {
+          window.localStorage.setItem("copied-artifact-body", value);
+          return Promise.resolve();
+        },
+      },
+    });
+  });
+
+  await page.getByRole("button", { name: "Copy" }).click();
+  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => window.localStorage.getItem("copied-artifact-body")))
+    .toBe('export function ViewerShell() {\n  return <main>Fragment-powered artifact viewer shell</main>;\n}');
+});
+
+test("copy action shows failure when clipboard API and execCommand fallback fail", async ({ page }) => {
+  await goToHash(page, getFragmentHash("Viewer bootstrap"));
+  await waitForViewerState(page, "artifact");
+
+  await page.evaluate(() => {
+    const origExec = document.execCommand.bind(document);
+    document.execCommand = (commandId: string, showUI?: boolean, value?: string | null) => {
+      if (commandId === "copy") {
+        return false;
+      }
+      return origExec(commandId, showUI, value ?? undefined);
+    };
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: () => Promise.reject(new Error("denied")),
+      },
+    });
+  });
+
+  await page.getByRole("button", { name: "Copy" }).click();
+  await expect(page.getByRole("button", { name: "Copy failed" })).toBeVisible();
+});
+
 test("invalid payloads fail gracefully", async ({ page }) => {
   const decodeErrorMessage = "The fragment payload could not be decoded as valid JSON.";
   await goToHash(page, invalidFragments.malformed);

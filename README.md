@@ -17,12 +17,12 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 - Markdown, code, diff, CSV, and JSON all render in the static shell
 - Fragment transport supports `plain`, `lz`, `deflate`, and `arx`, with automatic shortest-fragment selection across packed/non-packed wire formats
 - The `arx` substitution dictionary is served at `/arx-dictionary.json` so agents can fetch it for local compression
-- Markdown supports download plus browser print-to-PDF
+- The viewer toolbar copies artifact bodies to the clipboard, downloads them as files, and (for markdown) supports browser print-to-PDF
 - Deployment target: static hosting, including Cloudflare Pages
 
 ## Included Renderers
 
-- `markdown` - GFM rendering with safe sanitization, download, print flow, and premium code fences that reuse the CodeMirror viewer stack
+- `markdown` - GFM rendering with safe sanitization, copy/download/print flows from the shell, and premium code fences that reuse the CodeMirror viewer stack
 - `code` - read-only CodeMirror view with line numbers, wrap toggle, syntax-tree-aware rainbow brackets, and maintained indentation markers
 - `diff` - review-style multi-file git patch viewer with unified and split modes
 - `csv` - parsed table view with sticky headers and horizontal overflow handling
