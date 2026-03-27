@@ -281,7 +281,7 @@ export function ViewerShell() {
   const activeArtifact = envelope ? getActiveArtifact(envelope) : null;
 
   useEffect(() => {
-    const title = activeArtifact?.title ?? envelope?.title;
+    const title = activeArtifact?.title?.trim() || envelope?.title?.trim();
     document.title = title ? `${title} — agent-render` : "agent-render";
   }, [envelope, activeArtifact]);
   activeArtifactRef.current = activeArtifact;
