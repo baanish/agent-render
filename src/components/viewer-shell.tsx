@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
-  ArrowUpRight,
   Check,
   Copy,
   Download,
@@ -22,7 +21,6 @@ import { loadArxDictionary } from "@/lib/payload/arx-codec";
 import {
   MAX_FRAGMENT_LENGTH,
   PAYLOAD_FRAGMENT_KEY,
-  artifactKinds,
   type ArtifactKind,
   type ArtifactPayload,
   type CodeArtifact,
@@ -57,26 +55,6 @@ const sampleCards = sampleLinks.map((link, index) => ({
 
 const iconPath = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/icon.svg`;
 
-const ecosystemLinks = [
-  {
-    href: "https://github.com/baanish/agent-render",
-    kicker: "Source",
-    title: "Browse the GitHub repo",
-    description: "Inspect the payload format, renderer shell, and deployment notes behind the static viewer.",
-  },
-  {
-    href: "https://clawdhub.com/skills/agent-render-linking",
-    kicker: "Ecosystem",
-    title: "Use the ClawdHub skill",
-    description: "Help OpenClaw agents emit `agent-render` links intentionally across chat surfaces and workflows.",
-  },
-] as const;
-
-const emptyStateSteps = [
-  "Pick a sample fragment to update the hash in place.",
-  "The shell decodes the envelope client-side and activates the chosen artifact.",
-  "Artifact-specific renderers take over this stage without sending the payload to a server.",
-] as const;
 
 const MarkdownRenderer = dynamic(
   () => import("@/components/renderers/markdown-renderer").then((module) => module.MarkdownRenderer),
@@ -279,7 +257,6 @@ export function ViewerShell() {
   const csvArtifact: CsvArtifact | null = activeArtifact?.kind === "csv" ? activeArtifact : null;
   const jsonArtifact: JsonArtifact | null = activeArtifact?.kind === "json" ? activeArtifact : null;
   const hasKnownRenderer = Boolean(markdownArtifact || codeArtifact || diffArtifact || csvArtifact || jsonArtifact);
-  const budgetRatio = Math.min(fragmentLength / MAX_FRAGMENT_LENGTH, 1);
   const statusTone = getStatusTone(parsed);
   const viewerState = activeArtifact && envelope ? "artifact" : parsed.ok ? "decoded-no-artifact" : parsed.code === "empty" ? "empty" : "error";
 
@@ -446,29 +423,19 @@ export function ViewerShell() {
             <h1 className="font-display text-lg font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>
           </a>
 
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-            <span className="mono-pill shell-pill">Zero Data Retention by design</span>
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
         </header>
 
         {activeArtifact && envelope ? (
           <section className="artifact-first-layout">
             <section className="panel print-hide-on-markdown px-2.5 py-2.5 sm:px-5 sm:py-4">
               <div className="artifact-bundle-header">
-                <div>
-                  <p className="section-kicker">Artifact bundle</p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2.5 sm:mt-2 sm:gap-3">
-                    <h2 className="text-xl font-semibold leading-tight tracking-[-0.03em] sm:text-2xl">{envelope.title ?? "Untitled bundle"}</h2>
-                    <span className="mono-pill">{envelope.artifacts.length} item{envelope.artifacts.length === 1 ? "" : "s"}</span>
-                  </div>
-                  <p className="mt-1.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-2 sm:leading-6">
-                    Selecting an artifact updates the active fragment target while keeping the rendered payload front and center.
-                  </p>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold leading-tight tracking-[-0.02em] sm:text-xl">{envelope.title ?? "Untitled bundle"}</h2>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="mono-pill" style={{ borderColor: statusTone.color, color: statusTone.color }}>
+                  <span className="mono-pill" style={{ color: statusTone.color }}>
                     {statusTone.label}
                   </span>
                   <span className="mono-pill">{numberFormatter.format(fragmentLength)} chars</span>
@@ -488,12 +455,11 @@ export function ViewerShell() {
             <section className="panel panel-strong overflow-hidden px-2.5 py-2.5 sm:px-5 sm:py-4">
               <div className="artifact-stage-head print-hide-on-markdown">
                 <div className="min-w-0">
-                  <p className="section-kicker">{getArtifactSubtitle(activeArtifact)}</p>
-                  <h3 className="mt-1.5 text-[1.7rem] font-semibold leading-[1.08] tracking-[-0.02em] sm:mt-2 sm:text-4xl sm:leading-tight">
+                  <h3 className="text-lg font-semibold leading-tight tracking-[-0.02em] sm:text-xl">
                     {getArtifactHeading(activeArtifact)}
                   </h3>
-                  <p className="mt-1.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-2 sm:leading-6">
-                    {getArtifactSupportingLabel(activeArtifact)}
+                  <p className="mt-1 text-sm text-[color:var(--text-muted)]">
+                    {getArtifactSubtitle(activeArtifact)}
                   </p>
                 </div>
 
@@ -561,248 +527,24 @@ export function ViewerShell() {
           </section>
         ) : (
           <section className="empty-state-layout">
-            <section className="home-hero-panel panel panel-hero px-3 py-3.5 sm:px-8 sm:py-8">
-              <div className="grid gap-4 sm:gap-8 xl:grid-cols-[minmax(0,1.14fr)_minmax(19rem,0.86fr)] xl:items-end">
-                <div>
-                  <p className="section-kicker">Artifact viewer</p>
-                  <h2 className="mt-2 max-w-3xl text-2xl font-semibold leading-tight tracking-[-0.02em] sm:mt-3 sm:text-3xl lg:text-4xl">
-                    Share artifacts in the URL, keep the server out of the payload.
-                  </h2>
-                  <p className="mt-3 max-w-2xl text-[0.92rem] leading-[1.55] text-[color:var(--text-muted)] sm:mt-4 sm:text-base sm:leading-relaxed">
-                    agent-render opens markdown, code, diff, CSV, and JSON artifacts from a single static link, so someone can understand the payload without uploading it anywhere.
-                  </p>
-                </div>
-
-                <div className="hero-metric-stack">
-                  <div className="metric-card">
-                    <p className="metric-label">Protocol shape</p>
-                    <p className="font-mono mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
-                      #{PAYLOAD_FRAGMENT_KEY}=v1.&lt;codec&gt;.&lt;payload&gt;
-                    </p>
-                  </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Why it exists</p>
-                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
-                      Agent outputs get flattened in chat. agent-render keeps them readable, portable, and static-host friendly.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="hero-callout-row home-hero-callouts mt-3.5 print-hide-on-markdown sm:mt-8">
-                {ecosystemLinks.map((link) => (
-                  <a key={link.href} href={link.href} target="_blank" rel="noreferrer" className="hero-link-card">
-                    <span className="hero-link-eyebrow">{link.kicker}</span>
-                    <span className="hero-link-title">
-                      {link.title}
-                      <ArrowUpRight className="h-4 w-4 shrink-0 text-[color:var(--accent-secondary)]" />
-                    </span>
-                    <p className="hero-link-body">{link.description}</p>
-                  </a>
-                ))}
-
-                <div className="hero-link-card is-static">
-                  <span className="hero-link-eyebrow">How to try it</span>
-                  <span className="hero-link-title">Load any sample fragment below</span>
-                  <p className="hero-link-body">Pick a sample, update the hash, and the viewer opens without sending the artifact body to the host.</p>
-                </div>
-              </div>
-            </section>
-
             <LinkCreator onPreviewHash={setFragmentHash} />
 
-            <div className="empty-state-lower-grid home-empty-lower-grid print-hide-on-markdown">
-              <section className="home-samples-panel panel px-3 py-3 sm:px-6 sm:py-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="section-kicker">Example fragments</p>
-                    <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] sm:text-2xl">Load a sample envelope</h3>
-                  </div>
-                  <span className="mono-pill">{sampleCards.length} presets</span>
-                </div>
-                <p className="mt-2.5 max-w-2xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-6">
-                  Each preset uses the same fragment transport as the live product, so you can try the viewer shell with realistic payload sizes and renderer combinations in one click.
-                </p>
+            <nav className="sample-list print-hide-on-markdown">
+              <p className="mb-3 text-sm font-medium text-[color:var(--text-muted)]">Try a sample</p>
+              {sampleCards.map((sample) => {
+                const Icon = kindIcons[sample.kind];
+                const isActive = hash === sample.hash;
 
-                <div className="sample-link-grid mt-3 sm:mt-5">
-                  {sampleCards.map((sample) => {
-                    const Icon = kindIcons[sample.kind];
-                    const isActive = hash === sample.hash;
-
-                    return (
-                      <a key={sample.hash} href={sample.hash} className={cn("sample-link", isActive && "is-active")}>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="mono-pill !px-2.5 !py-1">
-                              <Icon className="h-3.5 w-3.5" />
-                              {sample.kind}
-                            </span>
-                            <span className="section-kicker">{numberFormatter.format(sample.fragmentLength)} chars</span>
-                          </div>
-                          <h4 className="mt-3 text-base font-semibold leading-6">{sample.title}</h4>
-                          <p className="mt-1 text-sm leading-6 text-[color:var(--text-muted)]">
-                            {sample.description ?? `${sample.envelope.artifacts.length} artifact${sample.envelope.artifacts.length === 1 ? "" : "s"} ready for fragment decode.`}
-                          </p>
-                        </div>
-                        <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-[color:var(--text-soft)]" />
-                      </a>
-                    );
-                  })}
-                </div>
-              </section>
-
-              <section className="home-inspector-panel panel px-3 py-3 sm:px-6 sm:py-5">
-                <div>
-                  <p className="section-kicker">Fragment inspector</p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2.5 sm:mt-2 sm:gap-3">
-                    <h3 className="text-xl font-semibold tracking-[-0.03em] sm:text-2xl">Current URL state</h3>
-                    <span className="mono-pill" style={{ borderColor: statusTone.color, color: statusTone.color }}>
-                      {statusTone.label}
-                    </span>
-                  </div>
-                  <p className="mt-2.5 text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-6">{statusTone.message}</p>
-                </div>
-
-                <div className="metric-grid mt-3.5 sm:mt-5">
-                  <div className="metric-card">
-                    <p className="metric-label">Fragment budget</p>
-                    <p className="metric-value">{numberFormatter.format(fragmentLength)} / {numberFormatter.format(MAX_FRAGMENT_LENGTH)}</p>
-                  </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Codec</p>
-                    <p className="metric-value">{parsed.ok ? parsed.envelope.codec : "plain"}</p>
-                  </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Artifacts</p>
-                    <p className="metric-value">{parsed.ok ? numberFormatter.format(parsed.envelope.artifacts.length) : "0"}</p>
-                  </div>
-                </div>
-
-                <div className="mt-3.5 sm:mt-5">
-                  <div className="mb-2 flex items-center justify-between gap-3 text-sm text-[color:var(--text-muted)]">
-                    <span>Size budget</span>
-                    <span>{Math.round(budgetRatio * 100)}%</span>
-                  </div>
-                  <div className="budget-track">
-                    <div className="budget-fill" style={{ width: `${budgetRatio * 100}%` }} />
-                  </div>
-                </div>
-
-                <div className="mt-3 grid gap-2 sm:mt-5 sm:gap-3">
-                  <div className="rounded-[var(--radius-md)] bg-[color:var(--surface-muted)] p-3 sm:p-4">
-                    <p className="metric-label">Hash preview</p>
-                    <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">
-                      {getHashPreview(hash)}
-                    </pre>
-                  </div>
-
-                  <div className="metric-card">
-                    <p className="metric-label">What happens next</p>
-                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
-                      Once a fragment is present, the shell decodes the envelope in-browser, selects the active artifact, and swaps this empty state for the renderer-specific stage without changing the route model.
-                    </p>
-                  </div>
-                </div>
-              </section>
-            </div>
-
-            <section className="home-stage-panel panel panel-strong overflow-hidden px-3 py-3 sm:px-6 sm:py-5">
-              <div className="print-hide-on-markdown flex flex-wrap items-start justify-between gap-3 border-b border-[color:var(--border)] pb-3 sm:gap-4 sm:pb-5">
-                <div>
-                  <p className="section-kicker">Viewer shell</p>
-                  <h3 className="mt-2 text-2xl font-semibold leading-tight tracking-[-0.02em] sm:text-3xl">
-                    {activeArtifact?.title ?? envelope?.title ?? "Renderer staging area"}
-                  </h3>
-                  <p className="mt-2.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
-                    {activeArtifact
-                      ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. Multiple artifact-specific viewers now render directly in-frame while the shell stays ready for future polish.`
-                      : "This stage becomes the live artifact surface once a fragment is active. The payload stays in the URL hash, the route stays export-friendly, and each artifact kind can render inside the same shell."}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {artifactKinds.map((kind) => {
-                    const Icon = kindIcons[kind];
-                    const isCurrent = activeArtifact?.kind === kind;
-
-                    return (
-                      <span
-                        key={kind}
-                        className="mono-pill"
-                        style={
-                          isCurrent
-                            ? {
-                                borderColor: "var(--accent-secondary)",
-                                color: "var(--accent-secondary)",
-                              }
-                            : undefined
-                        }
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                        {kind}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="viewer-shell-empty-grid mt-3 sm:mt-5">
-                <div className="viewer-frame viewer-frame-home">
-                  <div className="viewer-head print-hide-on-markdown">
-                    <div>
-                      <p className="metric-label">Ready for fragment decode</p>
-                      <h4 className="mt-1.5 text-base font-semibold tracking-[-0.03em] sm:mt-2 sm:text-xl">Choose a sample payload to populate this shell</h4>
-                    </div>
-                    <span className="mono-pill">public-safe</span>
-                  </div>
-                  <div className="artifact-preview viewer-empty-preview">
-                    <div className="viewer-empty-content">
-                      <div>
-                        <p className="section-kicker">First-run flow</p>
-                        <h4 className="mt-2.5 text-xl font-semibold leading-tight tracking-[-0.02em] sm:mt-3 sm:text-2xl">
-                          The live renderer stage appears here as soon as a fragment is selected.
-                        </h4>
-                        <p className="mt-2.5 max-w-2xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-4 sm:leading-7">
-                          {parsed.ok
-                            ? "A decoded fragment is already present, so the active artifact can take over this frame immediately."
-                            : parsed.message}
-                        </p>
-                      </div>
-
-                      <div className="viewer-step-grid">
-                        {emptyStateSteps.map((step, index) => (
-                          <div key={step} className="metric-card">
-                            <p className="metric-label">Step {index + 1}</p>
-                            <p className="mt-2.5 text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">{step}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="viewer-shell-side-grid print-hide-on-markdown">
-                  <div className="metric-card">
-                    <p className="metric-label">Security posture</p>
-                    <p className="mt-2.5 text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
-                      Payloads stay in the hash, renderers stay client-side, and artifact-specific viewers can land without changing fragment transport semantics.
-                    </p>
-                  </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Route model</p>
-                    <p className="mt-2.5 text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
-                      The app remains a single export-friendly route for Cloudflare Pages and other static hosts, even as richer artifact viewers plug into the shell.
-                    </p>
-                  </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Supported artifacts</p>
-                    <p className="mt-2.5 text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
-                      Markdown, code, diff, CSV, and JSON all share the same shell contract, so the homepage can explain the product before the first payload ever lands.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
+                return (
+                  <a key={sample.hash} href={sample.hash} className={cn("sample-row", isActive && "is-active")}>
+                    <Icon className="h-4 w-4 shrink-0 text-[color:var(--text-soft)]" />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{sample.title}</span>
+                    <span className="font-mono text-xs text-[color:var(--text-soft)]">{sample.kind}</span>
+                    <span className="font-mono text-xs text-[color:var(--text-soft)]">{numberFormatter.format(sample.fragmentLength)}</span>
+                  </a>
+                );
+              })}
+            </nav>
           </section>
         )}
       </div>

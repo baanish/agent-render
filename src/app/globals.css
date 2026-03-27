@@ -37,31 +37,31 @@
   --print-border: rgba(23, 32, 51, 0.14);
 }
 
-/* Warm dark mode — espresso & walnut */
+/* Cool blue-charcoal dark mode — warm accents on cool base */
 .dark {
-  --page-bg: #17120e;
-  --page-bg-secondary: rgba(14, 108, 119, 0.06);
-  --page-bg-accent: rgba(186, 89, 55, 0.05);
-  --surface: #1e1814;
-  --surface-strong: #1a1410;
-  --surface-muted: rgba(186, 160, 130, 0.06);
-  --surface-elevated: #241d18;
-  --border: rgba(186, 160, 130, 0.12);
-  --border-strong: rgba(186, 160, 130, 0.2);
-  --text-primary: #f0ebe4;
-  --text-muted: #b8a99a;
-  --text-soft: #8a7d72;
-  --accent: #d88a62;
-  --accent-strong: #eaa07c;
-  --accent-secondary: #5dbfcc;
+  --page-bg: #0c1015;
+  --page-bg-secondary: rgba(14, 108, 119, 0.05);
+  --page-bg-accent: rgba(186, 89, 55, 0.03);
+  --surface: #131920;
+  --surface-strong: #0f141a;
+  --surface-muted: rgba(99, 150, 200, 0.06);
+  --surface-elevated: #1a2230;
+  --border: rgba(130, 160, 200, 0.1);
+  --border-strong: rgba(130, 160, 200, 0.18);
+  --text-primary: #e2e8f0;
+  --text-muted: #8b99ad;
+  --text-soft: #5e6b7e;
+  --accent: #de7f58;
+  --accent-strong: #f0a27f;
+  --accent-secondary: #5cc7d4;
   --success: #6dbfa0;
   --warning: #d9a65a;
   --danger: #d47a6e;
-  --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.2);
-  --surface-code: #120e0a;
-  --surface-code-raised: #1e1612;
-  --surface-code-text: #f0ebe4;
+  --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --surface-code: #0a0f14;
+  --surface-code-raised: #111820;
+  --surface-code-text: #e2e8f0;
 }
 
 * {
@@ -283,6 +283,33 @@ select {
 
 .sample-link.is-active {
   background: color-mix(in srgb, var(--accent) 12%, var(--surface-muted));
+}
+
+.sample-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sample-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  transition: color var(--duration-base) ease;
+}
+
+.sample-row:last-child {
+  border-bottom: none;
+}
+
+.sample-row:hover {
+  color: var(--accent);
+}
+
+.sample-row.is-active {
+  color: var(--accent-secondary);
 }
 
 .home-generator-grid,
