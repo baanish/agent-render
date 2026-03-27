@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
+  ArrowUpRight,
   Check,
   Copy,
   Download,
@@ -529,14 +530,24 @@ export function ViewerShell() {
           <section className="empty-state-layout">
             <div className="home-intro">
               <h2 className="text-2xl font-semibold leading-tight tracking-[-0.02em] sm:text-3xl lg:text-4xl">
-                Share artifacts in the URL, keep the server out of the payload.
+                Artifacts in the URL. No server required.
               </h2>
-              <p className="mt-3 max-w-2xl text-[0.92rem] leading-relaxed text-[color:var(--text-muted)] sm:mt-4 sm:text-base">
-                agent-render opens markdown, code, diff, CSV, and JSON artifacts from a single static link, so someone can understand the payload without uploading it anywhere.
+              <p className="mt-3 max-w-xl text-[0.92rem] leading-relaxed text-[color:var(--text-muted)] sm:mt-4 sm:text-base">
+                Paste markdown, code, diffs, CSV, or JSON. Get a static link that renders it — nothing uploaded, nothing stored.
               </p>
-              <p className="font-mono mt-4 text-sm text-[color:var(--text-soft)]">
-                #{PAYLOAD_FRAGMENT_KEY}=v1.&lt;codec&gt;.&lt;payload&gt;
-              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-4">
+                <a href="https://github.com/baanish/agent-render" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-[color:var(--accent-secondary)] hover:underline">
+                  GitHub
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </a>
+                <a href="https://clawdhub.com/skills/agent-render-linking" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-[color:var(--accent-secondary)] hover:underline">
+                  ClawdHub skill
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </a>
+                <span className="font-mono text-xs text-[color:var(--text-soft)]">
+                  #{PAYLOAD_FRAGMENT_KEY}=v1.&lt;codec&gt;.&lt;payload&gt;
+                </span>
+              </div>
             </div>
 
             <LinkCreator onPreviewHash={setFragmentHash} />
@@ -588,17 +599,6 @@ export function ViewerShell() {
                 ) : null}
               </section>
 
-              <section className="home-links">
-                <h3 className="text-lg font-semibold tracking-[-0.02em]">Links</h3>
-                <div className="mt-3 flex flex-col gap-2">
-                  <a href="https://github.com/baanish/agent-render" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--accent-secondary)] hover:underline">
-                    GitHub repo
-                  </a>
-                  <a href="https://clawdhub.com/skills/agent-render-linking" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--accent-secondary)] hover:underline">
-                    ClawdHub skill
-                  </a>
-                </div>
-              </section>
             </div>
           </section>
         )}

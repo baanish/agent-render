@@ -112,13 +112,13 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
         <div>
           <div className="home-generator-heading">
             <div>
-              <p className="section-kicker">Try it now</p>
+              <p className="section-kicker">Create a link</p>
               <h3 className="mt-2 text-2xl font-semibold leading-tight tracking-[-0.02em] sm:text-3xl">
-                Make a shareable artifact link from pasted content.
+                Paste content, get a link.
               </h3>
             </div>
-            <p className="max-w-2xl text-sm leading-[1.55rem] text-[color:var(--text-muted)] sm:text-base sm:leading-7">
-              Pick a format, paste the artifact, and generate a real `agent-render` URL in the browser. No backend, no upload step, no extra route.
+            <p className="max-w-2xl text-sm leading-relaxed text-[color:var(--text-muted)] sm:text-base">
+              Choose a format and paste your artifact. The link is generated entirely in the browser.
             </p>
           </div>
 
@@ -243,8 +243,8 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
           <div className="creator-result-card">
             <div className="creator-result-head">
               <div>
-                <p className="section-kicker">Generated link</p>
-                <h4 className="mt-2 text-xl font-semibold tracking-[-0.03em]">Ready to copy, preview, or open</h4>
+                <p className="section-kicker">Result</p>
+                <h4 className="mt-2 text-xl font-semibold tracking-[-0.03em]">Your link</h4>
               </div>
               <span className="mono-pill">
                 <GeneratedKindIcon className="h-3.5 w-3.5" />
@@ -296,7 +296,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                   <p className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">{generatedLink.envelope.title}</p>
                   {isGeneratedLinkStale ? (
                     <p className="creator-inline-status" role="status">
-                      The draft changed after the last generation. Generate again to refresh the link.
+                      Draft changed since last generation. Hit Generate again.
                     </p>
                   ) : null}
                 </div>
@@ -304,7 +304,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             ) : (
               <div className="creator-empty-state">
                 <p className="text-sm leading-6 text-[color:var(--text-muted)]">
-                  Generate a link to get a shareable URL that opens this artifact directly in the viewer.
+                  Fill out the form and hit Generate to get a shareable URL.
                 </p>
               </div>
             )}
