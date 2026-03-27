@@ -19,7 +19,7 @@ GitHub Pages is strongest when the application behaves like a static shell inste
 
 ## Renderer implementation
 
-- `markdown` - formatted document view with shell copy, download, and print-to-PDF flows plus embedded premium code fences
+- `markdown` - formatted document view with shell copy, download, and print-to-PDF flows plus embedded premium code fences and inline mermaid diagram rendering
 - `code` - read-only CodeMirror view with syntax-aware rendering and code affordances
 - `diff` - review-style diff view with unified and split modes
 - `csv` - table-focused data grid built from parsed rows and dynamic columns
@@ -41,6 +41,10 @@ This round explicitly evaluated Shiki and rejected it for now.
 - That choice also removes the weaker `rehype-highlight` plus `highlight.js` path instead of carrying both.
 
 If markdown fence fidelity becomes a repeated product problem after these bundle reductions, Shiki remains the next serious candidate, but it should replace rather than supplement the current fence path.
+
+## Mermaid diagram support
+
+Markdown artifacts render ` ```mermaid ` fenced code blocks as interactive diagrams using the `mermaid` library. The library is dynamically imported on first encounter to avoid bloating the initial bundle. Diagrams respond to theme changes (light/dark) and fall back to displaying the raw mermaid source if rendering fails. Security level is set to `strict` to prevent script injection via diagram definitions.
 
 ## Raw code renderer choice
 

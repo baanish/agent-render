@@ -139,7 +139,7 @@ Two sample envelopes live in `src/lib/payload/examples.ts` for local development
 }
 ```
 
-Markdown artifacts use the `content` field and currently support client-side clipboard copy, file download, and browser print-to-PDF from the viewer shell.
+Markdown artifacts use the `content` field and currently support client-side clipboard copy, file download, and browser print-to-PDF from the viewer shell. Mermaid fenced code blocks (` ```mermaid `) within markdown content are rendered as interactive diagrams.
 
 ### Code artifact example
 

@@ -15,6 +15,7 @@
 - `@tanstack/react-table` - MIT
 - `lz-string` - MIT
 - `fflate` - MIT
+- `mermaid` - MIT
 
 ## Notes
 
@@ -30,6 +31,7 @@
 - `@git-diff-view/*` fits review-style diffs better than a generic merge editor for the current viewer.
 - `papaparse` plus `@tanstack/react-table` keeps CSV parsing and rendering readable without coupling to a heavyweight data-grid framework.
 - `fflate` provides portable deflate/inflate support across iOS Safari and Android Chromium without relying on browser-specific compression streams.
+- `mermaid` renders diagram definitions (flowcharts, sequence diagrams, etc.) to SVG client-side. Dynamically imported within the markdown renderer so it does not affect initial bundle size.
 
 ## Notable removals
 

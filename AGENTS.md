@@ -55,6 +55,7 @@ Describe and preserve what is already true in the repo today.
 
 - `markdown` renders as sanitized GFM and supports download plus browser print-to-PDF.
 - Markdown code fences reuse the CodeMirror viewer approach instead of a second highlighting stack.
+- Markdown ` ```mermaid ` fenced code blocks render as interactive diagrams via the dynamically imported `mermaid` library with theme-aware rendering and strict security.
 - `code` uses a read-only CodeMirror surface with language-aware loading.
 - `diff` uses a review-style git patch viewer with unified and split modes.
 - `csv` renders as a readable table/grid.
@@ -109,6 +110,7 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 
 ### Renderers
 - `src/components/renderers/markdown-renderer.tsx`
+- `src/components/renderers/mermaid-block.tsx` - inline mermaid diagram renderer used within markdown fences
 - `src/components/renderers/code-renderer.tsx`
 - `src/components/renderers/diff-renderer.tsx`
 - `src/components/renderers/csv-renderer.tsx`
