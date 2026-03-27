@@ -527,24 +527,79 @@ export function ViewerShell() {
           </section>
         ) : (
           <section className="empty-state-layout">
+            <div className="home-intro">
+              <h2 className="text-2xl font-semibold leading-tight tracking-[-0.02em] sm:text-3xl lg:text-4xl">
+                Share artifacts in the URL, keep the server out of the payload.
+              </h2>
+              <p className="mt-3 max-w-2xl text-[0.92rem] leading-relaxed text-[color:var(--text-muted)] sm:mt-4 sm:text-base">
+                agent-render opens markdown, code, diff, CSV, and JSON artifacts from a single static link, so someone can understand the payload without uploading it anywhere.
+              </p>
+              <p className="font-mono mt-4 text-sm text-[color:var(--text-soft)]">
+                #{PAYLOAD_FRAGMENT_KEY}=v1.&lt;codec&gt;.&lt;payload&gt;
+              </p>
+            </div>
+
             <LinkCreator onPreviewHash={setFragmentHash} />
 
-            <nav className="sample-list print-hide-on-markdown">
-              <p className="mb-3 text-sm font-medium text-[color:var(--text-muted)]">Try a sample</p>
-              {sampleCards.map((sample) => {
-                const Icon = kindIcons[sample.kind];
-                const isActive = hash === sample.hash;
+            <div className="home-lower print-hide-on-markdown">
+              <section>
+                <h3 className="text-lg font-semibold tracking-[-0.02em]">Sample fragments</h3>
+                <nav className="sample-list mt-3">
+                  {sampleCards.map((sample) => {
+                    const Icon = kindIcons[sample.kind];
+                    const isActive = hash === sample.hash;
 
-                return (
-                  <a key={sample.hash} href={sample.hash} className={cn("sample-row", isActive && "is-active")}>
-                    <Icon className="h-4 w-4 shrink-0 text-[color:var(--text-soft)]" />
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{sample.title}</span>
-                    <span className="font-mono text-xs text-[color:var(--text-soft)]">{sample.kind}</span>
-                    <span className="font-mono text-xs text-[color:var(--text-soft)]">{numberFormatter.format(sample.fragmentLength)}</span>
+                    return (
+                      <a key={sample.hash} href={sample.hash} className={cn("sample-row", isActive && "is-active")}>
+                        <Icon className="h-4 w-4 shrink-0 text-[color:var(--text-soft)]" />
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">{sample.title}</span>
+                        <span className="font-mono text-xs text-[color:var(--text-soft)]">{sample.kind}</span>
+                        <span className="font-mono text-xs tabular-nums text-[color:var(--text-soft)]">{numberFormatter.format(sample.fragmentLength)}</span>
+                      </a>
+                    );
+                  })}
+                </nav>
+              </section>
+
+              <section>
+                <h3 className="text-lg font-semibold tracking-[-0.02em]">Fragment state</h3>
+                <dl className="home-meta mt-3">
+                  <div>
+                    <dt>Status</dt>
+                    <dd style={{ color: statusTone.color }}>{statusTone.label}</dd>
+                  </div>
+                  <div>
+                    <dt>Budget</dt>
+                    <dd>{numberFormatter.format(fragmentLength)} / {numberFormatter.format(MAX_FRAGMENT_LENGTH)}</dd>
+                  </div>
+                  <div>
+                    <dt>Codec</dt>
+                    <dd>{parsed.ok ? parsed.envelope.codec : "—"}</dd>
+                  </div>
+                  <div>
+                    <dt>Artifacts</dt>
+                    <dd>{parsed.ok ? parsed.envelope.artifacts.length : "0"}</dd>
+                  </div>
+                </dl>
+                {hash ? (
+                  <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all rounded-[var(--radius-md)] bg-[color:var(--surface-muted)] p-3 text-xs leading-relaxed text-[color:var(--text-muted)]">
+                    {getHashPreview(hash)}
+                  </pre>
+                ) : null}
+              </section>
+
+              <section className="home-links">
+                <h3 className="text-lg font-semibold tracking-[-0.02em]">Links</h3>
+                <div className="mt-3 flex flex-col gap-2">
+                  <a href="https://github.com/baanish/agent-render" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--accent-secondary)] hover:underline">
+                    GitHub repo
                   </a>
-                );
-              })}
-            </nav>
+                  <a href="https://clawdhub.com/skills/agent-render-linking" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--accent-secondary)] hover:underline">
+                    ClawdHub skill
+                  </a>
+                </div>
+              </section>
+            </div>
           </section>
         )}
       </div>

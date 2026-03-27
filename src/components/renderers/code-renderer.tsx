@@ -48,8 +48,8 @@ const editorTheme = EditorView.theme({
   },
   ".cm-gutters": {
     backgroundColor: "var(--surface-code-raised)",
-    color: "rgba(239, 243, 247, 0.5)",
-    borderRight: "1px solid rgba(239, 243, 247, 0.08)",
+    color: "var(--code-gutter-text)",
+    borderRight: "1px solid var(--code-gutter-border)",
     minWidth: "3.3rem",
   },
   ".cm-gutterElement": {
@@ -57,13 +57,13 @@ const editorTheme = EditorView.theme({
     textAlign: "right",
   },
   ".cm-activeLine": {
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    backgroundColor: "var(--code-active-line)",
   },
   ".cm-activeLineGutter": {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "var(--code-active-line)",
   },
   ".cm-selectionBackground": {
-    backgroundColor: "rgba(105, 209, 221, 0.18) !important",
+    backgroundColor: "var(--code-selection) !important",
   },
   ".cm-rainbow-bracket": {
     fontWeight: "700",
