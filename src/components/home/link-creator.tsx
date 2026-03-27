@@ -107,13 +107,13 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   };
 
   return (
-    <section className="home-generator-panel panel panel-strong fade-up px-3 py-3 sm:px-6 sm:py-5" style={{ animationDelay: "120ms" }}>
+    <section className="home-generator-panel panel panel-strong px-3 py-3 sm:px-6 sm:py-5">
       <div className="home-generator-grid">
         <div>
           <div className="home-generator-heading">
             <div>
               <p className="section-kicker">Try it now</p>
-              <h3 className="font-display mt-2 text-[2rem] font-semibold leading-[0.96] tracking-[-0.05em] sm:text-[2.7rem]">
+              <h3 className="mt-2 text-2xl font-semibold leading-tight tracking-[-0.02em] sm:text-3xl">
                 Make a shareable artifact link from pasted content.
               </h3>
             </div>

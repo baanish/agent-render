@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowUpRight,
@@ -15,10 +14,7 @@ import {
   FileJson2,
   FileSpreadsheet,
   FileText,
-  FolderKanban,
   Printer,
-  ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { sampleEnvelopes, sampleLinks } from "@/lib/payload/examples";
 import { decodeFragment, decodeFragmentAsync, encodeEnvelope, encodeEnvelopeAsync } from "@/lib/payload/fragment";
@@ -227,9 +223,6 @@ function getStatusTone(parsed: ReturnType<typeof decodeFragment>) {
   };
 }
 
-function getAnimationStyle(delay: number): CSSProperties {
-  return { animationDelay: `${delay}ms` };
-}
 
 /**
  * Render the main viewer shell for decoding and displaying artifact fragments from the URL hash.
@@ -437,7 +430,7 @@ export function ViewerShell() {
       data-renderer-ready={rendererReady ? "true" : "false"}
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3.5 sm:gap-6">
-        <header className="panel print-hide-on-markdown fade-up sticky top-2 z-30 flex flex-col gap-2 px-3 py-2.5 sm:top-4 sm:gap-4 sm:px-6 sm:py-4 lg:flex-row lg:items-center lg:justify-between">
+        <header className="panel print-hide-on-markdown sticky top-2 z-30 flex flex-col gap-2 px-3 py-2.5 sm:top-4 sm:gap-4 sm:px-6 sm:py-4 lg:flex-row lg:items-center lg:justify-between">
           <a
             href="#"
             onClick={(e) => {
@@ -461,7 +454,7 @@ export function ViewerShell() {
 
         {activeArtifact && envelope ? (
           <section className="artifact-first-layout">
-            <section className="panel fade-up print-hide-on-markdown px-2.5 py-2.5 sm:px-5 sm:py-4" style={getAnimationStyle(80)}>
+            <section className="panel print-hide-on-markdown px-2.5 py-2.5 sm:px-5 sm:py-4">
               <div className="artifact-bundle-header">
                 <div>
                   <p className="section-kicker">Artifact bundle</p>
@@ -492,11 +485,11 @@ export function ViewerShell() {
               />
             </section>
 
-            <section className="panel panel-strong fade-up overflow-hidden px-2.5 py-2.5 sm:px-5 sm:py-4" style={getAnimationStyle(140)}>
+            <section className="panel panel-strong overflow-hidden px-2.5 py-2.5 sm:px-5 sm:py-4">
               <div className="artifact-stage-head print-hide-on-markdown">
                 <div className="min-w-0">
                   <p className="section-kicker">{getArtifactSubtitle(activeArtifact)}</p>
-                  <h3 className="font-display mt-1.5 text-[1.7rem] font-semibold leading-[1.02] tracking-[-0.04em] sm:mt-2 sm:text-4xl sm:leading-tight">
+                  <h3 className="mt-1.5 text-[1.7rem] font-semibold leading-[1.08] tracking-[-0.02em] sm:mt-2 sm:text-4xl sm:leading-tight">
                     {getArtifactHeading(activeArtifact)}
                   </h3>
                   <p className="mt-1.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-2 sm:leading-6">
@@ -546,7 +539,7 @@ export function ViewerShell() {
               </div>
             </section>
 
-            <section className="print-hide-on-markdown fade-up" style={getAnimationStyle(200)}>
+            <section className="print-hide-on-markdown">
               <div className="artifact-meta-grid" data-testid="artifact-metadata-grid">
                 {getArtifactDetailRows(activeArtifact).map((row) => (
                   <div key={row.label} className="artifact-meta-card">
@@ -568,30 +561,16 @@ export function ViewerShell() {
           </section>
         ) : (
           <section className="empty-state-layout">
-            <section className="home-hero-panel panel panel-hero fade-up px-3 py-3.5 sm:px-8 sm:py-8" style={getAnimationStyle(80)}>
+            <section className="home-hero-panel panel panel-hero px-3 py-3.5 sm:px-8 sm:py-8">
               <div className="grid gap-4 sm:gap-8 xl:grid-cols-[minmax(0,1.14fr)_minmax(19rem,0.86fr)] xl:items-end">
                 <div>
                   <p className="section-kicker">Artifact viewer</p>
-                  <h2 className="font-display mt-2 max-w-3xl text-[2rem] font-semibold leading-[0.94] tracking-[-0.05em] sm:mt-3 sm:text-5xl sm:leading-none lg:text-6xl">
+                  <h2 className="mt-2 max-w-3xl text-2xl font-semibold leading-tight tracking-[-0.02em] sm:mt-3 sm:text-3xl lg:text-4xl">
                     Share artifacts in the URL, keep the server out of the payload.
                   </h2>
-                  <p className="mt-3 max-w-2xl text-[0.92rem] leading-[1.55] text-[color:var(--text-muted)] sm:mt-5 sm:text-lg sm:leading-7">
+                  <p className="mt-3 max-w-2xl text-[0.92rem] leading-[1.55] text-[color:var(--text-muted)] sm:mt-4 sm:text-base sm:leading-relaxed">
                     agent-render opens markdown, code, diff, CSV, and JSON artifacts from a single static link, so someone can understand the payload without uploading it anywhere.
                   </p>
-                  <div className="mt-3.5 flex flex-wrap gap-1.5 sm:mt-6 sm:gap-3">
-                    <span className="mono-pill">
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                      fully static export
-                    </span>
-                    <span className="mono-pill">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      product-minded shell
-                    </span>
-                    <span className="mono-pill">
-                      <FolderKanban className="h-3.5 w-3.5" />
-                      renderer slots ready
-                    </span>
-                  </div>
                 </div>
 
                 <div className="hero-metric-stack">
@@ -633,7 +612,7 @@ export function ViewerShell() {
             <LinkCreator onPreviewHash={setFragmentHash} />
 
             <div className="empty-state-lower-grid home-empty-lower-grid print-hide-on-markdown">
-              <section className="home-samples-panel panel fade-up px-3 py-3 sm:px-6 sm:py-5" style={getAnimationStyle(140)}>
+              <section className="home-samples-panel panel px-3 py-3 sm:px-6 sm:py-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="section-kicker">Example fragments</p>
@@ -672,7 +651,7 @@ export function ViewerShell() {
                 </div>
               </section>
 
-              <section className="home-inspector-panel panel fade-up px-3 py-3 sm:px-6 sm:py-5" style={getAnimationStyle(200)}>
+              <section className="home-inspector-panel panel px-3 py-3 sm:px-6 sm:py-5">
                 <div>
                   <p className="section-kicker">Fragment inspector</p>
                   <div className="mt-1.5 flex flex-wrap items-center gap-2.5 sm:mt-2 sm:gap-3">
@@ -727,11 +706,11 @@ export function ViewerShell() {
               </section>
             </div>
 
-            <section className="home-stage-panel panel panel-strong fade-up overflow-hidden px-3 py-3 sm:px-6 sm:py-5" style={getAnimationStyle(260)}>
+            <section className="home-stage-panel panel panel-strong overflow-hidden px-3 py-3 sm:px-6 sm:py-5">
               <div className="print-hide-on-markdown flex flex-wrap items-start justify-between gap-3 border-b border-[color:var(--border)] pb-3 sm:gap-4 sm:pb-5">
                 <div>
                   <p className="section-kicker">Viewer shell</p>
-                  <h3 className="font-display mt-2 text-2xl font-semibold leading-tight tracking-[-0.04em] sm:text-4xl">
+                  <h3 className="mt-2 text-2xl font-semibold leading-tight tracking-[-0.02em] sm:text-3xl">
                     {activeArtifact?.title ?? envelope?.title ?? "Renderer staging area"}
                   </h3>
                   <p className="mt-2.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
@@ -780,7 +759,7 @@ export function ViewerShell() {
                     <div className="viewer-empty-content">
                       <div>
                         <p className="section-kicker">First-run flow</p>
-                        <h4 className="font-display mt-2.5 text-[1.75rem] font-semibold leading-[1.02] tracking-[-0.04em] sm:mt-3 sm:text-[2.35rem] sm:leading-tight">
+                        <h4 className="mt-2.5 text-xl font-semibold leading-tight tracking-[-0.02em] sm:mt-3 sm:text-2xl">
                           The live renderer stage appears here as soon as a fragment is selected.
                         </h4>
                         <p className="mt-2.5 max-w-2xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-4 sm:leading-7">

@@ -7,7 +7,7 @@ import "./globals.css";
 const display = Fraunces({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["500", "600", "700"],
+  weight: ["600"],
 });
 
 const sans = IBM_Plex_Sans({
