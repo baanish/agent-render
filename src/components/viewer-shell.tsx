@@ -689,7 +689,7 @@ export function ViewerShell() {
                 </div>
 
                 <div className="mt-3 grid gap-2 sm:mt-5 sm:gap-3">
-                  <div className="rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-3 sm:p-4">
+                  <div className="rounded-[var(--radius-md)] bg-[color:var(--surface-muted)] p-3 sm:p-4">
                     <p className="metric-label">Hash preview</p>
                     <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">
                       {getHashPreview(hash)}
