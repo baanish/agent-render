@@ -200,6 +200,20 @@ select {
   max-width: 42rem;
 }
 
+.fragment-error {
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--danger);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface-muted));
+}
+
+.fragment-error-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .home-lower {
   display: grid;
   gap: 2.5rem;

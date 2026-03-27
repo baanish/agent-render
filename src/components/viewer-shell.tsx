@@ -550,6 +550,19 @@ export function ViewerShell() {
               </div>
             </div>
 
+            {!parsed.ok && parsed.code !== "empty" ? (
+              <div className="fragment-error" role="alert">
+                <div className="fragment-error-head">
+                  <span className="text-sm font-semibold" style={{ color: statusTone.color }}>{statusTone.label}</span>
+                  <span className="font-mono text-xs text-[color:var(--text-soft)]">{numberFormatter.format(fragmentLength)} / {numberFormatter.format(MAX_FRAGMENT_LENGTH)} chars</span>
+                </div>
+                <p className="mt-1.5 text-sm text-[color:var(--text-muted)]">{statusTone.message}</p>
+                <pre className="font-mono mt-2.5 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-relaxed text-[color:var(--text-soft)]">
+                  {getHashPreview(hash)}
+                </pre>
+              </div>
+            ) : null}
+
             <LinkCreator onPreviewHash={setFragmentHash} />
 
             <div className="home-lower print-hide-on-markdown">
@@ -571,34 +584,6 @@ export function ViewerShell() {
                   })}
                 </nav>
               </section>
-
-              <section>
-                <h3 className="text-lg font-semibold tracking-[-0.02em]">Fragment state</h3>
-                <dl className="home-meta mt-3">
-                  <div>
-                    <dt>Status</dt>
-                    <dd style={{ color: statusTone.color }}>{statusTone.label}</dd>
-                  </div>
-                  <div>
-                    <dt>Budget</dt>
-                    <dd>{numberFormatter.format(fragmentLength)} / {numberFormatter.format(MAX_FRAGMENT_LENGTH)}</dd>
-                  </div>
-                  <div>
-                    <dt>Codec</dt>
-                    <dd>{parsed.ok ? parsed.envelope.codec : "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Artifacts</dt>
-                    <dd>{parsed.ok ? parsed.envelope.artifacts.length : "0"}</dd>
-                  </div>
-                </dl>
-                {hash ? (
-                  <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all rounded-[var(--radius-md)] bg-[color:var(--surface-muted)] p-3 text-xs leading-relaxed text-[color:var(--text-muted)]">
-                    {getHashPreview(hash)}
-                  </pre>
-                ) : null}
-              </section>
-
             </div>
           </section>
         )}
