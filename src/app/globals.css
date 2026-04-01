@@ -700,7 +700,7 @@ select {
 }
 
 .dark .artifact-switcher.is-active {
-  border-left: 3px solid var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .artifact-switcher:focus-visible {
@@ -1414,12 +1414,6 @@ select {
   max-width: 100%;
   height: auto;
   border-radius: var(--radius-lg);
-  filter: grayscale(0.2);
-  transition: filter 700ms ease;
-}
-
-.markdown-article img:hover {
-  filter: grayscale(0);
 }
 
 .artifact-list-item {
