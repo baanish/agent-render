@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agent Render | Architectural Intelligence</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Space+Grotesk:wght@300..700&amp;family=IBM+Plex+Mono:wght@300;400;600&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error-dim": "#c94947",
+              "tertiary-fixed-dim": "#d6c9ee",
+              "inverse-primary": "#a83b00",
+              "surface-bright": "#262852",
+              "surface-container-low": "#101128",
+              "primary-fixed-dim": "#ff9971",
+              "on-surface": "#e4e3ff",
+              "primary": "#ff8757",
+              "secondary-fixed": "#e1e0fb",
+              "on-secondary-fixed-variant": "#595a70",
+              "tertiary-container": "#e4d7fd",
+              "on-tertiary": "#5c5271",
+              "tertiary": "#f1e7ff",
+              "on-tertiary-fixed-variant": "#5d5372",
+              "on-primary-container": "#3a0f00",
+              "secondary-dim": "#b7b6d1",
+              "surface-container": "#151732",
+              "on-secondary": "#3e3e54",
+              "tertiary-dim": "#d6c9ee",
+              "on-tertiary-fixed": "#403755",
+              "secondary": "#c5c4df",
+              "on-secondary-container": "#a2a2bb",
+              "primary-fixed": "#ffad8e",
+              "on-primary-fixed": "#4c1600",
+              "primary-container": "#fd7034",
+              "on-surface-variant": "#a6a7d4",
+              "on-tertiary-container": "#534968",
+              "background": "#0b0c1f",
+              "on-secondary-fixed": "#3d3e53",
+              "on-primary": "#4f1700",
+              "on-primary-fixed-variant": "#7d2900",
+              "primary-dim": "#ff7438",
+              "inverse-on-surface": "#53536a",
+              "surface-tint": "#ff8757",
+              "outline-variant": "#43446b",
+              "surface-variant": "#202247",
+              "surface": "#0b0c1f",
+              "surface-container-highest": "#202247",
+              "on-error-container": "#ff9993",
+              "secondary-container": "#232438",
+              "surface-container-lowest": "#000000",
+              "inverse-surface": "#fbf8ff",
+              "error-container": "#8a1a1e",
+              "outline": "#70729c",
+              "surface-container-high": "#1b1c3c",
+              "error": "#ff716c",
+              "secondary-fixed-dim": "#d3d2ed",
+              "on-error": "#490006",
+              "surface-dim": "#0b0c1f",
+              "on-background": "#e4e3ff",
+              "tertiary-fixed": "#e4d7fd"
+            },
+            fontFamily: {
+              "headline": ["Newsreader"],
+              "body": ["Space Grotesk"],
+              "label": ["IBM Plex Mono"]
+            },
+            borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .thinking-indicator {
+            width: 120px;
+            height: 120px;
+            border: 1px solid #FF8757;
+            border-radius: 50%;
+            position: relative;
+            opacity: 0.6;
+        }
+        .editorial-shadow {
+            box-shadow: 0 20px 40px rgba(11, 12, 31, 0.4);
+        }
+        .grid-lines {
+            background-image: linear-gradient(to right, rgba(67, 68, 107, 0.1) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(67, 68, 107, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#0B0C1F]/60 backdrop-blur-xl bg-[#0B0C1F]/10 border-b border-[#FF8757]/15">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold font-['Newsreader'] text-[#FF8757]">Agent Render</span>
+<div class="hidden md:flex gap-6">
+<a class="font-['Space_Grotesk'] text-sm uppercase tracking-widest text-[#FF8757] border-b-2 border-[#FF8757] pb-1" href="#">Docs</a>
+<a class="font-['Space_Grotesk'] text-sm uppercase tracking-widest text-[#F1E7FF] hover:text-[#FF8757] transition-colors duration-300" href="#">GitHub</a>
+<a class="font-['Space_Grotesk'] text-sm uppercase tracking-widest text-[#F1E7FF] hover:text-[#FF8757] transition-colors duration-300" href="#">About</a>
+</div>
+</div>
+<div class="font-['IBM_Plex_Mono'] text-[10px] uppercase tracking-tighter text-[#FF8757]">
+            [STATUS: READY]
+        </div>
+</nav>
+<!-- SideNavBar (Suppressed for landing, but structure maintained for reference) -->
+<aside class="hidden lg:flex fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex flex-col py-8 w-16 bg-surface-container-low border-r border-outline-variant/10">
+<div class="flex flex-col gap-8 items-center">
+<span class="material-symbols-outlined text-primary cursor-pointer">folder</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer">database</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer">terminal</span>
+</div>
+</aside>
+<main class="lg:pl-16 pt-16 grid-lines min-h-screen">
+<!-- Hero Section: The Dual Nature -->
+<section class="relative min-h-[921px] flex flex-col lg:flex-row items-center px-6 lg:px-20 py-20 gap-12 overflow-hidden">
+<!-- Asymmetrical Manifesto (Human) -->
+<div class="w-full lg:w-3/5 z-10">
+<div class="mb-6 font-label text-primary text-xs tracking-[0.3em] uppercase">
+                    Protocol v4.0.1-Alpha // [TIMESTAMP: 12:44:01]
+                </div>
+<h1 class="font-headline italic text-5xl lg:text-7xl text-primary leading-tight max-w-3xl">
+                    Architectural Intelligence as an <span class="not-italic text-on-surface">Artifact.</span>
+</h1>
+<p class="mt-8 font-headline text-2xl text-on-surface-variant max-w-2xl leading-relaxed italic">
+                    The interface is no longer a tool, but a sentient archive. We curate the entropy of machine logic into the elegance of editorial permanence.
+                </p>
+<div class="mt-12 flex items-center gap-8">
+<button class="bg-primary text-on-primary font-body px-8 py-4 text-lg font-bold hover:bg-primary-dim transition-all active:scale-95">
+                        Try it Now
+                    </button>
+<div class="flex flex-col">
+<span class="font-label text-[10px] text-tertiary-dim uppercase tracking-widest">Persistence Mode</span>
+<span class="font-body text-on-surface text-sm font-semibold">URL-ONLY DECENTRALIZATION</span>
+</div>
+</div>
+</div>
+<!-- Machine Logic Stream (Data) -->
+<div class="w-full lg:w-2/5 relative h-full flex items-center justify-center">
+<div class="absolute -z-10 w-96 h-96 bg-primary/10 blur-[120px]"></div>
+<div class="bg-surface-container-high/40 backdrop-blur-2xl p-1 border border-outline-variant/20 editorial-shadow">
+<div class="bg-surface-container-lowest p-6 font-label text-[11px] text-primary/80 leading-relaxed overflow-hidden h-[400px] w-full lg:w-[380px]">
+<div class="flex justify-between mb-4 border-b border-outline-variant/20 pb-2">
+<span>RAW_STREAM_v04</span>
+<span class="text-tertiary">OPERATIONAL</span>
+</div>
+<div class="space-y-1 opacity-70">
+<p>&gt; INITIALIZING_RENDER_ENGINE...</p>
+<p class="text-on-surface">&gt; COMPILING_ARTIFACT_ID: 0x8821AF</p>
+<p>&gt; MEMORY_STATE: VOLATILE</p>
+<p>&gt; UPLOAD_LIMIT: 8,000_CHARACTERS</p>
+<p class="text-tertiary">&gt; APPLYING_NEWSREADER_SERIF...</p>
+<p>&gt; OFFSET_MAPPING: 0.00042ms</p>
+<p>&gt; [WARN]: LATENCY_DETECTED_IN_CORE</p>
+<p>&gt; RESOLVING...</p>
+<p class="text-primary">&gt; STATUS: SUCCESSFUL</p>
+<p>&gt; -------------------------------</p>
+<p>&gt; BEGIN_MANIFESTO_TRANSCRIPTION</p>
+<p class="text-on-surface">"The beauty of the machine is not in its power, but in its ability to be silent."</p>
+<p>&gt; END_TRANSCRIPTION</p>
+<p>&gt; -------------------------------</p>
+<p>&gt; SYNCING_TO_URL_PROTOCOL...</p>
+<p>&gt; URL_LENGTH: 2048_BYTES</p>
+<p>&gt; COMPRESSION_RATIO: 4.2:1</p>
+<p class="text-primary-fixed-dim">&gt; DATA_PERSISTENCE: IMMUTABLE</p>
+</div>
+</div>
+</div>
+<!-- Thinking Indicator (Signature Motif) -->
+<div class="absolute -bottom-10 -right-10 hidden xl:block">
+<div class="thinking-indicator flex items-center justify-center">
+<svg class="stroke-primary fill-none opacity-40" height="100" viewbox="0 0 100 100" width="100">
+<circle cx="50" cy="50" r="40" stroke-dasharray="10 5"></circle>
+<path d="M50 10 A40 40 0 0 1 90 50" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</div>
+</section>
+<!-- Feature Bento Grid -->
+<section class="px-6 lg:px-20 py-24 bg-surface-container-low">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Zero-Server Overhead -->
+<div class="md:col-span-8 bg-surface-container border border-outline-variant/10 p-10 flex flex-col justify-between hover:bg-surface-container-high transition-colors">
+<div>
+<div class="w-12 h-12 bg-primary/10 flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-primary">cloud_off</span>
+</div>
+<h3 class="font-headline text-4xl italic text-on-surface mb-4">Zero-Server <span class="text-primary">Overhead</span></h3>
+<p class="font-body text-on-surface-variant text-lg max-w-xl">
+                            All rendering happens locally. We do not store your data because your data is part of the architecture itself. Private by design, fast by default.
+                        </p>
+</div>
+<div class="mt-8 font-label text-[10px] text-tertiary-dim tracking-widest uppercase">
+                        Protocol: CLIENT_SIDE_ONLY // Latency: 0.0ms
+                    </div>
+</div>
+<!-- URL Persistence -->
+<div class="md:col-span-4 bg-surface-container-highest border border-outline-variant/10 p-10 flex flex-col justify-center text-center">
+<span class="material-symbols-outlined text-primary text-5xl mb-6">link</span>
+<h3 class="font-body font-bold text-xl uppercase tracking-tighter mb-4">URL-Only Persistence</h3>
+<p class="font-body text-sm text-on-surface-variant">
+                        Share your artifacts through a single, immutable URL. No database required.
+                    </p>
+</div>
+<!-- Multimodal Viewing -->
+<div class="md:col-span-4 bg-surface-variant p-8 flex flex-col items-start border border-outline-variant/10">
+<div class="flex gap-2 mb-8">
+<div class="px-2 py-1 bg-surface-container-lowest text-[10px] font-label text-primary border border-primary/20">MD</div>
+<div class="px-2 py-1 bg-surface-container-lowest text-[10px] font-label text-on-surface-variant">DIFF</div>
+<div class="px-2 py-1 bg-surface-container-lowest text-[10px] font-label text-on-surface-variant">CSV</div>
+<div class="px-2 py-1 bg-surface-container-lowest text-[10px] font-label text-on-surface-variant">CODE</div>
+</div>
+<h3 class="font-headline text-3xl italic text-on-surface mb-2">Multimodal</h3>
+<p class="font-body text-sm text-on-surface-variant">Switch seamlessly between data representations with zero context loss.</p>
+</div>
+<!-- Visual Element: Abstract Metadata -->
+<div class="md:col-span-8 bg-surface border border-outline-variant/10 relative overflow-hidden min-h-[300px]">
+<img class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay" data-alt="Abstract technical data visualization with orange glowing lines and geometric shapes on a dark indigo background with grain texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJkmBWqNmqYStIsFeA0E5NgP54WAikNA5EozCJdVeT1MeKSiYjdHaqBwON1Z8_Aai0_4T_khsa1kBr-CUc4wEzl1-YR8ra7hL0c35qeykDoVsY0mgyWCdnyHAHWFDqkGyCdF4ABW6kB-6muTROlFwRyIYy3Nq613DJZKTyqczKoeS8K7l6ikZnBZoA2Ye3gfyLUJS5vCGFdKoS1Vw-2rpciflbzv3P78Phi4Oc-mNeggTV1j4gR9nZpnjLOhly23LshJTpyTSiEh0"/>
+<div class="absolute inset-0 p-10 flex flex-col justify-end">
+<h3 class="font-headline text-5xl text-on-surface max-w-md">The 8,000 Character <span class="italic text-primary">Threshold.</span></h3>
+<div class="mt-4 flex gap-4">
+<span class="font-label text-xs text-tertiary-fixed-dim bg-surface-container-low px-3 py-1">BUFFER_MAX: 8192</span>
+<span class="font-label text-xs text-tertiary-fixed-dim bg-surface-container-low px-3 py-1">ENCODING: BASE64_DEFLATE</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Editorial Quote Section -->
+<section class="py-32 px-6 lg:px-20 border-t border-outline-variant/10">
+<div class="max-w-4xl mx-auto text-center">
+<span class="material-symbols-outlined text-primary mb-8" style="font-variation-settings: 'FILL' 1;">format_quote</span>
+<blockquote class="font-headline text-4xl lg:text-6xl text-on-surface italic leading-snug">
+                    "We are building a bridge between the <span class="not-italic text-primary font-bold">Raw Volatility</span> of code and the <span class="not-italic text-tertiary font-bold">Stable Grace</span> of documentation."
+                </blockquote>
+<cite class="mt-12 block font-label text-xs tracking-[0.4em] uppercase text-on-surface-variant">— THE ARCHIVE CORE</cite>
+</div>
+</section>
+<!-- Call to Action -->
+<section class="py-24 px-6 lg:px-20 relative bg-surface-container-highest overflow-hidden">
+<div class="absolute top-0 right-0 w-1/2 h-full opacity-10 pointer-events-none">
+<div class="w-full h-full border-l border-t border-primary/40 rotate-12 translate-x-20 translate-y-20"></div>
+</div>
+<div class="relative z-10 flex flex-col items-center text-center">
+<h2 class="font-headline text-6xl text-on-surface italic mb-8">Initialize your <span class="text-primary not-italic font-bold">Artifact.</span></h2>
+<div class="flex flex-col md:flex-row gap-6 w-full max-w-xl">
+<div class="flex-grow bg-surface-container-high border border-outline-variant/20 p-4 font-label text-on-surface-variant flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-dim">terminal</span>
+<span>agent-render --init artifact_001</span>
+</div>
+<button class="bg-primary text-on-primary font-body px-10 py-4 font-bold hover:bg-primary-dim transition-all">
+                        GENERATE
+                    </button>
+</div>
+<div class="mt-12 flex gap-12 font-label text-[10px] text-tertiary-dim tracking-widest uppercase">
+<span>STATUS: OPERATIONAL</span>
+<span>REGION: GLOBAL_EDGE</span>
+<span>LOAD: NOMINAL</span>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-12 px-8 flex flex-col md:flex-row justify-between items-center bg-[#0B0C1F] border-t border-[#F1E7FF]/10 gap-8">
+<div class="flex flex-col gap-2">
+<span class="font-['IBM_Plex_Mono'] text-[10px] uppercase tracking-tighter text-[#F1E7FF]">© 2024 AGENT RENDER PROTOCOL</span>
+<span class="font-['IBM_Plex_Mono'] text-[10px] uppercase tracking-tighter text-[#F1E7FF]/40">ALL RIGHTS RESERVED // ENCRYPTED</span>
+</div>
+<div class="flex gap-12">
+<div class="flex flex-col items-end">
+<span class="text-[9px] font-label text-primary mb-1 uppercase tracking-widest">Repository</span>
+<a class="font-['IBM_Plex_Mono'] text-xs uppercase tracking-tighter text-[#F1E7FF] opacity-60 hover:opacity-100 hover:text-[#FF8757] underline decoration-[#FF8757] transition-all" href="#">GitHub</a>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[9px] font-label text-primary mb-1 uppercase tracking-widest">Documentation</span>
+<a class="font-['IBM_Plex_Mono'] text-xs uppercase tracking-tighter text-[#F1E7FF] opacity-60 hover:opacity-100 hover:text-[#FF8757] transition-all" href="#">Wiki</a>
+</div>
+</div>
+</footer>
+</main>
+<!-- Floating Global Status Data Ribbon -->
+<div class="fixed bottom-0 left-0 w-full md:left-16 md:w-[calc(100%-64px)] h-8 bg-surface-container-highest border-t border-outline-variant/10 z-50 flex items-center px-4 overflow-hidden">
+<div class="flex gap-8 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-primary rounded-full"></div>
+<span class="font-label text-[9px] text-primary uppercase">Engine_v4.0.1_Online</span>
+</div>
+<span class="font-label text-[9px] text-on-surface-variant uppercase tracking-widest opacity-40">|</span>
+<span class="font-label text-[9px] text-on-surface-variant uppercase">Uptime: 99.998%</span>
+<span class="font-label text-[9px] text-on-surface-variant uppercase tracking-widest opacity-40">|</span>
+<span class="font-label text-[9px] text-on-surface-variant uppercase">Nodes: 12,402 Active</span>
+<span class="font-label text-[9px] text-on-surface-variant uppercase tracking-widest opacity-40">|</span>
+<span class="font-label text-[9px] text-on-surface-variant uppercase">Latency: 4ms</span>
+<span class="font-label text-[9px] text-on-surface-variant uppercase tracking-widest opacity-40">|</span>
+<span class="font-label text-[9px] text-primary uppercase animate-pulse">Scanning for entropy...</span>
+</div>
+</div>
+</body></html>

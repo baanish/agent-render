@@ -2,64 +2,85 @@
 @import "@git-diff-view/react/styles/diff-view-pure.css";
 
 :root {
-  --page-bg: #f2ecdf;
-  --page-bg-secondary: rgba(14, 108, 119, 0.08);
-  --page-bg-accent: rgba(186, 89, 55, 0.1);
-  --surface: rgba(255, 249, 241, 0.84);
-  --surface-strong: rgba(255, 252, 247, 0.96);
-  --surface-muted: rgba(19, 28, 41, 0.035);
-  --surface-elevated: rgba(255, 255, 255, 0.82);
-  --border: rgba(23, 32, 51, 0.11);
-  --border-strong: rgba(23, 32, 51, 0.18);
-  --text-primary: #172033;
-  --text-muted: #5b6678;
-  --text-soft: #7a8495;
-  --accent: #ba5937;
-  --accent-strong: #964526;
-  --accent-secondary: #0e6c77;
+  /* ── Surface hierarchy — warm parchment ── */
+  --page-bg: #fcf9f2;
+  --page-bg-secondary: rgba(0, 98, 140, 0.05);
+  --page-bg-accent: rgba(176, 47, 0, 0.05);
+  --surface: rgba(252, 249, 242, 0.88);
+  --surface-strong: rgba(255, 255, 255, 0.96);
+  --surface-muted: rgba(28, 28, 24, 0.035);
+  --surface-elevated: rgba(235, 232, 225, 0.86);
+  /* ── Ghost borders — outline-variant at low opacity ── */
+  --border: rgba(228, 190, 180, 0.18);
+  --border-strong: rgba(228, 190, 180, 0.30);
+  /* ── Text — deep charcoal, never pure black ── */
+  --text-primary: #1c1c18;
+  --text-muted: #5f5f56;
+  --text-soft: #5b4039;
+  /* ── Accent — burnt orange laser, not a paint bucket ── */
+  --accent: #b02f00;
+  --accent-strong: #8a2400;
+  --accent-secondary: #00628c;
+  /* ── Semantic ── */
   --success: #287357;
   --warning: #ad6b1f;
-  --danger: #a33b2b;
-  --shadow-lg: 0 26px 72px rgba(21, 27, 39, 0.11);
-  --shadow-md: 0 14px 34px rgba(21, 27, 39, 0.075);
-  --radius-xl: 28px;
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --radius-sm: 999px;
+  --danger: #ba1a1a;
+  /* ── Ambient shadows — tinted with on-surface, never pure black ── */
+  --shadow-lg: 0 26px 72px rgba(28, 28, 24, 0.08);
+  --shadow-md: 0 20px 40px rgba(28, 28, 24, 0.04);
+  /* ── Radius — sharp, architectural ── */
+  --radius-xl: 2px;
+  --radius-lg: 2px;
+  --radius-md: 2px;
+  --radius-sm: 2px;
   --duration-base: 280ms;
-  --surface-code: rgba(18, 27, 40, 0.95);
-  --surface-code-raised: rgba(28, 38, 54, 0.82);
+  /* ── Code surfaces ── */
+  --surface-code: #1c1c18;
+  --surface-code-raised: rgba(28, 28, 24, 0.92);
   --surface-code-text: #eff3f7;
+  /* ── Print ── */
   --print-paper: #ffffff;
-  --print-ink: #172033;
-  --print-muted: #566073;
-  --print-border: rgba(23, 32, 51, 0.14);
+  --print-ink: #1c1c18;
+  --print-muted: #5b4039;
+  --print-border: rgba(228, 190, 180, 0.14);
 }
 
 .dark {
-  --page-bg: #0a0f15;
-  --page-bg-secondary: rgba(82, 155, 168, 0.05);
-  --page-bg-accent: rgba(201, 111, 76, 0.04);
-  --surface: rgba(13, 19, 27, 0.92);
-  --surface-strong: rgba(18, 25, 35, 0.98);
-  --surface-muted: rgba(135, 154, 180, 0.05);
-  --surface-elevated: rgba(23, 31, 43, 0.96);
-  --border: rgba(174, 191, 214, 0.13);
-  --border-strong: rgba(201, 214, 233, 0.2);
-  --text-primary: #eef2f7;
-  --text-muted: #a7b2c1;
-  --text-soft: #7f8b9b;
-  --accent: #de7f58;
-  --accent-strong: #f0a27f;
-  --accent-secondary: #72c4cf;
+  /* ── Surface hierarchy — midnight indigo ── */
+  --page-bg: #0b0c1f;
+  --page-bg-secondary: rgba(241, 231, 255, 0.03);
+  --page-bg-accent: rgba(255, 135, 87, 0.04);
+  --surface: rgba(21, 23, 50, 0.92);
+  --surface-strong: rgba(16, 17, 40, 0.98);
+  --surface-muted: rgba(166, 167, 212, 0.05);
+  --surface-elevated: rgba(27, 28, 60, 0.96);
+  /* ── Ghost borders — muted indigo ── */
+  --border: rgba(67, 68, 107, 0.18);
+  --border-strong: rgba(67, 68, 107, 0.30);
+  /* ── Text — pale lavender-white ── */
+  --text-primary: #e4e3ff;
+  --text-muted: #c5c4df;
+  --text-soft: #a6a7d4;
+  /* ── Accent — warm coral glow ── */
+  --accent: #ff8757;
+  --accent-strong: #fd7034;
+  --accent-secondary: #8b8dbd;
+  /* ── Semantic ── */
   --success: #78c5a8;
   --warning: #e6b263;
-  --danger: #ef9c90;
-  --shadow-lg: 0 28px 72px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 14px 34px rgba(0, 0, 0, 0.34);
-  --surface-code: rgba(8, 13, 20, 0.98);
-  --surface-code-raised: rgba(15, 21, 30, 0.95);
-  --surface-code-text: #eef3f7;
+  --danger: #ffb4ab;
+  /* ── Shadows — tinted with background, never neutral gray ── */
+  --shadow-lg: 0 28px 72px rgba(11, 12, 31, 0.4);
+  --shadow-md: 0 20px 40px rgba(11, 12, 31, 0.2);
+  /* ── Radius — zero, precise, architectural ── */
+  --radius-xl: 0px;
+  --radius-lg: 0px;
+  --radius-md: 0px;
+  --radius-sm: 0px;
+  /* ── Code ── */
+  --surface-code: rgba(8, 9, 20, 0.98);
+  --surface-code-raised: rgba(16, 17, 40, 0.95);
+  --surface-code-text: #e4e3ff;
 }
 
 * {
@@ -74,16 +95,24 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--text-primary);
+  /* Theme-switching font aliases: light → Inter body, dark → Space Grotesk body */
+  --font-display: var(--font-headline);
+  --font-sans: var(--font-body);
   font-family: var(--font-sans), sans-serif;
   background:
     radial-gradient(circle at top left, var(--page-bg-secondary), transparent 36%),
     radial-gradient(circle at top right, var(--page-bg-accent), transparent 28%),
-    linear-gradient(180deg, color-mix(in srgb, var(--page-bg) 92%, white 8%), var(--page-bg));
+    linear-gradient(180deg, color-mix(in srgb, var(--page-bg) 94%, white 6%), var(--page-bg));
 }
 
 .dark body {
+  /* Dark: Newsreader for display, Space Grotesk for body */
+  --font-display: var(--font-editorial);
+  --font-sans: var(--font-headline);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--page-bg) 94%, #0e141d 6%), var(--page-bg));
+    radial-gradient(circle at 30% 10%, rgba(255, 135, 87, 0.04), transparent 40%),
+    radial-gradient(circle at 80% 60%, rgba(241, 231, 255, 0.02), transparent 35%),
+    linear-gradient(180deg, #0b0c1f, #080919);
 }
 
 body::before {
@@ -92,11 +121,21 @@ body::before {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), color-mix(in srgb, var(--border) 80%, transparent) calc(100% - 1px), transparent 100%),
-    linear-gradient(0deg, transparent 0, transparent calc(100% - 1px), color-mix(in srgb, var(--border) 60%, transparent) calc(100% - 1px), transparent 100%);
+    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), color-mix(in srgb, var(--border) 60%, transparent) calc(100% - 1px), transparent 100%),
+    linear-gradient(0deg, transparent 0, transparent calc(100% - 1px), color-mix(in srgb, var(--border) 40%, transparent) calc(100% - 1px), transparent 100%);
   background-size: 72px 72px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent 85%);
-  opacity: 0.35;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent 80%);
+  opacity: 0.3;
+}
+
+/* Dark mode: visible terminal grid at 40px spacing */
+.dark body::before {
+  background:
+    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(67, 68, 107, 0.10) calc(100% - 1px), transparent 100%),
+    linear-gradient(0deg, transparent 0, transparent calc(100% - 1px), rgba(67, 68, 107, 0.07) calc(100% - 1px), transparent 100%);
+  background-size: 40px 40px;
+  mask-image: none;
+  opacity: 1;
 }
 
 a {
@@ -112,16 +151,47 @@ select {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  background: color-mix(in srgb, var(--accent) 36%, transparent);
   color: var(--text-primary);
 }
 
+.dark ::selection {
+  background: rgba(255, 135, 87, 0.32);
+  color: #e4e3ff;
+}
+
 .font-display {
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Dark mode: Newsreader italic for display-tier headlines */
+.dark .font-display {
   font-family: var(--font-display), serif;
+  font-style: italic;
 }
 
 .font-mono {
   font-family: var(--font-mono), monospace;
+}
+
+/* ── Custom scrollbars ── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-elevated);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 .panel {
@@ -130,7 +200,7 @@ select {
   border-radius: var(--radius-xl);
   background: var(--surface);
   box-shadow: var(--shadow-md);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(20px);
   overflow: hidden;
 }
 
@@ -140,13 +210,13 @@ select {
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 32%);
-  opacity: 0.68;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), transparent 28%);
+  opacity: 0.5;
 }
 
 .dark .panel::after {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 30%);
-  opacity: 0.48;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%);
+  opacity: 0.3;
 }
 
 .panel-strong {
@@ -156,19 +226,21 @@ select {
 
 .panel-hero {
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--surface-strong) 82%, transparent), color-mix(in srgb, var(--surface) 96%, transparent)),
-    radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--accent-secondary) 18%, transparent), transparent 32%),
-    radial-gradient(circle at 20% 90%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 28%);
+    linear-gradient(135deg, color-mix(in srgb, var(--surface-strong) 88%, transparent), color-mix(in srgb, var(--surface) 96%, transparent)),
+    radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--accent-secondary) 10%, transparent), transparent 32%),
+    radial-gradient(circle at 20% 90%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 28%);
 }
 
 .dark .panel-hero {
-  background: var(--surface-strong);
+  background:
+    linear-gradient(135deg, var(--surface-strong), rgba(21, 23, 50, 0.96)),
+    radial-gradient(circle at 80% 20%, rgba(255, 135, 87, 0.04), transparent 40%);
 }
 
 .section-kicker {
   color: var(--text-soft);
   font-family: var(--font-mono), monospace;
-  font-size: 0.72rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -194,6 +266,12 @@ select {
   border-color: var(--border-strong);
   color: var(--text-primary);
   background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+}
+
+/* Dark data chips: square, technical, not bubbly */
+.dark .mono-pill {
+  background: rgba(27, 28, 60, 0.8);
+  border-color: rgba(67, 68, 107, 0.25);
 }
 
 .metric-grid {
@@ -232,20 +310,19 @@ select {
   padding: 1rem 1.05rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 90%, transparent), color-mix(in srgb, var(--surface) 96%, transparent)),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-secondary) 12%, transparent), transparent 48%);
+  background: color-mix(in srgb, var(--surface-elevated) 80%, transparent);
   transition:
     transform var(--duration-base) ease,
     border-color var(--duration-base) ease,
-    background-color var(--duration-base) ease,
+    background-color 500ms ease,
     box-shadow var(--duration-base) ease;
 }
 
 .hero-link-card:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--accent-secondary) 44%, var(--border));
-  box-shadow: 0 18px 36px color-mix(in srgb, var(--accent-secondary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: color-mix(in srgb, var(--surface-elevated) 95%, transparent);
+  box-shadow: 0 18px 36px color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .hero-link-card.is-static:hover {
@@ -255,14 +332,14 @@ select {
 }
 
 .hero-link-card:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent-secondary) 48%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 48%, transparent);
   outline-offset: 2px;
 }
 
 .hero-link-eyebrow {
-  color: var(--accent-secondary);
+  color: var(--accent);
   font-family: var(--font-mono), monospace;
-  font-size: 0.72rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -303,16 +380,16 @@ select {
 }
 
 .budget-track {
-  height: 0.7rem;
-  border-radius: var(--radius-sm);
+  height: 3px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--surface-muted) 78%, transparent);
   overflow: hidden;
 }
 
 .budget-fill {
   height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent-secondary), var(--accent));
+  border-radius: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
   transition: width var(--duration-base) ease;
 }
 
@@ -335,13 +412,17 @@ select {
 
 .sample-link:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
-  box-shadow: 0 18px 36px color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  box-shadow: 0 18px 36px color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.sample-link:active {
+  transform: scale(0.98);
 }
 
 .sample-link.is-active {
-  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-strong));
 }
 
 .home-generator-grid,
@@ -384,19 +465,19 @@ select {
 }
 
 .creator-kind-card:hover {
-  border-color: color-mix(in srgb, var(--accent-secondary) 42%, var(--border));
-  box-shadow: 0 14px 26px color-mix(in srgb, var(--accent-secondary) 8%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  box-shadow: 0 14px 26px color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .creator-kind-card.is-active {
-  border-color: color-mix(in srgb, var(--accent-secondary) 58%, var(--border));
-  background: color-mix(in srgb, var(--accent-secondary) 10%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-strong));
 }
 
 .creator-kind-card:focus-visible,
 .creator-input:focus-visible,
 .creator-textarea:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent-secondary) 44%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 44%, transparent);
   outline-offset: 2px;
 }
 
@@ -408,7 +489,7 @@ select {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-muted) 90%, transparent);
-  color: var(--accent-secondary);
+  color: var(--accent);
 }
 
 .creator-kind-label {
@@ -449,10 +530,18 @@ select {
 .creator-textarea,
 .creator-link-output {
   width: 100%;
-  border: 1px solid var(--border);
+  border: none;
+  border-bottom: 2px solid transparent;
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
   color: var(--text-primary);
+  transition: border-color var(--duration-base) ease;
+}
+
+.creator-input:focus,
+.creator-textarea:focus {
+  border-bottom-color: var(--accent);
+  outline: none;
 }
 
 .creator-input,
@@ -502,10 +591,8 @@ select {
   gap: 0.85rem;
   height: 100%;
   border: 1px solid var(--border);
-  border-radius: calc(var(--radius-xl) - 2px);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 90%, transparent), color-mix(in srgb, var(--surface-strong) 98%, transparent)),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-secondary) 12%, transparent), transparent 42%);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface-elevated) 80%, transparent);
   padding: 1rem;
 }
 
@@ -583,12 +670,12 @@ select {
 }
 
 .artifact-selector-row::-webkit-scrollbar {
-  height: 0.55rem;
+  height: 4px;
 }
 
 .artifact-selector-row::-webkit-scrollbar-thumb {
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--accent-secondary) 22%, var(--border));
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 22%, var(--border));
 }
 
 .artifact-switcher {
@@ -611,8 +698,8 @@ select {
 
 .artifact-switcher:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--accent-secondary) 46%, var(--border));
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--accent-secondary) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .artifact-switcher-content {
@@ -620,13 +707,17 @@ select {
 }
 
 .artifact-switcher.is-active {
-  border-color: color-mix(in srgb, var(--accent-secondary) 56%, var(--border));
-  background: color-mix(in srgb, var(--accent-secondary) 10%, var(--surface-strong));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-secondary) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-strong));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.dark .artifact-switcher.is-active {
+  border-left: 3px solid var(--accent);
 }
 
 .artifact-switcher:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent-secondary) 48%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 48%, transparent);
   outline-offset: 2px;
 }
 
@@ -639,12 +730,12 @@ select {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-muted) 90%, transparent);
-  color: var(--accent-secondary);
+  color: var(--accent);
 }
 
 .artifact-switcher.is-active .artifact-switcher-icon {
-  border-color: color-mix(in srgb, var(--accent-secondary) 46%, var(--border));
-  background: color-mix(in srgb, var(--accent-secondary) 12%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-strong));
 }
 
 .viewer-frame {
@@ -747,7 +838,8 @@ select {
   font-family: var(--font-mono), monospace;
   font-size: 0.74rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   transition:
     transform var(--duration-base) ease,
     border-color var(--duration-base) ease,
@@ -757,19 +849,32 @@ select {
 
 .artifact-action:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--accent-secondary) 46%, var(--border));
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--accent-secondary) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.artifact-action:active {
+  transform: scale(0.95);
 }
 
 .artifact-action:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent-secondary) 48%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 48%, transparent);
   outline-offset: 2px;
 }
 
 .artifact-action.is-primary {
-  border-color: color-mix(in srgb, var(--accent-secondary) 45%, var(--border));
-  background: color-mix(in srgb, var(--accent-secondary) 12%, var(--surface-strong));
-  color: var(--accent-secondary);
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #ffffff;
+}
+
+.dark .artifact-action.is-primary {
+  background: var(--accent);
+  color: #4f1700;
+}
+
+.artifact-action.is-primary:hover {
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .artifact-action.is-code {
@@ -804,10 +909,18 @@ select {
 .markdown-article h6 {
   margin-top: 1.5em;
   color: var(--text-primary);
-  font-family: var(--font-display), serif;
+  font-family: var(--font-display), sans-serif;
   font-weight: 600;
   line-height: 1.08;
   letter-spacing: -0.04em;
+}
+
+/* Dark mode: editorial serif italic for markdown headings */
+.dark .markdown-article h1,
+.dark .markdown-article h2,
+.dark .markdown-article h3 {
+  font-family: var(--font-display), serif;
+  font-style: italic;
 }
 
 .markdown-article h1 {
@@ -839,11 +952,16 @@ select {
 }
 
 .markdown-link {
-  color: var(--accent-secondary);
+  color: var(--accent);
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--accent-secondary) 36%, transparent);
+  text-decoration-color: color-mix(in srgb, var(--accent) 36%, transparent);
   text-decoration-thickness: 1.5px;
   text-underline-offset: 0.18em;
+  transition: text-decoration-color var(--duration-base) ease;
+}
+
+.markdown-link:hover {
+  text-decoration-color: var(--accent);
 }
 
 .markdown-article ul,
@@ -869,11 +987,13 @@ select {
 
 .markdown-article blockquote {
   margin-inline: 0;
-  padding: 1rem 1.2rem;
-  border-left: 3px solid var(--accent-secondary);
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-secondary) 9%, transparent), color-mix(in srgb, var(--surface-strong) 92%, transparent));
+  padding: 1.2rem 1.4rem;
+  border-left: 3px solid var(--accent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--surface-elevated) 60%, transparent);
   color: var(--text-primary);
+  font-family: var(--font-editorial), serif;
+  font-style: italic;
 }
 
 .markdown-article blockquote > * {
@@ -883,7 +1003,7 @@ select {
 .markdown-inline-code {
   padding: 0.18rem 0.45rem;
   border: 1px solid var(--border);
-  border-radius: 0.55rem;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-muted) 82%, transparent);
   color: var(--text-primary);
   font-family: var(--font-mono), monospace;
@@ -898,6 +1018,10 @@ select {
   box-shadow: var(--shadow-md);
 }
 
+.dark .markdown-code-frame {
+  border-color: rgba(67, 68, 107, 0.20);
+}
+
 .markdown-code-head {
   display: flex;
   align-items: center;
@@ -905,7 +1029,11 @@ select {
   gap: 0.75rem;
   padding: 0.8rem 1rem;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-secondary) 14%, transparent), transparent 58%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 58%);
+}
+
+.dark .markdown-code-head {
+  background: linear-gradient(90deg, rgba(255, 135, 87, 0.06), transparent 58%);
 }
 
 .markdown-code-chip,
@@ -941,7 +1069,7 @@ select {
 }
 
 .code-renderer-shell {
-  border-radius: calc(var(--radius-xl) - 6px);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--surface-code);
   box-shadow: inset 0 0 0 1px rgba(239, 243, 247, 0.05);
@@ -1039,8 +1167,8 @@ select {
   }
 
 .patch-bundle-link.is-active {
-  border-color: color-mix(in srgb, var(--accent-secondary) 56%, var(--border));
-  background: color-mix(in srgb, var(--accent-secondary) 10%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-strong));
 }
 
 .patch-bundle-files {
@@ -1300,12 +1428,19 @@ select {
   height: 1px;
   border: 0;
   background: var(--border);
+  margin: 2rem 0;
 }
 
 .markdown-article img {
   max-width: 100%;
   height: auto;
   border-radius: var(--radius-lg);
+  filter: grayscale(0.2);
+  transition: filter 700ms ease;
+}
+
+.markdown-article img:hover {
+  filter: grayscale(0);
 }
 
 .artifact-list-item {
@@ -1316,8 +1451,8 @@ select {
 }
 
 .artifact-list-item.is-active {
-  border-color: color-mix(in srgb, var(--accent-secondary) 52%, var(--border));
-  background: color-mix(in srgb, var(--accent-secondary) 10%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-strong));
 }
 
 .artifact-meta-grid {
@@ -1374,7 +1509,7 @@ select {
 }
 
 .artifact-disclosure-summary:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent-secondary) 40%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
   outline-offset: -2px;
 }
 
@@ -1445,8 +1580,8 @@ select {
   .panel,
   .viewer-frame,
   .artifact-disclosure {
-    border-radius: calc(var(--radius-md) + 2px);
-    box-shadow: 0 12px 28px rgba(21, 27, 39, 0.08);
+    border-radius: var(--radius-md);
+    box-shadow: 0 12px 28px rgba(28, 28, 24, 0.06);
   }
 
   .panel::after {
@@ -1606,7 +1741,7 @@ select {
   }
 
   .home-inspector-panel .budget-track {
-    height: 0.58rem;
+    height: 2px;
   }
 
   .home-inspector-panel pre {

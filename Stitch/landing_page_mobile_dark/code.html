@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agent Render - Dual Nature Landing Page</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Space+Grotesk:wght@300..700&amp;family=IBM+Plex+Mono:wght@300;400;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error-dim": "#c94947",
+              "tertiary-fixed-dim": "#d6c9ee",
+              "inverse-primary": "#a83b00",
+              "surface-bright": "#262852",
+              "surface-container-low": "#101128",
+              "primary-fixed-dim": "#ff9971",
+              "on-surface": "#e4e3ff",
+              "primary": "#ff8757",
+              "secondary-fixed": "#e1e0fb",
+              "on-secondary-fixed-variant": "#595a70",
+              "tertiary-container": "#e4d7fd",
+              "on-tertiary": "#5c5271",
+              "tertiary": "#f1e7ff",
+              "on-tertiary-fixed-variant": "#5d5372",
+              "on-primary-container": "#3a0f00",
+              "secondary-dim": "#b7b6d1",
+              "surface-container": "#151732",
+              "on-secondary": "#3e3e54",
+              "tertiary-dim": "#d6c9ee",
+              "on-tertiary-fixed": "#403755",
+              "secondary": "#c5c4df",
+              "on-secondary-container": "#a2a2bb",
+              "primary-fixed": "#ffad8e",
+              "on-primary-fixed": "#4c1600",
+              "primary-container": "#fd7034",
+              "on-surface-variant": "#a6a7d4",
+              "on-tertiary-container": "#534968",
+              "background": "#0b0c1f",
+              "on-secondary-fixed": "#3d3e53",
+              "on-primary": "#4f1700",
+              "on-primary-fixed-variant": "#7d2900",
+              "primary-dim": "#ff7438",
+              "inverse-on-surface": "#53536a",
+              "surface-tint": "#ff8757",
+              "outline-variant": "#43446b",
+              "surface-variant": "#202247",
+              "surface": "#0b0c1f",
+              "surface-container-highest": "#202247",
+              "on-error-container": "#ff9993",
+              "secondary-container": "#232438",
+              "surface-container-lowest": "#000000",
+              "inverse-surface": "#fbf8ff",
+              "error-container": "#8a1a1e",
+              "outline": "#70729c",
+              "surface-container-high": "#1b1c3c",
+              "error": "#ff716c",
+              "secondary-fixed-dim": "#d3d2ed",
+              "on-error": "#490006",
+              "surface-dim": "#0b0c1f",
+              "on-background": "#e4e3ff",
+              "tertiary-fixed": "#e4d7fd"
+            },
+            fontFamily: {
+              "headline": ["Newsreader"],
+              "body": ["Space Grotesk"],
+              "label": ["IBM Plex Mono"]
+            },
+            borderRadius: {"DEFAULT": "0rem", "lg": "0rem", "xl": "0rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .thinking-indicator {
+            width: 120px;
+            height: 120px;
+            border: 1px solid rgba(255, 135, 87, 0.2);
+            position: relative;
+        }
+        .grid-overlay {
+            background-image: linear-gradient(to right, rgba(67, 68, 107, 0.1) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(67, 68, 107, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .editorial-shadow {
+            box-shadow: 0 20px 40px rgba(11, 12, 31, 0.4);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar Implementation -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#0B0C1F]/60 backdrop-blur-xl bg-[#0B0C1F]/10 border-b border-[#FF8757]/15">
+<div class="flex items-center gap-2">
+<span class="text-xl font-bold font-['Newsreader'] text-[#FF8757]">Agent Render</span>
+</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="font-['Space_Grotesk'] text-[1.125rem] text-[#FF8757] border-b-2 border-[#FF8757] pb-1" href="#">Docs</a>
+<a class="font-['Space_Grotesk'] text-[1.125rem] text-[#F1E7FF] hover:text-[#FF8757] transition-colors duration-300" href="#">GitHub</a>
+<a class="font-['Space_Grotesk'] text-[1.125rem] text-[#F1E7FF] hover:text-[#FF8757] transition-colors duration-300" href="#">About</a>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-['IBM_Plex_Mono'] text-[0.6875rem] uppercase tracking-tighter text-[#FF8757]">[STATUS: READY]</span>
+<button class="md:hidden text-[#FF8757] p-2 hover:bg-[#FF8757]/10 transition-colors duration-300 active:scale-95">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</nav>
+<main class="relative pt-16 min-h-screen grid-overlay">
+<!-- Hero Section -->
+<section class="px-6 pt-20 pb-32 flex flex-col items-center text-center relative overflow-hidden">
+<!-- Asymmetrical Background Accent -->
+<div class="absolute -top-20 -right-20 w-96 h-96 bg-primary/5 blur-[120px] rounded-full"></div>
+<!-- Signature Thinking Indicator Motif -->
+<div class="mb-16 relative">
+<div class="thinking-indicator flex items-center justify-center">
+<!-- SVG implementation of the math formula visualization -->
+<svg class="w-24 h-24 stroke-primary fill-none opacity-80" viewbox="0 0 100 100">
+<path d="M50 10 A40 40 0 0 1 90 50 A40 40 0 0 1 50 90 A40 40 0 0 1 10 50 A40 40 0 0 1 50 10" stroke-width="0.5"></path>
+<path class="opacity-30" d="M50 20 L50 80 M20 50 L80 50" stroke-width="0.2"></path>
+<circle cx="50" cy="50" fill="currentColor" r="2"></circle>
+</svg>
+</div>
+<div class="absolute -bottom-6 left-1/2 -translate-x-1/2 w-max">
+<span class="font-label text-[0.6875rem] text-primary/60 tracking-widest uppercase">Protocol Active</span>
+</div>
+</div>
+<h1 class="font-headline italic text-5xl md:text-7xl lg:text-8xl text-primary mb-8 leading-[1.1] max-w-4xl">
+                Architectural Intelligence <br/>as an Artifact.
+            </h1>
+<p class="font-body text-on-surface-variant text-lg md:text-xl max-w-2xl mb-12 leading-relaxed">
+                A sentient archive for the modern builder. Colliding cold machine logic with editorial elegance to curate your digital legacy.
+            </p>
+<div class="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+<button class="px-10 py-4 bg-primary text-on-primary font-body font-bold text-sm uppercase tracking-widest transition-all hover:brightness-110 active:scale-95 shadow-lg shadow-primary/20">
+                    Initialize Workspace
+                </button>
+<button class="px-10 py-4 border border-outline-variant text-on-surface font-label text-sm uppercase tracking-widest hover:bg-surface-variant transition-colors active:scale-95">
+                    Try it Now
+                </button>
+</div>
+</section>
+<!-- Feature Bento/Grid Section -->
+<section class="px-6 py-24 bg-surface-container-low border-t border-outline-variant/10">
+<div class="max-w-6xl mx-auto">
+<div class="flex items-baseline justify-between mb-16 border-b border-outline-variant/10 pb-4">
+<h2 class="font-headline italic text-3xl text-tertiary">Core Modules</h2>
+<span class="font-label text-[0.6875rem] text-tertiary/40">VERSION 4.0.1-ALPHA</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-1">
+<!-- Feature Card 1 -->
+<div class="group relative bg-surface-container p-8 border border-outline-variant/10 hover:bg-surface-container-high transition-colors duration-500">
+<div class="mb-12">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="terminal">terminal</span>
+</div>
+<h3 class="font-headline text-2xl text-on-surface mb-4">Machine-Native Sharing</h3>
+<p class="font-body text-on-surface-variant text-sm leading-relaxed mb-8">
+                            High-fidelity data streams designed for seamless interplay between human intuition and machine execution. No translation loss.
+                        </p>
+<div class="font-label text-[0.6875rem] text-primary/60 tracking-tighter">
+                            LATENCY: &lt; 2MS // ENCRYPTED
+                        </div>
+</div>
+<!-- Feature Card 2 -->
+<div class="group relative bg-surface-container-high p-8 border border-outline-variant/10 md:-translate-y-4 shadow-2xl z-10 editorial-shadow">
+<div class="mb-12">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="security" data-weight="fill" style="font-variation-settings: 'FILL' 1;">security</span>
+</div>
+<h3 class="font-headline text-2xl text-on-surface mb-4">Zero-Retention Architecture</h3>
+<p class="font-body text-on-surface-variant text-sm leading-relaxed mb-8">
+                            Privacy by geometry. Our structure ensures metadata resides only where you dictate, leaving no permanent footprint in the void.
+                        </p>
+<div class="font-label text-[0.6875rem] text-primary/60 tracking-tighter">
+                            PROTOCOL: EPHEMERAL-01
+                        </div>
+</div>
+<!-- Feature Card 3 -->
+<div class="group relative bg-surface-container p-8 border border-outline-variant/10 hover:bg-surface-container-high transition-colors duration-500">
+<div class="mb-12">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="layers">layers</span>
+</div>
+<h3 class="font-headline text-2xl text-on-surface mb-4">Multi-Format Viewer</h3>
+<p class="font-body text-on-surface-variant text-sm leading-relaxed mb-8">
+                            Visualize complexity through multiple lenses. From raw code blocks to editorial layouts, the format adapts to your focus.
+                        </p>
+<div class="font-label text-[0.6875rem] text-primary/60 tracking-tighter">
+                            RENDER: ADAPTIVE_SERIF
+                        </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Technical Editorial Section -->
+<section class="px-6 py-32 flex flex-col md:flex-row gap-16 max-w-6xl mx-auto overflow-hidden">
+<div class="flex-1 space-y-8">
+<div class="inline-block px-3 py-1 border border-primary/20 text-primary font-label text-[0.6875rem] uppercase tracking-widest">
+                    Design Philosophy
+                </div>
+<h2 class="font-headline italic text-4xl md:text-5xl text-on-surface leading-tight">
+                    Information should not be consumed. It should be <span class="text-primary">inhabited.</span>
+</h2>
+<div class="flex gap-4">
+<div class="w-px bg-primary/30"></div>
+<p class="font-body text-on-surface-variant leading-relaxed py-2 italic opacity-80">
+                        We believe in the power of the printed word applied to the ephemeral nature of the screen. Our interface is a tribute to the archival instinct.
+                    </p>
+</div>
+<div class="pt-8 flex items-center gap-6">
+<img alt="Abstract motherboard detail" class="w-20 h-20 object-cover grayscale brightness-75 border border-outline-variant/20" data-alt="Macro photography of a sleek computer circuit board with glowing orange light paths against a deep indigo background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6DBJ9S_3MR0pPj1Px61C3l3xv4uRoqyddEwGgj90YT2ep9dgGe1N5uURv8vokaRQUm8HNZY-AGUY28z5Jve3GnVlx-wRgMt3oKui1g4rtAgGCj1L2MUgAdefhAXkDw1LGeM475dcIxoDS3NnSp1qbxDYueu3XWtoBgjucCXVMYksPeloFeW4_YGoY82T0gqXF87M0GOiLCCBYTfClfSXOP_lC4efnciaLBJ40J2T_BYLxAZSEdfodfK1P6uoOXqqIeJtqrdPbu3o"/>
+<div class="font-label text-[0.6875rem] uppercase tracking-widest text-on-surface-variant">
+                        Rooted in Hardware.<br/>Inspired by Type.
+                    </div>
+</div>
+</div>
+<div class="flex-1 relative">
+<div class="aspect-[4/5] bg-surface-container-highest relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-tr from-surface-container-lowest to-transparent opacity-60"></div>
+<img alt="Brutalist architecture" class="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-40 group-hover:scale-105 transition-transform duration-[2s]" data-alt="Dramatic low angle shot of brutalist concrete architecture with sharp geometric shadows and high contrast editorial lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLXJO2uNQbuwqovgODy8oXvpUllWsN8nJ0en_rkEcbdZKLz4dX99_gOQKs1GeTZLdddANXLecfEsI6G33S321DObYk872J6nqXZb4DhZvJejBoeAdHNLH-jgUp1Te974_RkxacQ_6r8GX-HfA5qQu-0m8WaIaciAkkFeSvdnUtWCMVY_ZDN3tOVImCrURZAQM_X6O0dAH9G7HmnIKNxxcduzt5mHlv6B_7i6qJDC_S7wRSHRD6S7hoeDEdFKnmhyAUFlmZf-41t30"/>
+<div class="absolute bottom-8 left-8 right-8 p-6 bg-surface/80 backdrop-blur-md border border-primary/10">
+<span class="font-label text-[0.6875rem] text-primary mb-2 block tracking-widest">ARCHIVAL_LOG_082</span>
+<h4 class="font-headline text-xl text-on-surface">The structure of thought is architectural.</h4>
+</div>
+</div>
+<!-- Glassmorphic Overlay -->
+<div class="absolute -bottom-8 -right-8 w-48 h-48 bg-surface-variant/40 backdrop-blur-2xl p-6 hidden md:block border border-outline-variant/10">
+<div class="font-label text-[0.6875rem] text-tertiary mb-4">SYSTEM_METRICS</div>
+<div class="space-y-2">
+<div class="h-1 bg-primary/20 w-full">
+<div class="h-full bg-primary w-[70%]"></div>
+</div>
+<div class="h-1 bg-primary/20 w-full">
+<div class="h-full bg-primary w-[45%]"></div>
+</div>
+<div class="h-1 bg-primary/20 w-full">
+<div class="h-full bg-primary w-[90%]"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA / Data Ribbon -->
+<section class="mt-20 border-y border-outline-variant/10">
+<div class="flex overflow-hidden py-4 whitespace-nowrap bg-surface-container-lowest font-label text-[0.6875rem] text-primary/40 uppercase tracking-[0.3em]">
+<div class="flex animate-marquee">
+<span class="mx-8">System Ready</span>
+<span class="mx-8 text-primary">Initialize Protocol</span>
+<span class="mx-8">Architectural Intelligence</span>
+<span class="mx-8 text-primary">Artifact Render</span>
+<span class="mx-8">System Ready</span>
+<span class="mx-8 text-primary">Initialize Protocol</span>
+<span class="mx-8">Architectural Intelligence</span>
+<span class="mx-8 text-primary">Artifact Render</span>
+</div>
+</div>
+</section>
+</main>
+<!-- SideNavBar (Hidden by default, triggered by mobile menu) -->
+<!-- Shown here for structural reference as per JSON -->
+<aside class="hidden fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex flex-col py-8 bg-[#0B0C1F] tonal-shift bg-surface-container-low w-64">
+<div class="px-6 mb-12">
+<div class="text-[#FF8757] font-['IBM_Plex_Mono'] text-xs tracking-widest mb-1">INDEX</div>
+<div class="text-[#F1E7FF]/40 font-['Space_Grotesk'] text-[0.6875rem]">v4.0.1-alpha</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="px-6 py-4 flex items-center gap-4 text-[#FF8757] bg-[#FF8757]/5 font-bold border-l-4 border-[#FF8757] transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined">folder</span>
+<span class="font-['Space_Grotesk'] text-[1.125rem] uppercase tracking-widest">Artifacts</span>
+</div>
+<div class="px-6 py-4 flex items-center gap-4 text-[#F1E7FF]/60 hover:text-[#F1E7FF] hover:bg-[#F1E7FF]/5 transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined">database</span>
+<span class="font-['Space_Grotesk'] text-[1.125rem] uppercase tracking-widest">Metadata</span>
+</div>
+<div class="px-6 py-4 flex items-center gap-4 text-[#F1E7FF]/60 hover:text-[#F1E7FF] hover:bg-[#F1E7FF]/5 transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-['Space_Grotesk'] text-[1.125rem] uppercase tracking-widest">Log</span>
+</div>
+</div>
+</aside>
+<!-- Footer Implementation -->
+<footer class="w-full py-4 px-8 flex justify-between items-center border-t border-[#F1E7FF]/10 bg-[#0B0C1F]">
+<div class="font-['IBM_Plex_Mono'] text-[0.6875rem] uppercase tracking-tighter text-[#F1E7FF] opacity-60">
+            © 2024 AGENT RENDER PROTOCOL
+        </div>
+<div class="flex gap-6">
+<a class="font-['IBM_Plex_Mono'] text-[0.6875rem] uppercase tracking-tighter text-[#F1E7FF] opacity-60 hover:opacity-100 hover:text-[#FF8757] transition-opacity duration-200 underline decoration-[#FF8757]" href="#">GitHub</a>
+<a class="font-['IBM_Plex_Mono'] text-[0.6875rem] uppercase tracking-tighter text-[#F1E7FF] opacity-60 hover:opacity-100 hover:text-[#FF8757] transition-opacity duration-200" href="#">Wiki</a>
+</div>
+</footer>
+<style>
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+            display: flex;
+            animation: marquee 30s linear infinite;
+        }
+    </style>
+</body></html>

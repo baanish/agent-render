@@ -444,17 +444,17 @@ export function ViewerShell() {
               e.preventDefault();
               handleGoHome();
             }}
-            className="flex items-center gap-2.5 sm:gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-secondary)] focus-visible:ring-offset-2 rounded-[var(--radius-lg)] -m-1 p-1"
+            className="flex items-center gap-2.5 sm:gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 rounded-[var(--radius-lg)] -m-1 p-1"
             aria-label="Go to homepage"
           >
             <div className="grid h-9 w-9 place-items-center rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-strong)] shadow-[var(--shadow-md)] sm:h-11 sm:w-11">
               <Image src={iconPath} alt="" width={24} height={24} className="h-5 w-5 sm:h-6 sm:w-6" priority unoptimized />
             </div>
-            <h1 className="font-display text-lg font-semibold tracking-[-0.03em] sm:text-2xl">agent-render</h1>
+            <h1 className="font-display text-lg font-semibold tracking-[-0.03em] sm:text-2xl">Agent Render</h1>
           </a>
 
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-            <span className="mono-pill shell-pill">Zero Data Retention by design</span>
+            <span className="mono-pill" style={{ borderColor: "var(--accent)", color: "var(--accent)" }}>[STATUS: READY]</span>
             <ThemeToggle />
           </div>
         </header>
@@ -496,7 +496,7 @@ export function ViewerShell() {
               <div className="artifact-stage-head print-hide-on-markdown">
                 <div className="min-w-0">
                   <p className="section-kicker">{getArtifactSubtitle(activeArtifact)}</p>
-                  <h3 className="font-display mt-1.5 text-[1.7rem] font-semibold leading-[1.02] tracking-[-0.04em] sm:mt-2 sm:text-4xl sm:leading-tight">
+                  <h3 className="font-display mt-1.5 text-[1.7rem] font-bold leading-[1.02] tracking-[-0.04em] sm:mt-2 sm:text-4xl sm:leading-tight">
                     {getArtifactHeading(activeArtifact)}
                   </h3>
                   <p className="mt-1.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-2 sm:leading-6">
@@ -572,7 +572,7 @@ export function ViewerShell() {
               <div className="grid gap-4 sm:gap-8 xl:grid-cols-[minmax(0,1.14fr)_minmax(19rem,0.86fr)] xl:items-end">
                 <div>
                   <p className="section-kicker">Artifact viewer</p>
-                  <h2 className="font-display mt-2 max-w-3xl text-[2rem] font-semibold leading-[0.94] tracking-[-0.05em] sm:mt-3 sm:text-5xl sm:leading-none lg:text-6xl">
+                  <h2 className="font-display mt-2 max-w-3xl text-[2rem] font-bold leading-[0.94] tracking-[-0.04em] sm:mt-3 sm:text-5xl sm:leading-none lg:text-[3.5rem]">
                     Share artifacts in the URL, keep the server out of the payload.
                   </h2>
                   <p className="mt-3 max-w-2xl text-[0.92rem] leading-[1.55] text-[color:var(--text-muted)] sm:mt-5 sm:text-lg sm:leading-7">
@@ -616,7 +616,7 @@ export function ViewerShell() {
                     <span className="hero-link-eyebrow">{link.kicker}</span>
                     <span className="hero-link-title">
                       {link.title}
-                      <ArrowUpRight className="h-4 w-4 shrink-0 text-[color:var(--accent-secondary)]" />
+                      <ArrowUpRight className="h-4 w-4 shrink-0 text-[color:var(--accent)]" />
                     </span>
                     <p className="hero-link-body">{link.description}</p>
                   </a>
@@ -731,7 +731,7 @@ export function ViewerShell() {
               <div className="print-hide-on-markdown flex flex-wrap items-start justify-between gap-3 border-b border-[color:var(--border)] pb-3 sm:gap-4 sm:pb-5">
                 <div>
                   <p className="section-kicker">Viewer shell</p>
-                  <h3 className="font-display mt-2 text-2xl font-semibold leading-tight tracking-[-0.04em] sm:text-4xl">
+                  <h3 className="font-display mt-2 text-2xl font-bold leading-tight tracking-[-0.04em] sm:text-4xl">
                     {activeArtifact?.title ?? envelope?.title ?? "Renderer staging area"}
                   </h3>
                   <p className="mt-2.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
@@ -780,7 +780,7 @@ export function ViewerShell() {
                     <div className="viewer-empty-content">
                       <div>
                         <p className="section-kicker">First-run flow</p>
-                        <h4 className="font-display mt-2.5 text-[1.75rem] font-semibold leading-[1.02] tracking-[-0.04em] sm:mt-3 sm:text-[2.35rem] sm:leading-tight">
+                        <h4 className="font-display mt-2.5 text-[1.75rem] font-bold leading-[1.02] tracking-[-0.04em] sm:mt-3 sm:text-[2.35rem] sm:leading-tight">
                           The live renderer stage appears here as soon as a fragment is selected.
                         </h4>
                         <p className="mt-2.5 max-w-2xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-4 sm:leading-7">

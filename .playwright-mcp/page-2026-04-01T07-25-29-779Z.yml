@@ -1,0 +1,129 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Go to homepage" [ref=e5] [cursor=pointer]:
+          - /url: "#"
+          - heading "Agent Render" [level=1] [ref=e7]
+        - generic [ref=e8]:
+          - generic [ref=e9]: "[STATUS: READY]"
+          - button "Switch to light theme" [ref=e332]:
+            - img [ref=e333]
+            - generic [ref=e13]: Light mode
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - generic [ref=e17]:
+              - paragraph [ref=e18]: Artifact bundle
+              - generic [ref=e339]:
+                - heading "Maintainer kickoff" [level=2] [ref=e340]
+                - generic [ref=e341]: 1 item
+              - paragraph [ref=e20]: Selecting an artifact updates the active fragment target while keeping the rendered payload front and center.
+            - generic [ref=e33]:
+              - generic [ref=e342]: Decoded
+              - generic [ref=e343]: 790 chars
+          - button "Open artifact Sprint roadmap" [pressed] [ref=e345]:
+            - img [ref=e347]
+            - generic [ref=e350]:
+              - generic [ref=e351]: Sprint roadmap
+              - generic [ref=e352]:
+                - generic [ref=e353]: markdown
+                - generic [ref=e354]: roadmap.md
+        - generic [ref=e355]:
+          - generic [ref=e356]:
+            - generic [ref=e357]:
+              - paragraph [ref=e358]: GFM markdown artifact
+              - heading "Sprint roadmap" [level=3] [ref=e359]
+              - paragraph [ref=e360]: roadmap.md
+            - generic [ref=e361]:
+              - button "Copy" [ref=e362]:
+                - img [ref=e363]
+                - text: Copy
+              - button "Download" [ref=e366]:
+                - img [ref=e367]
+                - text: Download
+              - button "Print / PDF" [ref=e370]:
+                - img [ref=e371]
+                - text: Print / PDF
+              - generic [ref=e375]: markdown
+          - article [ref=e379]:
+            - heading "Sprint roadmap" [level=1] [ref=e380]
+            - blockquote [ref=e381]:
+              - paragraph [ref=e382]: The public shell now needs a renderer that feels like a first-class artifact, not a fallback preview.
+            - heading "Sprint 1 scope" [level=2] [ref=e383]
+            - list [ref=e384]:
+              - listitem [ref=e385]:
+                - checkbox [checked] [disabled] [ref=e386]
+                - text: Render markdown directly in the viewer
+              - listitem [ref=e387]:
+                - checkbox [checked] [disabled] [ref=e388]
+                - text: Support GitHub Flavored Markdown tables and task lists
+              - listitem [ref=e389]:
+                - checkbox [checked] [disabled] [ref=e390]
+                - text: Keep raw HTML disabled by default
+              - listitem [ref=e391]:
+                - checkbox [checked] [disabled] [ref=e392]
+                - text: Add markdown download and print flows
+            - heading "Launch checklist" [level=2] [ref=e393]
+            - table [ref=e395]:
+              - rowgroup [ref=e396]:
+                - row "Surface Status Notes" [ref=e397]:
+                  - columnheader "Surface" [ref=e398]
+                  - columnheader "Status" [ref=e399]
+                  - columnheader "Notes" [ref=e400]
+              - rowgroup [ref=e401]:
+                - row "Viewer shell Ready Editorial chrome stays intact" [ref=e402]:
+                  - cell "Viewer shell" [ref=e403]
+                  - cell "Ready" [ref=e404]
+                  - cell "Editorial chrome stays intact" [ref=e405]
+                - row "Code fences Ready Productized framing with language chips" [ref=e406]:
+                  - cell "Code fences" [ref=e407]
+                  - cell "Ready" [ref=e408]
+                  - cell "Productized framing with language chips" [ref=e409]
+                - row "Print output Ready Browser print only, no server path" [ref=e410]:
+                  - cell "Print output" [ref=e411]
+                  - cell "Ready" [ref=e412]
+                  - cell "Browser print only, no server path" [ref=e413]
+            - heading "Example fenced block" [level=3] [ref=e414]
+            - generic [ref=e415]:
+              - generic [ref=e416]:
+                - generic [ref=e417]: ts
+                - generic [ref=e418]: premium fence
+              - generic [ref=e422]:
+                - generic [ref=e424]:
+                  - generic [ref=e425]: "1"
+                  - generic [ref=e426]: "2"
+                  - generic [ref=e427]: "3"
+                - textbox [ref=e428]:
+                  - generic [ref=e429]: "export function decodeEnvelope(fragment: string) {"
+                  - generic [ref=e430]: "return fragment.startsWith(\"agent-render=\") ? \"ready\" : \"missing\";"
+                  - generic [ref=e431]: "}"
+            - paragraph [ref=e432]: Keep the markdown renderer crisp on mobile and intentional on paper.
+        - generic [ref=e433]:
+          - generic [ref=e434]:
+            - generic [ref=e435]:
+              - paragraph [ref=e436]: Kind
+              - paragraph [ref=e437]: markdown
+            - generic [ref=e438]:
+              - paragraph [ref=e439]: Artifact
+              - paragraph [ref=e440]: roadmap
+            - generic [ref=e441]:
+              - paragraph [ref=e442]: File
+              - paragraph [ref=e443]: roadmap.md
+            - generic [ref=e444]:
+              - paragraph [ref=e445]: Size
+              - paragraph [ref=e446]: 816 chars
+          - group [ref=e447]:
+            - generic "Fragment details Codec, transport, budget, and hash preview +" [ref=e448] [cursor=pointer]:
+              - generic [ref=e449]:
+                - generic [ref=e450]: Fragment details
+                - generic [ref=e451]: Codec, transport, budget, and hash preview
+              - text: +
+  - status [ref=e322]:
+    - generic [ref=e323]:
+      - img [ref=e325]
+      - generic [ref=e327]:
+        - text: Static route
+        - button "Hide static indicator" [ref=e328] [cursor=pointer]:
+          - img [ref=e329]
+  - alert [ref=e321]

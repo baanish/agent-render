@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed-variant": "#004c6d",
+              "on-primary-fixed-variant": "#862200",
+              "on-tertiary-fixed": "#001e2e",
+              "on-secondary-fixed-variant": "#47473f",
+              "on-error-container": "#93000a",
+              "inverse-on-surface": "#f3f0e9",
+              "secondary-container": "#e2e0d5",
+              "tertiary-container": "#007caf",
+              "outline": "#907067",
+              "surface-container-highest": "#e5e2db",
+              "background": "#fcf9f2",
+              "surface-tint": "#b02f00",
+              "on-background": "#1c1c18",
+              "tertiary-fixed": "#c8e6ff",
+              "on-tertiary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "outline-variant": "#e4beb4",
+              "surface-container": "#f1eee7",
+              "surface-dim": "#dcdad3",
+              "surface-variant": "#e5e2db",
+              "tertiary-fixed-dim": "#86cfff",
+              "secondary": "#5f5f56",
+              "on-surface-variant": "#5b4039",
+              "on-tertiary-container": "#fcfcff",
+              "on-secondary-container": "#63635a",
+              "error-container": "#ffdad6",
+              "primary-fixed": "#ffdbd1",
+              "on-primary": "#ffffff",
+              "primary-fixed-dim": "#ffb5a0",
+              "surface-container-low": "#f6f3ec",
+              "surface-bright": "#fcf9f2",
+              "secondary-fixed-dim": "#c8c7bc",
+              "secondary-fixed": "#e5e3d8",
+              "on-error": "#ffffff",
+              "on-secondary": "#ffffff",
+              "tertiary": "#00628c",
+              "on-primary-fixed": "#3b0900",
+              "surface-container-high": "#ebe8e1",
+              "inverse-surface": "#31312c",
+              "inverse-primary": "#ffb5a0",
+              "primary-container": "#ff5722",
+              "on-surface": "#1c1c18",
+              "on-primary-container": "#541200",
+              "surface": "#fcf9f2",
+              "primary": "#b02f00",
+              "on-secondary-fixed": "#1c1c15",
+              "error": "#ba1a1a"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Space Grotesk"],
+              "mono": ["IBM Plex Mono"],
+              "serif": ["Newsreader"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 20px;
+        }
+        .thinking-dot {
+            width: 4px;
+            height: 4px;
+            background-color: #ff5722;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fcf9f2;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e5e2db;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation (Shell) -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md flex justify-between items-center w-full px-6 py-4 max-w-full">
+<div class="flex flex-col">
+<span class="text-2xl font-bold tracking-tighter text-on-surface font-headline">Agent Render</span>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="thinking-dot"></span>
+<span class="font-mono text-[10px] uppercase tracking-widest text-secondary">Neural Synthesis Active</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface opacity-70 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<button class="bg-primary-container text-on-primary-container px-4 py-1.5 text-xs font-bold font-headline rounded-sm">
+                Get Started
+            </button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-32 min-h-screen px-4 md:px-6">
+<!-- Metadata Header Section -->
+<section class="mb-8 p-6 bg-surface-container-high rounded-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col">
+<span class="font-mono text-[11px] text-primary uppercase tracking-tighter font-medium">Artifact_ID: v2.08-alpha</span>
+<h1 class="font-headline font-bold text-3xl tracking-tight leading-none mt-1">The Brutalist Archivist Manual</h1>
+</div>
+<span class="material-symbols-outlined text-secondary" data-icon="bookmark">bookmark</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-6">
+<div class="flex flex-col gap-1">
+<span class="font-mono text-[10px] uppercase text-secondary">Last Modified</span>
+<span class="font-mono text-xs text-on-surface">2024.10.12 14:32</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-mono text-[10px] uppercase text-secondary">Complexity</span>
+<span class="font-mono text-xs text-on-surface">High (Level 4)</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-mono text-[10px] uppercase text-secondary">Language</span>
+<span class="font-mono text-xs text-on-surface">Markdown + Python</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-mono text-[10px] uppercase text-secondary">Status</span>
+<span class="font-mono text-xs text-primary font-bold">READY</span>
+</div>
+</div>
+</section>
+<!-- Markdown Display Area -->
+<article class="prose prose-sm max-w-none">
+<div class="p-6 bg-surface-container-lowest rounded-sm shadow-sm">
+<h2 class="font-headline font-semibold text-xl border-b-2 border-primary-container/20 pb-2 mb-6">Introduction to Curation</h2>
+<p class="font-serif text-lg leading-relaxed text-on-surface mb-6 italic">
+                    "Information is not a commodity, it is an environment. To curate is to architect the atmosphere in which data lives."
+                </p>
+<p class="font-body text-sm leading-relaxed mb-6 opacity-90">
+                    The intersection of brutalist architecture and technical archival practices creates a unique friction. In this model, we prioritize the <strong>monolith</strong>—the singular, indestructible block of text. By stripping away standard UI affordances, the content must stand on its own structural integrity.
+                </p>
+<!-- Technical Callout -->
+<div class="bg-surface-container my-8 p-4 border-l-4 border-primary">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary scale-75" data-icon="terminal">terminal</span>
+<span class="font-mono text-[10px] font-bold uppercase tracking-widest text-primary">System Directive</span>
+</div>
+<p class="font-mono text-xs leading-normal text-secondary">
+                        IF visibility &lt; 0.1 THEN RECALIBRATE contrast_ratios. DO NOT inject artificial padding into data clusters.
+                    </p>
+</div>
+<p class="font-body text-sm leading-relaxed mb-8 opacity-90">
+                    Below is the core implementation for the rendering engine used in this specific artifact. Note the use of direct memory mapping and the avoidance of standard CSS normalization.
+                </p>
+<!-- Code Block -->
+<div class="bg-on-background rounded-sm p-4 overflow-x-auto my-6">
+<div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+<span class="font-mono text-[10px] text-white/40 uppercase">render_engine.py</span>
+<span class="font-mono text-[10px] text-primary">PY3.11</span>
+</div>
+<pre class="font-mono text-[12px] leading-relaxed text-[#c8c7bc]"><span class="text-[#ffb5a0]">def</span> <span class="text-tertiary-fixed-dim">synthesize_layout</span>(data_stream):
+    <span class="text-white/30"># Initialize the archival grid</span>
+    grid = Grid(density=<span class="text-primary-container">'high'</span>)
+    
+    <span class="text-[#ffb5a0]">for</span> packet <span class="text-[#ffb5a0]">in</span> data_stream:
+        <span class="text-white/30"># Map to neutral surface tones</span>
+        packet.surface = <span class="text-primary-container">"#fcf9f2"</span>
+        grid.anchor(packet)
+        
+    <span class="text-[#ffb5a0]">return</span> grid.render()</pre>
+</div>
+<h3 class="font-headline font-semibold text-lg mt-10 mb-4">Structural Principles</h3>
+<ul class="space-y-4 list-none p-0">
+<li class="flex gap-4 items-start">
+<span class="font-mono text-primary font-bold mt-1">01</span>
+<span class="font-body text-sm opacity-90">Avoid decorative borders. Space is the primary separator.</span>
+</li>
+<li class="flex gap-4 items-start">
+<span class="font-mono text-primary font-bold mt-1">02</span>
+<span class="font-body text-sm opacity-90">Contrast should be functional, not just aesthetic.</span>
+</li>
+<li class="flex gap-4 items-start">
+<span class="font-mono text-primary font-bold mt-1">03</span>
+<span class="font-body text-sm opacity-90">Typography is the interface. Use scale to indicate hierarchy.</span>
+</li>
+</ul>
+</div>
+</article>
+<!-- Related Insights (Asymmetric Layout) -->
+<section class="mt-12 mb-8">
+<h4 class="font-mono text-[10px] uppercase tracking-widest text-secondary mb-6 flex items-center gap-2">
+<span class="w-8 h-[1px] bg-outline-variant"></span>
+                Associated Fragments
+            </h4>
+<div class="grid grid-cols-6 gap-3">
+<div class="col-span-4 bg-surface-container-high p-4 h-32 flex flex-col justify-between">
+<span class="font-headline font-bold text-lg leading-tight">Typography in the Machine Age</span>
+<span class="font-mono text-[10px] text-primary">READ NOW</span>
+</div>
+<div class="col-span-2 bg-primary-container p-4 h-32 flex flex-col justify-end items-end">
+<span class="material-symbols-outlined text-white" data-icon="open_in_new">open_in_new</span>
+</div>
+<div class="col-span-3 bg-on-background p-4 h-40 flex flex-col justify-between">
+<span class="font-mono text-[10px] text-white/50 uppercase">Metadata</span>
+<p class="text-white/90 text-xs font-body">Schema definition for the 2024 archival standard.</p>
+</div>
+<div class="col-span-3 bg-surface-container p-4 h-40">
+<img class="w-full h-full object-cover grayscale opacity-50 contrast-125" data-alt="Monochrome architectural details of a brutalist concrete building with sharp shadows and geometric lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmaoJpvaH_Ak5v4QfIu4_oUHqkrHis2JQNo4Mu3xWZO9evdbZ9hKDYxCx6XGrcfpmv4QC2ZXifOTCPl2adDiDT_gX8X2be_S4fXHL08i_FYMl79JIjJ8hKXonwuJc8UcrYfQ80O_R4IQWwDOHbAKQylGYP2dJEtH57Da5pZPOntaEaPcLJMXg-2tRI4CPn62iOqdBI_ApA2vnZ_LVXFfgkqehFiPedHuXVp0L0p5dTEr7hdDe1g1ONF7LqkNFTyscVOdnpCxE36VU"/>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Action Bar (Shell/Mobile Navigation) -->
+<footer class="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-high px-6 py-4 flex justify-between items-center shadow-[0_-10px_30px_rgba(28,28,24,0.05)] border-none">
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-on-surface opacity-60 group-hover:text-primary group-hover:opacity-100 transition-all" data-icon="save">save</span>
+<span class="font-mono text-[9px] uppercase font-medium">Save</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-on-surface opacity-60 group-hover:text-primary group-hover:opacity-100 transition-all" data-icon="content_copy">content_copy</span>
+<span class="font-mono text-[9px] uppercase font-medium">Copy</span>
+</button>
+<!-- Floating Active Action -->
+<button class="bg-on-background text-white p-4 rounded-full -mt-10 shadow-xl border-4 border-surface ring-2 ring-primary/20">
+<span class="material-symbols-outlined" data-icon="fork_right" style="font-variation-settings: 'FILL' 1;">fork_right</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-on-surface opacity-60 group-hover:text-primary group-hover:opacity-100 transition-all" data-icon="info">info</span>
+<span class="font-mono text-[9px] uppercase font-medium">Details</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-on-surface opacity-60 group-hover:text-primary group-hover:opacity-100 transition-all" data-icon="share">share</span>
+<span class="font-mono text-[9px] uppercase font-medium">Share</span>
+</button>
+</footer>
+<!-- Progress Indicator Overlay (Subtle) -->
+<div class="fixed top-[72px] left-0 w-full h-[2px] bg-surface-container-high overflow-hidden">
+<div class="h-full bg-primary-container w-2/3"></div>
+</div>
+<!-- Background Decorative Texture (Soft Parchment) -->
+<div class="fixed inset-0 pointer-events-none z-[-1] opacity-20" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuARsPG1ZW05TrZ0sz7wsDkydsDtRKS7psfaJMyRw_ZagePyj15V3N9iVcyBuQqoIt3Jxn7NIujUEBl04aOCR4rHkeX1r5KDq0mSBtg4BqRY-t13Wbik5CbmafJ2y5Le0qsDYs6YZXC8khV0a8y1BVfrKkSzea1nmOOJK43DptmpM2ZMx6070HOregcZE2wlBwa-5hmSN8j41NJejMaKdsqg9Bjy8btKrGaqW6KezeQrmrOx_72m18zENFLkuDVY7aRhvG8jexhlxDw');"></div>
+</body></html>

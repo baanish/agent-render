@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agent Render | Artifact Viewer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Space+Grotesk:wght@300..700&amp;family=IBM+Plex+Mono:wght@300;400;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #0b0c1f;
+            color: #e4e3ff;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden;
+        }
+        .thinking-indicator {
+            width: 120px;
+            height: 120px;
+            position: relative;
+        }
+        /* Custom Syntax Highlighting Emulation */
+        .syntax-json .key { color: #f1e7ff; }
+        .syntax-json .string { color: #ff8757; }
+        .syntax-json .number { color: #ffad8e; }
+        
+        .syntax-diff .added { background-color: rgba(255, 135, 87, 0.1); color: #ff8757; }
+        .syntax-diff .removed { background-color: rgba(241, 231, 255, 0.05); color: #a6a7d4; }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0b0c1f; }
+        ::-webkit-scrollbar-thumb { background: #43446b; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff8757",
+                        "surface": "#0b0c1f",
+                        "tertiary": "#f1e7ff",
+                        "on-surface": "#e4e3ff",
+                        "surface-container": "#151732",
+                        "surface-container-low": "#101128",
+                        "surface-container-high": "#1b1c3c",
+                        "surface-container-highest": "#202247",
+                        "outline-variant": "#43446b",
+                        "on-primary": "#4f1700",
+                    },
+                    fontFamily: {
+                        "headline": ["Newsreader"],
+                        "body": ["Space Grotesk"],
+                        "label": ["IBM Plex Mono"]
+                    },
+                    borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#0B0C1F]/60 backdrop-blur-xl bg-[#0B0C1F]/10 border-b border-[#FF8757]/15">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold font-['Newsreader'] text-[#FF8757]">Agent Render</span>
+<nav class="hidden md:flex gap-6">
+<a class="font-['Space_Grotesk'] text-[#F1E7FF] hover:text-[#FF8757] transition-colors duration-300" href="#">Docs</a>
+<a class="font-['Space_Grotesk'] text-[#FF8757] border-b-2 border-[#FF8757] pb-1" href="#">GitHub</a>
+<a class="font-['Space_Grotesk'] text-[#F1E7FF] hover:text-[#FF8757] transition-colors duration-300" href="#">About</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-['IBM_Plex_Mono'] text-[0.6875rem] uppercase tracking-tighter text-[#FF8757]">[STATUS: READY]</span>
+<span class="font-['IBM_Plex_Mono'] text-[0.6875rem] uppercase tracking-tighter text-[#F1E7FF]/60 px-2 py-1 bg-surface-container-highest">AR-9921</span>
+</div>
+</header>
+<!-- Main Container -->
+<main class="flex pt-16 min-h-screen">
+<!-- SideNavBar (The Index) -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex flex-col py-8 bg-[#0B0C1F] w-64 border-r border-outline-variant/10 tonal-shift bg-surface-container-low">
+<div class="px-6 mb-8">
+<h2 class="text-[#FF8757] font-['IBM_Plex_Mono'] font-bold text-[0.6875rem] tracking-widest uppercase">INDEX</h2>
+<p class="text-[#F1E7FF]/40 font-['IBM_Plex_Mono'] text-[0.6rem]">v4.0.1-alpha</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="group flex items-center gap-3 px-6 py-3 text-[#FF8757] bg-[#FF8757]/5 font-bold border-l-4 border-[#FF8757] transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">folder</span>
+<span class="font-['Space_Grotesk'] text-[0.9rem] uppercase tracking-widest">Artifacts</span>
+</a>
+<a class="group flex items-center gap-3 px-6 py-3 text-[#F1E7FF]/60 hover:text-[#F1E7FF] hover:bg-[#F1E7FF]/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">database</span>
+<span class="font-['Space_Grotesk'] text-[0.9rem] uppercase tracking-widest">Metadata</span>
+</a>
+<a class="group flex items-center gap-3 px-6 py-3 text-[#F1E7FF]/60 hover:text-[#F1E7FF] hover:bg-[#F1E7FF]/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+<span class="font-['Space_Grotesk'] text-[0.9rem] uppercase tracking-widest">Log</span>
+</a>
+</nav>
+<div class="mt-auto px-6 pt-6 border-t border-outline-variant/10">
+<div class="space-y-4">
+<div class="flex flex-col">
+<span class="font-['IBM_Plex_Mono'] text-[0.6rem] text-tertiary/40">CURRENT_BRANCH</span>
+<span class="font-['IBM_Plex_Mono'] text-[0.7rem] text-tertiary">main/production</span>
+</div>
+<div class="flex flex-col">
+<span class="font-['IBM_Plex_Mono'] text-[0.6rem] text-tertiary/40">MEMORY_LOAD</span>
+<div class="w-full bg-surface-container-highest h-1 mt-1">
+<div class="bg-primary h-full w-[64%]"></div>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<section class="ml-64 flex-1 flex flex-col">
+<!-- Contextual Toolbar -->
+<div class="h-12 border-b border-outline-variant/10 flex items-center justify-between px-8 bg-surface-container-low/50 sticky top-16 z-30 backdrop-blur-md">
+<div class="flex items-center gap-4">
+<span class="font-['IBM_Plex_Mono'] text-[0.7rem] text-tertiary/60">FILE: manifesto_v2.md</span>
+<div class="h-4 w-[1px] bg-outline-variant/20"></div>
+<span class="font-['IBM_Plex_Mono'] text-[0.7rem] text-primary">SHA-256: 8a1f...9b2</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 bg-surface-container-high hover:bg-surface-container-highest text-tertiary font-['IBM_Plex_Mono'] text-[0.7rem] transition-colors border border-outline-variant/10">COPY LINK</button>
+<button class="px-3 py-1 bg-surface-container-high hover:bg-surface-container-highest text-tertiary font-['IBM_Plex_Mono'] text-[0.7rem] transition-colors border border-outline-variant/10">FORK</button>
+<button class="px-3 py-1 bg-primary text-on-primary font-['IBM_Plex_Mono'] text-[0.7rem] font-bold">SAVE ARTIFACT</button>
+</div>
+</div>
+<!-- Dashboard Layout (Editorial Technical) -->
+<div class="grid grid-cols-12 gap-0 flex-1">
+<!-- Left Content: Markdown Editorial -->
+<div class="col-span-12 lg:col-span-7 border-r border-outline-variant/10 p-12 bg-surface">
+<div class="max-w-2xl">
+<span class="font-['IBM_Plex_Mono'] text-[0.6875rem] text-primary mb-4 block tracking-[0.2em]">01_PROTOCOL_MANIFESTO</span>
+<h1 class="font-['Newsreader'] italic text-[3.5rem] leading-tight text-on-surface mb-8">The Sentient Archive: <br/>Architecture of Permanent Thought</h1>
+<div class="prose prose-invert prose-orange font-['Newsreader'] text-xl leading-relaxed space-y-6 text-on-surface/90">
+<p>To archive is not merely to store; it is to <em class="italic text-primary">curate the ghost of intent</em>. In the current epoch of ephemeral data, the Agent Render Protocol seeks a return to the terminal as a sacred space. Where logic meets narrative, we find the core of the sentient archive.</p>
+<div class="bg-surface-container-low p-8 border-l-2 border-primary my-12">
+<p class="text-lg italic text-tertiary/80">"Data is a raw material, but memory is an architectural choice. We build not for the search engine, but for the witness."</p>
+</div>
+<p>Our commitment to the monospaced heartbeat ensures that every transaction is readable by both man and machine. The asymmetry of our interface reflects the natural chaos of creative synthesis, housed within the rigid grid of the digital mainframe.</p>
+<p>The following technical definitions delineate the boundaries of this archival space. Notice the transition from the narrative serif to the structured monospace as we move into the execution layer.</p>
+</div>
+</div>
+</div>
+<!-- Right Content: Technical Stack -->
+<div class="col-span-12 lg:col-span-5 flex flex-col bg-surface-container-low/30 overflow-hidden">
+<!-- JSON Panel -->
+<div class="flex-1 p-8 border-b border-outline-variant/10">
+<div class="flex justify-between items-center mb-6">
+<span class="font-['Space_Grotesk'] text-[0.9rem] uppercase tracking-widest text-tertiary">CONFIG.JSON</span>
+<span class="material-symbols-outlined text-tertiary/40">settings_ethernet</span>
+</div>
+<pre class="font-['IBM_Plex_Mono'] text-[0.8rem] syntax-json leading-relaxed">{
+  <span class="key">"protocol"</span>: <span class="string">"AR-RENDER"</span>,
+  <span class="key">"version"</span>: <span class="number">4.01</span>,
+  <span class="key">"encryption"</span>: {
+    <span class="key">"layer"</span>: <span class="string">"AES-GCM-256"</span>,
+    <span class="key">"vault_id"</span>: <span class="number">9921884</span>
+  },
+  <span class="key">"layers"</span>: [
+    <span class="string">"EDITORIAL_REPRESENTATION"</span>,
+    <span class="string">"MACHINE_TRUTH_LOG"</span>
+  ],
+  <span class="key">"status"</span>: <span class="string">"SYNCHRONIZED"</span>
+}</pre>
+</div>
+<!-- Git Diff Panel -->
+<div class="flex-1 p-8 bg-surface-container-low/50">
+<div class="flex justify-between items-center mb-6">
+<span class="font-['Space_Grotesk'] text-[0.9rem] uppercase tracking-widest text-tertiary">GIT_PATCH_REF</span>
+<span class="material-symbols-outlined text-tertiary/40">history</span>
+</div>
+<pre class="font-['IBM_Plex_Mono'] text-[0.75rem] syntax-diff leading-relaxed">@@ -14,7 +14,8 @@
+- define( 'STORY_MODE', false );
++ define( 'STORY_MODE', true );
++ define( 'ARCHIVE_DEPTH', 'SENTIENT' );
+ 
+ function render_artifact() {
+-   echo $data-&gt;raw;
++   return Archive::synthesize($data);
+ }</pre>
+</div>
+<!-- Thinking Indicator Widget -->
+<div class="h-48 flex items-center justify-center p-8 border-t border-outline-variant/10 relative overflow-hidden">
+<div class="absolute inset-0 opacity-5">
+<div class="w-full h-full" style="background-image: radial-gradient(circle, #ff8757 1px, transparent 1px); background-size: 20px 20px;"></div>
+</div>
+<div class="text-center relative z-10">
+<!-- Visualizing the math-based thinking indicator via SVG -->
+<svg class="thinking-indicator mx-auto mb-4" viewbox="0 0 100 100">
+<path d="M 50 10 C 70 10 90 30 90 50 C 90 70 70 90 50 90 C 30 90 10 70 10 50 C 10 30 30 10 50 10" fill="none" stroke="#ff8757" stroke-dasharray="2, 4" stroke-width="1">
+</path>
+<path d="M 50 25 L 50 75 M 25 50 L 75 50" opacity="0.3" stroke="#ff8757" stroke-width="0.5"></path>
+<circle cx="50" cy="50" fill="#ff8757" r="2"></circle>
+</svg>
+<span class="font-['IBM_Plex_Mono'] text-[0.6rem] text-primary tracking-[0.4em] uppercase">SYSTEM_THINKING_SYNTHESIS</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-4 px-8 flex justify-between items-center border-t border-[#F1E7FF]/10 bg-[#0B0C1F] z-50">
+<div class="flex gap-4">
+<span class="font-['IBM_Plex_Mono'] text-[0.6875rem] uppercase tracking-tighter text-[#F1E7FF]/60 hover:text-[#FF8757] transition-opacity duration-200 cursor-pointer">GitHub</span>
+<span class="font-['IBM_Plex_Mono'] text-[0.6875rem] uppercase tracking-tighter text-[#F1E7FF]/60 hover:text-[#FF8757] transition-opacity duration-200 cursor-pointer">Wiki</span>
+</div>
+<div class="font-['IBM_Plex_Mono'] text-[0.6875rem] uppercase tracking-tighter text-[#F1E7FF] opacity-60">
+            © 2024 AGENT RENDER PROTOCOL
+        </div>
+</footer>
+<!-- Decorative Grid Overlay (Do's: grid lines at 10% opacity) -->
+<div class="fixed inset-0 pointer-events-none z-[60] border-[1px] border-outline-variant/5"></div>
+</body></html>

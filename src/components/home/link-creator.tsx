@@ -113,7 +113,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
           <div className="home-generator-heading">
             <div>
               <p className="section-kicker">Try it now</p>
-              <h3 className="font-display mt-2 text-[2rem] font-semibold leading-[0.96] tracking-[-0.05em] sm:text-[2.7rem]">
+              <h3 className="font-display mt-2 text-[2rem] font-bold leading-[0.96] tracking-[-0.04em] sm:text-[2.7rem]">
                 Make a shareable artifact link from pasted content.
               </h3>
             </div>
