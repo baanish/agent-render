@@ -570,177 +570,159 @@ export function ViewerShell() {
         ) : (
           <section className="empty-state-layout">
             {/* ── Editorial hero ── */}
-            <section className="home-hero-panel fade-up px-4 py-8 sm:px-8 sm:py-16 lg:py-20" style={getAnimationStyle(80)}>
-              <div className="mx-auto max-w-4xl">
-                <p className="section-kicker">Artifact viewer</p>
-                <h2 className="font-display mt-4 max-w-4xl text-[2.5rem] font-bold leading-[0.92] tracking-[-0.04em] sm:mt-6 sm:text-6xl sm:leading-[0.92] lg:text-[4.5rem]">
-                  Share artifacts in the URL, keep the server out of the payload.
-                </h2>
-                <p className="mt-5 max-w-2xl text-[0.95rem] leading-[1.65] text-[color:var(--text-muted)] sm:mt-8 sm:text-lg sm:leading-8">
-                  agent-render opens markdown, code, diff, CSV, and JSON artifacts from a single static link, so someone can understand the payload without uploading it anywhere.
-                </p>
-                <div className="mt-5 flex flex-wrap gap-2 sm:mt-8 sm:gap-3">
-                  <span className="mono-pill">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    fully static export
-                  </span>
-                  <span className="mono-pill">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    product-minded shell
-                  </span>
-                  <span className="mono-pill">
-                    <FolderKanban className="h-3.5 w-3.5" />
-                    renderer slots ready
-                  </span>
-                </div>
+            <section className="home-hero-section fade-up" style={getAnimationStyle(80)}>
+              <p className="section-kicker">Artifact viewer</p>
+              <h2 className="font-display mt-4 max-w-4xl text-[2.5rem] font-bold leading-[0.92] tracking-[-0.04em] sm:mt-6 sm:text-6xl sm:leading-[0.92] lg:text-[4.5rem]">
+                Share artifacts in the URL, keep the server out of the payload.
+              </h2>
+              <p className="mt-5 max-w-2xl text-base leading-[1.7] text-[color:var(--text-muted)] sm:mt-8 sm:text-lg sm:leading-8">
+                agent-render opens markdown, code, diff, CSV, and JSON artifacts from a single static link, so someone can understand the payload without uploading it anywhere.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2 sm:mt-10 sm:gap-3">
+                <span className="mono-pill">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  fully static export
+                </span>
+                <span className="mono-pill">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  product-minded shell
+                </span>
+                <span className="mono-pill">
+                  <FolderKanban className="h-3.5 w-3.5" />
+                  renderer slots ready
+                </span>
               </div>
             </section>
 
             {/* ── Bento feature grid ── */}
             <section className="bento-grid fade-up" style={getAnimationStyle(120)}>
-              <div className="panel bento-card bento-wide px-4 py-5 sm:px-6 sm:py-6">
-                <p className="metric-label">Protocol shape</p>
-                <p className="font-mono mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
+              <div className="bento-card bento-wide px-5 py-6 sm:px-8 sm:py-8">
+                <p className="section-kicker">Protocol shape</p>
+                <p className="font-mono mt-4 text-base leading-8 text-[color:var(--text-muted)] sm:text-lg">
                   #{PAYLOAD_FRAGMENT_KEY}=v1.&lt;codec&gt;.&lt;payload&gt;
                 </p>
               </div>
-              <div className="panel bento-card px-4 py-5 sm:px-6 sm:py-6">
-                <p className="metric-label">Why it exists</p>
-                <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
+              <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
+                <p className="section-kicker">Why it exists</p>
+                <p className="mt-4 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
                   Agent outputs get flattened in chat. agent-render keeps them readable, portable, and static-host friendly.
                 </p>
               </div>
               {ecosystemLinks.map((link) => (
-                <a key={link.href} href={link.href} target="_blank" rel="noreferrer" className="panel bento-card bento-link px-4 py-5 sm:px-6 sm:py-6">
+                <a key={link.href} href={link.href} target="_blank" rel="noreferrer" className="bento-card bento-link px-5 py-6 sm:px-8 sm:py-8">
                   <span className="hero-link-eyebrow">{link.kicker}</span>
                   <span className="hero-link-title">
                     {link.title}
                     <ArrowUpRight className="h-4 w-4 shrink-0 text-[color:var(--accent)]" />
                   </span>
-                  <p className="hero-link-body">{link.description}</p>
+                  <p className="mt-2 text-sm leading-7 text-[color:var(--text-muted)]">{link.description}</p>
                 </a>
               ))}
-              <div className="panel bento-card px-4 py-5 sm:px-6 sm:py-6">
+              <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
                 <span className="hero-link-eyebrow">How to try it</span>
-                <span className="hero-link-title">Load any sample fragment below</span>
-                <p className="hero-link-body">Pick a sample, update the hash, and the viewer opens without sending the artifact body to the host.</p>
+                <span className="mt-3 block text-base font-semibold leading-6">Load any sample fragment below</span>
+                <p className="mt-2 text-sm leading-7 text-[color:var(--text-muted)]">Pick a sample, update the hash, and the viewer opens without sending the artifact body to the host.</p>
               </div>
             </section>
 
             {/* ── Editorial pull quote ── */}
             <section className="editorial-quote fade-up" style={getAnimationStyle(140)}>
-              <blockquote className="font-display text-center text-xl font-semibold leading-snug tracking-[-0.02em] text-[color:var(--text-primary)] sm:text-3xl sm:leading-snug lg:text-4xl">
+              <blockquote className="font-display text-center text-2xl font-semibold leading-snug tracking-[-0.02em] text-[color:var(--text-primary)] sm:text-3xl sm:leading-snug lg:text-[2.75rem] lg:leading-[1.15]">
                 &ldquo;We don&rsquo;t just display data; we curate it into a <em className="text-[color:var(--accent)]" style={{ fontStyle: "italic" }}>landscape of information.</em>&rdquo;
               </blockquote>
             </section>
 
+            {/* ── Link creator ── */}
             <LinkCreator onPreviewHash={setFragmentHash} />
 
-            <div className="empty-state-lower-grid home-empty-lower-grid print-hide-on-markdown">
-              <section className="home-samples-panel panel fade-up px-4 py-5 sm:px-8 sm:py-8" style={getAnimationStyle(140)}>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="section-kicker">Example fragments</p>
-                    <h3 className="font-display mt-3 text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">Load a sample envelope</h3>
-                  </div>
-                  <span className="mono-pill">{sampleCards.length} presets</span>
+            {/* ── Samples + Inspector — full-bleed sections ── */}
+            <section className="home-samples-section fade-up" style={getAnimationStyle(180)}>
+              <div className="section-header">
+                <div>
+                  <p className="section-kicker">Example fragments</p>
+                  <h3 className="font-display mt-3 text-2xl font-bold tracking-[-0.03em] sm:mt-4 sm:text-4xl">Load a sample envelope</h3>
                 </div>
-                <p className="mt-3 max-w-2xl text-sm leading-[1.55rem] text-[color:var(--text-muted)] sm:mt-4 sm:leading-7">
-                  Each preset uses the same fragment transport as the live product, so you can try the viewer shell with realistic payload sizes and renderer combinations in one click.
-                </p>
+                <span className="mono-pill">{sampleCards.length} presets</span>
+              </div>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)] sm:mt-5 sm:text-base sm:leading-8">
+                Each preset uses the same fragment transport as the live product, so you can try the viewer shell with realistic payload sizes and renderer combinations in one click.
+              </p>
 
-                <div className="sample-link-grid mt-3 sm:mt-5">
-                  {sampleCards.map((sample) => {
-                    const Icon = kindIcons[sample.kind];
-                    const isActive = hash === sample.hash;
+              <div className="sample-link-grid mt-6 sm:mt-8">
+                {sampleCards.map((sample) => {
+                  const Icon = kindIcons[sample.kind];
+                  const isActive = hash === sample.hash;
 
-                    return (
-                      <a key={sample.hash} href={sample.hash} className={cn("sample-link", isActive && "is-active")}>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="mono-pill !px-2.5 !py-1">
-                              <Icon className="h-3.5 w-3.5" />
-                              {sample.kind}
-                            </span>
-                            <span className="section-kicker">{numberFormatter.format(sample.fragmentLength)} chars</span>
-                          </div>
-                          <h4 className="mt-3 text-base font-semibold leading-6">{sample.title}</h4>
-                          <p className="mt-1 text-sm leading-6 text-[color:var(--text-muted)]">
-                            {sample.description ?? `${sample.envelope.artifacts.length} artifact${sample.envelope.artifacts.length === 1 ? "" : "s"} ready for fragment decode.`}
-                          </p>
+                  return (
+                    <a key={sample.hash} href={sample.hash} className={cn("sample-link", isActive && "is-active")}>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="mono-pill !px-2.5 !py-1">
+                            <Icon className="h-3.5 w-3.5" />
+                            {sample.kind}
+                          </span>
+                          <span className="section-kicker">{numberFormatter.format(sample.fragmentLength)} chars</span>
                         </div>
-                        <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-[color:var(--text-soft)]" />
-                      </a>
-                    );
-                  })}
-                </div>
-              </section>
+                        <h4 className="mt-3 text-base font-semibold leading-6 sm:text-lg">{sample.title}</h4>
+                        <p className="mt-1.5 text-sm leading-7 text-[color:var(--text-muted)]">
+                          {sample.description ?? `${sample.envelope.artifacts.length} artifact${sample.envelope.artifacts.length === 1 ? "" : "s"} ready for fragment decode.`}
+                        </p>
+                      </div>
+                      <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-[color:var(--text-soft)]" />
+                    </a>
+                  );
+                })}
+              </div>
+            </section>
 
-              <section className="home-inspector-panel panel fade-up px-4 py-5 sm:px-8 sm:py-8" style={getAnimationStyle(200)}>
+            <section className="home-inspector-section fade-up print-hide-on-markdown" style={getAnimationStyle(220)}>
+              <div className="section-header">
                 <div>
                   <p className="section-kicker">Fragment inspector</p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2.5 sm:mt-2 sm:gap-3">
-                    <h3 className="text-xl font-semibold tracking-[-0.03em] sm:text-2xl">Current URL state</h3>
-                    <span className="mono-pill" style={{ borderColor: statusTone.color, color: statusTone.color }}>
-                      {statusTone.label}
-                    </span>
-                  </div>
-                  <p className="mt-2.5 text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-6">{statusTone.message}</p>
+                  <h3 className="font-display mt-3 text-2xl font-bold tracking-[-0.03em] sm:mt-4 sm:text-4xl">Current URL state</h3>
                 </div>
+                <span className="mono-pill" style={{ borderColor: statusTone.color, color: statusTone.color }}>
+                  {statusTone.label}
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">{statusTone.message}</p>
 
-                <div className="metric-grid mt-3.5 sm:mt-5">
-                  <div className="metric-card">
-                    <p className="metric-label">Fragment budget</p>
-                    <p className="metric-value">{numberFormatter.format(fragmentLength)} / {numberFormatter.format(MAX_FRAGMENT_LENGTH)}</p>
-                  </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Codec</p>
-                    <p className="metric-value">{parsed.ok ? parsed.envelope.codec : "plain"}</p>
-                  </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Artifacts</p>
-                    <p className="metric-value">{parsed.ok ? numberFormatter.format(parsed.envelope.artifacts.length) : "0"}</p>
-                  </div>
-                </div>
-
-                <div className="mt-3.5 sm:mt-5">
-                  <div className="mb-2 flex items-center justify-between gap-3 text-sm text-[color:var(--text-muted)]">
-                    <span>Size budget</span>
-                    <span>{Math.round(budgetRatio * 100)}%</span>
-                  </div>
-                  <div className="budget-track">
+              <div className="bento-grid mt-6 sm:mt-8">
+                <div className="bento-card px-5 py-5 sm:px-6 sm:py-6">
+                  <p className="metric-label">Fragment budget</p>
+                  <p className="metric-value">{numberFormatter.format(fragmentLength)} / {numberFormatter.format(MAX_FRAGMENT_LENGTH)}</p>
+                  <div className="budget-track mt-4">
                     <div className="budget-fill" style={{ width: `${budgetRatio * 100}%` }} />
                   </div>
                 </div>
-
-                <div className="mt-3 grid gap-2 sm:mt-5 sm:gap-3">
-                  <div className="rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-3 sm:p-4">
-                    <p className="metric-label">Hash preview</p>
-                    <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">
-                      {getHashPreview(hash)}
-                    </pre>
-                  </div>
-
-                  <div className="metric-card">
-                    <p className="metric-label">What happens next</p>
-                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
-                      Once a fragment is present, the shell decodes the envelope in-browser, selects the active artifact, and swaps this empty state for the renderer-specific stage without changing the route model.
-                    </p>
-                  </div>
+                <div className="bento-card px-5 py-5 sm:px-6 sm:py-6">
+                  <p className="metric-label">Codec</p>
+                  <p className="metric-value">{parsed.ok ? parsed.envelope.codec : "plain"}</p>
                 </div>
-              </section>
-            </div>
+                <div className="bento-card px-5 py-5 sm:px-6 sm:py-6">
+                  <p className="metric-label">Artifacts</p>
+                  <p className="metric-value">{parsed.ok ? numberFormatter.format(parsed.envelope.artifacts.length) : "0"}</p>
+                </div>
+                <div className="bento-card bento-wide px-5 py-5 sm:px-6 sm:py-6">
+                  <p className="metric-label">Hash preview</p>
+                  <pre className="font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)] sm:text-sm">
+                    {getHashPreview(hash)}
+                  </pre>
+                </div>
+              </div>
+            </section>
 
-            <section className="home-stage-panel panel panel-strong fade-up overflow-hidden px-4 py-5 sm:px-8 sm:py-8" style={getAnimationStyle(260)}>
-              <div className="print-hide-on-markdown flex flex-wrap items-start justify-between gap-3 border-b border-[color:var(--border)] pb-4 sm:gap-4 sm:pb-6">
+            {/* ── Initialize section ── */}
+            <section className="home-stage-section fade-up" style={getAnimationStyle(260)}>
+              <div className="section-header print-hide-on-markdown">
                 <div>
                   <p className="section-kicker">Viewer shell</p>
-                  <h3 className="font-display mt-3 text-2xl font-bold leading-tight tracking-[-0.04em] sm:text-4xl">
-                    {activeArtifact?.title ?? envelope?.title ?? "Renderer staging area"}
+                  <h3 className="font-display mt-3 text-2xl font-bold leading-tight tracking-[-0.04em] sm:mt-4 sm:text-4xl lg:text-5xl">
+                    {activeArtifact?.title ?? envelope?.title ?? "Initialize your Artifact"}
                   </h3>
-                  <p className="mt-2.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
+                  <p className="mt-4 max-w-3xl text-sm leading-7 text-[color:var(--text-muted)] sm:mt-5 sm:text-base sm:leading-8">
                     {activeArtifact
-                      ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment. Multiple artifact-specific viewers now render directly in-frame while the shell stays ready for future polish.`
+                      ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment.`
                       : "This stage becomes the live artifact surface once a fragment is active. The payload stays in the URL hash, the route stays export-friendly, and each artifact kind can render inside the same shell."}
                   </p>
                 </div>
@@ -757,8 +739,8 @@ export function ViewerShell() {
                         style={
                           isCurrent
                             ? {
-                                borderColor: "var(--accent-secondary)",
-                                color: "var(--accent-secondary)",
+                                borderColor: "var(--accent)",
+                                color: "var(--accent)",
                               }
                             : undefined
                         }
@@ -771,60 +753,35 @@ export function ViewerShell() {
                 </div>
               </div>
 
-              <div className="viewer-shell-empty-grid mt-3 sm:mt-5">
-                <div className="viewer-frame viewer-frame-home">
-                  <div className="viewer-head print-hide-on-markdown">
-                    <div>
-                      <p className="metric-label">Ready for fragment decode</p>
-                      <h4 className="mt-1.5 text-base font-semibold tracking-[-0.03em] sm:mt-2 sm:text-xl">Choose a sample payload to populate this shell</h4>
-                    </div>
-                    <span className="mono-pill">public-safe</span>
-                  </div>
-                  <div className="artifact-preview viewer-empty-preview">
-                    <div className="viewer-empty-content">
-                      <div>
-                        <p className="section-kicker">First-run flow</p>
-                        <h4 className="font-display mt-2.5 text-[1.75rem] font-bold leading-[1.02] tracking-[-0.04em] sm:mt-3 sm:text-[2.35rem] sm:leading-tight">
-                          The live renderer stage appears here as soon as a fragment is selected.
-                        </h4>
-                        <p className="mt-2.5 max-w-2xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-4 sm:leading-7">
-                          {parsed.ok
-                            ? "A decoded fragment is already present, so the active artifact can take over this frame immediately."
-                            : parsed.message}
-                        </p>
-                      </div>
-
-                      <div className="viewer-step-grid">
-                        {emptyStateSteps.map((step, index) => (
-                          <div key={step} className="metric-card">
-                            <p className="metric-label">Step {index + 1}</p>
-                            <p className="mt-2.5 text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">{step}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+              <div className="bento-grid mt-8 sm:mt-10">
+                <div className="bento-card bento-wide px-5 py-6 sm:px-8 sm:py-8">
+                  <p className="section-kicker">First-run flow</p>
+                  <h4 className="font-display mt-3 text-xl font-bold leading-tight tracking-[-0.03em] sm:mt-4 sm:text-2xl lg:text-3xl">
+                    The live renderer stage appears here as soon as a fragment is selected.
+                  </h4>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)] sm:mt-4 sm:text-base sm:leading-8">
+                    {parsed.ok
+                      ? "A decoded fragment is already present, so the active artifact can take over this frame immediately."
+                      : parsed.message}
+                  </p>
                 </div>
-
-                <div className="viewer-shell-side-grid print-hide-on-markdown">
-                  <div className="metric-card">
-                    <p className="metric-label">Security posture</p>
-                    <p className="mt-2.5 text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
-                      Payloads stay in the hash, renderers stay client-side, and artifact-specific viewers can land without changing fragment transport semantics.
-                    </p>
+                {emptyStateSteps.map((step, index) => (
+                  <div key={step} className="bento-card px-5 py-6 sm:px-8 sm:py-8">
+                    <p className="section-kicker">Step {index + 1}</p>
+                    <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">{step}</p>
                   </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Route model</p>
-                    <p className="mt-2.5 text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
-                      The app remains a single export-friendly route for Cloudflare Pages and other static hosts, even as richer artifact viewers plug into the shell.
-                    </p>
-                  </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Supported artifacts</p>
-                    <p className="mt-2.5 text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
-                      Markdown, code, diff, CSV, and JSON all share the same shell contract, so the homepage can explain the product before the first payload ever lands.
-                    </p>
-                  </div>
+                ))}
+                <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
+                  <p className="section-kicker">Security posture</p>
+                  <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
+                    Payloads stay in the hash, renderers stay client-side, and artifact-specific viewers can land without changing fragment transport semantics.
+                  </p>
+                </div>
+                <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
+                  <p className="section-kicker">Route model</p>
+                  <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
+                    The app remains a single export-friendly route for Cloudflare Pages and other static hosts.
+                  </p>
                 </div>
               </div>
             </section>

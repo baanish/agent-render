@@ -2,32 +2,32 @@
 @import "@git-diff-view/react/styles/diff-view-pure.css";
 
 :root {
-  /* ── Surface hierarchy — warm parchment ── */
-  --page-bg: #fcf9f2;
-  --page-bg-secondary: rgba(0, 98, 140, 0.05);
-  --page-bg-accent: rgba(176, 47, 0, 0.05);
-  --surface: rgba(252, 249, 242, 0.88);
+  /* ── Surface hierarchy — warm ivory with sunset undertone ── */
+  --page-bg: #faf8f4;
+  --page-bg-secondary: rgba(139, 92, 168, 0.04);
+  --page-bg-accent: rgba(204, 102, 51, 0.04);
+  --surface: rgba(250, 248, 244, 0.88);
   --surface-strong: rgba(255, 255, 255, 0.96);
-  --surface-muted: rgba(28, 28, 24, 0.035);
-  --surface-elevated: rgba(235, 232, 225, 0.86);
-  /* ── Ghost borders — outline-variant at low opacity ── */
-  --border: rgba(228, 190, 180, 0.18);
-  --border-strong: rgba(228, 190, 180, 0.30);
-  /* ── Text — deep charcoal, never pure black ── */
-  --text-primary: #1c1c18;
-  --text-muted: #5f5f56;
-  --text-soft: #5b4039;
-  /* ── Accent — burnt orange laser, not a paint bucket ── */
-  --accent: #b02f00;
-  --accent-strong: #8a2400;
-  --accent-secondary: #00628c;
+  --surface-muted: rgba(40, 30, 50, 0.03);
+  --surface-elevated: rgba(245, 241, 235, 0.86);
+  /* ── Ghost borders — warm taupe ── */
+  --border: rgba(160, 140, 130, 0.14);
+  --border-strong: rgba(160, 140, 130, 0.24);
+  /* ── Text — warm charcoal ── */
+  --text-primary: #2a2028;
+  --text-muted: #6b5e68;
+  --text-soft: #8a7e86;
+  /* ── Accent — sunset orange ── */
+  --accent: #cc6633;
+  --accent-strong: #a8502a;
+  --accent-secondary: #8b5ca8;
   /* ── Semantic ── */
-  --success: #287357;
-  --warning: #ad6b1f;
-  --danger: #ba1a1a;
-  /* ── Ambient shadows — tinted with on-surface, never pure black ── */
-  --shadow-lg: 0 26px 72px rgba(28, 28, 24, 0.08);
-  --shadow-md: 0 20px 40px rgba(28, 28, 24, 0.04);
+  --success: #4a8c6f;
+  --warning: #b8863a;
+  --danger: #c44b3f;
+  /* ── Ambient shadows — warm-tinted ── */
+  --shadow-lg: 0 26px 72px rgba(42, 32, 40, 0.07);
+  --shadow-md: 0 20px 40px rgba(42, 32, 40, 0.035);
   /* ── Radius — sharp, architectural ── */
   --radius-xl: 2px;
   --radius-lg: 2px;
@@ -35,52 +35,52 @@
   --radius-sm: 2px;
   --duration-base: 280ms;
   /* ── Code surfaces ── */
-  --surface-code: #1c1c18;
-  --surface-code-raised: rgba(28, 28, 24, 0.92);
-  --surface-code-text: #eff3f7;
+  --surface-code: #1e1a22;
+  --surface-code-raised: rgba(30, 26, 34, 0.92);
+  --surface-code-text: #ede8f2;
   /* ── Print ── */
   --print-paper: #ffffff;
-  --print-ink: #1c1c18;
-  --print-muted: #5b4039;
-  --print-border: rgba(228, 190, 180, 0.14);
+  --print-ink: #2a2028;
+  --print-muted: #6b5e68;
+  --print-border: rgba(160, 140, 130, 0.14);
 }
 
 .dark {
-  /* ── Surface hierarchy — midnight indigo ── */
-  --page-bg: #0b0c1f;
-  --page-bg-secondary: rgba(241, 231, 255, 0.03);
-  --page-bg-accent: rgba(255, 135, 87, 0.04);
-  --surface: rgba(21, 23, 50, 0.92);
-  --surface-strong: rgba(16, 17, 40, 0.98);
-  --surface-muted: rgba(166, 167, 212, 0.05);
-  --surface-elevated: rgba(27, 28, 60, 0.96);
-  /* ── Ghost borders — muted indigo ── */
-  --border: rgba(67, 68, 107, 0.18);
-  --border-strong: rgba(67, 68, 107, 0.30);
-  /* ── Text — pale lavender-white ── */
-  --text-primary: #e4e3ff;
-  --text-muted: #c5c4df;
-  --text-soft: #a6a7d4;
-  /* ── Accent — warm coral glow ── */
-  --accent: #ff8757;
-  --accent-strong: #fd7034;
-  --accent-secondary: #8b8dbd;
+  /* ── Surface hierarchy — deep dusk ── */
+  --page-bg: #0e0b14;
+  --page-bg-secondary: rgba(139, 92, 168, 0.04);
+  --page-bg-accent: rgba(224, 140, 80, 0.03);
+  --surface: rgba(18, 14, 24, 0.92);
+  --surface-strong: rgba(14, 11, 20, 0.98);
+  --surface-muted: rgba(180, 160, 200, 0.05);
+  --surface-elevated: rgba(24, 20, 32, 0.96);
+  /* ── Ghost borders — twilight violet ── */
+  --border: rgba(100, 80, 120, 0.16);
+  --border-strong: rgba(100, 80, 120, 0.28);
+  /* ── Text — warm pearl ── */
+  --text-primary: #ece6f0;
+  --text-muted: #b8afc2;
+  --text-soft: #8a7e96;
+  /* ── Accent — sunset ember ── */
+  --accent: #e08c50;
+  --accent-strong: #c87a42;
+  --accent-secondary: #b08ed0;
   /* ── Semantic ── */
   --success: #78c5a8;
-  --warning: #e6b263;
-  --danger: #ffb4ab;
-  /* ── Shadows — tinted with background, never neutral gray ── */
-  --shadow-lg: 0 28px 72px rgba(11, 12, 31, 0.4);
-  --shadow-md: 0 20px 40px rgba(11, 12, 31, 0.2);
-  /* ── Radius — zero, precise, architectural ── */
+  --warning: #deb06a;
+  --danger: #e8a098;
+  /* ── Shadows — purple-black ── */
+  --shadow-lg: 0 28px 72px rgba(14, 11, 20, 0.5);
+  --shadow-md: 0 20px 40px rgba(14, 11, 20, 0.25);
+  /* ── Radius — zero, architectural ── */
   --radius-xl: 0px;
   --radius-lg: 0px;
   --radius-md: 0px;
   --radius-sm: 0px;
   /* ── Code ── */
-  --surface-code: rgba(8, 9, 20, 0.98);
-  --surface-code-raised: rgba(16, 17, 40, 0.95);
-  --surface-code-text: #e4e3ff;
+  --surface-code: rgba(10, 8, 16, 0.98);
+  --surface-code-raised: rgba(18, 14, 26, 0.95);
+  --surface-code-text: #ece6f0;
 }
 
 * {
@@ -97,16 +97,16 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans), sans-serif;
   background:
-    radial-gradient(circle at top left, var(--page-bg-secondary), transparent 36%),
-    radial-gradient(circle at top right, var(--page-bg-accent), transparent 28%),
-    linear-gradient(180deg, color-mix(in srgb, var(--page-bg) 94%, white 6%), var(--page-bg));
+    radial-gradient(circle at 20% 0%, rgba(204, 102, 51, 0.04), transparent 40%),
+    radial-gradient(circle at 80% 10%, rgba(139, 92, 168, 0.03), transparent 35%),
+    linear-gradient(180deg, var(--page-bg), color-mix(in srgb, var(--page-bg) 97%, #f0e8f4 3%));
 }
 
 .dark body {
   background:
-    radial-gradient(circle at 30% 10%, rgba(255, 135, 87, 0.04), transparent 40%),
-    radial-gradient(circle at 80% 60%, rgba(241, 231, 255, 0.02), transparent 35%),
-    linear-gradient(180deg, #0b0c1f, #080919);
+    radial-gradient(circle at 20% 0%, rgba(224, 140, 80, 0.05), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 168, 0.04), transparent 35%),
+    linear-gradient(180deg, #0e0b14, #0a0810);
 }
 
 body::before {
@@ -125,8 +125,8 @@ body::before {
 /* Dark mode: visible terminal grid at 40px spacing */
 .dark body::before {
   background:
-    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(67, 68, 107, 0.10) calc(100% - 1px), transparent 100%),
-    linear-gradient(0deg, transparent 0, transparent calc(100% - 1px), rgba(67, 68, 107, 0.07) calc(100% - 1px), transparent 100%);
+    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(100, 80, 120, 0.08) calc(100% - 1px), transparent 100%),
+    linear-gradient(0deg, transparent 0, transparent calc(100% - 1px), rgba(100, 80, 120, 0.06) calc(100% - 1px), transparent 100%);
   background-size: 40px 40px;
   mask-image: none;
   opacity: 1;
@@ -150,8 +150,8 @@ select {
 }
 
 .dark ::selection {
-  background: rgba(255, 135, 87, 0.32);
-  color: #e4e3ff;
+  background: rgba(224, 140, 80, 0.30);
+  color: #ece6f0;
 }
 
 .font-display {
@@ -181,7 +181,7 @@ select {
   background: var(--accent);
 }
 
-/* ── Nav bar — flat, not a card ── */
+/* ── Nav bar — flat, full-width, not a card ── */
 .nav-bar {
   background: color-mix(in srgb, var(--page-bg) 85%, transparent);
   backdrop-filter: blur(20px);
@@ -189,16 +189,57 @@ select {
 }
 
 .dark .nav-bar {
-  background: rgba(11, 12, 31, 0.60);
-  border-bottom-color: rgba(255, 135, 87, 0.08);
+  background: rgba(14, 11, 20, 0.70);
+  border-bottom-color: rgba(224, 140, 80, 0.08);
 }
 
-/* ── Editorial hero — no panel, just content ── */
-.home-hero-panel {
+/* ── Full-bleed editorial sections ── */
+.home-hero-section {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
   border-bottom: 1px solid var(--border);
 }
 
-/* ── Bento grid ── */
+@media (min-width: 768px) {
+  .home-hero-section {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .home-hero-section {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+}
+
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.home-samples-section,
+.home-inspector-section,
+.home-stage-section {
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 768px) {
+  .home-samples-section,
+  .home-inspector-section,
+  .home-stage-section {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+}
+
+/* ── Bento grid — tonal separation via 1px gaps ── */
 .bento-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -226,50 +267,44 @@ select {
 }
 
 .bento-card {
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  backdrop-filter: none;
   background: var(--page-bg);
 }
 
-.bento-card::after {
-  display: none;
-}
-
 .dark .bento-card {
-  background: var(--surface-strong);
+  background: rgba(14, 11, 20, 0.98);
 }
 
 .bento-link {
   display: grid;
   gap: 0.5rem;
+  align-content: start;
   transition: background-color 500ms ease;
 }
 
 .bento-link:hover {
-  background: color-mix(in srgb, var(--accent) 4%, var(--page-bg));
+  background: color-mix(in srgb, var(--accent) 3%, var(--page-bg));
 }
 
 .dark .bento-link:hover {
-  background: color-mix(in srgb, var(--accent) 4%, var(--surface-strong));
+  background: rgba(224, 140, 80, 0.04);
 }
 
 /* ── Editorial pull quote ── */
 .editorial-quote {
-  padding: 2rem 1.5rem;
+  padding: 3rem 1rem;
   text-align: center;
+  border-bottom: 1px solid var(--border);
 }
 
 @media (min-width: 768px) {
   .editorial-quote {
-    padding: 4rem 3rem;
+    padding: 5rem 3rem;
   }
 }
 
 @media (min-width: 1280px) {
   .editorial-quote {
-    padding: 5rem 4rem;
+    padding: 6rem 4rem;
   }
 }
 
@@ -312,8 +347,9 @@ select {
 
 .dark .panel-hero {
   background:
-    linear-gradient(135deg, var(--surface-strong), rgba(21, 23, 50, 0.96)),
-    radial-gradient(circle at 80% 20%, rgba(255, 135, 87, 0.04), transparent 40%);
+    linear-gradient(135deg, var(--surface-strong), rgba(18, 14, 24, 0.96)),
+    radial-gradient(circle at 80% 20%, rgba(224, 140, 80, 0.03), transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(139, 92, 168, 0.02), transparent 35%);
 }
 
 .section-kicker {
@@ -347,10 +383,10 @@ select {
   background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
 }
 
-/* Dark data chips: square, technical, not bubbly */
+/* Dark data chips */
 .dark .mono-pill {
-  background: rgba(27, 28, 60, 0.8);
-  border-color: rgba(67, 68, 107, 0.25);
+  background: rgba(24, 20, 32, 0.8);
+  border-color: rgba(100, 80, 120, 0.22);
 }
 
 .metric-grid {
@@ -368,7 +404,7 @@ select {
 
 .empty-state-layout {
   display: grid;
-  gap: 1rem;
+  gap: 0;
 }
 
 .hero-metric-stack,
@@ -480,7 +516,7 @@ select {
   min-height: 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 1rem;
+  padding: 1.25rem 1.5rem;
   background: color-mix(in srgb, var(--surface-elevated) 88%, transparent);
   transition:
     transform var(--duration-base) ease,
@@ -504,6 +540,19 @@ select {
   background: color-mix(in srgb, var(--accent) 5%, var(--surface-strong));
 }
 
+.home-generator-section {
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 768px) {
+  .home-generator-section {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+}
+
 .home-generator-grid,
 .creator-form-grid,
 .creator-result-metrics,
@@ -513,7 +562,7 @@ select {
 }
 
 .home-generator-grid {
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .home-generator-heading {
@@ -667,12 +716,12 @@ select {
 
 .creator-result-card {
   display: grid;
-  gap: 0.85rem;
+  gap: 1rem;
   height: 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-elevated) 80%, transparent);
-  padding: 1rem;
+  padding: 1.5rem;
 }
 
 .creator-result-head {
@@ -949,7 +998,7 @@ select {
 
 .dark .artifact-action.is-primary {
   background: var(--accent);
-  color: #4f1700;
+  color: #1a0e08;
 }
 
 .artifact-action.is-primary:hover {
@@ -1059,11 +1108,11 @@ select {
 .markdown-article blockquote {
   margin-inline: 0;
   padding: 1.2rem 1.4rem;
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--accent-secondary);
   border-radius: 0;
   background: color-mix(in srgb, var(--surface-elevated) 60%, transparent);
   color: var(--text-primary);
-  font-family: var(--font-editorial), serif;
+  font-family: var(--font-display), serif;
   font-style: italic;
 }
 
@@ -1090,7 +1139,7 @@ select {
 }
 
 .dark .markdown-code-frame {
-  border-color: rgba(67, 68, 107, 0.20);
+  border-color: rgba(100, 80, 120, 0.18);
 }
 
 .markdown-code-head {
@@ -1104,7 +1153,7 @@ select {
 }
 
 .dark .markdown-code-head {
-  background: linear-gradient(90deg, rgba(255, 135, 87, 0.06), transparent 58%);
+  background: linear-gradient(90deg, rgba(224, 140, 80, 0.05), transparent 58%);
 }
 
 .markdown-code-chip,
