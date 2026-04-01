@@ -1,43 +1,21 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter, Newsreader, Space_Grotesk } from "next/font/google";
+import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-/**
- * Newsreader — the editorial serif voice. Used for display-level headlines in dark mode.
- * Italic is the default for display-tier text in "The Sentient Archive" dark theme.
- */
-const editorial = Newsreader({
+const display = Fraunces({
   subsets: ["latin"],
-  variable: "--font-editorial",
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
+  variable: "--font-display",
+  weight: ["500", "600", "700"],
 });
 
-/**
- * Space Grotesk — the structural geometric sans. Used for headlines in light mode
- * and as the body workhorse in dark mode.
- */
-const headline = Space_Grotesk({
+const sans = IBM_Plex_Sans({
   subsets: ["latin"],
-  variable: "--font-headline",
+  variable: "--font-sans",
   weight: ["400", "500", "600", "700"],
 });
 
-/**
- * Inter — the humanist body sans. Used for long-form body text in light mode.
- */
-const body = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-  weight: ["400", "500", "600"],
-});
-
-/**
- * IBM Plex Mono — the machine voice. Used for all metadata, timestamps,
- * technical labels, code snippets, and status indicators across both themes.
- */
 const mono = IBM_Plex_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
@@ -61,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${editorial.variable} ${headline.variable} ${body.variable} ${mono.variable} antialiased`}>
+      <body className={`${display.variable} ${sans.variable} ${mono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>

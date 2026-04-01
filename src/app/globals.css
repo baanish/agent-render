@@ -95,9 +95,6 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--text-primary);
-  /* Theme-switching font aliases: light → Inter body, dark → Space Grotesk body */
-  --font-display: var(--font-headline);
-  --font-sans: var(--font-body);
   font-family: var(--font-sans), sans-serif;
   background:
     radial-gradient(circle at top left, var(--page-bg-secondary), transparent 36%),
@@ -106,9 +103,6 @@ body {
 }
 
 .dark body {
-  /* Dark: Newsreader for display, Space Grotesk for body */
-  --font-display: var(--font-editorial);
-  --font-sans: var(--font-headline);
   background:
     radial-gradient(circle at 30% 10%, rgba(255, 135, 87, 0.04), transparent 40%),
     radial-gradient(circle at 80% 60%, rgba(241, 231, 255, 0.02), transparent 35%),
@@ -161,14 +155,7 @@ select {
 }
 
 .font-display {
-  font-family: var(--font-display), sans-serif;
-  letter-spacing: -0.02em;
-}
-
-/* Dark mode: Newsreader italic for display-tier headlines */
-.dark .font-display {
   font-family: var(--font-display), serif;
-  font-style: italic;
 }
 
 .font-mono {
@@ -909,18 +896,10 @@ select {
 .markdown-article h6 {
   margin-top: 1.5em;
   color: var(--text-primary);
-  font-family: var(--font-display), sans-serif;
+  font-family: var(--font-display), serif;
   font-weight: 600;
   line-height: 1.08;
   letter-spacing: -0.04em;
-}
-
-/* Dark mode: editorial serif italic for markdown headings */
-.dark .markdown-article h1,
-.dark .markdown-article h2,
-.dark .markdown-article h3 {
-  font-family: var(--font-display), serif;
-  font-style: italic;
 }
 
 .markdown-article h1 {
