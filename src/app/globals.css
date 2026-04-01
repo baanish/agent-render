@@ -97,9 +97,9 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans), sans-serif;
   background:
-    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(204, 102, 51, 0.12), transparent),
-    radial-gradient(ellipse 60% 50% at 100% 10%, rgba(139, 92, 168, 0.08), transparent),
-    radial-gradient(ellipse 50% 40% at 80% 100%, rgba(180, 120, 90, 0.06), transparent),
+    radial-gradient(ellipse 60% 45% at 0% 0%, #e8c8b0, transparent 70%),
+    radial-gradient(ellipse 45% 45% at 100% 5%, #d4c4e0, transparent 70%),
+    radial-gradient(ellipse 40% 35% at 65% 100%, #e0ccb8, transparent 70%),
     var(--page-bg);
 }
 
