@@ -452,10 +452,7 @@ export function ViewerShell() {
           <h1 className="font-display text-lg font-semibold tracking-[-0.03em] sm:text-xl">Agent Render</h1>
         </a>
 
-        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-          <span className="mono-pill" style={{ borderColor: "var(--accent)", color: "var(--accent)" }}>[STATUS: READY]</span>
-          <ThemeToggle />
-        </div>
+        <ThemeToggle />
       </header>
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pb-12 pt-6 sm:gap-16 sm:px-8 sm:pb-24 sm:pt-12 lg:gap-20 lg:px-12 lg:pt-16">
@@ -616,13 +613,6 @@ export function ViewerShell() {
                 <span className="mt-3 block text-base font-semibold leading-6">Load any sample fragment below</span>
                 <p className="mt-2 text-sm leading-7 text-[color:var(--text-muted)]">Pick a sample, update the hash, and the viewer opens without sending the artifact body to the host.</p>
               </div>
-            </section>
-
-            {/* ── Editorial pull quote ── */}
-            <section className="editorial-quote fade-up" style={getAnimationStyle(140)}>
-              <blockquote className="font-display text-center text-2xl font-semibold leading-snug tracking-[-0.02em] text-[color:var(--text-primary)] sm:text-3xl sm:leading-snug lg:text-[2.75rem] lg:leading-[1.15]">
-                &ldquo;We don&rsquo;t just display data; we curate it into a <em className="text-[color:var(--accent)]" style={{ fontStyle: "italic" }}>landscape of information.</em>&rdquo;
-              </blockquote>
             </section>
 
             {/* ── Link creator ── */}
