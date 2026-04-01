@@ -97,17 +97,17 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans), sans-serif;
   background:
-    radial-gradient(ellipse 60% 45% at 0% 0%, #e8c8b0, transparent 70%),
-    radial-gradient(ellipse 45% 45% at 100% 5%, #d4c4e0, transparent 70%),
-    radial-gradient(ellipse 40% 35% at 65% 100%, #e0ccb8, transparent 70%),
+    radial-gradient(ellipse 60% 45% at 0% 0%, #f1e0d2, transparent 70%),
+    radial-gradient(ellipse 45% 45% at 100% 5%, #e6dee8, transparent 70%),
+    radial-gradient(ellipse 40% 35% at 65% 100%, #ede2d6, transparent 70%),
     var(--page-bg);
 }
 
 .dark body {
   background:
-    radial-gradient(ellipse 70% 50% at 0% 0%, rgba(180, 110, 60, 0.10), transparent),
-    radial-gradient(ellipse 60% 60% at 100% 20%, rgba(80, 60, 120, 0.08), transparent),
-    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(140, 60, 80, 0.05), transparent),
+    radial-gradient(ellipse 70% 50% at 0% 0%, #2a1a10, transparent 70%),
+    radial-gradient(ellipse 60% 60% at 100% 20%, #1a142a, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, #201018, transparent 70%),
     var(--page-bg);
 }
 
