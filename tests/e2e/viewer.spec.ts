@@ -108,25 +108,17 @@ test.describe("mobile UX", () => {
     await expect(page.getByRole("button", { name: "Back to unified" })).toBeVisible();
   });
 
-  test("surfaces the try-it action before supporting links on phones", async ({ page }) => {
+  test("surfaces samples before inspector on phones", async ({ page }) => {
     await waitForViewerState(page, "empty");
 
-    const tryItBox = await page.locator(".home-hero-callouts .hero-link-card.is-static").boundingBox();
-    const sourceBox = await page.getByRole("link", { name: /Browse the GitHub repo/i }).boundingBox();
-    const samplesBox = await page.locator(".home-samples-panel").boundingBox();
-    const inspectorBox = await page.locator(".home-inspector-panel").boundingBox();
+    const samplesBox = await page.locator(".home-samples-section").boundingBox();
+    const inspectorBox = await page.locator(".home-inspector-section").boundingBox();
 
-    expect(tryItBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(sourceBox?.y ?? 0);
     expect(samplesBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(inspectorBox?.y ?? 0);
     await expect(page.getByRole("link", { name: /Maintainer kickoff/i })).toBeVisible();
   });
 
-  test("keeps homepage and artifact metadata in compact two-column grids", async ({ page }) => {
-    await waitForViewerState(page, "empty");
-
-    const homeMetrics = page.locator(".home-inspector-panel .metric-grid");
-    await expect.poll(() => homeMetrics.evaluate((element) => window.getComputedStyle(element).gridTemplateColumns.split(" ").length)).toBe(2);
-
+  test("keeps artifact metadata in compact two-column grids", async ({ page }) => {
     await goToHash(page, getFragmentHash("arx showcase"));
     await waitForViewerState(page, "artifact");
 
@@ -138,7 +130,7 @@ test.describe("mobile UX", () => {
 test("renders compact CSV payloads without giant whitespace", async ({ page }) => {
   await goToHash(page, getFragmentHash("Data export preview"));
   await waitForViewerState(page, "artifact");
-  const frame = await page.locator(".viewer-frame-hero").boundingBox();
+  const frame = await page.locator(".viewer-frame-primary").boundingBox();
   expect(frame?.height ?? 0).toBeLessThan(900);
   await expect(page.locator("table.csv-table")).toBeVisible();
 });
@@ -183,7 +175,7 @@ test("download action emits a file", async ({ page }) => {
   await waitForViewerState(page, "artifact");
   const [download] = await Promise.all([
     page.waitForEvent("download"),
-    page.getByRole("button", { name: "Download" }).click(),
+    page.getByRole("button", { name: "Download" }).first().click(),
   ]);
   await expect(download.suggestedFilename()).toContain("viewer-shell.tsx");
 });
