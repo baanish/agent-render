@@ -462,73 +462,65 @@ export function ViewerShell() {
 
         {activeArtifact && envelope ? (
           <section className="artifact-first-layout">
-            <section className="panel fade-up print-hide-on-markdown px-4 py-4 sm:px-8 sm:py-6" style={getAnimationStyle(80)}>
-              <div className="artifact-bundle-header">
-                <div>
-                  <p className="section-kicker">Artifact bundle</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2.5 sm:mt-3 sm:gap-3">
-                    <h2 className="font-display text-xl font-semibold leading-tight tracking-[-0.03em] sm:text-3xl">{envelope.title ?? "Untitled bundle"}</h2>
-                    <span className="mono-pill">{envelope.artifacts.length} item{envelope.artifacts.length === 1 ? "" : "s"}</span>
-                  </div>
-                  <p className="mt-1.5 max-w-3xl text-sm leading-[1.45rem] text-[color:var(--text-muted)] sm:mt-2 sm:leading-6">
-                    Selecting an artifact updates the active fragment target while keeping the rendered payload front and center.
-                  </p>
-                </div>
+            {/* ── Compact file-info toolbar ── */}
+            <div className="artifact-toolbar-bar fade-up print-hide-on-markdown" style={getAnimationStyle(80)}>
+              <div className="artifact-toolbar-left">
+                <span className="mono-pill" style={{ borderColor: statusTone.color, color: statusTone.color }}>
+                  {statusTone.label}
+                </span>
+                <span className="font-mono text-xs text-[color:var(--text-soft)]">{getArtifactSupportingLabel(activeArtifact)}</span>
+                <span className="font-mono text-xs text-[color:var(--text-soft)]">{numberFormatter.format(fragmentLength)} chars</span>
+              </div>
+              <div className="viewer-toolbar">
+                <button
+                  type="button"
+                  className={cn("artifact-action", artifactCopyState === "copied" && "is-primary")}
+                  onClick={handleArtifactCopy}
+                >
+                  {artifactCopyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {artifactCopyState === "copied" ? "Copied" : artifactCopyState === "failed" ? "Copy failed" : "Copy"}
+                </button>
+                <button type="button" className="artifact-action" onClick={handleArtifactDownload}>
+                  <Download className="h-3.5 w-3.5" />
+                  Download
+                </button>
+                {markdownArtifact ? (
+                  <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
+                    <Printer className="h-3.5 w-3.5" />
+                    Print / PDF
+                  </button>
+                ) : null}
+                <button type="button" className="artifact-action is-primary" onClick={handleArtifactDownload}>
+                  <Download className="h-3.5 w-3.5" />
+                  Save
+                </button>
+              </div>
+            </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="mono-pill" style={{ borderColor: statusTone.color, color: statusTone.color }}>
-                    {statusTone.label}
-                  </span>
-                  <span className="mono-pill">{numberFormatter.format(fragmentLength)} chars</span>
-                </div>
+            {/* ── Artifact selector (when multi-artifact) ── */}
+            {envelope.artifacts.length > 1 ? (
+              <section className="print-hide-on-markdown fade-up" style={getAnimationStyle(100)}>
+                <ArtifactSelector
+                  artifacts={envelope.artifacts}
+                  activeArtifactId={activeArtifact.id}
+                  getHeading={getArtifactHeading}
+                  getSupportingLabel={getArtifactSupportingLabel}
+                  kindIcons={kindIcons}
+                  onSelect={handleArtifactSelect}
+                />
+              </section>
+            ) : null}
+
+            {/* ── Editorial artifact heading + content ── */}
+            <section className="artifact-content-section fade-up" style={getAnimationStyle(140)}>
+              <div className="print-hide-on-markdown">
+                <p className="section-kicker">{getArtifactSubtitle(activeArtifact)}</p>
+                <h3 className="font-display mt-3 text-[2.2rem] font-bold leading-[0.96] tracking-[-0.04em] sm:mt-4 sm:text-[3rem] lg:text-[3.5rem] lg:leading-[0.94]">
+                  {getArtifactHeading(activeArtifact)}
+                </h3>
               </div>
 
-              <ArtifactSelector
-                artifacts={envelope.artifacts}
-                activeArtifactId={activeArtifact.id}
-                getHeading={getArtifactHeading}
-                getSupportingLabel={getArtifactSupportingLabel}
-                kindIcons={kindIcons}
-                onSelect={handleArtifactSelect}
-              />
-            </section>
-
-            <section className="panel panel-strong fade-up overflow-hidden px-4 py-4 sm:px-8 sm:py-6" style={getAnimationStyle(140)}>
-              <div className="artifact-stage-head print-hide-on-markdown">
-                <div className="min-w-0">
-                  <p className="section-kicker">{getArtifactSubtitle(activeArtifact)}</p>
-                  <h3 className="font-display mt-2 text-[2rem] font-bold leading-[1.02] tracking-[-0.04em] sm:mt-3 sm:text-[2.8rem] sm:leading-tight">
-                    {getArtifactHeading(activeArtifact)}
-                  </h3>
-                  <p className="mt-2 max-w-3xl text-sm leading-[1.55rem] text-[color:var(--text-muted)] sm:mt-3 sm:leading-7">
-                    {getArtifactSupportingLabel(activeArtifact)}
-                  </p>
-                </div>
-
-                <div className="viewer-toolbar">
-                  <button
-                    type="button"
-                    className={cn("artifact-action", artifactCopyState === "copied" && "is-primary")}
-                    onClick={handleArtifactCopy}
-                  >
-                    {artifactCopyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                    {artifactCopyState === "copied" ? "Copied" : artifactCopyState === "failed" ? "Copy failed" : "Copy"}
-                  </button>
-                  <button type="button" className="artifact-action is-primary" onClick={handleArtifactDownload}>
-                    <Download className="h-3.5 w-3.5" />
-                    Download
-                  </button>
-                  {markdownArtifact ? (
-                    <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
-                      <Printer className="h-3.5 w-3.5" />
-                      Print / PDF
-                    </button>
-                  ) : null}
-                  <span className="mono-pill">{activeArtifact.kind}</span>
-                </div>
-              </div>
-
-              <div className="viewer-frame viewer-frame-primary viewer-frame-hero">
+              <div className="viewer-frame viewer-frame-primary mt-6 sm:mt-10">
                 <div className={cn("artifact-preview", markdownArtifact && "is-markdown print-markdown-target")}>
                   {markdownArtifact ? (
                     <MarkdownRenderer artifact={markdownArtifact} onReady={markRendererReady} />
@@ -547,10 +539,11 @@ export function ViewerShell() {
               </div>
             </section>
 
+            {/* ── Metadata bento ── */}
             <section className="print-hide-on-markdown fade-up" style={getAnimationStyle(200)}>
-              <div className="artifact-meta-grid" data-testid="artifact-metadata-grid">
+              <div className="bento-grid" data-testid="artifact-metadata-grid">
                 {getArtifactDetailRows(activeArtifact).map((row) => (
-                  <div key={row.label} className="artifact-meta-card">
+                  <div key={row.label} className="bento-card px-5 py-5 sm:px-6 sm:py-6">
                     <p className="metric-label">{row.label}</p>
                     <p className="artifact-meta-value">{row.value}</p>
                   </div>

@@ -775,7 +775,38 @@ select {
 
 .artifact-first-layout {
   display: grid;
-  gap: 1rem;
+  gap: 0;
+}
+
+/* ── Compact toolbar ribbon ── */
+.artifact-toolbar-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.artifact-toolbar-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+
+/* ── Editorial content area ── */
+.artifact-content-section {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .artifact-content-section {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
 }
 
 .artifact-bundle-header {
@@ -789,11 +820,11 @@ select {
 .artifact-selector-row {
   display: flex;
   gap: 0.75rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
   scroll-padding-inline: 1rem;
   overflow-x: auto;
-  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   scroll-snap-type: x proximity;
 }
 
@@ -887,7 +918,7 @@ select {
 }
 
 .viewer-frame-hero {
-  margin-top: 1rem;
+  margin-top: 0;
 }
 
 .artifact-stage-head {
@@ -909,8 +940,14 @@ select {
 
 .artifact-preview {
   min-height: 0;
-  padding: 1rem;
+  padding: 1.5rem;
   background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
+}
+
+@media (min-width: 768px) {
+  .artifact-preview {
+    padding: 2rem 2.5rem;
+  }
 }
 
 .dark .artifact-preview {
