@@ -65,21 +65,21 @@ const ecosystemLinks = [
   {
     href: "https://github.com/baanish/agent-render",
     kicker: "Source",
-    title: "Browse the GitHub repo",
-    description: "Inspect the payload format, renderer shell, and deployment notes behind the static viewer.",
+    title: "GitHub",
+    description: "Source code, payload format, and deployment docs.",
   },
   {
     href: "https://clawdhub.com/skills/agent-render-linking",
     kicker: "Ecosystem",
-    title: "Use the ClawdHub skill",
-    description: "Help OpenClaw agents emit `agent-render` links intentionally across chat surfaces and workflows.",
+    title: "ClawdHub skill",
+    description: "Let OpenClaw agents generate agent-render links in chat.",
   },
 ] as const;
 
 const emptyStateSteps = [
-  "Pick a sample fragment to update the hash in place.",
-  "The shell decodes the envelope client-side and activates the chosen artifact.",
-  "Artifact-specific renderers take over this stage without sending the payload to a server.",
+  "Pick a sample fragment below.",
+  "The payload decodes client-side from the URL hash.",
+  "The renderer displays the artifact without contacting a server.",
 ] as const;
 
 const MarkdownRenderer = dynamic(
@@ -114,26 +114,26 @@ function getArtifactBody(artifact: ArtifactPayload): string {
 
 function getArtifactSubtitle(artifact: ArtifactPayload): string {
   if (artifact.kind === "markdown") {
-    return "GFM markdown artifact";
+    return "Markdown";
   }
 
   if (artifact.kind === "code") {
-    return artifact.language ? `${artifact.language} source artifact` : "Source artifact";
+    return artifact.language ?? "Code";
   }
 
   if (artifact.kind === "diff") {
-    return artifact.view ? `${artifact.view} diff artifact` : "Patch artifact";
+    return artifact.view ? `${artifact.view} diff` : "Diff";
   }
 
   if (artifact.kind === "json") {
-    return "Structured data artifact";
+    return "JSON";
   }
 
   if (artifact.kind === "csv") {
-    return "Tabular data artifact";
+    return "CSV";
   }
 
-  return "Document artifact";
+  return (artifact as ArtifactPayload).kind;
 }
 
 function getArtifactHeading(artifact: ArtifactPayload): string {
@@ -208,20 +208,20 @@ function getStatusTone(parsed: ReturnType<typeof decodeFragment>) {
     return {
       label: "Decoded",
       color: "var(--success)",
-      message: "Envelope is valid and ready for viewer routing.",
+      message: "Fragment decoded successfully.",
     };
   }
 
   if (parsed.code === "empty") {
     return {
-      label: "Awaiting fragment",
+      label: "Empty",
       color: "var(--accent-secondary)",
       message: parsed.message,
     };
   }
 
   return {
-    label: "Needs correction",
+    label: "Error",
     color: "var(--danger)",
     message: parsed.message,
   };
@@ -566,20 +566,20 @@ export function ViewerShell() {
                 Share artifacts in the URL, keep the server out of the payload.
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-[1.7] text-[color:var(--text-muted)] sm:mt-8 sm:text-lg sm:leading-8">
-                agent-render opens markdown, code, diff, CSV, and JSON artifacts from a single static link, so someone can understand the payload without uploading it anywhere.
+                View markdown, code, diffs, CSV, and JSON from a single static link. Nothing leaves the browser.
               </p>
               <div className="mt-6 flex flex-wrap gap-2 sm:mt-10 sm:gap-3">
                 <span className="mono-pill">
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  fully static export
+                  static export
                 </span>
                 <span className="mono-pill">
                   <Sparkles className="h-3.5 w-3.5" />
-                  product-minded shell
+                  5 renderers
                 </span>
                 <span className="mono-pill">
                   <FolderKanban className="h-3.5 w-3.5" />
-                  renderer slots ready
+                  zero retention
                 </span>
               </div>
             </section>
@@ -593,9 +593,9 @@ export function ViewerShell() {
                 </p>
               </div>
               <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
-                <p className="section-kicker">Why it exists</p>
+                <p className="section-kicker">Why</p>
                 <p className="mt-4 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-                  Agent outputs get flattened in chat. agent-render keeps them readable, portable, and static-host friendly.
+                  Agent outputs get flattened in chat. This keeps them readable and portable.
                 </p>
               </div>
               {ecosystemLinks.map((link) => (
@@ -609,9 +609,9 @@ export function ViewerShell() {
                 </a>
               ))}
               <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
-                <span className="hero-link-eyebrow">How to try it</span>
-                <span className="mt-3 block text-base font-semibold leading-6">Load any sample fragment below</span>
-                <p className="mt-2 text-sm leading-7 text-[color:var(--text-muted)]">Pick a sample, update the hash, and the viewer opens without sending the artifact body to the host.</p>
+                <span className="hero-link-eyebrow">Try it</span>
+                <span className="mt-3 block text-base font-semibold leading-6">Load a sample below</span>
+                <p className="mt-2 text-sm leading-7 text-[color:var(--text-muted)]">Click any sample to populate the viewer from the URL hash.</p>
               </div>
             </section>
 
@@ -628,7 +628,7 @@ export function ViewerShell() {
                 <span className="mono-pill">{sampleCards.length} presets</span>
               </div>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)] sm:mt-5 sm:text-base sm:leading-8">
-                Each preset uses the same fragment transport as the live product, so you can try the viewer shell with realistic payload sizes and renderer combinations in one click.
+                Click any sample to open it in the viewer. Same encoding as production links.
               </p>
 
               <div className="sample-link-grid mt-6 sm:mt-8">
@@ -648,7 +648,7 @@ export function ViewerShell() {
                         </div>
                         <h4 className="mt-3 text-base font-semibold leading-6 sm:text-lg">{sample.title}</h4>
                         <p className="mt-1.5 text-sm leading-7 text-[color:var(--text-muted)]">
-                          {sample.description ?? `${sample.envelope.artifacts.length} artifact${sample.envelope.artifacts.length === 1 ? "" : "s"} ready for fragment decode.`}
+                          {sample.description ?? `${sample.envelope.artifacts.length} artifact${sample.envelope.artifacts.length === 1 ? "" : "s"}`}
                         </p>
                       </div>
                       <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-[color:var(--text-soft)]" />
@@ -705,8 +705,8 @@ export function ViewerShell() {
                   </h3>
                   <p className="mt-4 max-w-3xl text-sm leading-7 text-[color:var(--text-muted)] sm:mt-5 sm:text-base sm:leading-8">
                     {activeArtifact
-                      ? `${getArtifactSubtitle(activeArtifact)} selected from the decoded fragment.`
-                      : "This stage becomes the live artifact surface once a fragment is active. The payload stays in the URL hash, the route stays export-friendly, and each artifact kind can render inside the same shell."}
+                      ? `${getArtifactSubtitle(activeArtifact)} selected.`
+                      : "Select a fragment above to render it here. Everything stays in the URL."}
                   </p>
                 </div>
 
@@ -738,14 +738,14 @@ export function ViewerShell() {
 
               <div className="bento-grid mt-8 sm:mt-10">
                 <div className="bento-card bento-wide px-5 py-6 sm:px-8 sm:py-8">
-                  <p className="section-kicker">First-run flow</p>
+                  <p className="section-kicker">Getting started</p>
                   <h4 className="font-display mt-3 text-xl font-bold leading-tight tracking-[-0.03em] sm:mt-4 sm:text-2xl lg:text-3xl">
-                    The live renderer stage appears here as soon as a fragment is selected.
+                    Pick a sample or paste your own content above.
                   </h4>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)] sm:mt-4 sm:text-base sm:leading-8">
                     {parsed.ok
-                      ? "A decoded fragment is already present, so the active artifact can take over this frame immediately."
-                      : parsed.message}
+                      ? "Fragment decoded — select an artifact to render it."
+                      : "No fragment in the URL yet."}
                   </p>
                 </div>
                 {emptyStateSteps.map((step, index) => (
@@ -755,15 +755,15 @@ export function ViewerShell() {
                   </div>
                 ))}
                 <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
-                  <p className="section-kicker">Security posture</p>
+                  <p className="section-kicker">Security</p>
                   <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-                    Payloads stay in the hash, renderers stay client-side, and artifact-specific viewers can land without changing fragment transport semantics.
+                    The payload never leaves the URL hash. Rendering is entirely client-side.
                   </p>
                 </div>
                 <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
-                  <p className="section-kicker">Route model</p>
+                  <p className="section-kicker">Hosting</p>
                   <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-                    The app remains a single export-friendly route for Cloudflare Pages and other static hosts.
+                    Single static route. Works on any static host.
                   </p>
                 </div>
               </div>
