@@ -244,6 +244,10 @@ select {
   }
 }
 
+.bento-grid-compact {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 .bento-card {
   background: var(--page-bg);
 }

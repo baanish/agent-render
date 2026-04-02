@@ -538,7 +538,7 @@ export function ViewerShell() {
 
             {/* ── Metadata bento ── */}
             <section className="print-hide-on-markdown fade-up" style={getAnimationStyle(200)}>
-              <div className="bento-grid" data-testid="artifact-metadata-grid">
+              <div className="bento-grid bento-grid-compact" data-testid="artifact-metadata-grid">
                 {getArtifactDetailRows(activeArtifact).map((row) => (
                   <div key={row.label} className="bento-card px-5 py-5 sm:px-6 sm:py-6">
                     <p className="metric-label">{row.label}</p>
