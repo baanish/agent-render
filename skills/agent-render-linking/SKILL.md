@@ -201,7 +201,7 @@ If the dictionary fetch fails, fall back to `deflate` codec.
 ## Practical limits
 
 Respect these limits:
-- target fragment budget: about 8,000 characters
+- target fragment budget: about 8,192 characters
 - target decoded payload budget: about 200,000 characters
 - strict Discord practical budget for linked text workflows: about 1,500 characters
 

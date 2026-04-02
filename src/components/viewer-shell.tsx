@@ -477,19 +477,15 @@ export function ViewerShell() {
                   {artifactCopyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   {artifactCopyState === "copied" ? "Copied" : artifactCopyState === "failed" ? "Copy failed" : "Copy"}
                 </button>
-                <button type="button" className="artifact-action" onClick={handleArtifactDownload}>
-                  <Download className="h-3.5 w-3.5" />
-                  Download
-                </button>
                 {markdownArtifact ? (
                   <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
                     <Printer className="h-3.5 w-3.5" />
-                    Print / PDF
+                    Print
                   </button>
                 ) : null}
                 <button type="button" className="artifact-action is-primary" onClick={handleArtifactDownload}>
                   <Download className="h-3.5 w-3.5" />
-                  Save
+                  Download
                 </button>
               </div>
             </div>

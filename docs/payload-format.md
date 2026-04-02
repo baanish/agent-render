@@ -77,7 +77,7 @@ Packed key map:
 
 ## Limits
 
-- Supported fragment budget: 8,000 characters
+- Supported fragment budget: 8,192 characters
 - Supported decoded payload budget: 200,000 characters
 - Larger payloads should fail with a clear error before rendering
 - Compression is selected automatically by shortest fragment across packed/non-packed candidates

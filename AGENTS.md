@@ -85,7 +85,7 @@ Current rules:
 - fragment key: `agent-render`
 - format: `v1.<codec>.<payload>` for `plain|lz|deflate`, and `v1.arx.<dictVersion>.<payload>` for `arx`
 - codecs: `plain`, `lz`, `deflate`, and `arx`
-- fragment size budget: `8000` characters
+- fragment size budget: `8192` characters
 - decoded payload budget: `200000` characters
 - packed wire transport (`p: 1`) is allowed and must decode back to the standard envelope
 - bundles must contain at least one artifact
