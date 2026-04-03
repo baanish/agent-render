@@ -279,6 +279,11 @@ export function ViewerShell() {
   const fragmentLength = hash.startsWith("#") ? hash.length - 1 : hash.length;
   const envelope = parsed.ok ? parsed.envelope : null;
   const activeArtifact = envelope ? getActiveArtifact(envelope) : null;
+
+  useEffect(() => {
+    const title = activeArtifact?.title?.trim() || envelope?.title?.trim();
+    document.title = title ? `${title} — agent-render` : "agent-render";
+  }, [envelope, activeArtifact]);
   activeArtifactRef.current = activeArtifact;
   const markdownArtifact: MarkdownArtifact | null = activeArtifact?.kind === "markdown" ? activeArtifact : null;
   const codeArtifact: CodeArtifact | null = activeArtifact?.kind === "code" ? activeArtifact : null;
