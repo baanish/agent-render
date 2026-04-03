@@ -8,8 +8,10 @@ import type { LucideIcon } from "lucide-react";
 import {
   ArrowUpRight,
   Check,
+  Code,
   Copy,
   Download,
+  Eye,
   FileCode2,
   FileDiff,
   FileJson2,
@@ -243,6 +245,7 @@ export function ViewerShell() {
   const [hash, setHash] = useState("");
   const [rendererReady, setRendererReady] = useState(true);
   const [artifactCopyState, setArtifactCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
   const activeArtifactRef = useRef<ArtifactPayload | null>(null);
   /** Incremented on each copy click so stale async completions cannot overwrite state from a newer request. */
   const artifactCopyTokenRef = useRef(0);
@@ -291,6 +294,7 @@ export function ViewerShell() {
   const csvArtifact: CsvArtifact | null = activeArtifact?.kind === "csv" ? activeArtifact : null;
   const jsonArtifact: JsonArtifact | null = activeArtifact?.kind === "json" ? activeArtifact : null;
   const hasKnownRenderer = Boolean(markdownArtifact || codeArtifact || diffArtifact || csvArtifact || jsonArtifact);
+  const hasRawToggle = Boolean(markdownArtifact || csvArtifact);
   const budgetRatio = Math.min(fragmentLength / MAX_FRAGMENT_LENGTH, 1);
   const statusTone = getStatusTone(parsed);
   const viewerState = activeArtifact && envelope ? "artifact" : parsed.ok ? "decoded-no-artifact" : parsed.code === "empty" ? "empty" : "error";
@@ -316,6 +320,7 @@ export function ViewerShell() {
 
   useEffect(() => {
     setArtifactCopyState("idle");
+    setViewMode("rendered");
   }, [activeArtifact?.id]);
 
   useEffect(() => {
@@ -482,11 +487,23 @@ export function ViewerShell() {
                   {artifactCopyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   {artifactCopyState === "copied" ? "Copied" : artifactCopyState === "failed" ? "Copy failed" : "Copy"}
                 </button>
-                {markdownArtifact ? (
+                {markdownArtifact && viewMode === "rendered" ? (
                   <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
                     <Printer className="h-3.5 w-3.5" />
                     Print
                   </button>
+                ) : null}
+                {hasRawToggle ? (
+                  <div className="diff-view-toggle">
+                    <button type="button" className={cn("artifact-action", viewMode === "rendered" && "is-primary")} onClick={() => setViewMode("rendered")}>
+                      <Eye className="h-3.5 w-3.5" />
+                      Rendered
+                    </button>
+                    <button type="button" className={cn("artifact-action", viewMode === "raw" && "is-primary")} onClick={() => setViewMode("raw")}>
+                      <Code className="h-3.5 w-3.5" />
+                      Raw
+                    </button>
+                  </div>
                 ) : null}
                 <button type="button" className="artifact-action is-primary" onClick={handleArtifactDownload}>
                   <Download className="h-3.5 w-3.5" />
@@ -519,13 +536,17 @@ export function ViewerShell() {
               </div>
 
               <div className="viewer-frame viewer-frame-primary mt-6 sm:mt-10">
-                <div className={cn("artifact-preview", markdownArtifact && "is-markdown print-markdown-target")}>
-                  {markdownArtifact ? (
+                <div className={cn("artifact-preview", markdownArtifact && viewMode === "rendered" && "is-markdown print-markdown-target")}>
+                  {markdownArtifact && viewMode === "raw" ? (
+                    <CodeRenderer artifact={{ ...markdownArtifact, kind: "code", language: "markdown" }} onReady={markRendererReady} />
+                  ) : markdownArtifact ? (
                     <MarkdownRenderer artifact={markdownArtifact} onReady={markRendererReady} />
                   ) : codeArtifact ? (
                     <CodeRenderer artifact={codeArtifact} onReady={markRendererReady} />
                   ) : diffArtifact ? (
                     <DiffRenderer artifact={diffArtifact} onReady={markRendererReady} />
+                  ) : csvArtifact && viewMode === "raw" ? (
+                    <CodeRenderer artifact={{ ...csvArtifact, kind: "code", language: "textile" }} onReady={markRendererReady} />
                   ) : csvArtifact ? (
                     <CsvRenderer artifact={csvArtifact} onReady={markRendererReady} />
                   ) : jsonArtifact ? (
