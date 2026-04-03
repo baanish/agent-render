@@ -67,7 +67,7 @@ test("renders markdown payloads and triggers print", async ({ page }) => {
     };
   });
 
-  await page.getByRole("button", { name: "Print / PDF" }).click();
+  await page.getByRole("button", { name: "Print" }).click();
   await expect.poll(() => page.evaluate(() => Boolean(window.__printCalled))).toBe(true);
 });
 
