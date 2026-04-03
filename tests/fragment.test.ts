@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { decodeFragment, encodeEnvelope } from "@/lib/payload/fragment";
+import { decodeFragment, decodeFragmentAsync, encodeEnvelope } from "@/lib/payload/fragment";
 import type { PayloadEnvelope } from "@/lib/payload/schema";
 import { packEnvelope } from "@/lib/payload/wire-format";
+import { arxCompressBMP, getActiveDictVersion } from "@/lib/payload/arx-codec";
 
 const envelope: PayloadEnvelope = {
   v: 1,
@@ -179,5 +180,34 @@ describe("fragment payload transport", () => {
     }
 
     expect(parsed.code).toBe("decoded-too-large");
+  });
+
+  it("decodes a baseBMP-encoded arx fragment (sync path)", async () => {
+    const arxEnvelope: PayloadEnvelope = { ...envelope, codec: "arx" };
+    const json = JSON.stringify(packEnvelope(arxEnvelope));
+    const encoded = await arxCompressBMP(json);
+    const hash = `#agent-render=v1.arx.${getActiveDictVersion()}.${encoded}`;
+
+    const parsed = await decodeFragmentAsync(hash);
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.envelope.title).toBe("Test bundle");
+  });
+
+  it("decodes a baseBMP arx fragment when BMP chars are percent-escaped", async () => {
+    const arxEnvelope: PayloadEnvelope = { ...envelope, codec: "arx" };
+    const json = JSON.stringify(packEnvelope(arxEnvelope));
+    const encoded = await arxCompressBMP(json);
+    const hash = `#agent-render=v1.arx.${getActiveDictVersion()}.${encoded}`;
+    const escapedHash = hash.replace(/[^\x00-\x7F]/g, (ch) => encodeURIComponent(ch));
+
+    const parsed = await decodeFragmentAsync(escapedHash);
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.envelope.title).toBe("Test bundle");
   });
 });
