@@ -140,3 +140,13 @@ test-results/
 .pnp.*
 .cursor/*
 /.junie
+
+# macOS
+.DS_Store
+
+# Design references & screenshots
+Stitch/
+final-light*.png
+
+# Playwright MCP snapshots
+.playwright-mcp/

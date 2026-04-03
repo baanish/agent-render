@@ -1,4 +1,4 @@
-export const MAX_FRAGMENT_LENGTH = 8000;
+export const MAX_FRAGMENT_LENGTH = 8192;
 export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 

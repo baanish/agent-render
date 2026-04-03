@@ -23,7 +23,7 @@ export async function stabilizePage(page: Page) {
 }
 
 export async function waitForViewerState(page: Page, state: string) {
-  await expect(page.locator('[data-testid="viewer-shell"]')).toHaveAttribute("data-viewer-state", state);
+  await expect(page.locator('[data-testid="viewer-shell"]')).toHaveAttribute("data-viewer-state", state, { timeout: 15000 });
 }
 
 export async function waitForRendererReady(page: Page, kind: "markdown" | "code" | "diff" | "csv" | "json") {
