@@ -19,6 +19,11 @@ const EmbeddedCodeRenderer = dynamic(
   { ssr: false },
 );
 
+const MermaidBlock = dynamic(
+  () => import("@/components/renderers/mermaid-block").then((module) => module.MermaidBlock),
+  { ssr: false },
+);
+
 function getCodeLanguage(className?: string): string {
   const match = /language-([\w-]+)/.exec(className ?? "");
   return match?.[1]?.toLowerCase() ?? "text";
@@ -91,6 +96,23 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
       const code = getCodeContents(children);
       const blockId = `${artifact.id}-code-${blockIndex}`;
       blockIndex += 1;
+
+      if (language === "mermaid") {
+        return (
+          <div className="markdown-mermaid-frame">
+            <div className="markdown-code-head">
+              <span className="markdown-code-chip">mermaid</span>
+              <span className="markdown-code-caption">diagram</span>
+            </div>
+            <MermaidBlock
+              code={code}
+              onReady={() => {
+                setReadyBlockIds((current) => (current.includes(blockId) ? current : [...current, blockId]));
+              }}
+            />
+          </div>
+        );
+      }
 
       return (
         <div className="markdown-code-frame">

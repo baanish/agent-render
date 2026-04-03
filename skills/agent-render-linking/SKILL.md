@@ -1,6 +1,6 @@
 ---
 name: agent-render-linking
-description: Create zero-retention agent-render.com links for markdown, code, diffs, CSV, or JSON artifacts. Use when an agent needs to share a nicely rendered artifact in the browser instead of pasting raw content into chat. Trigger for requests like "share this as a link", "make a diff link", "render this markdown/code/csv/json", or when chat rendering is weak. Agent Render is open source, hosted on Cloudflare Pages, and self-hostable. Use platform-specific linked-text syntax only on surfaces that support it cleanly, such as Discord Markdown links, Telegram HTML links, or Slack mrkdwn links; otherwise send a short summary plus the raw URL.
+description: Create zero-retention agent-render.com links for markdown, code, diffs, CSV, or JSON artifacts. Markdown artifacts support inline mermaid diagram rendering via fenced code blocks. Use when an agent needs to share a nicely rendered artifact in the browser instead of pasting raw content into chat. Trigger for requests like "share this as a link", "make a diff link", "render this markdown/code/csv/json", "show this diagram", or when chat rendering is weak. Agent Render is open source, hosted on Cloudflare Pages, and self-hostable. Use platform-specific linked-text syntax only on surfaces that support it cleanly, such as Discord Markdown links, Telegram HTML links, or Slack mrkdwn links; otherwise send a short summary plus the raw URL.
 ---
 
 # Agent Render Linking
@@ -76,6 +76,20 @@ Use this JSON envelope:
   "content": "# Report\n\n- Item one"
 }
 ```
+
+Markdown artifacts support mermaid diagrams via fenced code blocks. Use standard ` ```mermaid ` fences inside the `content` field and the viewer will render them as interactive diagrams:
+
+```json
+{
+  "id": "architecture",
+  "kind": "markdown",
+  "title": "System architecture",
+  "filename": "architecture.md",
+  "content": "# Architecture\n\n```mermaid\ngraph TD\n  A[Client] --> B[API Gateway]\n  B --> C[Service A]\n  B --> D[Service B]\n```\n\nThe diagram above shows the high-level system topology."
+}
+```
+
+Mermaid diagrams render client-side with theme-aware styling (light/dark). If a diagram fails to render, the raw mermaid source is shown as a fallback. All standard mermaid diagram types are supported: flowcharts, sequence diagrams, class diagrams, state diagrams, ER diagrams, Gantt charts, pie charts, and more.
 
 ### Code
 

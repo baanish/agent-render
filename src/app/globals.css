@@ -1024,6 +1024,52 @@ select {
   border-color: rgba(100, 80, 120, 0.18);
 }
 
+.markdown-mermaid-frame {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border-strong) 88%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--surface-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.dark .markdown-mermaid-frame {
+  border-color: rgba(100, 80, 120, 0.18);
+}
+
+.mermaid-container {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  overflow-x: auto;
+}
+
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-error {
+  padding: 1rem;
+}
+
+.mermaid-error-message {
+  margin: 0 0 0.75rem;
+  color: var(--text-danger, #e53e3e);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.mermaid-error-source {
+  margin: 0;
+  padding: 0.75rem;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  background: var(--surface-code);
+  color: var(--surface-code-text);
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+}
+
 .markdown-code-head {
   display: flex;
   align-items: center;
