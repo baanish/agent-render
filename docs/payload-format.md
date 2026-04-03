@@ -102,7 +102,7 @@ Running `npm run codec:poc` (single markdown artifact containing `AGENTS.md`) cu
 
 Result: `arx` with baseBMP encoding achieves ~69% smaller fragments than `deflate` on this payload (~6.1x compression ratio). The improvement comes from brotli compression (~20% better than deflate), baseBMP encoding (~15.92 bits/char using ~62k safe BMP code points), and domain dictionary substitution. **base64url** is an ASCII-only option that can beat base76 on surfaces that percent-encode Unicode (chat apps, some shorteners). Base1k, baseBMP, and base76 remain available; auto-selection compares estimated transport length.
 
-Timing (AGENTS.md 8000 chars, avg of 10 runs):
+Timing (AGENTS.md 8192 chars, avg of 10 runs):
 - `deflate+base64url`: ~0.1ms
 - `arx+base76`: ~13.8ms
 - `arx+base64url`: ~8.1ms
