@@ -29,7 +29,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       type="button"
       onClick={() => mounted && setTheme(isDark ? "light" : "dark")}
       className={cn(
-        "mono-pill shell-pill min-w-[8.5rem] justify-center transition-transform duration-300 hover:-translate-y-0.5",
+        "mono-pill shell-pill min-w-[8.5rem] justify-center transition-colors duration-150",
         className,
       )}
       aria-label={mounted ? `Switch to ${isDark ? "light" : "dark"} theme` : "Theme toggle loading"}

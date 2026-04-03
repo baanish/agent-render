@@ -28,7 +28,7 @@ export function FragmentDetailsDisclosure({
         <span className="artifact-disclosure-summary-copy">
           <span className="section-kicker">Fragment details</span>
           <span className="artifact-disclosure-title text-sm font-medium text-[color:var(--text-primary)]">
-            Codec, transport, budget, and hash preview
+            Codec, budget, and hash preview
           </span>
         </span>
       </summary>
