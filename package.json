@@ -40,7 +40,6 @@
     "@git-diff-view/react": "^0.1.1",
     "@replit/codemirror-indentation-markers": "^6.5.3",
     "@tanstack/react-table": "^8.21.3",
-    "better-sqlite3": "^12.8.0",
     "brotli-wasm": "^3.0.1",
     "clsx": "^2.1.1",
     "fflate": "^0.8.2",
@@ -75,6 +74,9 @@
     "tsx": "^4.21.0",
     "typescript": "^5.8.2",
     "vitest": "^4.0.18"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^12.8.0"
   },
   "engines": {
     "node": ">=20.10.0"
