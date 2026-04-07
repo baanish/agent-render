@@ -252,20 +252,24 @@ export function ViewerShell() {
 
   useEffect(() => {
     // Self-hosted UUID mode: the server injects the payload string into the page.
-    // When present, use it as the hash source instead of the URL fragment so the
-    // existing decode → render pipeline works without changes.
+    // When present, use it as the initial hash source instead of the URL fragment
+    // so the existing decode → render pipeline works without changes.
     const injected = (window as unknown as Record<string, unknown>).__AGENT_RENDER_PAYLOAD__;
     if (typeof injected === "string" && injected.length > 0) {
       delete (window as unknown as Record<string, unknown>).__AGENT_RENDER_PAYLOAD__;
       setHash(`#${injected}`);
-      return;
     }
 
     const syncHash = () => {
       setHash(window.location.hash);
     };
 
-    syncHash();
+    // Still register the hashchange listener even when an injected payload was
+    // consumed so that subsequent navigation (sample links, back/forward, manual
+    // URL edits) continues to work.
+    if (!injected) {
+      syncHash();
+    }
     window.addEventListener("hashchange", syncHash);
 
     return () => {
