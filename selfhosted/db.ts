@@ -107,11 +107,11 @@ export function getArtifact(id: string): ArtifactRow | null {
 
   getDb()
     .prepare(
-      `UPDATE artifacts SET last_viewed_at = ?, expires_at = ?, updated_at = ? WHERE id = ?`,
+      `UPDATE artifacts SET last_viewed_at = ?, expires_at = ? WHERE id = ?`,
     )
-    .run(now, newExpiresAt, now, id);
+    .run(now, newExpiresAt, id);
 
-  return { ...row, last_viewed_at: now, expires_at: newExpiresAt, updated_at: now };
+  return { ...row, last_viewed_at: now, expires_at: newExpiresAt };
 }
 
 /**

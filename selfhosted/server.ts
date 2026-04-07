@@ -51,7 +51,10 @@ function getIndexHtml(): string {
  * via `window.__AGENT_RENDER_PAYLOAD__` on load.
  */
 function injectPayload(html: string, payload: string): string {
-  const script = `<script>window.__AGENT_RENDER_PAYLOAD__=${JSON.stringify(payload)};</script>`;
+  // Escape </script> sequences to prevent XSS via crafted payloads breaking
+  // out of the script tag. JSON.stringify alone does not escape </
+  const safeJson = JSON.stringify(payload).replace(/</g, "\\u003c");
+  const script = `<script>window.__AGENT_RENDER_PAYLOAD__=${safeJson};</script>`;
   return html.replace("</head>", `${script}</head>`);
 }
 
@@ -102,7 +105,15 @@ async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> 
   const cleanPath = urlPath.split("?", 1)[0].split("#", 1)[0];
   const normalizedPath = cleanPath === "/" ? "/index.html" : cleanPath;
 
-  let filePath = path.join(outputDirectory, normalizedPath);
+  let filePath = path.resolve(path.join(outputDirectory, normalizedPath));
+  const resolvedOutputDir = path.resolve(outputDirectory);
+
+  // Prevent path traversal outside the output directory
+  if (!filePath.startsWith(resolvedOutputDir + path.sep) && filePath !== resolvedOutputDir) {
+    res.writeHead(403);
+    res.end("Forbidden");
+    return;
+  }
 
   try {
     const details = await stat(filePath);
