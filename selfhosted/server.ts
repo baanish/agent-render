@@ -72,6 +72,7 @@ function readBody(req: IncomingMessage): Promise<string> {
       if (size > limit) {
         req.destroy();
         reject(new Error("Request body too large."));
+        return;
       }
       chunks.push(chunk);
     });
