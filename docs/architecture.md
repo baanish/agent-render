@@ -114,3 +114,49 @@ The static host does not receive fragment contents as part of the request, but t
 - GitHub Pages-compatible `basePath` and `assetPrefix`
 - `.nojekyll` included for Pages compatibility
 - Fragment size budget enforced before render
+
+## Self-hosted UUID mode (optional)
+
+The repository includes an optional self-hosted server mode in `selfhosted/` that provides UUID-based artifact links backed by SQLite. This is a separate deployment mode — the static export remains the default product.
+
+### How it works
+
+The self-hosted server is a standalone Node.js HTTP server that:
+
+1. Serves the pre-built `out/` static files (the same frontend as the static product)
+2. Exposes a REST API at `/api/artifacts` for CRUD operations on stored payloads
+3. Handles `GET /:uuid` requests by looking up the payload in SQLite, injecting it into the viewer page via `window.__AGENT_RENDER_PAYLOAD__`, and serving the result
+
+The `ViewerShell` component checks for `window.__AGENT_RENDER_PAYLOAD__` on mount. When present, it uses the injected payload string instead of reading `window.location.hash`. This feeds into the same decode → normalize → render pipeline, so all viewer features (copy, download, print-to-PDF, diff modes, artifact switching) work identically.
+
+### Storage
+
+SQLite with a single `artifacts` table:
+
+- `id` (UUID v4 primary key)
+- `payload` (the agent-render payload string)
+- `created_at`, `updated_at`, `last_viewed_at` (ISO timestamps)
+- `expires_at` (sliding TTL, refreshed on each successful read)
+
+### TTL
+
+Artifacts use a 24-hour sliding TTL. Each successful read (API or viewer) extends `expires_at` by 24 hours. Expired entries are lazily deleted on read and can also be batch-cleaned via `POST /api/cleanup`.
+
+### Separation from static mode
+
+The self-hosted mode does not alter the static export pipeline:
+
+- `next.config.ts` remains `output: "export"`
+- The frontend change is a single mount-time check for an injected payload — a no-op in static/fragment mode
+- All existing fragment-based functionality, tests, and deployments are unaffected
+- Self-hosted code lives entirely in `selfhosted/` and is not bundled into the static export
+
+### Key files
+
+- `selfhosted/server.ts` — HTTP server with API routes and UUID page rendering
+- `selfhosted/db.ts` — SQLite persistence (CRUD, TTL refresh, cleanup)
+- `selfhosted/ttl.ts` — TTL constants and helpers
+- `selfhosted/validate.ts` — Payload validation for the API
+- `selfhosted/Dockerfile` — Multi-stage Docker build
+- `selfhosted/docker-compose.yml` — Docker Compose deployment
+- `selfhosted/tsconfig.json` — TypeScript config for server-side compilation

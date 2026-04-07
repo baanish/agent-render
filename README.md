@@ -30,10 +30,41 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 
 ## Principles
 
-- Fully static export with Next.js App Router
-- No backend, no database, no server-side persistence
-- Fragment-based payloads (`#...`) so the server never receives artifact contents
+- Fully static export with Next.js App Router (default product)
+- Fragment-based payloads (`#...`) so the static host never receives artifact contents
 - Public-safe naming and MIT-compatible dependencies
+- Optional self-hosted mode for server-backed UUID links (see below)
+
+## Self-Hosted UUID Mode (Optional)
+
+In addition to the default static/fragment-based product, `agent-render` includes an optional self-hosted server mode that stores payloads in SQLite under UUID keys.
+
+**When to use it:**
+- Payloads exceed the ~8 KB fragment budget
+- Links are shared on platforms that mangle long URLs
+- You want short, stable links like `https://host/{uuid}`
+- Agent-driven workflows that create and manage artifacts programmatically
+
+**What it provides:**
+- REST API for creating, reading, updating, and deleting artifacts
+- UUID-based viewer links that render the same UI as fragment links
+- 24-hour sliding TTL with automatic expiry
+- SQLite storage — no external database required
+- Docker Compose and daemon deployment options
+
+**Quick start:**
+
+```bash
+npm run build
+npm run selfhosted:dev
+```
+
+Then create an artifact via the API and visit `http://localhost:3000/{uuid}`.
+
+See `docs/deployment.md` for Docker Compose, daemon, and auth setup options.
+See `skills/selfhosted-agent-render/SKILL.md` for agent workflow guidance.
+
+The self-hosted mode is an add-on. The existing static fragment-based viewer remains the default product and continues to work as-is.
 
 ## Local Development
 
@@ -79,9 +110,10 @@ The shell keeps first load lean and defers renderer-heavy code until needed. The
 
 - `docs/architecture.md` - architecture and tradeoffs
 - `docs/payload-format.md` - fragment protocol, limits, and examples
-- `docs/deployment.md` - deployment notes
+- `docs/deployment.md` - deployment notes (including self-hosted mode)
 - `docs/dependency-notes.md` - major dependency and license notes
 - `docs/testing.md` - test commands, screenshot workflow, and CI notes
+- `skills/selfhosted-agent-render/SKILL.md` - self-hosted UUID mode skill for agents
 
 ## Zero Retention
 

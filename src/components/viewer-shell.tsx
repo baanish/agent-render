@@ -251,6 +251,16 @@ export function ViewerShell() {
   const artifactCopyTokenRef = useRef(0);
 
   useEffect(() => {
+    // Self-hosted UUID mode: the server injects the payload string into the page.
+    // When present, use it as the hash source instead of the URL fragment so the
+    // existing decode → render pipeline works without changes.
+    const injected = (window as unknown as Record<string, unknown>).__AGENT_RENDER_PAYLOAD__;
+    if (typeof injected === "string" && injected.length > 0) {
+      delete (window as unknown as Record<string, unknown>).__AGENT_RENDER_PAYLOAD__;
+      setHash(`#${injected}`);
+      return;
+    }
+
     const syncHash = () => {
       setHash(window.location.hash);
     };
