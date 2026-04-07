@@ -249,6 +249,8 @@ export function ViewerShell() {
   const activeArtifactRef = useRef<ArtifactPayload | null>(null);
   /** Incremented on each copy click so stale async completions cannot overwrite state from a newer request. */
   const artifactCopyTokenRef = useRef(0);
+  /** True when the current hash originated from a server-injected payload (self-hosted UUID mode). */
+  const injectedPayloadRef = useRef(false);
 
   useEffect(() => {
     // Self-hosted UUID mode: the server injects the payload string into the page.
@@ -257,10 +259,12 @@ export function ViewerShell() {
     const injected = (window as unknown as Record<string, unknown>).__AGENT_RENDER_PAYLOAD__;
     if (typeof injected === "string" && injected.length > 0) {
       delete (window as unknown as Record<string, unknown>).__AGENT_RENDER_PAYLOAD__;
+      injectedPayloadRef.current = true;
       setHash(`#${injected}`);
     }
 
     const syncHash = () => {
+      injectedPayloadRef.current = false;
       setHash(window.location.hash);
     };
 
@@ -287,7 +291,8 @@ export function ViewerShell() {
 
   useEffect(() => {
     let cancelled = false;
-    decodeFragmentAsync(hash).then((result) => {
+    const options = injectedPayloadRef.current ? { skipFragmentBudget: true } : undefined;
+    decodeFragmentAsync(hash, options).then((result) => {
       if (!cancelled) setParsed(result);
     });
     return () => { cancelled = true; };
