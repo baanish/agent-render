@@ -271,7 +271,7 @@ export function ViewerShell() {
     // Still register the hashchange listener even when an injected payload was
     // consumed so that subsequent navigation (sample links, back/forward, manual
     // URL edits) continues to work.
-    if (!injected) {
+    if (typeof injected !== "string" || injected.length === 0) {
       syncHash();
     }
     window.addEventListener("hashchange", syncHash);
