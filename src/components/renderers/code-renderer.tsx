@@ -48,8 +48,8 @@ const editorTheme = EditorView.theme({
   },
   ".cm-gutters": {
     backgroundColor: "var(--surface-code-raised)",
-    color: "rgba(239, 243, 247, 0.5)",
-    borderRight: "1px solid rgba(239, 243, 247, 0.08)",
+    color: "var(--surface-code-gutter-fg)",
+    borderRight: "1px solid var(--surface-code-gutter-border)",
     minWidth: "3.3rem",
   },
   ".cm-gutterElement": {
@@ -57,10 +57,10 @@ const editorTheme = EditorView.theme({
     textAlign: "right",
   },
   ".cm-activeLine": {
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    backgroundColor: "var(--surface-code-active-line)",
   },
   ".cm-activeLineGutter": {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "var(--surface-code-active-gutter)",
   },
   ".cm-selectionBackground": {
     backgroundColor: "rgba(105, 209, 221, 0.18) !important",
@@ -248,10 +248,12 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
       {compact ? null : (
         <div className="code-renderer-toolbar">
           <div className="code-renderer-meta">
-            <span className="mono-pill !border-[rgba(239,243,247,0.12)] !bg-[rgba(255,255,255,0.04)] !text-[rgba(239,243,247,0.86)]">
+            <span className="mono-pill !border-[color:var(--surface-code-chrome-border)] !bg-[color-mix(in_srgb,var(--surface-code-text)_6%,transparent)] !text-[color:var(--surface-code-text)]">
               {language}
             </span>
-            <span className="section-kicker !text-[rgba(239,243,247,0.56)]">read-only codemirror</span>
+            <span className="section-kicker !text-[color:color-mix(in_srgb,var(--surface-code-text)_56%,transparent)]">
+              read-only codemirror
+            </span>
           </div>
           <button type="button" className="artifact-action is-code" onClick={() => setWrapLines((value) => !value)}>
             <WrapText className="h-3.5 w-3.5" />
