@@ -1883,19 +1883,60 @@ select {
 
   .viewer-toolbar {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     justify-content: flex-start;
     gap: 0.38rem;
+    flex-wrap: wrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
 
-  .artifact-action {
-    flex: 1 1 calc(50% - 0.25rem);
+  /* Avoid flex-shrink on toolbar buttons so labels are not clipped; pair rows only inside raw/rendered toggle */
+  .artifact-action:not(a) {
+    flex: 0 0 auto;
     min-height: 2.55rem;
     padding: 0.46rem 0.65rem;
     font-size: 0.71rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  button.artifact-action {
+    max-width: 100%;
+  }
+
+  .viewer-toolbar .diff-view-toggle {
+    display: flex;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 0.38rem;
+    min-width: 0;
+  }
+
+  .viewer-toolbar .diff-view-toggle .artifact-action {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+    max-width: 100%;
   }
 
   .viewer-toolbar > .artifact-action.is-primary {
-    flex-basis: 100%;
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .code-renderer-toolbar,
+  .diff-renderer-toolbar,
+  .csv-renderer-toolbar,
+  .json-renderer-toolbar {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
 
   .viewer-frame-primary {

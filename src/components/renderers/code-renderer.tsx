@@ -21,6 +21,19 @@ import { bracketMatching, defaultHighlightStyle, syntaxTree, syntaxHighlighting 
 import { detectCodeLanguage, loadLanguageSupport } from "@/lib/code/language";
 import type { CodeArtifact } from "@/lib/payload/schema";
 
+const NARROW_CODE_BREAKPOINT = 640;
+const MOBILE_CODE_MEDIA_QUERY = `(max-width: ${NARROW_CODE_BREAKPOINT}px)`;
+
+function getDefaultWrapLines(compact: boolean) {
+  if (compact) {
+    return true;
+  }
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return window.matchMedia(MOBILE_CODE_MEDIA_QUERY).matches;
+}
+
 type CodeRendererProps = {
   artifact: CodeArtifact;
   compact?: boolean;
@@ -153,7 +166,7 @@ const rainbowBrackets = ViewPlugin.fromClass(
  */
 export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendererProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [wrapLines, setWrapLines] = useState(compact);
+  const [wrapLines, setWrapLines] = useState(() => getDefaultWrapLines(compact));
   const [languageExtension, setLanguageExtension] = useState<Awaited<ReturnType<typeof loadLanguageSupport>>>(null);
   const [isReady, setIsReady] = useState(false);
   const language = useMemo(() => detectCodeLanguage(artifact.filename, artifact.language), [artifact.filename, artifact.language]);
