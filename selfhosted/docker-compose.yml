@@ -1,0 +1,16 @@
+services:
+  agent-render:
+    build:
+      context: ..
+      dockerfile: selfhosted/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - agent-render-data:/app/data
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/data/agent-render.db
+    restart: unless-stopped
+
+volumes:
+  agent-render-data:

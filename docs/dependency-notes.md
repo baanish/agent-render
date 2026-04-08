@@ -16,6 +16,7 @@
 - `lz-string` - MIT
 - `fflate` - MIT
 - `mermaid` - MIT
+- `better-sqlite3` - MIT (self-hosted mode only)
 
 ## Notes
 
@@ -32,6 +33,7 @@
 - `papaparse` plus `@tanstack/react-table` keeps CSV parsing and rendering readable without coupling to a heavyweight data-grid framework.
 - `fflate` provides portable deflate/inflate support across iOS Safari and Android Chromium without relying on browser-specific compression streams.
 - `mermaid` renders diagram definitions (flowcharts, sequence diagrams, etc.) to SVG client-side. Dynamically imported within the markdown renderer so it does not affect initial bundle size.
+- `better-sqlite3` provides synchronous SQLite access for the optional self-hosted server mode. Only used by `selfhosted/` code and not bundled into the static frontend export.
 
 ## Notable removals
 
