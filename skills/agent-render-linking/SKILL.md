@@ -119,6 +119,8 @@ Prefer a real unified git patch in `patch`.
 }
 ```
 
+**Note:** Diff artifacts require `patch` or both `oldContent`/`newContent`. Unlike other artifact kinds, `content` is not a valid field for diffs.
+
 Use `view: "unified"` or `view: "split"`.
 
 A single `patch` string may contain multiple `diff --git` sections.
