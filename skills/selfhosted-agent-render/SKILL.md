@@ -1,50 +1,129 @@
 ---
 name: selfhosted-agent-render
-description: Build fragment-based Agent Render links for a self-hosted static deployment. Covers envelope shape, codecs, per-artifact-kind field requirements (diff uses patch or oldContent+newContent, not content), and fetching the arx dictionary from your own host. Use when the viewer base URL is not agent-render.com—for example a private or corporate static host—or when the user explicitly self-hosts agent-render.
+description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs to share rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal when payloads exceed the ~8 KB fragment budget, when links will be shared on platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds and envelope validation as the fragment-based product. The self-hosted server stores payloads in SQLite with a 24-hour sliding TTL.
 ---
 
-# Self-hosted Agent Render
+# Self-Hosted Agent Render
 
-Construct `#agent-render=...` links against **your own** static deployment of [agent-render](https://github.com/baanish/agent-render), not `agent-render.com`.
+Create, view, and manage agent-render artifacts through a self-hosted server that stores payloads under UUID keys.
 
-## Project context
+## When to use self-hosted mode
 
-Agent Render is a fully static, zero-retention artifact viewer. The same fragment protocol and envelope format apply whether the app is hosted publicly or on your own origin.
+Use self-hosted UUID mode instead of fragment links when:
 
-Throughout this skill, replace `<origin>` with your deployment base (scheme + host, no trailing slash), for example `https://render.example.com` or `https://pages.example.com/my-app` when using a subpath (set `NEXT_PUBLIC_BASE_PATH` at build time for subpath deployments).
+- The artifact payload exceeds the ~8,192 character fragment budget
+- Links will be shared on platforms that truncate or mangle long URLs (Slack, Teams, email)
+- The agent and viewer run on the same machine or local network
+- You want stable, short links that do not encode the payload in the URL
+- You need to update or delete artifacts after creation
 
-## Core rule
+If the payload fits in a fragment and the link will work on the target surface, prefer fragment-based links using the `agent-render-linking` skill instead. Fragment links are zero-retention, require no server, and work on the public `agent-render.com` deployment.
 
-Keep artifact bodies in the URL **fragment**, not in normal query parameters.
+## API
 
-Fragment shape:
+The self-hosted server exposes a simple REST API.
 
-```text
-#agent-render=v1.<codec>.<payload>                (plain | lz | deflate)
-#agent-render=v1.arx.<dictVersion>.<payload>       (arx)
+### Create an artifact
+
+```http
+POST /api/artifacts
+Content-Type: application/json
+
+{
+  "payload": "agent-render=v1.plain.<base64url-encoded-json>"
+}
 ```
 
-Supported codecs match the public product: `plain`, `lz`, `deflate`, `arx`, plus optional packed wire mode (`p: 1`) for shorter keys. Prefer shortest valid transport for the target surface; codec priority is typically `arx → deflate → lz → plain` unless overridden.
+Response (`201`):
+
+```json
+{
+  "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "expires_at": "2025-04-08T12:00:00.000Z"
+}
+```
+
+The `payload` field is the same payload string used in fragment links — the fragment body after `#`. Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`) described in the `agent-render-linking` skill.
+
+### Read an artifact
+
+```http
+GET /api/artifacts/:id
+```
+
+Response (`200`):
+
+```json
+{
+  "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "payload": "agent-render=v1.plain.<payload>",
+  "created_at": "2025-04-07T12:00:00.000Z",
+  "updated_at": "2025-04-07T12:00:00.000Z",
+  "last_viewed_at": "2025-04-07T14:00:00.000Z",
+  "expires_at": "2025-04-08T14:00:00.000Z"
+}
+```
+
+Each successful read extends the TTL by 24 hours.
+
+### Update an artifact
+
+```http
+PUT /api/artifacts/:id
+Content-Type: application/json
+
+{
+  "payload": "agent-render=v1.plain.<new-payload>"
+}
+```
+
+### Delete an artifact
+
+```http
+DELETE /api/artifacts/:id
+```
+
+### Cleanup expired
+
+```http
+POST /api/cleanup
+```
+
+Response: `{ "deleted": 5 }`
+
+## Viewer links
+
+When a user visits `/{uuid}`, the server looks up the stored payload, injects it into the viewer page, and renders the same UI as the fragment-based product. All viewer features work: copy, download, print-to-PDF, diff modes, artifact switching, raw toggle.
+
+Construct viewer links as:
+
+```text
+https://<your-host>/<uuid>
+```
+
+For example:
+
+```text
+https://render.local:3000/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+```
 
 ## Envelope format
 
-The viewer expects a JSON envelope with (at least) `v`, `codec`, `title`, `activeArtifactId`, and `artifacts`. Each artifact must include `id`, `kind`, and fields that match its `kind` (see below).
-
-Example envelope (one artifact):
+The payload format is identical to the fragment-based product. Construct a JSON envelope:
 
 ```json
 {
   "v": 1,
   "codec": "plain",
-  "title": "Artifact bundle title",
-  "activeArtifactId": "artifact-1",
+  "title": "Report",
+  "activeArtifactId": "report",
   "artifacts": [
     {
-      "id": "artifact-1",
+      "id": "report",
       "kind": "markdown",
       "title": "Weekly report",
-      "filename": "weekly-report.md",
-      "content": "# Report"
+      "filename": "report.md",
+      "content": "# Weekly Report\n\n- Item one\n- Item two"
     }
   ]
 }
@@ -153,39 +232,140 @@ A single `patch` string may contain multiple `diff --git` sections.
 
 > **Common mistake:** Diff artifacts do NOT use a `content` field. Use `patch` for unified diffs or provide both `oldContent` and `newContent`. A `content` field on a diff artifact will fail envelope validation.
 
-## Multi-artifact bundles
+Encode the envelope using the same codec pipeline as fragment links:
 
-You may include several artifacts; `activeArtifactId` selects which tab opens first. Invalid `activeArtifactId` values normalize to the first artifact.
+1. Serialize envelope as compact JSON
+2. Encode with a codec (`plain` = base64url, `lz` = lz-string, `deflate` = deflate + base64url)
+3. Prepend `agent-render=v1.<codec>.`
+4. POST the resulting string as the `payload` field
 
-## Link construction
-
-Build the shareable URL as:
+For simple cases, `plain` codec is sufficient:
 
 ```text
-<origin>/#agent-render=v1.<codec>.<payload>                (plain | lz | deflate)
-<origin>/#agent-render=v1.arx.<dictVersion>.<payload>       (arx)
+agent-render=v1.plain.<base64url(JSON.stringify(envelope))>
 ```
 
-Encoding steps for `plain`, `lz`, `deflate`, and `arx` match the public product; see `skills/agent-render-linking/SKILL.md` for full step-by-step construction and chat-specific link formatting.
+## TTL behavior
 
-## Shared arx dictionary (self-hosted)
+- Artifacts expire 24 hours after creation
+- Every successful read (API or viewer) extends the expiry by another 24 hours
+- Expired artifacts return 404 and are lazily cleaned up on access
+- Run `POST /api/cleanup` to batch-remove all expired artifacts
+- You can ask your agent to periodically clean up old records if desired
 
-Fetch the dictionary from **your** deployment so substitution versions stay aligned with the viewer:
+## Deployment
 
-- `<origin>/arx-dictionary.json`
-- `<origin>/arx-dictionary.json.br` (optional brotli-compressed variant)
+### Same-machine setup (recommended for agents)
 
-If local `arx` encoding fails (for example dictionary fetch errors), fall back to `deflate` or another codec.
+The simplest deployment is running the server on the same machine as the agent:
 
-## Practical limits
+```bash
+# Build the frontend
+npm run build
 
-- Fragment budget: about 8,192 characters
-- Decoded payload budget: about 200,000 characters
+# Start the self-hosted server
+npm run selfhosted:dev
+```
 
-If the fragment is too large, try `arx`, then `deflate`, then `lz`, then `plain`, allow packed wire mode, and trim content before failing explicitly.
+The server runs on port 3000 by default. Set `PORT` and `DB_PATH` environment variables to customize.
 
-## Avoid
+### Docker Compose
 
-- Do not put raw artifact bodies in normal query params.
-- Do not assume every `kind` uses `content`; **diff** does not.
-- Do not invent unsupported artifact kinds or fields beyond what the shipped viewer accepts.
+```bash
+cd selfhosted
+docker compose up -d
+```
+
+This builds the frontend, sets up SQLite with a persistent volume, and starts the server.
+
+### Daemon / systemd
+
+For a systemd-managed deployment:
+
+```ini
+[Unit]
+Description=agent-render self-hosted server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/node /path/to/agent-render/selfhosted/dist/server.js
+Environment=PORT=3000
+Environment=DB_PATH=/var/lib/agent-render/agent-render.db
+Restart=on-failure
+User=agent-render
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Build first with `npm run selfhosted:build` to produce `selfhosted/dist/`.
+
+### pm2
+
+```bash
+pm2 start selfhosted/dist/server.js --name agent-render
+```
+
+## Auth and access control
+
+The self-hosted server does not include built-in authentication. By default, anyone who can reach the server can create, read, and delete artifacts.
+
+Options for protecting the server:
+
+### Public access
+
+If you want the server to be publicly accessible, no additional configuration is needed. This is fine for non-sensitive artifacts.
+
+### Cloudflare Tunnel + Zero Trust (recommended for remote access)
+
+For exposing the server securely to the internet:
+
+1. Install `cloudflared` on the server machine
+2. Create a tunnel: `cloudflared tunnel create agent-render`
+3. Route a domain to the tunnel: `cloudflared tunnel route dns agent-render render.yourdomain.com`
+4. Run the tunnel: `cloudflared tunnel run agent-render`
+5. Add a Cloudflare Access policy in the Zero Trust dashboard to control who can reach the server
+
+This gives you authentication, access logs, and DDoS protection without modifying the application.
+
+### Reverse proxy with auth
+
+Place the server behind nginx, Caddy, or Traefik with HTTP basic auth, OAuth2 proxy, or mTLS.
+
+### Network-level restriction
+
+Bind to `127.0.0.1` (set `HOST=127.0.0.1`) and only allow local access, or restrict access via firewall rules.
+
+## Agent workflow example
+
+A typical agent workflow for creating and sharing an artifact:
+
+1. Construct the JSON envelope with the correct fields for each artifact `kind` (see **Supported artifact kinds**; diff uses `patch` or `oldContent`/`newContent`, not `content`)
+2. Encode it (e.g., `plain` codec with base64url)
+3. `POST /api/artifacts` with the encoded payload
+4. Return the viewer link `https://<host>/<uuid>` to the user
+
+```bash
+# Example: create a markdown artifact
+PAYLOAD=$(echo -n '{"v":1,"codec":"plain","artifacts":[{"id":"demo","kind":"markdown","content":"# Hello"}]}' | base64 -w0 | tr '+/' '-_' | tr -d '=')
+
+curl -s -X POST http://localhost:3000/api/artifacts \
+  -H "Content-Type: application/json" \
+  -d "{\"payload\": \"agent-render=v1.plain.$PAYLOAD\"}"
+```
+
+## Cleanup guidance
+
+Artifacts auto-expire after 24 hours of inactivity. For proactive cleanup:
+
+- Call `POST /api/cleanup` to remove all expired artifacts
+- Call `DELETE /api/artifacts/:id` to remove specific artifacts
+- Ask your agent to clean up after sharing, or schedule periodic cleanup
+
+## Good defaults
+
+- Use self-hosted mode for large payloads or agent-driven workflows
+- Use fragment links for quick, one-off shares that fit in the budget
+- Keep the server on the same machine as the agent for simplicity
+- Use Cloudflare Tunnel if you need remote access with authentication
+- Let TTL handle cleanup for most cases

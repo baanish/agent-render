@@ -18,7 +18,10 @@
     "codec:poc": "node scripts/codec-poc.mjs",
     "typecheck": "node scripts/ensure-next-types.mjs && tsc --noEmit",
     "check": "npm run lint && npm run test && npm run typecheck && npm run build",
-    "check:public-export-docs": "node scripts/check-public-export-docs.mjs"
+    "check:public-export-docs": "node scripts/check-public-export-docs.mjs",
+    "selfhosted:dev": "node --import tsx selfhosted/server.ts",
+    "selfhosted:build": "tsc -p selfhosted/tsconfig.json",
+    "selfhosted:start": "node selfhosted/dist/server.js"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.1",
@@ -59,6 +62,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.13.10",
     "@types/papaparse": "^5.3.16",
     "@types/react": "^19.0.10",
@@ -67,8 +71,12 @@
     "eslint-config-next": "15.1.11",
     "jsdom": "^28.1.0",
     "tailwindcss": "^4.0.6",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.2",
     "vitest": "^4.0.18"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^12.8.0"
   },
   "engines": {
     "node": ">=20.10.0"

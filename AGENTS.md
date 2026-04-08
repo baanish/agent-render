@@ -130,6 +130,15 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 ### Diff handling
 - `src/lib/diff/git-patch.ts` - patch parsing support for diff rendering
 
+### Self-hosted UUID mode (optional server variant)
+- `selfhosted/server.ts` - HTTP server with API routes and UUID page rendering
+- `selfhosted/db.ts` - SQLite persistence (CRUD, TTL refresh, cleanup)
+- `selfhosted/ttl.ts` - TTL constants and helpers
+- `selfhosted/validate.ts` - payload validation for the API
+- `selfhosted/tsconfig.json` - TypeScript config for server compilation
+- `selfhosted/Dockerfile` - multi-stage Docker build
+- `selfhosted/docker-compose.yml` - Docker Compose deployment
+
 ### Docs and external contract
 - `README.md`
 - `docs/architecture.md`
@@ -138,6 +147,7 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 - `docs/dependency-notes.md`
 - `docs/testing.md`
 - `skills/agent-render-linking/SKILL.md`
+- `skills/selfhosted-agent-render/SKILL.md`
 
 ## Development commands
 

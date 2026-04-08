@@ -298,10 +298,16 @@ When sharing a link:
 - Prefer shortest-by-measurement instead of human guesses
 - Use budget-aware encoding for Discord-like constraints
 
+## Self-hosted UUID mode
+
+If the payload exceeds the fragment budget or links are getting mangled by chat platforms, consider using the self-hosted UUID mode instead of fragment links. The self-hosted server stores payloads in SQLite and serves short `https://host/{uuid}` links that render the same viewer UI.
+
+See `skills/selfhosted-agent-render/SKILL.md` for API usage, deployment, and agent workflow guidance.
+
 ## Avoid
 
 - Do not put raw artifact content in normal query params
-- Do not upload artifact content to a server for this workflow
+- Do not upload artifact content to a server for this workflow (use the self-hosted mode if server storage is needed)
 - Do not dump giant noisy bundles when a focused artifact is enough
 - Do not invent unsupported fields unless the renderer has added them
 - Do not handcraft packed envelopes manually if helper utilities are available; construct logical envelopes and let transport logic pack automatically
