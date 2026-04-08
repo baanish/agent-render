@@ -44,6 +44,18 @@ The suite is intentionally split by responsibility:
 - component tests protect selector/disclosure UI contracts
 - unit tests protect transport codecs, envelope validation, diff parsing, and language inference
 
+## Self-hosted mode tests
+
+The self-hosted server has its own test suite under `tests/selfhosted/`:
+
+- `db.test.ts` — CRUD operations, TTL refresh, expiry cleanup
+- `validate.test.ts` — Payload validation rules
+- `ttl.test.ts` — TTL computation and expiry checks
+
+These tests use `// @vitest-environment node` to run with Node.js instead of jsdom, since they depend on `better-sqlite3` (a native module).
+
+They run as part of the standard `npm run test` command.
+
 ## CI
 
 The repository includes `.github/workflows/test.yml`, which installs Playwright browsers and runs `npm run test:ci` on pushes, pull requests, and manual dispatch.
