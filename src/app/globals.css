@@ -1894,7 +1894,7 @@ select {
   }
 
   /* Avoid flex-shrink on toolbar buttons so labels are not clipped; pair rows only inside raw/rendered toggle */
-  .artifact-action:not(a) {
+  .artifact-action {
     flex: 0 0 auto;
     min-height: 2.55rem;
     padding: 0.46rem 0.65rem;
@@ -1903,9 +1903,6 @@ select {
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
-  }
-
-  button.artifact-action {
     max-width: 100%;
   }
 
