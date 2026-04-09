@@ -28,7 +28,7 @@ type CodeRendererProps = {
 };
 
 const MAX_DECORATED_CONTENT_LENGTH = 120000;
-const rainbowColors = ["#f08d5e", "#efb360", "#69d1dd", "#80c193", "#9eb3ff", "#d799ff"];
+const RAINBOW_BRACKET_LEVELS = 6;
 
 const editorTheme = EditorView.theme({
   "&": {
@@ -48,8 +48,8 @@ const editorTheme = EditorView.theme({
   },
   ".cm-gutters": {
     backgroundColor: "var(--surface-code-raised)",
-    color: "rgba(239, 243, 247, 0.5)",
-    borderRight: "1px solid rgba(239, 243, 247, 0.08)",
+    color: "var(--surface-code-gutter-fg)",
+    borderRight: "1px solid var(--surface-code-gutter-border)",
     minWidth: "3.3rem",
   },
   ".cm-gutterElement": {
@@ -57,10 +57,10 @@ const editorTheme = EditorView.theme({
     textAlign: "right",
   },
   ".cm-activeLine": {
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    backgroundColor: "var(--surface-code-active-line)",
   },
   ".cm-activeLineGutter": {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "var(--surface-code-active-gutter)",
   },
   ".cm-selectionBackground": {
     backgroundColor: "rgba(105, 209, 221, 0.18) !important",
@@ -69,10 +69,10 @@ const editorTheme = EditorView.theme({
     fontWeight: "700",
   },
   ...Object.fromEntries(
-    rainbowColors.map((color, index) => [
+    Array.from({ length: RAINBOW_BRACKET_LEVELS }, (_, index) => [
       `.cm-rb-${index}`,
       {
-        color: `${color} !important`,
+        color: `var(--rb-${index}) !important`,
       },
     ]),
   ),
@@ -112,14 +112,14 @@ function buildRainbowDecorations(state: EditorState): DecorationSet {
 
     const char = text[index];
     if (char === "{" || char === "[" || char === "(") {
-      const level = stack.length % rainbowColors.length;
+      const level = stack.length % RAINBOW_BRACKET_LEVELS;
       stack.push(level);
       builder.add(index, index + 1, Decoration.mark({ class: `cm-rainbow-bracket cm-rb-${level}` }));
       continue;
     }
 
     if (char === "}" || char === "]" || char === ")") {
-      const level = stack.length > 0 ? stack.pop() ?? 0 : 0;
+      const level = stack.length > 0 ? (stack.pop() ?? 0) : 0;
       builder.add(index, index + 1, Decoration.mark({ class: `cm-rainbow-bracket cm-rb-${level}` }));
     }
   }
@@ -161,11 +161,17 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
   useEffect(() => {
     let cancelled = false;
 
-    void loadLanguageSupport(language).then((extension) => {
-      if (!cancelled) {
-        setLanguageExtension(extension);
-      }
-    });
+    void loadLanguageSupport(language)
+      .then((extension) => {
+        if (!cancelled) {
+          setLanguageExtension(extension);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLanguageExtension(null);
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -248,10 +254,8 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
       {compact ? null : (
         <div className="code-renderer-toolbar">
           <div className="code-renderer-meta">
-            <span className="mono-pill !border-[rgba(239,243,247,0.12)] !bg-[rgba(255,255,255,0.04)] !text-[rgba(239,243,247,0.86)]">
-              {language}
-            </span>
-            <span className="section-kicker !text-[rgba(239,243,247,0.56)]">read-only codemirror</span>
+            <span className="mono-pill code-renderer-language-pill">{language}</span>
+            <span className="section-kicker code-renderer-readonly-label">read-only codemirror</span>
           </div>
           <button type="button" className="artifact-action is-code" onClick={() => setWrapLines((value) => !value)}>
             <WrapText className="h-3.5 w-3.5" />
