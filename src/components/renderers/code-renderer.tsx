@@ -161,11 +161,17 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
   useEffect(() => {
     let cancelled = false;
 
-    void loadLanguageSupport(language).then((extension) => {
-      if (!cancelled) {
-        setLanguageExtension(extension);
-      }
-    });
+    void loadLanguageSupport(language)
+      .then((extension) => {
+        if (!cancelled) {
+          setLanguageExtension(extension);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLanguageExtension(null);
+        }
+      });
 
     return () => {
       cancelled = true;
