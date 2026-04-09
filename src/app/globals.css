@@ -42,6 +42,10 @@
   --surface-code-gutter-border: color-mix(in srgb, var(--surface-code-text) 10%, transparent);
   --surface-code-active-line: color-mix(in srgb, var(--surface-code-text) 7%, transparent);
   --surface-code-active-gutter: color-mix(in srgb, var(--surface-code-text) 9%, transparent);
+  /* ── Code toolbar “is-code” button (mirrors light code chrome) ── */
+  --surface-code-is-code-border: var(--surface-code-chrome-border);
+  --surface-code-is-code-bg: color-mix(in srgb, var(--surface-code-text) 6%, transparent);
+  --surface-code-is-code-fg: var(--surface-code-text);
   /* ── CodeMirror rainbow brackets (saturated for light code bg) ── */
   --rb-0: #c06820;
   --rb-1: #b08828;
@@ -96,6 +100,9 @@
   --surface-code-gutter-border: rgba(239, 243, 247, 0.08);
   --surface-code-active-line: rgba(255, 255, 255, 0.045);
   --surface-code-active-gutter: rgba(255, 255, 255, 0.05);
+  --surface-code-is-code-border: rgba(239, 243, 247, 0.12);
+  --surface-code-is-code-bg: rgba(255, 255, 255, 0.04);
+  --surface-code-is-code-fg: rgba(239, 243, 247, 0.86);
   /* ── CodeMirror rainbow brackets (bright for dark code bg) ── */
   --rb-0: #f08d5e;
   --rb-1: #efb360;
@@ -914,15 +921,9 @@ select {
 }
 
 .artifact-action.is-code {
-  border-color: var(--surface-code-chrome-border);
-  background: color-mix(in srgb, var(--surface-code-text) 6%, transparent);
-  color: var(--surface-code-text);
-}
-
-.dark .artifact-action.is-code {
-  border-color: rgba(239, 243, 247, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(239, 243, 247, 0.86);
+  border-color: var(--surface-code-is-code-border);
+  background: var(--surface-code-is-code-bg);
+  color: var(--surface-code-is-code-fg);
 }
 
 .markdown-document {
@@ -1179,6 +1180,16 @@ select {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.6rem;
+}
+
+.code-renderer-language-pill {
+  border-color: var(--surface-code-chrome-border) !important;
+  background: color-mix(in srgb, var(--surface-code-text) 6%, transparent) !important;
+  color: var(--surface-code-text) !important;
+}
+
+.code-renderer-readonly-label {
+  color: color-mix(in srgb, var(--surface-code-text) 56%, transparent) !important;
 }
 
 .code-renderer-host {
