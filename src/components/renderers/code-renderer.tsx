@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { WrapText } from "lucide-react";
 import { EditorState, RangeSetBuilder } from "@codemirror/state";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
@@ -20,6 +20,10 @@ import { searchKeymap } from "@codemirror/search";
 import { bracketMatching, defaultHighlightStyle, syntaxTree, syntaxHighlighting } from "@codemirror/language";
 import { detectCodeLanguage, loadLanguageSupport } from "@/lib/code/language";
 import type { CodeArtifact } from "@/lib/payload/schema";
+
+const MOBILE_CODE_MEDIA_QUERY = "(max-width: 640px)";
+
+type WrapPreference = "auto" | "on" | "off";
 
 type CodeRendererProps = {
   artifact: CodeArtifact;
@@ -153,10 +157,49 @@ const rainbowBrackets = ViewPlugin.fromClass(
  */
 export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendererProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const wrapPreferenceRef = useRef<WrapPreference>("auto");
   const [wrapLines, setWrapLines] = useState(compact);
   const [languageExtension, setLanguageExtension] = useState<Awaited<ReturnType<typeof loadLanguageSupport>>>(null);
   const [isReady, setIsReady] = useState(false);
   const language = useMemo(() => detectCodeLanguage(artifact.filename, artifact.language), [artifact.filename, artifact.language]);
+
+  useEffect(() => {
+    if (compact) {
+      setWrapLines(true);
+      wrapPreferenceRef.current = "auto";
+      return;
+    }
+
+    if (typeof window === "undefined" || !window.matchMedia) {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_CODE_MEDIA_QUERY);
+
+    const applyWrapFromPreference = () => {
+      const preference = wrapPreferenceRef.current;
+      if (preference === "on") {
+        setWrapLines(true);
+        return;
+      }
+      if (preference === "off") {
+        setWrapLines(false);
+        return;
+      }
+      setWrapLines(mediaQuery.matches);
+    };
+
+    applyWrapFromPreference();
+
+    const handleChange = () => {
+      applyWrapFromPreference();
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, [compact]);
 
   useEffect(() => {
     let cancelled = false;
@@ -253,7 +296,17 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
             </span>
             <span className="section-kicker !text-[rgba(239,243,247,0.56)]">read-only codemirror</span>
           </div>
-          <button type="button" className="artifact-action is-code" onClick={() => setWrapLines((value) => !value)}>
+          <button
+            type="button"
+            className="artifact-action is-code"
+            onClick={() =>
+              setWrapLines((value) => {
+                const next = !value;
+                wrapPreferenceRef.current = next ? "on" : "off";
+                return next;
+              })
+            }
+          >
             <WrapText className="h-3.5 w-3.5" />
             {wrapLines ? "Disable wrap" : "Enable wrap"}
           </button>
