@@ -42,6 +42,13 @@
   --surface-code-gutter-border: color-mix(in srgb, var(--surface-code-text) 10%, transparent);
   --surface-code-active-line: color-mix(in srgb, var(--surface-code-text) 7%, transparent);
   --surface-code-active-gutter: color-mix(in srgb, var(--surface-code-text) 9%, transparent);
+  /* ── CodeMirror rainbow brackets (saturated for light code bg) ── */
+  --rb-0: #c06820;
+  --rb-1: #b08828;
+  --rb-2: #2a8e9a;
+  --rb-3: #3a8a55;
+  --rb-4: #4466cc;
+  --rb-5: #8844bb;
   /* ── Print ── */
   --print-paper: #ffffff;
   --print-ink: #2a2028;
@@ -89,6 +96,13 @@
   --surface-code-gutter-border: rgba(239, 243, 247, 0.08);
   --surface-code-active-line: rgba(255, 255, 255, 0.045);
   --surface-code-active-gutter: rgba(255, 255, 255, 0.05);
+  /* ── CodeMirror rainbow brackets (bright for dark code bg) ── */
+  --rb-0: #f08d5e;
+  --rb-1: #efb360;
+  --rb-2: #69d1dd;
+  --rb-3: #80c193;
+  --rb-4: #9eb3ff;
+  --rb-5: #d799ff;
 }
 
 * {
