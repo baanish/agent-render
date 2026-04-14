@@ -1,6 +1,6 @@
 ---
 name: selfhosted-agent-render
-description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs to share rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal when payloads exceed the ~8 KB fragment budget, when links will be shared on platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds as the fragment-based product. The self-hosted server stores payloads in SQLite with a 24-hour sliding TTL.
+description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs to share rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal when payloads exceed the ~8 KB fragment budget, when links will be shared on platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds and envelope validation as the fragment-based product. The self-hosted server stores payloads in SQLite with a 24-hour sliding TTL.
 ---
 
 # Self-Hosted Agent Render
@@ -129,7 +129,108 @@ The payload format is identical to the fragment-based product. Construct a JSON 
 }
 ```
 
-Supported artifact kinds: `markdown`, `code`, `diff`, `csv`, `json`.
+### Supported artifact kinds
+
+Use these shapes inside the `artifacts` array. Examples show a **single artifact object** only (not the full envelope).
+
+#### Markdown
+
+**Required:** `content` (string) — GFM markdown source.
+
+```json
+{
+  "id": "report",
+  "kind": "markdown",
+  "title": "Weekly report",
+  "filename": "weekly-report.md",
+  "content": "# Report\n\n- Item one"
+}
+```
+
+Markdown supports **mermaid** diagrams via fenced code blocks: use ` ```mermaid ` fences inside `content`; the viewer renders them client-side with theme-aware styling.
+
+#### Code
+
+**Required:** `content` (string). **Optional:** `language` (string) for syntax highlighting.
+
+```json
+{
+  "id": "snippet",
+  "kind": "code",
+  "title": "viewer-shell.tsx",
+  "filename": "viewer-shell.tsx",
+  "language": "tsx",
+  "content": "export function ViewerShell() {\n  return <main />;\n}"
+}
+```
+
+#### Diff
+
+**Do not use `content`.** Validation requires either:
+
+- a string `patch` (preferred: unified git patch), **or**
+- both `oldContent` and `newContent` (strings).
+
+**Optional:** `language` (string), `view` — `"unified"` or `"split"` (default behavior follows the product if omitted).
+
+**Patch form** (preferred):
+
+```json
+{
+  "id": "patch",
+  "kind": "diff",
+  "title": "viewer-shell.tsx diff",
+  "filename": "viewer-shell.patch",
+  "patch": "diff --git a/viewer-shell.tsx b/viewer-shell.tsx\n--- a/viewer-shell.tsx\n+++ b/viewer-shell.tsx\n@@ -1 +1 @@\n-old\n+new\n",
+  "view": "split"
+}
+```
+
+**Old/new form** (when you do not have a unified patch):
+
+```json
+{
+  "id": "compare",
+  "kind": "diff",
+  "title": "Config change",
+  "filename": "config.diff",
+  "oldContent": "timeout = 30\n",
+  "newContent": "timeout = 60\n",
+  "view": "unified"
+}
+```
+
+A single `patch` string may contain multiple `diff --git` sections.
+
+#### CSV
+
+**Required:** `content` (string) — raw CSV text.
+
+```json
+{
+  "id": "metrics",
+  "kind": "csv",
+  "title": "Metrics snapshot",
+  "filename": "metrics.csv",
+  "content": "name,value\nrequests,42"
+}
+```
+
+#### JSON
+
+**Required:** `content` (string). The value must be **serialized JSON** (a JSON string containing JSON text), not a nested JSON object.
+
+```json
+{
+  "id": "manifest",
+  "kind": "json",
+  "title": "Manifest",
+  "filename": "manifest.json",
+  "content": "{\n  \"ready\": true\n}"
+}
+```
+
+> **Common mistake:** Diff artifacts do NOT use a `content` field. Use `patch` for unified diffs or provide both `oldContent` and `newContent`. A `content` field on a diff artifact will fail envelope validation.
 
 Encode the envelope using the same codec pipeline as fragment links:
 
@@ -239,7 +340,7 @@ Bind to `127.0.0.1` (set `HOST=127.0.0.1`) and only allow local access, or restr
 
 A typical agent workflow for creating and sharing an artifact:
 
-1. Construct the payload envelope with the artifact content
+1. Construct the JSON envelope with the correct fields for each artifact `kind` (see **Supported artifact kinds**; diff uses `patch` or `oldContent`/`newContent`, not `content`)
 2. Encode it (e.g., `plain` codec with base64url)
 3. `POST /api/artifacts` with the encoded payload
 4. Return the viewer link `https://<host>/<uuid>` to the user
