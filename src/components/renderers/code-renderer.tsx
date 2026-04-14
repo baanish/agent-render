@@ -167,7 +167,20 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
   const [languageExtension, setLanguageExtension] = useState<Awaited<ReturnType<typeof loadLanguageSupport>>>(null);
   const [isReady, setIsReady] = useState(false);
   const { resolvedTheme } = useTheme();
-  const isCmDark = resolvedTheme === "dark";
+  /**
+   * CodeMirror’s `dark` facet (syntax + indentation markers). When `resolvedTheme` is still
+   * undefined, read `html.dark` so the first mount matches the class next-themes applies before
+   * React state catches up.
+   */
+  const isCmDark = useMemo(() => {
+    if (resolvedTheme === "dark") {
+      return true;
+    }
+    if (resolvedTheme === "light") {
+      return false;
+    }
+    return typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+  }, [resolvedTheme]);
   const editorTheme = useMemo(() => createEditorTheme(isCmDark), [isCmDark]);
   const language = useMemo(() => detectCodeLanguage(artifact.filename, artifact.language), [artifact.filename, artifact.language]);
 
