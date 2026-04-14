@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { WrapText } from "lucide-react";
 import { EditorState, RangeSetBuilder } from "@codemirror/state";
@@ -30,53 +31,62 @@ type CodeRendererProps = {
 const MAX_DECORATED_CONTENT_LENGTH = 120000;
 const RAINBOW_BRACKET_LEVELS = 6;
 
-const editorTheme = EditorView.theme({
-  "&": {
-    height: "100%",
-    color: "var(--surface-code-text)",
-    backgroundColor: "var(--surface-code)",
-    fontFamily: "var(--font-mono), monospace",
-    fontSize: "13px",
-  },
-  ".cm-scroller": {
-    overflow: "auto",
-    lineHeight: "1.65",
-  },
-  ".cm-content": {
-    padding: "0.9rem 0 1.1rem 0",
-    caretColor: "var(--surface-code-text)",
-  },
-  ".cm-gutters": {
-    backgroundColor: "var(--surface-code-raised)",
-    color: "var(--surface-code-gutter-fg)",
-    borderRight: "1px solid var(--surface-code-gutter-border)",
-    minWidth: "3.3rem",
-  },
-  ".cm-gutterElement": {
-    padding: "0 0.9rem 0 0.7rem",
-    textAlign: "right",
-  },
-  ".cm-activeLine": {
-    backgroundColor: "var(--surface-code-active-line)",
-  },
-  ".cm-activeLineGutter": {
-    backgroundColor: "var(--surface-code-active-gutter)",
-  },
-  ".cm-selectionBackground": {
-    backgroundColor: "rgba(105, 209, 221, 0.18) !important",
-  },
-  ".cm-rainbow-bracket": {
-    fontWeight: "700",
-  },
-  ...Object.fromEntries(
-    Array.from({ length: RAINBOW_BRACKET_LEVELS }, (_, index) => [
-      `.cm-rb-${index}`,
-      {
-        color: `var(--rb-${index}) !important`,
+/**
+ * Builds the read-only CodeMirror theme. Passes `dark` so CodeMirror’s theme facet
+ * matches the app (indentation markers and other plugins use it, not CSS alone).
+ */
+function createEditorTheme(isDark: boolean) {
+  return EditorView.theme(
+    {
+      "&": {
+        height: "100%",
+        color: "var(--surface-code-text)",
+        backgroundColor: "var(--surface-code)",
+        fontFamily: "var(--font-mono), monospace",
+        fontSize: "13px",
       },
-    ]),
-  ),
-});
+      ".cm-scroller": {
+        overflow: "auto",
+        lineHeight: "1.65",
+      },
+      ".cm-content": {
+        padding: "0.9rem 0 1.1rem 0",
+        caretColor: "var(--surface-code-text)",
+      },
+      ".cm-gutters": {
+        backgroundColor: "var(--surface-code-raised)",
+        color: "var(--surface-code-gutter-fg)",
+        borderRight: "1px solid var(--surface-code-gutter-border)",
+        minWidth: "3.3rem",
+      },
+      ".cm-gutterElement": {
+        padding: "0 0.9rem 0 0.7rem",
+        textAlign: "right",
+      },
+      ".cm-activeLine": {
+        backgroundColor: "var(--surface-code-active-line)",
+      },
+      ".cm-activeLineGutter": {
+        backgroundColor: "var(--surface-code-active-gutter)",
+      },
+      ".cm-selectionBackground": {
+        backgroundColor: "var(--surface-code-selection-bg) !important",
+      },
+      ".cm-rainbow-bracket": {
+        fontWeight: "700",
+      },
+      ...Object.fromEntries(
+        Array.from({ length: RAINBOW_BRACKET_LEVELS }, (_, index) => [
+          `.cm-rb-${index}`,
+          {
+            color: `var(--rb-${index}) !important`,
+          },
+        ]),
+      ),
+    },
+    { dark: isDark },
+  );
+}
 
 function buildIgnoredRanges(state: EditorState) {
   const ignored: Array<{ from: number; to: number }> = [];
@@ -156,6 +166,9 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
   const [wrapLines, setWrapLines] = useState(compact);
   const [languageExtension, setLanguageExtension] = useState<Awaited<ReturnType<typeof loadLanguageSupport>>>(null);
   const [isReady, setIsReady] = useState(false);
+  const { resolvedTheme } = useTheme();
+  const isCmDark = resolvedTheme === "dark";
+  const editorTheme = useMemo(() => createEditorTheme(isCmDark), [isCmDark]);
   const language = useMemo(() => detectCodeLanguage(artifact.filename, artifact.language), [artifact.filename, artifact.language]);
 
   useEffect(() => {
@@ -243,7 +256,7 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
       window.cancelAnimationFrame(animationFrame);
       view.destroy();
     };
-  }, [artifact.content, languageExtension, onReady, wrapLines]);
+  }, [artifact.content, editorTheme, languageExtension, onReady, wrapLines]);
 
   return (
     <div

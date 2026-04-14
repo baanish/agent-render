@@ -46,6 +46,7 @@
   --surface-code-is-code-border: var(--surface-code-chrome-border);
   --surface-code-is-code-bg: color-mix(in srgb, var(--surface-code-text) 6%, transparent);
   --surface-code-is-code-fg: var(--surface-code-text);
+  --surface-code-selection-bg: rgba(105, 209, 221, 0.18);
   /* ── CodeMirror rainbow brackets (saturated for light code bg) ── */
   --rb-0: #c06820;
   --rb-1: #b08828;
@@ -103,6 +104,7 @@
   --surface-code-is-code-border: rgba(239, 243, 247, 0.12);
   --surface-code-is-code-bg: rgba(255, 255, 255, 0.04);
   --surface-code-is-code-fg: rgba(239, 243, 247, 0.86);
+  --surface-code-selection-bg: rgba(105, 209, 221, 0.18);
   /* ── CodeMirror rainbow brackets (bright for dark code bg) ── */
   --rb-0: #f08d5e;
   --rb-1: #efb360;
@@ -1431,62 +1433,6 @@ select {
   padding-bottom: 0.25rem;
 }
 
-.markdown-code {
-  display: block;
-  min-width: max-content;
-  color: var(--surface-code-text);
-  font-family: var(--font-mono), monospace;
-  font-size: 0.88rem;
-  line-height: 1.78;
-}
-
-.markdown-code .hljs-keyword,
-.markdown-code .hljs-selector-tag,
-.markdown-code .hljs-literal,
-.markdown-code .hljs-title,
-.markdown-code .hljs-section,
-.markdown-code .hljs-link {
-  color: #efb360;
-}
-
-.markdown-code .hljs-string,
-.markdown-code .hljs-attr,
-.markdown-code .hljs-template-tag,
-.markdown-code .hljs-template-variable {
-  color: #7fd7a4;
-}
-
-.markdown-code .hljs-number,
-.markdown-code .hljs-symbol,
-.markdown-code .hljs-bullet,
-.markdown-code .hljs-variable,
-.markdown-code .hljs-variable.constant_ {
-  color: #f29c8f;
-}
-
-.markdown-code .hljs-comment,
-.markdown-code .hljs-quote {
-  color: color-mix(in srgb, var(--surface-code-text) 44%, transparent);
-}
-
-.dark .markdown-code .hljs-comment,
-.dark .markdown-code .hljs-quote {
-  color: rgba(239, 243, 247, 0.48);
-}
-
-.markdown-code .hljs-function,
-.markdown-code .hljs-title.function_,
-.markdown-code .hljs-title.class_ {
-  color: #9eb3ff;
-}
-
-.markdown-code .hljs-property,
-.markdown-code .hljs-attribute,
-.markdown-code .hljs-built_in,
-.markdown-code .hljs-type {
-  color: #69d1dd;
-}
-
 .markdown-table-wrap {
   margin: 1.5rem 0;
   overflow-x: auto;
@@ -2124,7 +2070,6 @@ select {
     background: color-mix(in srgb, var(--print-paper) 86%, var(--print-ink) 14%) !important;
   }
 
-  body[data-print-mode="markdown"] .markdown-code,
   body[data-print-mode="markdown"] .markdown-code-chip,
   body[data-print-mode="markdown"] .markdown-code-caption,
   body[data-print-mode="markdown"] .markdown-table th,
