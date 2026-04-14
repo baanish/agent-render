@@ -1,7 +1,7 @@
 import React from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { CodeRenderer } from "@/components/renderers/code-renderer";
 import type { CodeArtifact } from "@/lib/payload/schema";
 
@@ -131,11 +131,8 @@ afterEach(() => {
 
 describe("CodeRenderer", () => {
   describe("wrap default on wide viewport", () => {
-    beforeEach(() => {
-      createControllableMatchMedia(false);
-    });
-
     it("shows Enable wrap button when viewport is wide", async () => {
+      createControllableMatchMedia(false);
       render(<CodeRenderer artifact={createArtifact()} />);
 
       await waitFor(() => {
@@ -144,6 +141,7 @@ describe("CodeRenderer", () => {
     });
 
     it("toggling wrap changes the button label", async () => {
+      createControllableMatchMedia(false);
       render(<CodeRenderer artifact={createArtifact()} />);
 
       const btn = await screen.findByRole("button", { name: /enable wrap/i });
@@ -167,11 +165,8 @@ describe("CodeRenderer", () => {
   });
 
   describe("wrap default on narrow viewport", () => {
-    beforeEach(() => {
-      createControllableMatchMedia(true);
-    });
-
     it("shows Disable wrap button when viewport is narrow", async () => {
+      createControllableMatchMedia(true);
       render(<CodeRenderer artifact={createArtifact()} />);
 
       await waitFor(() => {
@@ -194,10 +189,6 @@ describe("CodeRenderer", () => {
   });
 
   describe("wrap preference after manual toggle", () => {
-    beforeEach(() => {
-      createControllableMatchMedia(false);
-    });
-
     it("keeps the user choice when the viewport changes after a manual toggle", async () => {
       const media = createControllableMatchMedia(false);
       render(<CodeRenderer artifact={createArtifact()} />);
@@ -216,11 +207,8 @@ describe("CodeRenderer", () => {
   });
 
   describe("compact mode", () => {
-    beforeEach(() => {
-      createControllableMatchMedia(false);
-    });
-
     it("does not render a toolbar in compact mode", () => {
+      createControllableMatchMedia(false);
       render(<CodeRenderer artifact={createArtifact()} compact />);
 
       expect(screen.queryByRole("button", { name: /wrap/i })).not.toBeInTheDocument();

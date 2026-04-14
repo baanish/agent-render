@@ -125,6 +125,60 @@ test.describe("mobile UX", () => {
     const artifactMetrics = page.getByTestId("artifact-metadata-grid");
     await expect.poll(() => artifactMetrics.evaluate((element) => window.getComputedStyle(element).gridTemplateColumns.split(" ").length)).toBe(2);
   });
+
+  test("code artifact defaults line wrap on for narrow viewports", async ({ page }) => {
+    test.setTimeout(60_000);
+    await goToHash(page, getFragmentHash("Viewer bootstrap"));
+    await waitForViewerState(page, "artifact", { timeout: 45_000 });
+    await waitForRendererReady(page, "code");
+
+    await expect(page.getByRole("button", { name: /disable wrap/i })).toBeVisible();
+  });
+
+  test("markdown artifact toolbar keeps raw/rendered controls readable", async ({ page }) => {
+    await goToHash(page, getFragmentHash("Maintainer kickoff"));
+    await waitForViewerState(page, "artifact");
+    await waitForRendererReady(page, "markdown");
+
+    const toolbar = page.locator(".viewer-toolbar");
+    const rendered = page.getByRole("button", { name: /^Rendered$/ });
+    const raw = page.getByRole("button", { name: /^Raw$/ });
+
+    await expect(rendered).toBeVisible();
+    await expect(raw).toBeVisible();
+
+    const toolbarBox = await toolbar.boundingBox();
+    const renderedBox = await rendered.boundingBox();
+    const rawBox = await raw.boundingBox();
+    expect(toolbarBox && renderedBox && rawBox).toBeTruthy();
+    if (toolbarBox && renderedBox && rawBox) {
+      expect(renderedBox.width).toBeGreaterThan(48);
+      expect(rawBox.width).toBeGreaterThan(48);
+      expect(renderedBox.width + rawBox.width).toBeLessThanOrEqual(toolbarBox.width + 8);
+    }
+  });
+});
+
+test.describe("very narrow mobile toolbar", () => {
+  test.use({ viewport: { width: 340, height: 720 } });
+
+  test("stacks markdown raw/rendered toggle vertically at 340px", async ({ page }) => {
+    await goToHash(page, getFragmentHash("Maintainer kickoff"));
+    await waitForViewerState(page, "artifact");
+    await waitForRendererReady(page, "markdown");
+
+    const rendered = page.getByRole("button", { name: /^Rendered$/ });
+    const raw = page.getByRole("button", { name: /^Raw$/ });
+    await expect(rendered).toBeVisible();
+    await expect(raw).toBeVisible();
+
+    const renderedBox = await rendered.boundingBox();
+    const rawBox = await raw.boundingBox();
+    expect(renderedBox && rawBox).toBeTruthy();
+    if (renderedBox && rawBox) {
+      expect(rawBox.y).toBeGreaterThanOrEqual(renderedBox.y + renderedBox.height - 4);
+    }
+  });
 });
 
 test("renders compact CSV payloads without giant whitespace", async ({ page }) => {

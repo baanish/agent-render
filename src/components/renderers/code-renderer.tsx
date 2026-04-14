@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { WrapText } from "lucide-react";
 import { EditorState, RangeSetBuilder } from "@codemirror/state";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
@@ -164,6 +164,8 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
   const language = useMemo(() => detectCodeLanguage(artifact.filename, artifact.language), [artifact.filename, artifact.language]);
 
   // Runs before paint so the first CodeMirror mount matches the viewport (call sites use dynamic(..., { ssr: false })).
+  // Manual preference lives on wrapPreferenceRef so the matchMedia listener always reads the latest value without
+  // re-subscribing on every render. Toggling compact to false resets preference to "auto" (compact is static today).
   useLayoutEffect(() => {
     if (compact) {
       setWrapLines(true);
