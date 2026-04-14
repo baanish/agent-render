@@ -1998,6 +1998,12 @@ select {
   .artifact-action {
     flex-basis: 100%;
   }
+
+  /* Higher specificity than the 640px `.viewer-toolbar .diff-view-toggle .artifact-action` pair row */
+  .viewer-toolbar .diff-view-toggle .artifact-action {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
 }
 
 @media (min-width: 768px) {

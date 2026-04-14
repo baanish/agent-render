@@ -121,6 +121,11 @@ afterAll(() => {
 
 afterEach(() => {
   cleanup();
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: originalMatchMedia,
+  });
   vi.restoreAllMocks();
 });
 
