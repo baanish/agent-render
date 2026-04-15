@@ -1883,19 +1883,78 @@ select {
 
   .viewer-toolbar {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     justify-content: flex-start;
     gap: 0.38rem;
+    flex-wrap: wrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
 
+  /* Compact touch sizing for all action surfaces at ≤640px */
   .artifact-action {
-    flex: 1 1 calc(50% - 0.25rem);
     min-height: 2.55rem;
     padding: 0.46rem 0.65rem;
     font-size: 0.71rem;
   }
 
+  /* Viewer shell: avoid flex-shrink clipping on standalone buttons; pair row only inside raw/rendered toggle */
+  .viewer-toolbar .artifact-action {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .viewer-toolbar .diff-view-toggle {
+    display: flex;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 0.38rem;
+    min-width: 0;
+  }
+
+  .viewer-toolbar .diff-view-toggle .artifact-action {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .viewer-toolbar > .artifact-action.is-primary {
-    flex-basis: 100%;
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  /* JSON tree/raw toggle: same pair-row behavior as markdown raw/rendered (not covered by viewer-toolbar rules) */
+  .json-renderer-toolbar .diff-view-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.38rem;
+    min-width: 0;
+  }
+
+  .json-renderer-toolbar .diff-view-toggle .artifact-action {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .code-renderer-toolbar,
+  .diff-renderer-toolbar,
+  .csv-renderer-toolbar,
+  .json-renderer-toolbar {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
 
   .viewer-frame-primary {
@@ -1959,6 +2018,17 @@ select {
 
   .artifact-action {
     flex-basis: 100%;
+  }
+
+  /* Same selector specificity as the 640px pair rule; this block wins at ≤360px because it appears later in the stylesheet */
+  .viewer-toolbar .diff-view-toggle .artifact-action {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .json-renderer-toolbar .diff-view-toggle .artifact-action {
+    flex: 1 1 100%;
+    max-width: 100%;
   }
 }
 
