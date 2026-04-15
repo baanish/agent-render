@@ -1893,12 +1893,16 @@ select {
     scrollbar-width: thin;
   }
 
-  /* Avoid flex-shrink on toolbar buttons so labels are not clipped; pair rows only inside raw/rendered toggle */
+  /* Compact touch sizing for all action surfaces at ≤640px */
   .artifact-action {
-    flex: 0 0 auto;
     min-height: 2.55rem;
     padding: 0.46rem 0.65rem;
     font-size: 0.71rem;
+  }
+
+  /* Viewer shell: avoid flex-shrink clipping on standalone buttons; pair row only inside raw/rendered toggle */
+  .viewer-toolbar .artifact-action {
+    flex: 0 0 auto;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1923,6 +1927,23 @@ select {
   .viewer-toolbar > .artifact-action.is-primary {
     flex: 1 1 100%;
     max-width: 100%;
+  }
+
+  /* JSON tree/raw toggle: same pair-row behavior as markdown raw/rendered (not covered by viewer-toolbar rules) */
+  .json-renderer-toolbar .diff-view-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.38rem;
+    min-width: 0;
+  }
+
+  .json-renderer-toolbar .diff-view-toggle .artifact-action {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .code-renderer-toolbar,
@@ -1999,8 +2020,13 @@ select {
     flex-basis: 100%;
   }
 
-  /* Higher specificity than the 640px `.viewer-toolbar .diff-view-toggle .artifact-action` pair row */
+  /* Same selector specificity as the 640px pair rule; this block wins at ≤360px because it appears later in the stylesheet */
   .viewer-toolbar .diff-view-toggle .artifact-action {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .json-renderer-toolbar .diff-view-toggle .artifact-action {
     flex: 1 1 100%;
     max-width: 100%;
   }
