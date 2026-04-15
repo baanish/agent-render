@@ -32,10 +32,28 @@
   --radius-md: 2px;
   --radius-sm: 2px;
   --duration-base: 280ms;
-  /* ── Code surfaces ── */
-  --surface-code: #1e1a22;
-  --surface-code-raised: rgba(30, 26, 34, 0.92);
-  --surface-code-text: #ede8f2;
+  /* ── Code surfaces (light default) ── */
+  --surface-code: #f8f6fa;
+  --surface-code-raised: rgba(240, 236, 244, 0.95);
+  --surface-code-text: #1e1a22;
+  --surface-code-chrome-border: color-mix(in srgb, var(--surface-code-text) 12%, transparent);
+  --surface-code-toolbar-shine: color-mix(in srgb, var(--surface-code-text) 5%, transparent);
+  --surface-code-gutter-fg: color-mix(in srgb, var(--surface-code-text) 42%, transparent);
+  --surface-code-gutter-border: color-mix(in srgb, var(--surface-code-text) 10%, transparent);
+  --surface-code-active-line: color-mix(in srgb, var(--surface-code-text) 7%, transparent);
+  --surface-code-active-gutter: color-mix(in srgb, var(--surface-code-text) 9%, transparent);
+  /* ── Code toolbar “is-code” button (mirrors light code chrome) ── */
+  --surface-code-is-code-border: var(--surface-code-chrome-border);
+  --surface-code-is-code-bg: color-mix(in srgb, var(--surface-code-text) 6%, transparent);
+  --surface-code-is-code-fg: var(--surface-code-text);
+  --surface-code-selection-bg: rgba(105, 209, 221, 0.18);
+  /* ── CodeMirror rainbow brackets (saturated for light code bg) ── */
+  --rb-0: #c06820;
+  --rb-1: #b08828;
+  --rb-2: #2a8e9a;
+  --rb-3: #3a8a55;
+  --rb-4: #4466cc;
+  --rb-5: #8844bb;
   /* ── Print ── */
   --print-paper: #ffffff;
   --print-ink: #2a2028;
@@ -77,6 +95,23 @@
   --surface-code: rgba(10, 8, 16, 0.98);
   --surface-code-raised: rgba(18, 14, 26, 0.95);
   --surface-code-text: #ece6f0;
+  --surface-code-chrome-border: rgba(239, 243, 247, 0.08);
+  --surface-code-toolbar-shine: rgba(255, 255, 255, 0.03);
+  --surface-code-gutter-fg: rgba(239, 243, 247, 0.5);
+  --surface-code-gutter-border: rgba(239, 243, 247, 0.08);
+  --surface-code-active-line: rgba(255, 255, 255, 0.045);
+  --surface-code-active-gutter: rgba(255, 255, 255, 0.05);
+  --surface-code-is-code-border: rgba(239, 243, 247, 0.12);
+  --surface-code-is-code-bg: rgba(255, 255, 255, 0.04);
+  --surface-code-is-code-fg: rgba(239, 243, 247, 0.86);
+  --surface-code-selection-bg: rgba(105, 209, 221, 0.18);
+  /* ── CodeMirror rainbow brackets (bright for dark code bg) ── */
+  --rb-0: #f08d5e;
+  --rb-1: #efb360;
+  --rb-2: #69d1dd;
+  --rb-3: #80c193;
+  --rb-4: #9eb3ff;
+  --rb-5: #d799ff;
 }
 
 * {
@@ -888,9 +923,9 @@ select {
 }
 
 .artifact-action.is-code {
-  border-color: rgba(239, 243, 247, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(239, 243, 247, 0.86);
+  border-color: var(--surface-code-is-code-border);
+  background: var(--surface-code-is-code-bg);
+  color: var(--surface-code-is-code-fg);
 }
 
 .markdown-document {
@@ -1120,7 +1155,10 @@ select {
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--surface-code);
-  box-shadow: inset 0 0 0 1px rgba(239, 243, 247, 0.05);
+  box-shadow: inset 0 0 0 1px var(--surface-code-chrome-border);
+  transition:
+    background-color var(--duration-base) ease,
+    box-shadow var(--duration-base) ease;
 }
 
 .code-renderer-toolbar {
@@ -1130,10 +1168,13 @@ select {
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.9rem 1rem;
-  border-bottom: 1px solid rgba(239, 243, 247, 0.08);
+  border-bottom: 1px solid var(--surface-code-chrome-border);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+    linear-gradient(180deg, var(--surface-code-toolbar-shine), transparent),
     var(--surface-code-raised);
+  transition:
+    background var(--duration-base) ease,
+    border-color var(--duration-base) ease;
 }
 
 .code-renderer-meta {
@@ -1141,6 +1182,16 @@ select {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.6rem;
+}
+
+.code-renderer-language-pill {
+  border-color: var(--surface-code-chrome-border) !important;
+  background: color-mix(in srgb, var(--surface-code-text) 6%, transparent) !important;
+  color: var(--surface-code-text) !important;
+}
+
+.code-renderer-readonly-label {
+  color: color-mix(in srgb, var(--surface-code-text) 56%, transparent) !important;
 }
 
 .code-renderer-host {
@@ -1380,57 +1431,6 @@ select {
 
 .json-children {
   padding-bottom: 0.25rem;
-}
-
-.markdown-code {
-  display: block;
-  min-width: max-content;
-  color: var(--surface-code-text);
-  font-family: var(--font-mono), monospace;
-  font-size: 0.88rem;
-  line-height: 1.78;
-}
-
-.markdown-code .hljs-keyword,
-.markdown-code .hljs-selector-tag,
-.markdown-code .hljs-literal,
-.markdown-code .hljs-title,
-.markdown-code .hljs-section,
-.markdown-code .hljs-link {
-  color: #efb360;
-}
-
-.markdown-code .hljs-string,
-.markdown-code .hljs-attr,
-.markdown-code .hljs-template-tag,
-.markdown-code .hljs-template-variable {
-  color: #7fd7a4;
-}
-
-.markdown-code .hljs-number,
-.markdown-code .hljs-symbol,
-.markdown-code .hljs-bullet,
-.markdown-code .hljs-variable,
-.markdown-code .hljs-variable.constant_ {
-  color: #f29c8f;
-}
-
-.markdown-code .hljs-comment,
-.markdown-code .hljs-quote {
-  color: rgba(239, 243, 247, 0.48);
-}
-
-.markdown-code .hljs-function,
-.markdown-code .hljs-title.function_,
-.markdown-code .hljs-title.class_ {
-  color: #9eb3ff;
-}
-
-.markdown-code .hljs-property,
-.markdown-code .hljs-attribute,
-.markdown-code .hljs-built_in,
-.markdown-code .hljs-type {
-  color: #69d1dd;
 }
 
 .markdown-table-wrap {
@@ -2114,7 +2114,6 @@ select {
     background: color-mix(in srgb, var(--print-paper) 86%, var(--print-ink) 14%) !important;
   }
 
-  body[data-print-mode="markdown"] .markdown-code,
   body[data-print-mode="markdown"] .markdown-code-chip,
   body[data-print-mode="markdown"] .markdown-code-caption,
   body[data-print-mode="markdown"] .markdown-table th,
