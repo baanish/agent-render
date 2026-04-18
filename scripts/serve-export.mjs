@@ -82,7 +82,10 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  const contentType = contentTypes.get(path.extname(finalPath)) || "application/octet-stream";
+  let contentType = contentTypes.get(path.extname(finalPath)) || "application/octet-stream";
+  if (finalPath.endsWith(`${path.sep}.well-known${path.sep}oauth-protected-resource`)) {
+    contentType = "application/json; charset=utf-8";
+  }
   response.writeHead(200, { "Content-Type": contentType });
   createReadStream(finalPath).pipe(response);
 });

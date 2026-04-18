@@ -15,6 +15,8 @@ Agent Render is:
 - self-hostable for people who want their own deployment
 - meant to provide a zero-retention browser viewer for agent-shared artifacts
 
+OAuth client discovery for protected APIs on a deployment: `GET /.well-known/oauth-protected-resource` ([RFC 9728](https://www.rfc-editor.org/rfc/rfc9728)).
+
 Source repository:
 - `https://github.com/baanish/agent-render`
 

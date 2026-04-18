@@ -19,6 +19,10 @@ Use self-hosted UUID mode instead of fragment links when:
 
 If the payload fits in a fragment and the link will work on the target surface, prefer fragment-based links using the `agent-render-linking` skill instead. Fragment links are zero-retention, require no server, and work on the public `agent-render.com` deployment.
 
+## OAuth discovery (RFC 9728)
+
+Agents can read `GET /.well-known/oauth-protected-resource` for OAuth Protected Resource Metadata (`resource`, `authorization_servers`, `scopes_supported`). Configure issuers and scopes with `OAUTH_AUTHORIZATION_SERVERS` and `OAUTH_SCOPES_SUPPORTED` (JSON arrays). Override the resource identifier with `OAUTH_RESOURCE_IDENTIFIER` if it should differ from the request origin.
+
 ## API
 
 The self-hosted server exposes a simple REST API.

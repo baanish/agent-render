@@ -1,7 +1,24 @@
 import { expect, type Page } from "@playwright/test";
 
+/**
+ * Navigates using the Playwright `baseURL` and waits until `location.hash` matches
+ * the intended fragment so decode/render is not racing the next assertion.
+ */
 export async function goToHash(page: Page, hash = "") {
   await page.goto(`.${hash}`);
+  const expectedBody = hash.startsWith("#") ? hash.slice(1) : hash;
+  await page.waitForFunction(
+    (body) => {
+      const fragment = window.location.hash;
+      const normalized = fragment.startsWith("#") ? fragment.slice(1) : fragment;
+      if (body === "") {
+        return normalized === "";
+      }
+      return normalized === body;
+    },
+    expectedBody,
+    { timeout: 30_000 },
+  );
 }
 
 export async function setTheme(page: Page, theme: "light" | "dark") {
