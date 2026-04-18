@@ -101,6 +101,30 @@ function htmlResponse(res: ServerResponse, status: number, body: string): void {
   res.end(body);
 }
 
+const MCP_SERVER_CARD_PATH = "/.well-known/mcp/server-card.json";
+
+/**
+ * Serve the static MCP Server Card (SEP-2127) with CORS for browser-based discovery.
+ */
+function mcpServerCardResponse(res: ServerResponse): void {
+  const cardPath = path.join(outputDirectory, ".well-known", "mcp", "server-card.json");
+  if (!existsSync(cardPath)) {
+    res.writeHead(404);
+    res.end("Not found");
+    return;
+  }
+  const body = readFileSync(cardPath, "utf-8");
+  res.writeHead(200, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Content-Length": Buffer.byteLength(body),
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Cache-Control": "public, max-age=3600",
+  });
+  res.end(body);
+}
+
 /** Serve a static file from the output directory. */
 async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> {
   const cleanPath = urlPath.split("?", 1)[0].split("#", 1)[0];
@@ -179,11 +203,31 @@ function errorPage(title: string, message: string): string {
  * - `POST /api/cleanup` — remove expired artifacts
  * - `GET /:uuid` — render the viewer with the stored payload
  * - `GET /*` — serve static files from the build output
+ * - `GET /.well-known/mcp/server-card.json` — MCP Server Card for HTTP discovery (SEP-2127)
  */
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   const pathname = url.pathname.replace(/\/+$/, "") || "/";
   const method = req.method?.toUpperCase() ?? "GET";
+
+  if (pathname === MCP_SERVER_CARD_PATH) {
+    if (method === "OPTIONS") {
+      res.writeHead(204, {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      });
+      res.end();
+      return;
+    }
+    if (method === "GET") {
+      mcpServerCardResponse(res);
+      return;
+    }
+    res.writeHead(405);
+    res.end("Method not allowed");
+    return;
+  }
 
   // CORS headers for API routes
   if (pathname.startsWith("/api/")) {

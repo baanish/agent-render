@@ -17,6 +17,7 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 - Markdown, code, diff, CSV, and JSON all render in the static shell
 - Fragment transport supports `plain`, `lz`, `deflate`, and `arx`, with automatic shortest-fragment selection across packed/non-packed wire formats
 - The `arx` substitution dictionary is served at `/arx-dictionary.json` so agents can fetch it for local compression
+- MCP HTTP discovery metadata is published at `/.well-known/mcp/server-card.json` ([SEP-2127](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2127))
 - The viewer toolbar copies artifact bodies to the clipboard, downloads them as files, and (for markdown) supports browser print-to-PDF
 - Deployment target: static hosting, including Cloudflare Pages
 

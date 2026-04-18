@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json",
+  "name": "com.github.baanish/agent-render",
+  "version": "0.1.0",
+  "title": "agent-render",
+  "description": "Fully static, zero-retention artifact viewer for markdown, code, diffs, CSV, and JSON. Fragment-based transport keeps payloads in the URL hash so hosts do not receive artifact bodies. This card describes the product site; MCP streamable HTTP may not be enabled on every deployment.",
+  "websiteUrl": "https://agent-render.com",
+  "repository": {
+    "url": "https://github.com/baanish/agent-render",
+    "source": "github"
+  },
+  "serverInfo": {
+    "name": "agent-render",
+    "version": "0.1.0"
+  },
+  "endpoint": "https://agent-render.com/mcp",
+  "capabilities": {
+    "tools": false,
+    "resources": false,
+    "prompts": false
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://agent-render.com/mcp",
+      "supportedProtocolVersions": ["2025-11-25"]
+    }
+  ]
+}
