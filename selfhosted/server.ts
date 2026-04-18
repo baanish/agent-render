@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { existsSync, readFileSync, createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import {
   createArtifact,
@@ -11,6 +11,13 @@ import {
   getDb,
 } from "./db.js";
 import { validatePayload } from "./validate.js";
+import {
+  MARKDOWN_MAX_HTML_BYTES,
+  estimateMarkdownTokens,
+  htmlToMarkdown,
+  markdownResponseHeaders,
+  responseWantsMarkdown,
+} from "./markdown-for-agents.js";
 
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || "0.0.0.0";
@@ -101,8 +108,23 @@ function htmlResponse(res: ServerResponse, status: number, body: string): void {
   res.end(body);
 }
 
+/** Send UTF-8 markdown with optional token header. */
+function markdownResponse(res: ServerResponse, status: number, body: string): void {
+  const tokens = estimateMarkdownTokens(body);
+  const buf = Buffer.from(body, "utf-8");
+  res.writeHead(status, {
+    ...markdownResponseHeaders(tokens),
+    "Content-Length": buf.length,
+  });
+  res.end(buf);
+}
+
 /** Serve a static file from the output directory. */
-async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> {
+async function serveStatic(
+  res: ServerResponse,
+  urlPath: string,
+  req?: IncomingMessage,
+): Promise<void> {
   const cleanPath = urlPath.split("?", 1)[0].split("#", 1)[0];
   const normalizedPath = cleanPath === "/" ? "/index.html" : cleanPath;
 
@@ -133,6 +155,28 @@ async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> 
     return;
   }
 
+  const method = req?.method?.toUpperCase() ?? "GET";
+  const accept = req?.headers.accept;
+  if (
+    method === "GET" &&
+    path.extname(filePath) === ".html" &&
+    responseWantsMarkdown(typeof accept === "string" ? accept : undefined)
+  ) {
+    const details = await stat(filePath);
+    if (details.size <= MARKDOWN_MAX_HTML_BYTES) {
+      const html = await readFile(filePath, "utf-8");
+      const md = htmlToMarkdown(html);
+      const tokens = estimateMarkdownTokens(md);
+      const buf = Buffer.from(md, "utf-8");
+      res.writeHead(200, {
+        ...markdownResponseHeaders(tokens),
+        "Content-Length": buf.length,
+      });
+      res.end(buf);
+      return;
+    }
+  }
+
   const contentType = contentTypes.get(path.extname(filePath)) || "application/octet-stream";
   res.writeHead(200, { "Content-Type": contentType });
   createReadStream(filePath).pipe(res);
@@ -152,6 +196,10 @@ function isUuid(value: string): boolean {
 /**
  * Generate a simple error HTML page for expired or missing artifacts.
  */
+function errorMarkdown(title: string, message: string): string {
+  return `# ${title}\n\n${message}\n`;
+}
+
 function errorPage(title: string, message: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -272,23 +320,46 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   // GET /:uuid — render viewer with stored payload
   const pathSegment = pathname.slice(1);
   if (method === "GET" && isUuid(pathSegment)) {
+    const accept = req.headers.accept;
+    const wantsMd = responseWantsMarkdown(typeof accept === "string" ? accept : undefined);
     const row = getArtifact(pathSegment);
     if (!row) {
-      htmlResponse(res, 404, errorPage("Artifact not found", "This artifact has expired or does not exist."));
+      if (wantsMd) {
+        markdownResponse(
+          res,
+          404,
+          errorMarkdown("Artifact not found", "This artifact has expired or does not exist."),
+        );
+      } else {
+        htmlResponse(res, 404, errorPage("Artifact not found", "This artifact has expired or does not exist."));
+      }
       return;
     }
 
     try {
       const html = injectPayload(getIndexHtml(), row.payload);
-      htmlResponse(res, 200, html);
+      if (wantsMd) {
+        if (Buffer.byteLength(html, "utf-8") > MARKDOWN_MAX_HTML_BYTES) {
+          htmlResponse(res, 200, html);
+        } else {
+          const md = htmlToMarkdown(html);
+          markdownResponse(res, 200, md);
+        }
+      } else {
+        htmlResponse(res, 200, html);
+      }
     } catch {
-      htmlResponse(res, 500, errorPage("Server error", "Failed to render the artifact viewer."));
+      if (wantsMd) {
+        markdownResponse(res, 500, errorMarkdown("Server error", "Failed to render the artifact viewer."));
+      } else {
+        htmlResponse(res, 500, errorPage("Server error", "Failed to render the artifact viewer."));
+      }
     }
     return;
   }
 
   // Static file fallback
-  await serveStatic(res, pathname);
+  await serveStatic(res, pathname, req);
 }
 
 // Initialize database on startup

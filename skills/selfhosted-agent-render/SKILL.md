@@ -95,6 +95,8 @@ Response: `{ "deleted": 5 }`
 
 When a user visits `/{uuid}`, the server looks up the stored payload, injects it into the viewer page, and renders the same UI as the fragment-based product. All viewer features work: copy, download, print-to-PDF, diff modes, artifact switching, raw toggle.
 
+HTTP clients that prefer Markdown over HTML (for example `Accept: text/markdown` with a higher `q` value than `text/html`) receive `Content-Type: text/markdown` plus an `x-markdown-tokens` estimate instead of HTML for that page.
+
 Construct viewer links as:
 
 ```text

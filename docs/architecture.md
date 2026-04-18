@@ -127,6 +127,8 @@ The self-hosted server is a standalone Node.js HTTP server that:
 2. Exposes a REST API at `/api/artifacts` for CRUD operations on stored payloads
 3. Handles `GET /:uuid` requests by looking up the payload in SQLite, injecting it into the viewer page via `window.__AGENT_RENDER_PAYLOAD__`, and serving the result
 
+For HTML page responses, the server honors agent-style negotiation: when `Accept` prefers `text/markdown` over `text/html`, it returns Markdown with `Content-Type: text/markdown` and `x-markdown-tokens` (the same behavior as the local static preview server, which implements this because pure static hosts have no edge conversion).
+
 The `ViewerShell` component checks for `window.__AGENT_RENDER_PAYLOAD__` on mount. When present, it uses the injected payload string instead of reading `window.location.hash`. This feeds into the same decode → normalize → render pipeline, so all viewer features (copy, download, print-to-PDF, diff modes, artifact switching) work identically.
 
 ### Storage
@@ -153,6 +155,7 @@ The self-hosted mode does not alter the static export pipeline:
 
 ### Key files
 
+- `selfhosted/markdown-for-agents.ts` — shared `Accept` parsing and HTML→markdown conversion for Node servers
 - `selfhosted/server.ts` — HTTP server with API routes and UUID page rendering
 - `selfhosted/db.ts` — SQLite persistence (CRUD, TTL refresh, cleanup)
 - `selfhosted/ttl.ts` — TTL constants and helpers

@@ -131,6 +131,7 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 - `src/lib/diff/git-patch.ts` - patch parsing support for diff rendering
 
 ### Self-hosted UUID mode (optional server variant)
+- `selfhosted/markdown-for-agents.ts` - `Accept: text/markdown` negotiation and HTML→markdown for Node servers
 - `selfhosted/server.ts` - HTTP server with API routes and UUID page rendering
 - `selfhosted/db.ts` - SQLite persistence (CRUD, TTL refresh, cleanup)
 - `selfhosted/ttl.ts` - TTL constants and helpers

@@ -84,6 +84,8 @@ npm run preview
 
 Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a subpath deployment locally.
 
+The preview server supports agent-style content negotiation: requests with `Accept: text/markdown` (preferred over HTML) receive Markdown with `Content-Type: text/markdown` and an `x-markdown-tokens` estimate. See `docs/deployment.md` for details.
+
 ## Contributing
 
 - Public exported functions/components in `src/lib/**` and `src/components/**` must have a preceding `/** ... */` JSDoc block.

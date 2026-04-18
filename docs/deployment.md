@@ -32,6 +32,12 @@ Then serve `out/` under `/agent-render/` and open the sample fragment links from
 
 The preview server intentionally preserves the fragment payload and does not rely on hash-based in-page navigation for diff files.
 
+### Markdown for agents (`Accept: text/markdown`)
+
+HTTP clients that send `Accept: text/markdown` (with higher quality than `text/html`) receive a Markdown representation of HTML pages instead of raw HTML. Responses use `Content-Type: text/markdown; charset=utf-8`, `Vary: Accept`, and `x-markdown-tokens` with an estimated token count.
+
+This applies to the local preview server (`npm run preview`) and the optional self-hosted Node server. On Cloudflare zones with [Markdown for Agents](https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/) enabled, the edge may perform conversion before the request reaches the origin; otherwise the app servers above handle negotiation at the origin.
+
 ## Hosting model
 
 The project does not require a Node.js runtime. Any static host that can serve HTML, CSS, and JavaScript is sufficient.
