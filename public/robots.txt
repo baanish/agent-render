@@ -1,0 +1,6 @@
+# agent-render — static artifact viewer (RFC 9309). No sitemap; all meaningful URLs use the fragment.
+
+User-agent: *
+Allow: /
+Disallow: /_next/
+Disallow: /api/
