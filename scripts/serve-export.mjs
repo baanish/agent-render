@@ -28,7 +28,12 @@ const contentTypes = new Map([
   [".woff2", "font/woff2"],
 ]);
 
-function toFilePath(urlPath) {
+const MCP_SERVER_CARD_RELATIVE = "/.well-known/mcp/server-card.json";
+
+/**
+ * Resolve the URL path to a path relative to the site root (after optional base path).
+ */
+function resolveSiteRelativePath(urlPath) {
   const cleanPath = urlPath.split("?", 1)[0].split("#", 1)[0];
   let relativePath = cleanPath;
 
@@ -48,13 +53,45 @@ function toFilePath(urlPath) {
     relativePath = relativePath.slice(basePath.length) || "/";
   }
 
+  return relativePath;
+}
+
+function toFilePath(urlPath) {
+  const relativePath = resolveSiteRelativePath(urlPath);
   const normalizedPath = relativePath === "/" ? "/index.html" : relativePath;
   const tentativePath = path.join(outputDirectory, normalizedPath);
   return normalizedPath.endsWith("/") ? path.join(tentativePath, "index.html") : tentativePath;
 }
 
+function isMcpServerCardPath(urlPath) {
+  const relativePath = resolveSiteRelativePath(urlPath);
+  const normalized = relativePath.replace(/\/+$/, "") || "/";
+  return normalized === MCP_SERVER_CARD_RELATIVE;
+}
+
+function mcpServerCardHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Cache-Control": "public, max-age=3600",
+  };
+}
+
 const server = createServer(async (request, response) => {
   const requestPath = request.url || "/";
+  const method = request.method?.toUpperCase() ?? "GET";
+
+  if (method === "OPTIONS" && isMcpServerCardPath(requestPath)) {
+    response.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    });
+    response.end();
+    return;
+  }
+
   const filePath = toFilePath(requestPath);
 
   if (!filePath) {
@@ -83,7 +120,8 @@ const server = createServer(async (request, response) => {
   }
 
   const contentType = contentTypes.get(path.extname(finalPath)) || "application/octet-stream";
-  response.writeHead(200, { "Content-Type": contentType });
+  const extraHeaders = isMcpServerCardPath(requestPath) ? mcpServerCardHeaders() : {};
+  response.writeHead(200, { "Content-Type": contentType, ...extraHeaders });
   createReadStream(finalPath).pipe(response);
 });
 
