@@ -132,12 +132,17 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 
 ### Self-hosted UUID mode (optional server variant)
 - `selfhosted/server.ts` - HTTP server with API routes and UUID page rendering
+- `selfhosted/oauth-metadata.ts` - OAuth 2.0 / OpenID Connect discovery document builders (RFC 8414)
 - `selfhosted/db.ts` - SQLite persistence (CRUD, TTL refresh, cleanup)
 - `selfhosted/ttl.ts` - TTL constants and helpers
 - `selfhosted/validate.ts` - payload validation for the API
 - `selfhosted/tsconfig.json` - TypeScript config for server compilation
 - `selfhosted/Dockerfile` - multi-stage Docker build
 - `selfhosted/docker-compose.yml` - Docker Compose deployment
+
+### Build / OAuth discovery for static export
+- `scripts/oauth-discovery-templates/*` - JSON templates for discovery documents
+- `scripts/patch-oauth-discovery.mjs` - runs after `next build` to write `out/.well-known/` (issuer from `SITE_ORIGIN` / `PUBLIC_ORIGIN`, path layout per RFC 8414 when `NEXT_PUBLIC_BASE_PATH` is set)
 
 ### Docs and external contract
 - `README.md`

@@ -11,6 +11,12 @@ import {
   getDb,
 } from "./db.js";
 import { validatePayload } from "./validate.js";
+import {
+  buildJwksDocument,
+  buildOAuthAuthorizationServerMetadata,
+  buildOpenIdConfiguration,
+  resolveIssuerBaseFromRequest,
+} from "./oauth-metadata.js";
 
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || "0.0.0.0";
@@ -177,6 +183,9 @@ function errorPage(title: string, message: string): string {
  * - `PUT /api/artifacts/:id` — update an artifact payload
  * - `DELETE /api/artifacts/:id` — delete an artifact
  * - `POST /api/cleanup` — remove expired artifacts
+ * - `GET /.well-known/oauth-authorization-server` — OAuth 2.0 Authorization Server Metadata (RFC 8414)
+ * - `GET /.well-known/openid-configuration` — OpenID Provider Metadata
+ * - `GET /.well-known/jwks.json` — JWKS (empty keys; discovery wiring only)
  * - `GET /:uuid` — render the viewer with the stored payload
  * - `GET /*` — serve static files from the build output
  */
@@ -196,6 +205,37 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       res.end();
       return;
     }
+  }
+
+  if (pathname.startsWith("/.well-known/")) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+  }
+
+  const isTls = (req.socket as { encrypted?: boolean }).encrypted === true;
+
+  if (method === "GET" && pathname === "/.well-known/oauth-authorization-server") {
+    const issuerBase = resolveIssuerBaseFromRequest(req.headers, isTls);
+    jsonResponse(res, 200, buildOAuthAuthorizationServerMetadata(issuerBase));
+    return;
+  }
+
+  if (method === "GET" && pathname === "/.well-known/openid-configuration") {
+    const issuerBase = resolveIssuerBaseFromRequest(req.headers, isTls);
+    jsonResponse(res, 200, buildOpenIdConfiguration(issuerBase));
+    return;
+  }
+
+  if (method === "GET" && pathname === "/.well-known/jwks.json") {
+    jsonResponse(res, 200, buildJwksDocument());
+    return;
   }
 
   // POST /api/artifacts — create
