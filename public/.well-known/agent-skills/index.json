@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "agent-render-linking",
+      "type": "skill-md",
+      "description": "Create zero-retention agent-render.com links for markdown, code, diffs, CSV, or JSON artifacts. Markdown artifacts support inline mermaid diagram rendering via fenced code blocks. Use when an agent needs to share a nicely rendered artifact in the browser instead of pasting raw content into chat. Trigger for requests like \"share this as a link\", \"make a diff link\", \"render this markdown/code/csv/json\", \"show this diagram\", or when chat rendering is weak. Agent Render is open source, hosted on Cloudflare Pages, and self-hostable. Use platform-specific linked-text syntax only on surfaces that support it cleanly, such as Discord Markdown links, Telegram HTML links, or Slack mrkdwn links; otherwise send a short summary plus the raw URL.",
+      "url": "https://agent-render.com/skills/agent-render-linking/SKILL.md",
+      "digest": "sha256:9bbbf1fbd47fa0781271bfb8cfff6bc6a4b55146ceafab607579d289b683b249"
+    },
+    {
+      "name": "selfhosted-agent-render",
+      "type": "skill-md",
+      "description": "Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs to share rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal when payloads exceed the ~8 KB fragment budget, when links will be shared on platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds and envelope validation as the fragment-based product. The self-hosted server stores payloads in SQLite with a 24-hour sliding TTL.",
+      "url": "https://agent-render.com/skills/selfhosted-agent-render/SKILL.md",
+      "digest": "sha256:7a65d95b72529606eac7d93f77f710b93771caa2deea1f2e77834e177f974b9e"
+    }
+  ]
+}
