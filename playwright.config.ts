@@ -22,6 +22,11 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
+    // Playwright's default Accept prefers text/markdown first; the static preview server
+    // then returns markdown for document requests and the client shell never hydrates.
+    extraHTTPHeaders: {
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    },
   },
   webServer: {
     command: `NEXT_PUBLIC_BASE_PATH=/agent-render npm run build && PORT=${port} NEXT_PUBLIC_BASE_PATH=/agent-render npm run preview`,

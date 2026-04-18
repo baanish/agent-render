@@ -1,7 +1,13 @@
 import { expect, type Page } from "@playwright/test";
 
 export async function goToHash(page: Page, hash = "") {
-  await page.goto(`.${hash}`);
+  await page.goto(`.${hash}`, { waitUntil: "load" });
+  if (hash) {
+    await expect.poll(() => page.evaluate(() => window.location.hash), {
+      message: "Expected window.location.hash to match the navigation target (fragment may apply async).",
+      timeout: 10_000,
+    }).toBe(hash);
+  }
 }
 
 export async function setTheme(page: Page, theme: "light" | "dark") {

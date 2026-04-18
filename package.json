@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "tsc -p selfhosted/tsconfig.json",
     "preview": "node scripts/serve-export.mjs",
     "start": "npm run preview",
     "lint": "eslint . && npm run check:public-export-docs",
@@ -54,7 +55,8 @@
     "react-markdown": "^10.1.0",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "turndown": "^7.2.4"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
@@ -67,6 +69,7 @@
     "@types/papaparse": "^5.3.16",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@types/turndown": "^5.0.6",
     "eslint": "^9.22.0",
     "eslint-config-next": "15.1.11",
     "jsdom": "^28.1.0",
