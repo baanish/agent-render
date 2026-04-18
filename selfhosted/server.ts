@@ -31,6 +31,8 @@ const contentTypes = new Map<string, string>([
   [".woff", "font/woff"],
   [".woff2", "font/woff2"],
   [".br", "application/octet-stream"],
+  [".yaml", "application/yaml; charset=utf-8"],
+  [".yml", "application/yaml; charset=utf-8"],
 ]);
 
 let indexHtmlCache: string | null = null;
@@ -80,6 +82,43 @@ function readBody(req: IncomingMessage): Promise<string> {
     req.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
     req.on("error", reject);
   });
+}
+
+/**
+ * Respond to `/.well-known/api-catalog` per RFC 9727 (Linkset + optional HEAD Link header).
+ */
+function serveApiCatalog(
+  res: ServerResponse,
+  method: string,
+  catalogPath: string,
+): void {
+  const linkHeader = `<${catalogPath}>; rel="api-catalog"`;
+  const headers: Record<string, string | number> = {
+    "Content-Type": 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"',
+    Link: linkHeader,
+  };
+
+  if (method === "HEAD") {
+    res.writeHead(200, headers);
+    res.end();
+    return;
+  }
+
+  if (method !== "GET") {
+    res.writeHead(405, { Allow: "GET, HEAD, OPTIONS" });
+    res.end("Method not allowed");
+    return;
+  }
+
+  const filePath = path.join(outputDirectory, ".well-known", "api-catalog");
+  if (!existsSync(filePath)) {
+    res.writeHead(404);
+    res.end("Not found");
+    return;
+  }
+
+  res.writeHead(200, headers);
+  createReadStream(filePath).pipe(res);
 }
 
 /** Send a JSON response with the given status code. */
@@ -178,12 +217,20 @@ function errorPage(title: string, message: string): string {
  * - `DELETE /api/artifacts/:id` — delete an artifact
  * - `POST /api/cleanup` — remove expired artifacts
  * - `GET /:uuid` — render the viewer with the stored payload
+ * - `GET /.well-known/api-catalog` — RFC 9727 API discovery (Linkset JSON)
+ * - `GET /health.json` — static health response (`{ "status": "ok" }` from export)
  * - `GET /*` — serve static files from the build output
  */
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   const pathname = url.pathname.replace(/\/+$/, "") || "/";
   const method = req.method?.toUpperCase() ?? "GET";
+
+  const apiCatalogPath = "/.well-known/api-catalog";
+  if (pathname === apiCatalogPath) {
+    serveApiCatalog(res, method, apiCatalogPath);
+    return;
+  }
 
   // CORS headers for API routes
   if (pathname.startsWith("/api/")) {
