@@ -1,0 +1,4 @@
+# Content Signals — https://contentsignals.org/
+# IETF draft: https://datatracker.ietf.org/doc/draft-romm-aipref-contentsignals/
+User-agent: *
+Content-Signal: ai-train=no, search=yes, ai-input=no
