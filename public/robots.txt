@@ -1,0 +1,33 @@
+# https://www.rfc-editor.org/rfc/rfc9309
+# Public static viewer: AI crawlers may fetch the same public pages as other clients.
+# Optional dashboard control: https://developers.cloudflare.com/ai-crawl-control/
+
+User-agent: *
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
