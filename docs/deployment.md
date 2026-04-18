@@ -10,6 +10,7 @@ Key details:
 - Upload the generated `out/` directory to your static host
 - Set `NEXT_PUBLIC_BASE_PATH` only when you need a subpath deployment
 - `.nojekyll` remains harmless for hosts that ignore it
+- After each build, `out/_headers` includes an [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288) `Link` header on `/` and `/index.html` for agent discovery (`api-catalog`, `service-desc`, `service-doc`, `describedby`). Cloudflare Pages applies these automatically; other hosts can map the same URLs to equivalent response headers.
 
 ## Local verification
 

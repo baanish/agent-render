@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { existsSync, readFileSync, createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   createArtifact,
   getArtifact,
@@ -15,6 +16,27 @@ import { validatePayload } from "./validate.js";
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || "0.0.0.0";
 const outputDirectory = path.resolve(process.env.OUT_DIR || "out");
+
+const linkHeadersModuleHref = pathToFileURL(path.join(process.cwd(), "scripts", "agent-render-link-headers.mjs")).href;
+
+let homeLinkHeaderPromise: Promise<string> | null = null;
+
+/**
+ * RFC 8288 Link header for the homepage (cached), shared with `scripts/serve-export.mjs`.
+ */
+async function getHomeLinkHeader(): Promise<string> {
+  if (!homeLinkHeaderPromise) {
+    homeLinkHeaderPromise = import(linkHeadersModuleHref).then((m: { buildAgentRenderLinkHeaderValue: (b?: string) => string }) =>
+      m.buildAgentRenderLinkHeaderValue(process.env.NEXT_PUBLIC_BASE_PATH ?? ""),
+    );
+  }
+  return homeLinkHeaderPromise;
+}
+
+/** True when the resolved file is the built root `index.html` (not nested copies). */
+function isRootIndexHtml(filePath: string): boolean {
+  return path.resolve(filePath) === path.join(outputDirectory, "index.html");
+}
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -92,12 +114,14 @@ function jsonResponse(res: ServerResponse, status: number, body: unknown): void 
   res.end(json);
 }
 
-/** Send an HTML response with the given status code. */
-function htmlResponse(res: ServerResponse, status: number, body: string): void {
-  res.writeHead(status, {
+/** Send an HTML response with the given status code and optional Link header. */
+function htmlResponse(res: ServerResponse, status: number, body: string, headers?: Record<string, string>): void {
+  const merged: Record<string, string> = {
     "Content-Type": "text/html; charset=utf-8",
-    "Content-Length": Buffer.byteLength(body),
-  });
+    "Content-Length": String(Buffer.byteLength(body)),
+    ...headers,
+  };
+  res.writeHead(status, merged);
   res.end(body);
 }
 
@@ -134,7 +158,11 @@ async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> 
   }
 
   const contentType = contentTypes.get(path.extname(filePath)) || "application/octet-stream";
-  res.writeHead(200, { "Content-Type": contentType });
+  const headers: Record<string, string> = { "Content-Type": contentType };
+  if (isRootIndexHtml(filePath)) {
+    headers.Link = await getHomeLinkHeader();
+  }
+  res.writeHead(200, headers);
   createReadStream(filePath).pipe(res);
 }
 
@@ -280,7 +308,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     try {
       const html = injectPayload(getIndexHtml(), row.payload);
-      htmlResponse(res, 200, html);
+      htmlResponse(res, 200, html, { Link: await getHomeLinkHeader() });
     } catch {
       htmlResponse(res, 500, errorPage("Server error", "Failed to render the artifact viewer."));
     }

@@ -23,6 +23,7 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/out ./out
 COPY --from=builder /app/selfhosted/dist ./selfhosted/dist
+COPY --from=builder /app/scripts ./scripts
 
 RUN mkdir -p /app/data && chown -R nodejs:nodejs /app
 

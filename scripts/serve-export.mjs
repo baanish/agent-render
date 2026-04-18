@@ -3,6 +3,7 @@ import { existsSync, createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { buildAgentRenderLinkHeaderValue } from "./agent-render-link-headers.mjs";
 
 const outputDirectory = path.resolve("out");
 const port = Number(process.env.PORT || 3000);
@@ -53,6 +54,9 @@ function toFilePath(urlPath) {
   return normalizedPath.endsWith("/") ? path.join(tentativePath, "index.html") : tentativePath;
 }
 
+const linkHeaderValue = buildAgentRenderLinkHeaderValue(process.env.NEXT_PUBLIC_BASE_PATH || "");
+const rootIndexPath = path.join(outputDirectory, "index.html");
+
 const server = createServer(async (request, response) => {
   const requestPath = request.url || "/";
   const filePath = toFilePath(requestPath);
@@ -83,7 +87,11 @@ const server = createServer(async (request, response) => {
   }
 
   const contentType = contentTypes.get(path.extname(finalPath)) || "application/octet-stream";
-  response.writeHead(200, { "Content-Type": contentType });
+  const headers = { "Content-Type": contentType };
+  if (finalPath === rootIndexPath) {
+    headers.Link = linkHeaderValue;
+  }
+  response.writeHead(200, headers);
   createReadStream(finalPath).pipe(response);
 });
 

@@ -1,0 +1,73 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "agent-render API discovery",
+    "version": "1.0.0",
+    "description": "REST endpoints are available when running the optional self-hosted server (not on plain static hosting). Fragment payloads and the viewer shell are documented under docs/payload-format.md in the repository."
+  },
+  "servers": [{ "url": "/", "description": "Same origin as this host" }],
+  "paths": {
+    "/api/artifacts": {
+      "post": {
+        "summary": "Create a stored artifact (self-hosted mode only)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["payload"],
+                "properties": {
+                  "payload": { "type": "string", "description": "Raw payload string for the viewer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Artifact created" },
+          "400": { "description": "Invalid body" }
+        }
+      }
+    },
+    "/api/artifacts/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "get": {
+        "summary": "Retrieve artifact and refresh TTL (self-hosted mode only)",
+        "responses": {
+          "200": { "description": "Artifact body" },
+          "404": { "description": "Not found or expired" }
+        }
+      },
+      "put": {
+        "summary": "Replace artifact payload (self-hosted mode only)",
+        "responses": {
+          "200": { "description": "Updated" },
+          "404": { "description": "Not found or expired" }
+        }
+      },
+      "delete": {
+        "summary": "Delete artifact (self-hosted mode only)",
+        "responses": {
+          "200": { "description": "Deleted" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/api/cleanup": {
+      "post": {
+        "summary": "Remove expired artifacts (self-hosted mode only)",
+        "responses": {
+          "200": { "description": "Cleanup result", "content": { "application/json": { "schema": { "type": "object" } } } }
+        }
+      }
+    }
+  }
+}
