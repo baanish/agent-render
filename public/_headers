@@ -1,0 +1,7 @@
+# Cloudflare Pages: correct MIME for RFC 9728 metadata (extensionless path)
+/.well-known/oauth-protected-resource
+  Content-Type: application/json; charset=utf-8
+
+# Subpath deployment (matches common `NEXT_PUBLIC_BASE_PATH=/agent-render` preview)
+/agent-render/.well-known/oauth-protected-resource
+  Content-Type: application/json; charset=utf-8

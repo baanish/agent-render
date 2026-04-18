@@ -9,6 +9,7 @@ Key details:
 - Build with `npm ci` and `npm run build`
 - Upload the generated `out/` directory to your static host
 - Set `NEXT_PUBLIC_BASE_PATH` only when you need a subpath deployment
+- OAuth Protected Resource Metadata is emitted at build time to `out/.well-known/oauth-protected-resource` (and under `out/<basePath>/.well-known/...` when using a subpath). Override the canonical resource URL with `NEXT_PUBLIC_SITE_URL` before `npm run build` if your deployment hostname differs from the default (`https://agent-render.com`)
 - `.nojekyll` remains harmless for hosts that ignore it
 
 ## Local verification
@@ -68,6 +69,9 @@ The server starts on port 3000. Create artifacts via `POST /api/artifacts` and v
 | `HOST`    | `0.0.0.0`                   | Server bind address            |
 | `DB_PATH` | `./data/agent-render.db`    | SQLite database file path      |
 | `OUT_DIR` | `out`                       | Path to the static build output|
+| `OAUTH_RESOURCE_IDENTIFIER` | _(request origin)_ | RFC 9728 `resource` URL for `/.well-known/oauth-protected-resource` |
+| `OAUTH_AUTHORIZATION_SERVERS` | _(empty)_ | JSON array of OAuth/OIDC issuer URLs, e.g. `["https://auth.example.com"]` |
+| `OAUTH_SCOPES_SUPPORTED` | _(empty)_ | JSON array of scope strings, e.g. `["artifacts.write"]` |
 
 ### Docker Compose
 

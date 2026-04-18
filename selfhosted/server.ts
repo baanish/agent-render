@@ -18,6 +18,50 @@ const outputDirectory = path.resolve(process.env.OUT_DIR || "out");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const OAUTH_PR_PATH = "/.well-known/oauth-protected-resource";
+
+/**
+ * RFC 9728 OAuth Protected Resource Metadata document for this deployment.
+ * Lists the resource identifier and (when configured) trusted authorization servers.
+ */
+function getOAuthProtectedResourceMetadata(url: URL): Record<string, unknown> {
+  const fromEnv = process.env.OAUTH_RESOURCE_IDENTIFIER?.trim();
+  const resource = (fromEnv || `${url.protocol}//${url.host}`).replace(/\/$/, "");
+
+  let authorization_servers: string[] = [];
+  let scopes_supported: string[] = [];
+
+  const serversRaw = process.env.OAUTH_AUTHORIZATION_SERVERS?.trim();
+  if (serversRaw) {
+    try {
+      const parsed = JSON.parse(serversRaw) as unknown;
+      if (Array.isArray(parsed) && parsed.every((item) => typeof item === "string")) {
+        authorization_servers = parsed;
+      }
+    } catch {
+      // ignore invalid env
+    }
+  }
+
+  const scopesRaw = process.env.OAUTH_SCOPES_SUPPORTED?.trim();
+  if (scopesRaw) {
+    try {
+      const parsed = JSON.parse(scopesRaw) as unknown;
+      if (Array.isArray(parsed) && parsed.every((item) => typeof item === "string")) {
+        scopes_supported = parsed;
+      }
+    } catch {
+      // ignore invalid env
+    }
+  }
+
+  return {
+    resource,
+    authorization_servers,
+    scopes_supported,
+  };
+}
+
 const contentTypes = new Map<string, string>([
   [".html", "text/html; charset=utf-8"],
   [".js", "text/javascript; charset=utf-8"],
@@ -133,7 +177,10 @@ async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> 
     return;
   }
 
-  const contentType = contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+  let contentType = contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+  if (filePath.endsWith(`${path.sep}.well-known${path.sep}oauth-protected-resource`)) {
+    contentType = "application/json; charset=utf-8";
+  }
   res.writeHead(200, { "Content-Type": contentType });
   createReadStream(filePath).pipe(res);
 }
@@ -172,6 +219,7 @@ function errorPage(title: string, message: string): string {
  * Main request handler for the self-hosted agent-render server.
  *
  * Routes:
+ * - `GET /.well-known/oauth-protected-resource` — RFC 9728 OAuth Protected Resource Metadata
  * - `POST /api/artifacts` — create a new artifact
  * - `GET /api/artifacts/:id` — retrieve an artifact (refreshes TTL)
  * - `PUT /api/artifacts/:id` — update an artifact payload
@@ -184,6 +232,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   const pathname = url.pathname.replace(/\/+$/, "") || "/";
   const method = req.method?.toUpperCase() ?? "GET";
+
+  // GET /.well-known/oauth-protected-resource — RFC 9728 discovery for OAuth clients and agents
+  if (method === "GET" && pathname === OAUTH_PR_PATH) {
+    jsonResponse(res, 200, getOAuthProtectedResourceMetadata(url));
+    return;
+  }
 
   // CORS headers for API routes
   if (pathname.startsWith("/api/")) {

@@ -44,6 +44,7 @@ Describe and preserve what is already true in the repo today.
 ### Shell and routing
 
 - The app renders as one export-friendly shell.
+- The static export includes RFC 9728 OAuth Protected Resource Metadata at `/.well-known/oauth-protected-resource` (build step writes into `out/`; see `scripts/emit-oauth-protected-resource.mjs`).
 - The empty state explains the product and exposes sample fragment presets.
 - A built-in link creator can generate fragment-based links locally in the browser.
 - When a valid fragment is present, the app switches to a viewer-first artifact layout.
