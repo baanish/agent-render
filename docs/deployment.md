@@ -4,6 +4,8 @@
 
 `agent-render` is a static export and can be deployed to any host that serves files from `out/`.
 
+Automated API discovery ([RFC 9727](https://www.rfc-editor.org/rfc/rfc9727)): the build emits `out/.well-known/api-catalog` as `application/linkset+json`, listing the optional self-hosted HTTP API (OpenAPI, docs, health). Hosts must serve extensionless files with that media type or use a platform-specific rewrite to the built file.
+
 Key details:
 
 - Build with `npm ci` and `npm run build`
@@ -58,7 +60,7 @@ npm run build
 npm run selfhosted:dev
 ```
 
-The server starts on port 3000. Create artifacts via `POST /api/artifacts` and view them at `http://localhost:3000/{uuid}`.
+The server starts on port 3000. Create artifacts via `POST /api/artifacts` and view them at `http://localhost:3000/{uuid}`. It also serves `GET /.well-known/api-catalog` (RFC 9727) with `Link` headers on `HEAD`, and static `GET /health.json` for the catalog’s `status` link.
 
 ### Environment variables
 

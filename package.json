@@ -5,7 +5,7 @@
   "description": "A static, zero-retention artifact viewer for markdown, code, diffs, CSV, and JSON.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/write-api-catalog.mjs && next build",
     "preview": "node scripts/serve-export.mjs",
     "start": "npm run preview",
     "lint": "eslint . && npm run check:public-export-docs",

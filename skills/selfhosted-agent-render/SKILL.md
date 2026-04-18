@@ -23,6 +23,8 @@ If the payload fits in a fragment and the link will work on the target surface, 
 
 The self-hosted server exposes a simple REST API.
 
+Discovery: `GET /.well-known/api-catalog` returns RFC 9727 `application/linkset+json` pointing to the OpenAPI file (`service-desc`), human-readable notes (`service-doc`), and `GET /health.json` (`status`). Run `npm run build` before `selfhosted:dev` so the catalog in `out/.well-known/api-catalog` matches your `NEXT_PUBLIC_BASE_PATH`.
+
 ### Create an artifact
 
 ```http

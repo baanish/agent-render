@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>agent-render self-hosted HTTP API</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    code { background: #f4f4f5; padding: 0.1em 0.35em; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>agent-render self-hosted API</h1>
+  <p>
+    The optional self-hosted server exposes REST endpoints under <code>/api</code> for storing artifact
+    payloads in SQLite and serving viewer links. Build and run with
+    <code>npm run selfhosted:dev</code>, or use the Docker image described in the repository.
+  </p>
+  <p>
+    Machine-readable description: OpenAPI at <code>/openapi/selfhosted-artifacts.yaml</code>.
+    See the <code>skills/selfhosted-agent-render/SKILL.md</code> file in the project repository for full usage.
+  </p>
+</body>
+</html>
