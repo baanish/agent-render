@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -44,8 +44,18 @@ import { LinkCreator } from "@/components/home/link-creator";
 import { ArtifactSelector } from "@/components/viewer/artifact-selector";
 import { FragmentDetailsDisclosure } from "@/components/viewer/fragment-details-disclosure";
 import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  type AgentRenderWebMcpActions,
+  type WebMcpViewerState,
+  WEBMCP_EXAMPLE_KEYS,
+  buildExampleHashByKey,
+  registerAgentRenderWebMcpTools,
+} from "@/lib/webmcp/register-agent-render-tools";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
+
+const webmcpExampleHashByKey = buildExampleHashByKey(sampleLinks.map((link) => link.hash));
+const webmcpExampleTitles = sampleLinks.map((link) => link.title);
 
 const kindIcons: Record<ArtifactKind, LucideIcon> = {
   markdown: FileText,
@@ -455,6 +465,86 @@ export function ViewerShell() {
       window.print();
     });
   }, [markdownArtifact]);
+
+  const webmcpActionsRef = useRef<AgentRenderWebMcpActions | null>(null);
+
+  useLayoutEffect(() => {
+    webmcpActionsRef.current = {
+      getViewerState: (): WebMcpViewerState => {
+        const hasFragment = Boolean(hash && hash !== "#");
+        const fl = hash.startsWith("#") ? Math.max(0, hash.length - 1) : hash.length;
+        if (!parsed.ok) {
+          return {
+            hasFragment,
+            fragmentLength: fl,
+            decodeOk: false,
+            parseMessage: parsed.message,
+            artifactIds: [],
+            exampleKeys: WEBMCP_EXAMPLE_KEYS,
+            exampleTitles: webmcpExampleTitles,
+          };
+        }
+
+        const env = parsed.envelope;
+        const active = env.artifacts.find((a) => a.id === env.activeArtifactId) ?? env.artifacts[0];
+
+        return {
+          hasFragment,
+          fragmentLength: fl,
+          decodeOk: true,
+          envelopeTitle: env.title,
+          codec: env.codec,
+          artifactIds: env.artifacts.map((a) => a.id),
+          activeArtifactId: active?.id,
+          activeArtifactKind: active?.kind,
+          activeArtifactTitle: active?.title ?? active?.filename,
+          exampleKeys: WEBMCP_EXAMPLE_KEYS,
+          exampleTitles: webmcpExampleTitles,
+        };
+      },
+      loadSampleByKey: (key: string) => {
+        const nextHash = webmcpExampleHashByKey[key as keyof typeof webmcpExampleHashByKey];
+        if (!nextHash) {
+          return false;
+        }
+
+        if (window.location.hash === nextHash) {
+          return true;
+        }
+
+        window.location.hash = nextHash;
+        return true;
+      },
+      loadSampleByTitle: (substring: string) => {
+        const needle = substring.toLowerCase();
+        const index = webmcpExampleTitles.findIndex((title) => title.toLowerCase().includes(needle));
+        if (index === -1) {
+          return false;
+        }
+
+        const nextHash = sampleLinks[index]?.hash;
+        if (!nextHash) {
+          return false;
+        }
+
+        if (window.location.hash === nextHash) {
+          return true;
+        }
+
+        window.location.hash = nextHash;
+        return true;
+      },
+      selectArtifact: handleArtifactSelect,
+      copyActiveArtifact: handleArtifactCopy,
+      downloadActiveArtifact: handleArtifactDownload,
+      printActiveMarkdown: handleMarkdownPrint,
+      goHome: handleGoHome,
+    };
+  });
+
+  useEffect(() => {
+    return registerAgentRenderWebMcpTools(webmcpActionsRef);
+  }, []);
 
   return (
     <main
