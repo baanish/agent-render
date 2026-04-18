@@ -23,6 +23,16 @@ If the payload fits in a fragment and the link will work on the target surface, 
 
 The self-hosted server exposes a simple REST API.
 
+### OAuth / OpenID discovery (metadata only)
+
+The server responds to RFC 8414 and OpenID Connect discovery so tools can resolve endpoints:
+
+- `GET /.well-known/oauth-authorization-server` — OAuth 2.0 Authorization Server Metadata
+- `GET /.well-known/openid-configuration` — OpenID Provider Metadata (includes `response_types_supported`)
+- `GET /.well-known/jwks.json` — JWKS document (empty `keys`; no bearer-token gate on the artifact API today)
+
+Set `PUBLIC_ORIGIN` to your public base URL (scheme + host + optional path prefix) if the server sits behind a reverse proxy. The metadata lists conventional `authorization_endpoint` and `token_endpoint` URLs; interactive OAuth is not implemented—these documents declare that the host is not wired to an external authorization server for the UUID artifact API.
+
 ### Create an artifact
 
 ```http

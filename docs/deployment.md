@@ -10,6 +10,9 @@ Key details:
 - Upload the generated `out/` directory to your static host
 - Set `NEXT_PUBLIC_BASE_PATH` only when you need a subpath deployment
 - `.nojekyll` remains harmless for hosts that ignore it
+- After `next export`, `scripts/patch-oauth-discovery.mjs` writes OAuth 2.0 / OpenID Connect discovery JSON (RFC 8414 and OpenID Discovery) under `out/.well-known/` so agents can resolve `issuer`, endpoints, and `jwks_uri`. Override the issuer origin with `SITE_ORIGIN` (or `PUBLIC_ORIGIN`) at build time if you are not deploying at `https://agent-render.com`.
+
+Root deployment serves discovery at `/.well-known/oauth-authorization-server` and `/.well-known/openid-configuration` (no file extension). If `NEXT_PUBLIC_BASE_PATH` is set, the issuer includes that path segment and discovery follows RFC 8414’s path-based layout (for example `/.well-known/oauth-authorization-server/<segment>` on the host, plus `jwks.json` under `<segment>/.well-known/`).
 
 ## Local verification
 
@@ -68,6 +71,7 @@ The server starts on port 3000. Create artifacts via `POST /api/artifacts` and v
 | `HOST`    | `0.0.0.0`                   | Server bind address            |
 | `DB_PATH` | `./data/agent-render.db`    | SQLite database file path      |
 | `OUT_DIR` | `out`                       | Path to the static build output|
+| `PUBLIC_ORIGIN` | _(unset)_            | Public site origin for OAuth discovery on the self-hosted server (e.g. `https://example.com`). If unset, derived from request headers. |
 
 ### Docker Compose
 
