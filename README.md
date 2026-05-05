@@ -1,8 +1,25 @@
 # agent-render
 
+[![Test](https://github.com/baanish/agent-render/actions/workflows/test.yml/badge.svg)](https://github.com/baanish/agent-render/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Security policy](https://img.shields.io/badge/security-policy-brightgreen.svg)](SECURITY.md)
+[![Static export](https://img.shields.io/badge/runtime-static%20export-blue.svg)](docs/deployment.md)
+
 `agent-render` is a fully static, zero-retention artifact viewer for AI-generated outputs.
 
 Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based sharing for markdown, code, diffs, CSV, and JSON so the payload stays in the browser URL fragment instead of being sent to a server.
+
+## Visual Proof
+
+The repo includes Playwright visual snapshots for the shipped viewer surfaces:
+
+| Empty state | Markdown artifact |
+| --- | --- |
+| ![Empty state screenshot](tests/e2e/visual.spec.ts-snapshots/empty-state-light-chromium.png) | ![Markdown artifact screenshot](tests/e2e/visual.spec.ts-snapshots/markdown-light-chromium.png) |
+
+| Diff artifact | JSON artifact |
+| --- | --- |
+| ![Diff artifact screenshot](tests/e2e/visual.spec.ts-snapshots/diff-light-chromium.png) | ![JSON artifact screenshot](tests/e2e/visual.spec.ts-snapshots/json-light-chromium.png) |
 
 ## OpenClaw
 
@@ -11,6 +28,15 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 - Website: `https://agent-render.com`
 - OpenClaw: `https://openclaw.ai`
 - ClawdHub skill: `https://clawdhub.com/skills/agent-render-linking`
+
+## Trust Links
+
+- Security policy: [`SECURITY.md`](SECURITY.md)
+- Changelog and release notes: [`CHANGELOG.md`](CHANGELOG.md)
+- License: [`LICENSE`](LICENSE)
+- CI workflow: [`.github/workflows/test.yml`](.github/workflows/test.yml)
+- Deployment guide: [`docs/deployment.md`](docs/deployment.md)
+- Payload format: [`docs/payload-format.md`](docs/payload-format.md)
 
 ## Status
 
@@ -113,6 +139,8 @@ The shell keeps first load lean and defers renderer-heavy code until needed. The
 - `docs/deployment.md` - deployment notes (including self-hosted mode)
 - `docs/dependency-notes.md` - major dependency and license notes
 - `docs/testing.md` - test commands, screenshot workflow, and CI notes
+- `CHANGELOG.md` - release notes, including the `v0.1.0` GitHub checklist
+- `SECURITY.md` - vulnerability reporting and security boundary policy
 - `skills/selfhosted-agent-render/SKILL.md` - self-hosted UUID mode skill for agents
 
 ## Zero Retention
