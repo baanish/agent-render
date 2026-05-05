@@ -108,6 +108,8 @@ The static host does not receive fragment contents as part of the request, but t
 - client-side analytics would still be able to observe decoded payloads if added later
 - very large artifacts can exceed practical URL-sharing limits, which is why the shell enforces a fragment budget
 
+Fragment links are best for trusted direct sharing where the URL length is acceptable and the static host should stay out of the payload path. They are not ideal for public feeds, broad corporate sharing, or chat systems that rewrite/truncate long URLs.
+
 ## Routing and hosting constraints
 
 - `output: "export"`
@@ -118,6 +120,8 @@ The static host does not receive fragment contents as part of the request, but t
 ## Self-hosted UUID mode (optional)
 
 The repository includes an optional self-hosted server mode in `selfhosted/` that provides UUID-based artifact links backed by SQLite. This is a separate deployment mode — the static export remains the default product.
+
+UUID mode is the public/share-friendly option. It trades static zero-retention for short stable links that survive public posts, email, Slack/Teams, and corporate proxy/link-scanning systems more predictably than long fragments.
 
 ### How it works
 
@@ -141,6 +145,8 @@ SQLite with a single `artifacts` table:
 ### TTL
 
 Artifacts use a 24-hour sliding TTL. Each successful read (API or viewer) extends `expires_at` by 24 hours. Expired entries are lazily deleted on read and can also be batch-cleaned via `POST /api/cleanup`.
+
+UUID mode should not be described as zero-retention in its current form. The server stores the encoded payload until expiry or deletion. A future encrypted short-link mode could store ciphertext in SQLite while keeping the decryption key in the URL fragment, but that design is not implemented.
 
 ### Separation from static mode
 

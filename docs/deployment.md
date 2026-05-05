@@ -48,7 +48,14 @@ If you deploy at the domain root on Cloudflare Pages, leave `NEXT_PUBLIC_BASE_PA
 
 ## Self-hosted UUID mode (optional)
 
-The repository includes an optional self-hosted server that stores artifact payloads in SQLite and serves them under UUID links. This is a separate deployment from the static export and is intended for power users and agents.
+The repository includes an optional self-hosted server that stores artifact payloads in SQLite and serves them under UUID links. This is a separate deployment from the static export and is intended for power users, agents, and public sharing contexts where short stable URLs work better than long fragments.
+
+Choose the sharing mode by audience:
+
+- **Fragment links**: best for trusted direct sharing when the payload fits the fragment budget and static zero-retention matters.
+- **UUID links**: best for public, social, email, Slack/Teams, or corporate-proxy contexts where long fragment URLs look suspicious, get truncated, or are rewritten.
+
+Current UUID links are server-retained: the server stores the encoded payload until the TTL expires or the artifact is deleted. Do not describe UUID mode as zero-retention unless an encrypted short-link design is implemented.
 
 ### Quick start
 
@@ -128,10 +135,14 @@ Artifacts have a 24-hour sliding TTL. Each successful view extends the expiry. E
 
 The self-hosted server does not include built-in authentication. Options for protecting it:
 
-- **Public**: No additional configuration. Fine for non-sensitive artifacts.
+- **Public**: No additional configuration. Recommended for public/non-sensitive artifacts that benefit from short share-friendly links.
 - **Cloudflare Tunnel + Zero Trust**: Expose the server through a Cloudflare Tunnel and add Access policies for authentication. This is the recommended approach for remote access with SSO.
 - **Reverse proxy**: Place behind nginx, Caddy, or Traefik with HTTP basic auth, OAuth2 proxy, or mTLS.
 - **Local only**: Set `HOST=127.0.0.1` to bind to localhost only.
+
+### Future encrypted short links
+
+A future mode could encrypt the payload in the browser or agent, store only ciphertext under the UUID, and keep the decryption key in the URL fragment. That would make the short-link server unable to read plaintext while still giving users a short public URL shape. This repository does not implement that mode today.
 
 ### Same-machine deployment
 

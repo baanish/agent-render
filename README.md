@@ -33,15 +33,22 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 - Fully static export with Next.js App Router (default product)
 - Fragment-based payloads (`#...`) so the static host never receives artifact contents
 - Public-safe naming and MIT-compatible dependencies
-- Optional self-hosted mode for server-backed UUID links (see below)
+- Optional self-hosted mode for public/share-friendly UUID links (see below)
+
+## Sharing Guidance
+
+Use fragment links for trusted direct sharing when the artifact fits the URL budget and you want the static host kept out of the payload path.
+
+Use UUID links for public, social, or corporate-proxy sharing when a short stable URL matters more than static zero-retention. UUID mode stores the payload server-side until it expires or is deleted, so treat the server as part of the sharing boundary.
 
 ## Self-Hosted UUID Mode (Optional)
 
-In addition to the default static/fragment-based product, `agent-render` includes an optional self-hosted server mode that stores payloads in SQLite under UUID keys.
+In addition to the default static/fragment-based product, `agent-render` includes an optional self-hosted server mode that stores payloads in SQLite under UUID keys. It is the recommended mode for public sharing contexts where long fragment links look risky, get truncated, or pass through URL-rewriting infrastructure.
 
 **When to use it:**
 - Payloads exceed the ~8 KB fragment budget
 - Links are shared on platforms that mangle long URLs
+- Links are posted publicly, sent to broad groups, or routed through corporate proxy/link-scanning systems
 - You want short, stable links like `https://host/{uuid}`
 - Agent-driven workflows that create and manage artifacts programmatically
 
@@ -65,6 +72,8 @@ See `docs/deployment.md` for Docker Compose, daemon, and auth setup options.
 See `skills/selfhosted-agent-render/SKILL.md` for agent workflow guidance.
 
 The self-hosted mode is an add-on. The existing static fragment-based viewer remains the default product and continues to work as-is.
+
+UUID links are not zero-retention in the current implementation because the server stores the encoded payload. A future encrypted short-link design could store only ciphertext server-side while keeping the decryption key in the URL fragment, but that is not implemented yet.
 
 ## Local Development
 
