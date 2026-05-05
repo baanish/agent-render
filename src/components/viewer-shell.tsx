@@ -18,6 +18,7 @@ import {
   FileSpreadsheet,
   FileText,
   FolderKanban,
+  HelpCircle,
   Printer,
   ShieldCheck,
   Sparkles,
@@ -62,6 +63,7 @@ const sampleCards = sampleLinks.map((link, index) => ({
 }));
 
 const iconPath = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/icon.svg`;
+const urlExplainerPath = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/url-explainer/`;
 
 const ecosystemLinks = [
   {
@@ -607,7 +609,7 @@ export function ViewerShell() {
                 Share artifacts in the URL, keep the server out of the payload.
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-[1.7] text-[color:var(--text-muted)] sm:mt-8 sm:text-lg sm:leading-8">
-                View markdown, code, diffs, CSV, and JSON from a single static link. Nothing leaves the browser.
+                View markdown, code, diffs, CSV, and JSON from a single static link while the host stays out of the payload.
               </p>
               <div className="mt-6 flex flex-wrap gap-2 sm:mt-10 sm:gap-3">
                 <span className="mono-pill">
@@ -632,6 +634,10 @@ export function ViewerShell() {
                 <p className="font-mono mt-4 text-base leading-8 text-[color:var(--text-muted)] sm:text-lg">
                   #{PAYLOAD_FRAGMENT_KEY}=v1.&lt;codec&gt;.&lt;payload&gt;
                 </p>
+                <a href={urlExplainerPath} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--accent)]">
+                  <HelpCircle className="h-4 w-4" />
+                  Why does this URL look weird?
+                </a>
               </div>
               <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
                 <p className="section-kicker">Why</p>
@@ -798,8 +804,12 @@ export function ViewerShell() {
                 <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
                   <p className="section-kicker">Security</p>
                   <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-                    The payload never leaves the URL hash. Rendering is entirely client-side.
+                    The static host does not receive the URL hash, but copied links, browser history, screenshots, and client-side analytics can still expose it.
                   </p>
+                  <a href={urlExplainerPath} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--accent)]">
+                    Read the privacy tradeoff
+                    <ArrowUpRight className="h-4 w-4" />
+                  </a>
                 </div>
                 <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
                   <p className="section-kicker">Hosting</p>
