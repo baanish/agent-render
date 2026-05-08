@@ -3,6 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "description": "A static, zero-retention artifact viewer for markdown, code, diffs, CSV, and JSON.",
+  "license": "MIT",
+  "homepage": "https://agent-render.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/baanish/agent-render.git"
+  },
+  "bugs": {
+    "url": "https://github.com/baanish/agent-render/issues"
+  },
+  "keywords": [
+    "artifact-viewer",
+    "markdown",
+    "diff",
+    "static-site",
+    "zero-retention",
+    "openclaw",
+    "nextjs"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
