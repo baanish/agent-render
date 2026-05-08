@@ -268,7 +268,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                 <div className="creator-result-metrics">
                   <div className="metric-card">
                     <p className="metric-label">Codec</p>
-                    <p className="metric-value">{generatedLink.envelope.codec}</p>
+                    <p className="metric-value">{generatedLink.codec}</p>
                   </div>
                   <div className="metric-card">
                     <p className="metric-label">Fragment size</p>

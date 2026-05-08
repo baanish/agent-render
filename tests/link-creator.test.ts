@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { decodeFragment } from "@/lib/payload/fragment";
-import { createDraftEnvelope, createGeneratedArtifactLink, type LinkCreatorDraft } from "@/lib/payload/link-creator";
+import { decodeFragment, decodeFragmentAsync } from "@/lib/payload/fragment";
+import { createDraftEnvelope, createGeneratedArtifactLink, createGeneratedArtifactLinkAsync, type LinkCreatorDraft } from "@/lib/payload/link-creator";
 
 describe("link creator payloads", () => {
   it("builds a single-artifact envelope for pasted markdown", () => {
@@ -42,11 +42,13 @@ describe("link creator payloads", () => {
     const parsed = decodeFragment(generatedLink.hash);
 
     expect(generatedLink.url).toContain("#agent-render=");
+    expect(generatedLink.hash).toContain(`v1.${generatedLink.codec}.`);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) {
       return;
     }
 
+    expect(parsed.envelope.codec).toBe(generatedLink.codec);
     expect(parsed.envelope.title).toBe("Viewer shell");
     expect(parsed.envelope.activeArtifactId).toBe("viewer-shell");
     expect(parsed.envelope.artifacts[0]).toMatchObject({
@@ -82,6 +84,27 @@ describe("link creator payloads", () => {
       filename: "release.patch",
       view: "split",
     });
+  });
+
+  it("reports the actual wire codec for async generated links", async () => {
+    const draft: LinkCreatorDraft = {
+      kind: "code",
+      title: "Codec sample",
+      filename: "codec-sample.ts",
+      content: "export const artifact = { kind: 'code', content: 'hello' };\n",
+      language: "ts",
+      diffView: "unified",
+      codec: "arx2",
+    };
+
+    const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
+    const parsed = await decodeFragmentAsync(generatedLink.hash);
+
+    expect(generatedLink.hash).toContain("#agent-render=v1.arx2.");
+    expect(generatedLink.url).toContain("#agent-render=v1.arx2.");
+    expect(generatedLink.codec).toBe("arx2");
+    expect(generatedLink.envelope.codec).toBe("plain");
+    expect(parsed.ok).toBe(true);
   });
 
   it("rejects empty pasted content", () => {

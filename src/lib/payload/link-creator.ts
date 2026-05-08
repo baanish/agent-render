@@ -1,6 +1,15 @@
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { encodeEnvelope, encodeEnvelopeAsync } from "@/lib/payload/fragment";
-import { MAX_FRAGMENT_LENGTH, type ArtifactKind, type ArtifactPayload, type DiffArtifact, type PayloadCodec, type PayloadEnvelope } from "@/lib/payload/schema";
+import {
+  codecs,
+  MAX_FRAGMENT_LENGTH,
+  PAYLOAD_FRAGMENT_KEY,
+  type ArtifactKind,
+  type ArtifactPayload,
+  type DiffArtifact,
+  type PayloadCodec,
+  type PayloadEnvelope,
+} from "@/lib/payload/schema";
 
 export type LinkCreatorDraft = {
   kind: ArtifactKind;
@@ -15,6 +24,7 @@ export type LinkCreatorDraft = {
 export type GeneratedArtifactLink = {
   envelope: PayloadEnvelope;
   artifact: ArtifactPayload;
+  codec: PayloadCodec;
   hash: string;
   url: string;
   fragmentLength: number;
@@ -94,6 +104,21 @@ function buildArtifact(draft: LinkCreatorDraft): ArtifactPayload {
   };
 }
 
+function getFragmentCodec(fragmentBody: string): PayloadCodec {
+  const prefix = `${PAYLOAD_FRAGMENT_KEY}=v1.`;
+  if (!fragmentBody.startsWith(prefix)) {
+    return "plain";
+  }
+
+  const codecEnd = fragmentBody.indexOf(".", prefix.length);
+  if (codecEnd === -1) {
+    return "plain";
+  }
+
+  const codec = fragmentBody.slice(prefix.length, codecEnd);
+  return codecs.includes(codec as PayloadCodec) ? (codec as PayloadCodec) : "plain";
+}
+
 /**
  * Builds a single-artifact payload envelope from link-creator draft input.
  *
@@ -120,6 +145,7 @@ export function createDraftEnvelope(draft: LinkCreatorDraft): PayloadEnvelope {
  * exceeds `MAX_FRAGMENT_LENGTH`. The returned object always includes:
  * - `hash`: `#agent-render=v1...` fragment string
  * - `url`: either the hash-only URL or `baseUrl` with hash attached
+ * - `codec`: the selected wire codec in the generated fragment
  * - `fragmentLength`: character count excluding the leading `#`
  * - `envelope` and `artifact`: the normalized payload envelope and its single artifact
  */
@@ -130,7 +156,8 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
     throw new Error(normalized.message);
   }
 
-  const hash = `#${encodeEnvelope(normalized.envelope)}`;
+  const fragmentBody = encodeEnvelope(normalized.envelope);
+  const hash = `#${fragmentBody}`;
   const fragmentLength = hash.length - 1;
 
   if (fragmentLength > MAX_FRAGMENT_LENGTH) {
@@ -150,6 +177,7 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
   return {
     envelope: normalized.envelope,
     artifact: normalized.envelope.artifacts[0],
+    codec: getFragmentCodec(fragmentBody),
     hash,
     url,
     fragmentLength,
@@ -161,7 +189,7 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
  * `arx`) via {@link encodeEnvelopeAsync}.
  *
  * Error and return semantics match the sync variant: throws on invalid draft/normalized payload
- * or over-budget fragments, and returns `{ hash, url, fragmentLength, envelope, artifact }`.
+ * or over-budget fragments, and returns `{ hash, url, codec, fragmentLength, envelope, artifact }`.
  */
 export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, baseUrl?: string): Promise<GeneratedArtifactLink> {
   const normalized = normalizeEnvelope(createDraftEnvelope(draft));
@@ -171,7 +199,8 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
   }
 
   const encodeOptions = draft.codec && draft.codec !== "auto" ? { codec: draft.codec } : {};
-  const hash = `#${await encodeEnvelopeAsync(normalized.envelope, encodeOptions)}`;
+  const fragmentBody = await encodeEnvelopeAsync(normalized.envelope, encodeOptions);
+  const hash = `#${fragmentBody}`;
   const fragmentLength = hash.length - 1;
 
   if (fragmentLength > MAX_FRAGMENT_LENGTH) {
@@ -191,6 +220,7 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
   return {
     envelope: normalized.envelope,
     artifact: normalized.envelope.artifacts[0],
+    codec: getFragmentCodec(fragmentBody),
     hash,
     url,
     fragmentLength,
