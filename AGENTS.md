@@ -148,8 +148,6 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 - `docs/testing.md`
 - `skills/agent-render-linking/SKILL.md`
 - `skills/selfhosted-agent-render/SKILL.md`
-- `public/.well-known/agent-skills/index.json` - Agent Skills Discovery (RFC 0.2.0) machine-readable index
-- `public/skills/<name>/SKILL.md` - copies of repo skills for stable public URLs (kept in sync via `npm run sync:agent-skills-public`, run automatically before `next build`)
 
 ## Development commands
 
