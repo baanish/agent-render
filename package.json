@@ -92,7 +92,7 @@
     "tailwindcss": "^4.0.6",
     "tsx": "^4.21.0",
     "typescript": "^5.8.2",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.5"
   },
   "optionalDependencies": {
     "better-sqlite3": "^12.8.0"
