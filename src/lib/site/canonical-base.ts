@@ -1,8 +1,4 @@
-/**
- * Shared helpers for resolving the deployed absolute site URL used in metadata, sitemap, and robots.
- * Prefer `NEXT_PUBLIC_SITE_URL` (or `SITE_URL` at build time) so static exports embed the real domain;
- * falls back to `VERCEL_URL` on Vercel and `http://localhost:3000` for local builds.
- */
+const DEFAULT_SITE_ORIGIN = "https://agent-render.com";
 
 function normalizeConfiguredBasePath(raw: string | undefined): string {
   const configured = raw?.trim() ?? "";
@@ -16,18 +12,12 @@ function normalizeConfiguredBasePath(raw: string | undefined): string {
  * Returns the origin (scheme + host + port) for the deployed site, without a trailing slash.
  */
 export function getCanonicalSiteOrigin(): string {
-  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim() || process.env.SITE_URL?.trim();
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (explicit) {
     return new URL(explicit).origin;
   }
 
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) {
-    const host = vercel.replace(/^https?:\/\//, "");
-    return `https://${host}`;
-  }
-
-  return "http://localhost:3000";
+  return DEFAULT_SITE_ORIGIN;
 }
 
 const basePath = normalizeConfiguredBasePath(process.env.NEXT_PUBLIC_BASE_PATH);
