@@ -15,8 +15,8 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 ## Status
 
 - Markdown, code, diff, CSV, and JSON all render in the static shell
-- Fragment transport supports `plain`, `lz`, `deflate`, and `arx`, with automatic shortest-fragment selection across packed/non-packed wire formats
-- The `arx` substitution dictionary is served at `/arx-dictionary.json` so agents can fetch it for local compression
+- Fragment transport supports `plain`, `lz`, `deflate`, `arx`, and `arx2`, with automatic shortest-fragment selection across available wire formats
+- The `arx` substitution dictionary is served at `/arx-dictionary.json`; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json`
 - The viewer toolbar copies artifact bodies to the clipboard, downloads them as files, and (for markdown) supports browser print-to-PDF
 - Deployment target: static hosting, including Cloudflare Pages
 
@@ -94,6 +94,7 @@ Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a su
 
 ```bash
 npm run lint
+npm run bench:codecs
 npm run typecheck
 NEXT_PUBLIC_BASE_PATH=/agent-render npm run build
 ```

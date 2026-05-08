@@ -93,10 +93,11 @@ The fragment protocol keeps the JSON envelope stable and treats compression stri
 - `lz` stores compressed JSON via `lz-string` when it produces a smaller fragment
 - `deflate` stores deflate-compressed UTF-8 JSON bytes when it outperforms other codecs
 - `arx` applies domain-dictionary substitution, brotli compression (quality 11), and binary-to-text encoding for best-in-class compression. Four wire shapes are candidates: base76 (ASCII, 77 fragment-safe chars), base64url (RFC 4648 `A-Za-z0-9-_` with a `B.` prefix for detection), base1k (Unicode, 1774 chars from U+00A1–U+07FF), and baseBMP (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). The async encoder tries all four and picks the shortest **transport** length (percent-encoded UTF-8 length for non-ASCII), so base64url can win over Unicode encodings on chat-style surfaces. baseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes, achieving ~70% smaller fragments than deflate on typical payloads (~6.1x compression ratio for 8k markdown). Full pipeline timing is on the order of ~8–14ms for 8k payloads depending on the wire encoding. The substitution dictionary is served as a static file at `/arx-dictionary.json` so agents can fetch it for local compression; a pre-compressed `/arx-dictionary.json.br` variant is also available. The viewer loads the dictionary on startup and falls back to a built-in table if the fetch fails.
+- `arx2` keeps the arx compression stack but replaces the JSON envelope with a compact tuple envelope and applies `/arx2-dictionary.json` as an overlay before the shared arx dictionary. It uses `v1.arx2.<dictVersion>.<payload>` and decodes back to the standard envelope before validation/rendering.
 - packed wire mode (`p: 1`) shortens transport keys before compression, then unpacks back to the standard envelope during decode
-- automatic async codec selection tries `arx -> deflate -> lz -> plain` and compares packed + non-packed candidates
+- automatic async codec selection tries `arx2 -> arx -> deflate -> lz -> plain`; arx compares packed + non-packed candidates, while arx2 uses its tuple envelope
 - sync codec selection (used by examples and legacy paths) tries `deflate -> lz -> plain`
-- decode enforces both fragment length and decoded payload size ceilings before UI rendering
+- decode enforces both fragment length and decoded payload size ceilings before UI rendering; arx/arx2 Brotli decompression uses a streaming output cap before final JSON or tuple parsing
 - invalid bundle state is normalized or rejected before renderers mount
 
 ## Zero-retention boundaries

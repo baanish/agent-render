@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeFragment, decodeFragmentAsync, encodeEnvelope } from "@/lib/payload/fragment";
+import { decodeFragment, decodeFragmentAsync, encodeEnvelope, encodeEnvelopeAsync } from "@/lib/payload/fragment";
 import type { PayloadEnvelope } from "@/lib/payload/schema";
 import { packEnvelope } from "@/lib/payload/wire-format";
 import { arxCompressBMP, getActiveDictVersion } from "@/lib/payload/arx-codec";
@@ -36,6 +36,12 @@ describe("fragment payload transport", () => {
 
   it("throws a clear error when sync encoding is explicitly asked to use arx", () => {
     expect(() => encodeEnvelope(envelope, { codec: "arx" })).toThrow(
+      "arx codec requires async encoding — use encodeEnvelopeAsync instead.",
+    );
+  });
+
+  it("throws a clear error when sync encoding is explicitly asked to use arx2", () => {
+    expect(() => encodeEnvelope(envelope, { codec: "arx2" })).toThrow(
       "arx codec requires async encoding — use encodeEnvelopeAsync instead.",
     );
   });
@@ -209,5 +215,20 @@ describe("fragment payload transport", () => {
     if (!parsed.ok) return;
 
     expect(parsed.envelope.title).toBe("Test bundle");
+  });
+
+  it("decodes arx2 fragments through the async path", async () => {
+    const hash = `#${await encodeEnvelopeAsync(envelope, { codec: "arx2" })}`;
+    const syncParsed = decodeFragment(hash);
+    expect(syncParsed.ok).toBe(false);
+    if (!syncParsed.ok) {
+      expect(syncParsed.code).toBe("invalid-format");
+    }
+
+    const parsed = await decodeFragmentAsync(hash);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.envelope).toEqual({ ...envelope, codec: "arx2" });
   });
 });

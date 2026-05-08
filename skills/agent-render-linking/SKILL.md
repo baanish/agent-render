@@ -27,6 +27,7 @@ Use this fragment shape:
 ```text
 #agent-render=v1.<codec>.<payload>                (plain | lz | deflate)
 #agent-render=v1.arx.<dictVersion>.<payload>   (arx)
+#agent-render=v1.arx2.<dictVersion>.<payload>  (arx2)
 ```
 
 Supported codecs:
@@ -34,11 +35,12 @@ Supported codecs:
 - `lz`: `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate`: deflate-compressed UTF-8 JSON bytes encoded as base64url
 - `arx`: domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding (~70% smaller than deflate with baseBMP). Fetch the shared dictionary from `https://agent-render.com/arx-dictionary.json` to apply substitutions locally before brotli compression. Four wire shapes: baseBMP (~62k safe BMP code points, ~15.92 bits/char, best raw density), base1k (1774 Unicode code points U+00A1–U+07FF), base64url (ASCII `A-Za-z0-9-_`, `B.` prefix — good when Unicode would be percent-encoded), and base76 (77-char ASCII). The product encoder tries all four and picks the shortest **transport** length.
+- `arx2`: tuple-envelope transport + `https://agent-render.com/arx2-dictionary.json` overlay + the shared arx dictionary + brotli (quality 11) + the same four wire shapes. Existing arx links remain valid; prefer arx2 when it is the shortest transport.
 - packed wire mode (`p: 1`) may be used automatically to shorten transport keys
 
 Prefer:
 1. shortest valid fragment for the target surface
-2. codec priority `arx -> deflate -> lz -> plain` unless explicitly overridden
+2. codec priority `arx2 -> arx -> deflate -> lz -> plain` unless explicitly overridden
 3. packed wire mode when available
 
 ## Envelope shape
@@ -167,6 +169,7 @@ Construct the final URL as:
 ```text
 https://agent-render.com/#agent-render=v1.<codec>.<payload>                (plain | lz | deflate)
 https://agent-render.com/#agent-render=v1.arx.<dictVersion>.<payload>       (arx)
+https://agent-render.com/#agent-render=v1.arx2.<dictVersion>.<payload>      (arx2)
 ```
 
 For `plain`:
@@ -186,7 +189,7 @@ For `deflate`:
 4. Base64url-encode the compressed bytes
 5. Append it after `v1.deflate.`
 
-## Shared arx dictionary
+## Shared arx dictionaries
 
 The `arx` codec uses a substitution dictionary to replace common patterns with short byte sequences before brotli compression. The dictionary is served as a static JSON file:
 
@@ -214,6 +217,23 @@ The dictionary includes JSON envelope boilerplate patterns (like `","kind":"Mark
 
 If the dictionary fetch fails, fall back to `deflate` codec.
 
+For `arx2`, build the tuple envelope first:
+
+- single artifact: `[3, artifactTuple, envelopeTitle?]`
+- multi-artifact bundle: `[2, [artifactTuple, ...], envelopeTitle?, activeIndex?]`
+- kind codes: `m` markdown, `c` code, `d` diff, `s` csv, `j` json
+- markdown/csv/json tuple: `[kindCode, id, content, title?, filename?]`
+- code tuple: `["c", id, content, language?, title?, filename?]`
+- diff tuple: `["d", id, patch?, oldContent?, newContent?, language?, view?, title?, filename?]`
+
+Then apply substitutions in this order:
+
+1. Fetch and apply `https://agent-render.com/arx2-dictionary.json`
+2. Fetch and apply `https://agent-render.com/arx-dictionary.json`
+3. Brotli-compress at quality 11
+4. Try baseBMP, base1k, base64url, and base76; choose the shortest transport representation
+5. Prepend `v1.arx2.<dictVersion>.`, using the shared arx dictionary version
+
 ## Practical limits
 
 Respect these limits:
@@ -222,7 +242,7 @@ Respect these limits:
 - strict Discord practical budget for linked text workflows: about 1,500 characters
 
 If a link is getting too large:
-1. try `arx` first, then `deflate`, then `lz`, then `plain`
+1. try `arx2` first, then `arx`, then `deflate`, then `lz`, then `plain`
 2. allow packed wire mode
 3. trim unnecessary prose or metadata
 4. prefer a focused artifact over a bloated one
@@ -232,7 +252,7 @@ If a link is getting too large:
 
 When the caller provides a strict budget (for example 1,500 chars):
 
-1. encode using all available candidates (`arx/deflate/lz/plain`, packed and non-packed)
+1. encode using all available candidates (`arx2/arx/deflate/lz/plain`, packed and non-packed where applicable)
 2. choose the shortest fragment that is within budget
 3. if no candidate fits, return the shortest fragment plus a clear budget failure explanation
 

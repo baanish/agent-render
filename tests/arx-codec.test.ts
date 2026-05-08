@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import arxDictionaryJson from "../public/arx-dictionary.json";
 import {
   encodeBase76,
   decodeBase76,
@@ -16,10 +17,15 @@ import {
   arxCompressBMP,
   arxCompressBase64url,
   arxDecompress,
+  arx2CompressEnvelope,
+  arx2DecompressEnvelope,
+  ArxDecodedPayloadTooLargeError,
+  encodeArxDictionaryForTest,
   getActiveDictVersion,
+  loadArxDictionarySync,
 } from "@/lib/payload/arx-codec";
 import { encodeEnvelopeAsync, decodeFragmentAsync } from "@/lib/payload/fragment";
-import type { PayloadEnvelope } from "@/lib/payload/schema";
+import { MAX_DECODED_PAYLOAD_LENGTH, type PayloadEnvelope } from "@/lib/payload/schema";
 
 describe("base76 encoding", () => {
   it("round-trips empty input", () => {
@@ -279,7 +285,7 @@ describe("arx fragment round-trip", () => {
     expect(arxHash.length).toBeLessThan(deflateHash.length);
   });
 
-  it("async auto-selection picks arx when it is smallest", async () => {
+  it("async auto-selection picks an arx-family codec when it is smallest", async () => {
     const bigEnvelope: PayloadEnvelope = {
       ...envelope,
       artifacts: [
@@ -293,7 +299,7 @@ describe("arx fragment round-trip", () => {
     };
 
     const autoHash = await encodeEnvelopeAsync(bigEnvelope);
-    expect(autoHash).toContain(`v1.arx.${getActiveDictVersion()}.`);
+    expect(autoHash).toMatch(new RegExp(`v1\\.arx2?\\.${getActiveDictVersion()}\\.`));
   });
 
   it("async arx selection can choose the chat-safe base64url wire form", async () => {
@@ -333,5 +339,232 @@ describe("arx fragment round-trip", () => {
 
     const parsed = await decodeFragmentAsync(legacyHash);
     expect(parsed.ok).toBe(true);
+  });
+});
+
+describe("arx2 tuple envelope", () => {
+  const bundle: PayloadEnvelope = {
+    v: 1,
+    codec: "plain",
+    title: "Mixed arx2 bundle",
+    activeArtifactId: "patch",
+    artifacts: [
+      {
+        id: "notes",
+        kind: "markdown",
+        title: "Notes",
+        filename: "notes.md",
+        content: "# Notes\n\n## Scope\n\n- [x] Tuple envelope\n- [ ] Overlay dictionary",
+      },
+      {
+        id: "source",
+        kind: "code",
+        title: "source.ts",
+        filename: "source.ts",
+        language: "ts",
+        content: "import { value } from \"./value\";\n\nexport const result = value as const;\n",
+      },
+      {
+        id: "patch",
+        kind: "diff",
+        title: "change.patch",
+        filename: "change.patch",
+        patch: "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-export const a = 1;\n+export const a = 2;\n",
+        view: "split",
+      },
+      {
+        id: "table",
+        kind: "csv",
+        content: "name,value\nalpha,1\nbeta,2",
+      },
+      {
+        id: "manifest",
+        kind: "json",
+        content: "{\"ok\":true,\"items\":[1,2,3]}",
+      },
+    ],
+  };
+
+  it("round-trips single-artifact arx2 fragments", async () => {
+    const single: PayloadEnvelope = {
+      v: 1,
+      codec: "plain",
+      title: "Single",
+      activeArtifactId: "notes",
+      artifacts: [bundle.artifacts[0]],
+    };
+    const hash = `#${await encodeEnvelopeAsync(single, { codec: "arx2" })}`;
+    expect(hash).toContain(`v1.arx2.${getActiveDictVersion()}.`);
+
+    const parsed = await decodeFragmentAsync(hash);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.envelope).toEqual({ ...single, codec: "arx2" });
+  });
+
+  it("round-trips multi-artifact arx2 bundles across every artifact kind", async () => {
+    const hash = `#${await encodeEnvelopeAsync(bundle, { codec: "arx2" })}`;
+    const parsed = await decodeFragmentAsync(hash);
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.envelope).toEqual({ ...bundle, codec: "arx2" });
+  });
+
+  it("preserves optional tuple fields, omitted fields, and empty optional strings", async () => {
+    const edgeCases: PayloadEnvelope = {
+      v: 1,
+      codec: "plain",
+      activeArtifactId: "code",
+      artifacts: [
+        {
+          id: "code",
+          kind: "code",
+          content: "export function empty() { return \"\"; }",
+          language: "",
+          title: "",
+          filename: "",
+        },
+        {
+          id: "diff-pair",
+          kind: "diff",
+          oldContent: "",
+          newContent: "changed",
+          language: "txt",
+          view: "unified",
+        },
+      ],
+    };
+
+    const parsed = await decodeFragmentAsync(`#${await encodeEnvelopeAsync(edgeCases, { codec: "arx2" })}`);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.envelope).toEqual({ ...edgeCases, codec: "arx2" });
+  });
+
+  it("normalizes an invalid active artifact id to the first artifact", async () => {
+    const parsed = await decodeFragmentAsync(`#${await encodeEnvelopeAsync(
+      {
+        ...bundle,
+        activeArtifactId: "missing",
+      },
+      { codec: "arx2" },
+    )}`);
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.envelope.activeArtifactId).toBe("notes");
+  });
+
+  it("decodes percent-escaped unicode arx2 payloads", async () => {
+    const hash = `#${await encodeEnvelopeAsync(bundle, { codec: "arx2" })}`;
+    const escapedHash = hash.replace(/[^\x00-\x7F]/g, (char) => encodeURIComponent(char));
+
+    const parsed = await decodeFragmentAsync(escapedHash);
+    expect(parsed.ok).toBe(true);
+  });
+
+  it("decodes arx and arx2 payloads when the active dictionary version differs", async () => {
+    loadArxDictionarySync(arxDictionaryJson);
+    const arxHash = `#${await encodeEnvelopeAsync(bundle, { codec: "arx" })}`;
+    const arx2Hash = `#${await encodeEnvelopeAsync(bundle, { codec: "arx2" })}`;
+    const shiftedDictionary = {
+      ...arxDictionaryJson,
+      version: arxDictionaryJson.version + 100,
+    };
+
+    loadArxDictionarySync(shiftedDictionary);
+
+    const arxParsed = await decodeFragmentAsync(arxHash);
+    const arx2Parsed = await decodeFragmentAsync(arx2Hash);
+
+    expect(arxParsed.ok).toBe(true);
+    expect(arx2Parsed.ok).toBe(true);
+
+    loadArxDictionarySync(arxDictionaryJson);
+  });
+
+  it("can decode arx2 payloads directly through the codec API", async () => {
+    const payloads = await arx2CompressEnvelope(bundle);
+    const decoded = await arx2DecompressEnvelope(payloads.base64url);
+
+    expect(decoded).toEqual({ ...bundle, codec: "arx2" });
+  });
+
+  it("aborts brotli output that expands beyond the decoded payload budget", async () => {
+    const hugeEnvelope: PayloadEnvelope = {
+      v: 1,
+      codec: "plain",
+      activeArtifactId: "huge",
+      artifacts: [
+        {
+          id: "huge",
+          kind: "markdown",
+          content: "a".repeat(MAX_DECODED_PAYLOAD_LENGTH * 5),
+        },
+      ],
+    };
+
+    const payloads = await arx2CompressEnvelope(hugeEnvelope);
+    await expect(arx2DecompressEnvelope(payloads.base64url)).rejects.toBeInstanceOf(ArxDecodedPayloadTooLargeError);
+
+    const parsed = await decodeFragmentAsync(
+      `#agent-render=v1.arx2.${getActiveDictVersion()}.${payloads.base64url}`,
+      { skipFragmentBudget: true },
+    );
+
+    expect(parsed.ok).toBe(false);
+    if (parsed.ok) return;
+    expect(parsed.code).toBe("decoded-too-large");
+  });
+});
+
+describe("arx dictionary trie scanner", () => {
+  const singleByteCodes = [
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x0b, 0x0e, 0x0f, 0x10,
+    0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c,
+    0x1d,
+  ];
+  const pairs: Array<[string, string]> = [
+    ...arxDictionaryJson.singleByteSlots.slice(0, singleByteCodes.length).map((slot, index) => [
+      slot,
+      String.fromCharCode(singleByteCodes[index]),
+    ] as [string, string]),
+    ...arxDictionaryJson.extendedSlots.map((slot, index) => [
+      slot,
+      "\x00" + String.fromCharCode(index + 1),
+    ] as [string, string]),
+  ];
+
+  function legacySplitJoinEncode(text: string): string {
+    let result = text;
+    for (const [from, to] of pairs) {
+      result = result.split(from).join(to);
+    }
+    return result;
+  }
+
+  it("matches the legacy split/join encoder across adversarial inputs", () => {
+    loadArxDictionarySync(arxDictionaryJson);
+    const inputs = [
+      "",
+      "\x00\x01\x1f",
+      "emoji 😀 payload fragment content markdown component envelope",
+      "export function test() {\n  return artifact.payload.fragment;\n}\n".repeat(4),
+      "{\"v\":1,\"codec\":\"arx\",\"artifacts\":[{\"id\":\"a\",\"kind\":\"markdown\",\"content\":\"# Hi\"}]}",
+      "aaaaaaa".repeat(100),
+      "import export import export function function const const ".repeat(20),
+      ...Array.from({ length: 30 }, (_, index) => {
+        const prefix = index % 2 === 0 ? "agent-render https:// " : "constructor prototype ";
+        return `${prefix}${"payload".repeat(index + 1)}\0${"markdown".repeat(5)}`;
+      }),
+    ];
+
+    for (const input of inputs) {
+      expect(encodeArxDictionaryForTest(input)).toBe(legacySplitJoinEncode(input));
+    }
   });
 });

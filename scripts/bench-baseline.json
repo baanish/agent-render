@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-24T01:27:55.503Z",
+  "rows": {
+    "markdown-agents:arx": {
+      "encodedBytes": 2664
+    },
+    "markdown-agents:arx2": {
+      "encodedBytes": 2644
+    },
+    "code-fragment:arx": {
+      "encodedBytes": 2101
+    },
+    "code-fragment:arx2": {
+      "encodedBytes": 2084
+    },
+    "diff-patch:arx": {
+      "encodedBytes": 129
+    },
+    "diff-patch:arx2": {
+      "encodedBytes": 113
+    },
+    "diff-pair:arx": {
+      "encodedBytes": 101
+    },
+    "diff-pair:arx2": {
+      "encodedBytes": 92
+    },
+    "csv-grid:arx": {
+      "encodedBytes": 629
+    },
+    "csv-grid:arx2": {
+      "encodedBytes": 623
+    },
+    "json-package:arx": {
+      "encodedBytes": 991
+    },
+    "json-package:arx2": {
+      "encodedBytes": 972
+    },
+    "multi-bundle:arx": {
+      "encodedBytes": 5274
+    },
+    "multi-bundle:arx2": {
+      "encodedBytes": 5239
+    }
+  }
+}
