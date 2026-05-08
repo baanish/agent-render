@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
+import { getCanonicalSiteUrl, getMetadataBase } from "@/lib/site/canonical-base";
 import "./globals.css";
 
 const display = Fraunces({
@@ -23,6 +24,10 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
+  alternates: {
+    canonical: getCanonicalSiteUrl("/"),
+  },
   title: "agent-render",
   description: "A static, zero-retention artifact viewer shell for fragment-based markdown, code, diff, CSV, and JSON payloads.",
 };

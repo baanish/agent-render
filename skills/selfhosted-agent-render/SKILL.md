@@ -27,6 +27,8 @@ Do not describe current UUID links as zero-retention. The self-hosted server sto
 
 The self-hosted server exposes a simple REST API.
 
+Discovery: `GET /.well-known/api-catalog` returns RFC 9727 `application/linkset+json` with an `item` link to `/api/artifacts` and `service-desc` metadata pointing to the OpenAPI file for this optional self-hosted API.
+
 ### Create an artifact
 
 ```http
@@ -47,7 +49,7 @@ Response (`201`):
 }
 ```
 
-The `payload` field is the same payload string used in fragment links — the fragment body after `#`. Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`) described in the `agent-render-linking` skill.
+The `payload` field is the same payload string used in fragment links — the fragment body after `#`. Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`, `arx2`) described in the `agent-render-linking` skill.
 
 ### Read an artifact
 
@@ -239,7 +241,7 @@ A single `patch` string may contain multiple `diff --git` sections.
 Encode the envelope using the same codec pipeline as fragment links:
 
 1. Serialize envelope as compact JSON
-2. Encode with a codec (`plain` = base64url, `lz` = lz-string, `deflate` = deflate + base64url)
+2. Encode with a codec (`plain` = base64url, `lz` = lz-string, `deflate` = deflate + base64url, or the async arx/arx2 pipelines)
 3. Prepend `agent-render=v1.<codec>.`
 4. POST the resulting string as the `payload` field
 

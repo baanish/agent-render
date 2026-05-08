@@ -4,10 +4,15 @@
 
 `agent-render` is a static export and can be deployed to any host that serves files from `out/`.
 
+Automated API discovery ([RFC 9727](https://www.rfc-editor.org/rfc/rfc9727)): the static export includes `.well-known/api-catalog` as a Linkset JSON document for the optional self-hosted HTTP API. It advertises `/api/artifacts` and points to the OpenAPI description at `/openapi/selfhosted-artifacts.yaml`; hosts should serve the extensionless catalog with the `application/linkset+json` media type when possible.
+
+The catalog describes the optional self-hosted API. Pure static deployments must also expose the self-hosted server for `/api/artifacts` to exist. RFC well-known discovery resolves from the origin root, so `/.well-known/api-catalog` must be served there. Subpath-only deployments may need host rewrites or copied files for the catalog and `/openapi/selfhosted-artifacts.yaml` hrefs.
+
 Key details:
 
 - Build with `npm ci` and `npm run build`
 - Upload the generated `out/` directory to your static host
+- Set **`NEXT_PUBLIC_SITE_URL`** to your public origin (for example `https://example.com`) so `sitemap.xml` and metadata resolve to the correct canonical origin in the static export.
 - Set `NEXT_PUBLIC_BASE_PATH` only when you need a subpath deployment
 - `.nojekyll` remains harmless for hosts that ignore it
 
@@ -65,7 +70,7 @@ npm run build
 npm run selfhosted:dev
 ```
 
-The server starts on port 3000. Create artifacts via `POST /api/artifacts` and view them at `http://localhost:3000/{uuid}`.
+The server starts on port 3000. Create artifacts via `POST /api/artifacts` and view them at `http://localhost:3000/{uuid}`. It also serves the static RFC 9727 catalog at `GET /.well-known/api-catalog`.
 
 ### Environment variables
 
