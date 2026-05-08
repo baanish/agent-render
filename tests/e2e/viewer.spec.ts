@@ -78,6 +78,16 @@ test("renders code payloads", async ({ page }) => {
   await expect(page.locator(".cm-editor").first()).toBeVisible();
 });
 
+test("renders arx2 fragments through the viewer", async ({ page }) => {
+  const hash = "#agent-render=v1.arx2.1.B.G5YAoIzUVnkjvNDRuYkN71ZNo8KBFL0uoqsrTCc3P6gd25KyFmaWWi2GPGVBSQbV9vIA_tfs6WTMRdo0IIKRQEIMsoI36RDB7jr8YJq3abcYIzEpGs1Ady3VxyHdC-IyHyBG9yZRLJ0t5ClN5wftjQU";
+
+  await goToHash(page, hash);
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "code");
+  await expect(page.locator("[data-active-kind='code']")).toBeVisible();
+  await expect(page.getByText("viewer-shell.tsx").first()).toBeVisible();
+});
+
 test("renders multi-file diffs without mutating the payload hash", async ({ page }) => {
   await goToHash(page, getFragmentHash("Phase 1 sample diff"));
   await waitForViewerState(page, "artifact");

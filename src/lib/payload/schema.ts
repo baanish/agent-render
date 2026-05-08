@@ -3,7 +3,7 @@ export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 
 export const artifactKinds = ["markdown", "code", "diff", "csv", "json"] as const;
-export const codecs = ["plain", "lz", "deflate", "arx"] as const;
+export const codecs = ["plain", "lz", "deflate", "arx", "arx2"] as const;
 
 export type ArtifactKind = (typeof artifactKinds)[number];
 export type PayloadCodec = (typeof codecs)[number];
@@ -59,6 +59,28 @@ export type PayloadEnvelope = {
   activeArtifactId?: string;
   artifacts: ArtifactPayload[];
 };
+
+type OptionalTupleString = string | null | undefined;
+type OptionalTupleView = "unified" | "split" | null | undefined;
+
+export type Arx2KindCode = "m" | "c" | "d" | "s" | "j";
+export type Arx2TextArtifactTuple = ["m" | "s" | "j", string, string, OptionalTupleString?, OptionalTupleString?];
+export type Arx2CodeArtifactTuple = ["c", string, string, OptionalTupleString?, OptionalTupleString?, OptionalTupleString?];
+export type Arx2DiffArtifactTuple = [
+  "d",
+  string,
+  OptionalTupleString?,
+  OptionalTupleString?,
+  OptionalTupleString?,
+  OptionalTupleString?,
+  OptionalTupleView?,
+  OptionalTupleString?,
+  OptionalTupleString?,
+];
+export type Arx2ArtifactTuple = Arx2TextArtifactTuple | Arx2CodeArtifactTuple | Arx2DiffArtifactTuple;
+export type Arx2EnvelopeTuple =
+  | [3, Arx2ArtifactTuple, OptionalTupleString?]
+  | [2, Arx2ArtifactTuple[], OptionalTupleString?, number?];
 
 export type ParsedPayload =
   | { ok: true; envelope: PayloadEnvelope; rawLength: number }
