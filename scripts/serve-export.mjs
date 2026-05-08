@@ -30,14 +30,12 @@ const contentTypes = new Map([
   [".yml", "application/yaml; charset=utf-8"],
 ]);
 
-/** Path to the RFC 9727 API catalog file (after build), relative to `out/`. */
-function apiCatalogPath() {
-  return basePath ? `${basePath}/.well-known/api-catalog` : "/.well-known/api-catalog";
-}
+function contentTypeFor(filePath) {
+  if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
+    return 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
+  }
 
-function isApiCatalogRequest(urlPath) {
-  const cleanPath = urlPath.split("?", 1)[0].split("#", 1)[0];
-  return cleanPath === apiCatalogPath() || cleanPath === `${apiCatalogPath()}/`;
+  return contentTypes.get(path.extname(filePath)) || "application/octet-stream";
 }
 
 function toFilePath(urlPath) {
@@ -69,19 +67,6 @@ const server = createServer(async (request, response) => {
   const requestPath = request.url || "/";
   const method = (request.method || "GET").toUpperCase();
 
-  if (isApiCatalogRequest(requestPath)) {
-    const linkPath = apiCatalogPath();
-    const linkHeader = `<${linkPath}>; rel="api-catalog"`;
-    if (method === "HEAD") {
-      response.writeHead(200, {
-        Link: linkHeader,
-        "Content-Type": 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"',
-      });
-      response.end();
-      return;
-    }
-  }
-
   const filePath = toFilePath(requestPath);
 
   if (!filePath) {
@@ -109,27 +94,18 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  let contentType = contentTypes.get(path.extname(finalPath)) || "application/octet-stream";
-  if (finalPath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
-    contentType = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
+  if (method !== "GET" && method !== "HEAD") {
+    response.writeHead(405, { Allow: "GET, HEAD" });
+    response.end("Method not allowed");
+    return;
   }
 
-  const headers = { "Content-Type": contentType };
-  if (isApiCatalogRequest(requestPath)) {
-    const linkPath = apiCatalogPath();
-    headers.Link = `<${linkPath}>; rel="api-catalog"`;
-  }
-
-  response.writeHead(200, headers);
+  response.writeHead(200, { "Content-Type": contentTypeFor(finalPath) });
   if (method === "HEAD") {
     response.end();
     return;
   }
-  if (method !== "GET") {
-    response.writeHead(405);
-    response.end("Method not allowed");
-    return;
-  }
+
   createReadStream(finalPath).pipe(response);
 });
 

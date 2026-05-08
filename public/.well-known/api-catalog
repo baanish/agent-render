@@ -7,18 +7,6 @@
           "href": "/openapi/selfhosted-artifacts.yaml",
           "type": "application/yaml"
         }
-      ],
-      "service-doc": [
-        {
-          "href": "/selfhosted-api/",
-          "type": "text/html"
-        }
-      ],
-      "status": [
-        {
-          "href": "/health.json",
-          "type": "application/json"
-        }
       ]
     }
   ]

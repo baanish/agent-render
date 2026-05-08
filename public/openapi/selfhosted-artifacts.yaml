@@ -138,9 +138,32 @@ components:
           type: string
     ArtifactCreated:
       type: object
-      description: Returned when an artifact is created; shape matches server implementation.
-      additionalProperties: true
+      required: [id, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        expires_at:
+          type: string
+          format: date-time
     ArtifactRow:
       type: object
-      description: Stored artifact record including payload; shape matches server implementation.
-      additionalProperties: true
+      required: [id, payload, created_at, updated_at, last_viewed_at, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        payload:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_viewed_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time

@@ -37,6 +37,14 @@ const contentTypes = new Map<string, string>([
 
 let indexHtmlCache: string | null = null;
 
+function contentTypeFor(filePath: string): string {
+  if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
+    return 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
+  }
+
+  return contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+}
+
 /**
  * Read the built index.html from the static output directory.
  * Cached after first read for performance.
@@ -84,43 +92,6 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
-/**
- * Respond to `/.well-known/api-catalog` per RFC 9727 (Linkset + optional HEAD Link header).
- */
-function serveApiCatalog(
-  res: ServerResponse,
-  method: string,
-  catalogPath: string,
-): void {
-  const linkHeader = `<${catalogPath}>; rel="api-catalog"`;
-  const headers: Record<string, string | number> = {
-    "Content-Type": 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"',
-    Link: linkHeader,
-  };
-
-  if (method === "HEAD") {
-    res.writeHead(200, headers);
-    res.end();
-    return;
-  }
-
-  if (method !== "GET") {
-    res.writeHead(405, { Allow: "GET, HEAD, OPTIONS" });
-    res.end("Method not allowed");
-    return;
-  }
-
-  const filePath = path.join(outputDirectory, ".well-known", "api-catalog");
-  if (!existsSync(filePath)) {
-    res.writeHead(404);
-    res.end("Not found");
-    return;
-  }
-
-  res.writeHead(200, headers);
-  createReadStream(filePath).pipe(res);
-}
-
 /** Send a JSON response with the given status code. */
 function jsonResponse(res: ServerResponse, status: number, body: unknown): void {
   const json = JSON.stringify(body);
@@ -141,7 +112,7 @@ function htmlResponse(res: ServerResponse, status: number, body: string): void {
 }
 
 /** Serve a static file from the output directory. */
-async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> {
+async function serveStatic(res: ServerResponse, urlPath: string, method: string): Promise<void> {
   const cleanPath = urlPath.split("?", 1)[0].split("#", 1)[0];
   const normalizedPath = cleanPath === "/" ? "/index.html" : cleanPath;
 
@@ -172,8 +143,18 @@ async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> 
     return;
   }
 
-  const contentType = contentTypes.get(path.extname(filePath)) || "application/octet-stream";
-  res.writeHead(200, { "Content-Type": contentType });
+  if (method !== "GET" && method !== "HEAD") {
+    res.writeHead(405, { Allow: "GET, HEAD" });
+    res.end("Method not allowed");
+    return;
+  }
+
+  res.writeHead(200, { "Content-Type": contentTypeFor(filePath) });
+  if (method === "HEAD") {
+    res.end();
+    return;
+  }
+
   createReadStream(filePath).pipe(res);
 }
 
@@ -217,20 +198,12 @@ function errorPage(title: string, message: string): string {
  * - `DELETE /api/artifacts/:id` — delete an artifact
  * - `POST /api/cleanup` — remove expired artifacts
  * - `GET /:uuid` — render the viewer with the stored payload
- * - `GET /.well-known/api-catalog` — RFC 9727 API discovery (Linkset JSON)
- * - `GET /health.json` — static health response (`{ "status": "ok" }` from export)
  * - `GET /*` — serve static files from the build output
  */
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   const pathname = url.pathname.replace(/\/+$/, "") || "/";
   const method = req.method?.toUpperCase() ?? "GET";
-
-  const apiCatalogPath = "/.well-known/api-catalog";
-  if (pathname === apiCatalogPath) {
-    serveApiCatalog(res, method, apiCatalogPath);
-    return;
-  }
 
   // CORS headers for API routes
   if (pathname.startsWith("/api/")) {
@@ -335,7 +308,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   }
 
   // Static file fallback
-  await serveStatic(res, pathname);
+  await serveStatic(res, pathname, method);
 }
 
 // Initialize database on startup
