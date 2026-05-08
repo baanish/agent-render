@@ -110,7 +110,6 @@ The shell keeps first load lean and defers renderer-heavy code until needed. The
 
 - `docs/architecture.md` - architecture and tradeoffs
 - `docs/payload-format.md` - fragment protocol, limits, and examples
-- `docs/url-fragments.md` - plain-English guide to weird-looking fragment URLs and privacy tradeoffs
 - `docs/deployment.md` - deployment notes (including self-hosted mode)
 - `docs/dependency-notes.md` - major dependency and license notes
 - `docs/testing.md` - test commands, screenshot workflow, and CI notes

@@ -13,9 +13,7 @@ Payload contents are untrusted user content. Viewers, agents, and automations sh
 #agent-render=v1.arx.<dictVersion>.<payload>    (arx)
 ```
 
-The fragment protocol includes version and codec in the outer format so unsupported formats fail cleanly.
-
-For a short non-technical explanation of why these URLs look long and what privacy boundary the fragment provides, see [Why Does This URL Look Weird?](url-fragments.md).
+The fragment protocol includes version and codec in the outer format so unsupported formats fail cleanly. Fragment URLs can look long because they carry the artifact payload in the browser-only fragment instead of sending it to the host during the page request.
 
 Supported codecs:
 
