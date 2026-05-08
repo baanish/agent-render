@@ -198,6 +198,23 @@ select {
   border-bottom: 1px solid var(--border);
 }
 
+.nav-text-link {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.4;
+  transition: color 150ms ease;
+}
+
+.nav-text-link:hover {
+  color: var(--text-primary);
+}
+
+.nav-text-link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 48%, transparent);
+  outline-offset: 4px;
+}
+
 /* ── Full-bleed editorial sections ── */
 .home-hero-section {
   padding-top: 2rem;
@@ -242,6 +259,27 @@ select {
     padding-top: 4rem;
     padding-bottom: 4rem;
   }
+}
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+  color: var(--text-soft);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+}
+
+.site-footer a {
+  color: var(--text-muted);
+}
+
+.site-footer a:hover {
+  color: var(--text-primary);
 }
 
 /* ── Bento grid — tonal separation via 1px gaps ── */

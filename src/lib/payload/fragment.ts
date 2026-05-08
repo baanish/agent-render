@@ -8,6 +8,9 @@ import {
   arxCompressBMP,
   arxCompressBase64url,
   arxDecompress,
+  arx2CompressEnvelope,
+  arx2DecompressEnvelope,
+  ArxDecodedPayloadTooLargeError,
   getActiveDictVersion,
 } from "@/lib/payload/arx-codec";
 import {
@@ -95,6 +98,7 @@ function encodePayload(json: string, codec: PayloadCodec): string {
     case "deflate":
       return toBase64UrlBytes(deflateSync(strToU8(json)));
     case "arx":
+    case "arx2":
       throw new Error("arx codec requires async encoding — use encodeEnvelopeAsync instead.");
   }
 }
@@ -108,6 +112,7 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
     case "deflate":
       return strFromU8(inflateSync(fromBase64UrlBytes(encoded)));
     case "arx":
+    case "arx2":
       throw new Error("arx codec requires async decoding — use decodeFragmentAsync instead.");
   }
 }
@@ -136,11 +141,11 @@ function getCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
 function getSyncCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
   const candidates = getCandidateCodecs(options);
 
-  if (candidates.length === 1 && candidates[0] === "arx") {
-    return ["arx"];
+  if (candidates.length === 1 && (candidates[0] === "arx" || candidates[0] === "arx2")) {
+    return [candidates[0]];
   }
 
-  return candidates.filter((c) => c !== "arx");
+  return candidates.filter((c) => c !== "arx" && c !== "arx2");
 }
 
 function getAsyncCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
@@ -152,7 +157,7 @@ function getAsyncCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
     return ["plain"];
   }
 
-  const requested = options.codecPriority ?? ["arx", "deflate", "lz", "plain"];
+  const requested = options.codecPriority ?? ["arx2", "arx", "deflate", "lz", "plain"];
   return requested.filter((codec, index) => requested.indexOf(codec) === index);
 }
 
@@ -187,12 +192,33 @@ async function buildArxCandidates(envelope: PayloadEnvelope, packed: boolean): P
   return [makeCandidate(ascii), makeCandidate(unicode), makeCandidate(bmp), makeCandidate(b64url)];
 }
 
+async function buildArx2Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
+  const payloadEnvelope = { ...envelope, codec: "arx2" as PayloadCodec };
+  const dictVersion = getActiveDictVersion();
+  const payloads = await arx2CompressEnvelope(payloadEnvelope);
+  const makeCandidate = (payload: string): CandidateFragment => {
+    const value = `${PAYLOAD_FRAGMENT_KEY}=v1.arx2.${dictVersion}.${payload}`;
+    return { value, codec: "arx2", packed: false, transportLength: computeTransportLength(value) };
+  };
+  return [
+    makeCandidate(payloads.base76),
+    makeCandidate(payloads.base1k),
+    makeCandidate(payloads.baseBMP),
+    makeCandidate(payloads.base64url),
+  ];
+}
+
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {
   const codecsToTry = getAsyncCandidateCodecs(options);
   const wireModes = options.preferPacked === false ? [false] : [true, false];
   const candidates: CandidateFragment[] = [];
 
   for (const codec of codecsToTry) {
+    if (codec === "arx2") {
+      candidates.push(...await buildArx2Candidates(envelope));
+      continue;
+    }
+
     for (const packed of wireModes) {
       if (codec === "arx") {
         candidates.push(...await buildArxCandidates(envelope, packed));
@@ -319,11 +345,11 @@ export function decodeFragment(hash: string): ParsedPayload {
 
   const { fragment, codec, encoded } = header;
 
-  if (codec === "arx") {
+  if (codec === "arx" || codec === "arx2") {
     return {
       ok: false,
       code: "invalid-format",
-      message: "arx codec requires async decoding — use decodeFragmentAsync instead.",
+      message: "arx codecs require async decoding — use decodeFragmentAsync instead.",
     };
   }
 
@@ -425,7 +451,7 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
   try {
     let decodedJson: string | null;
 
-    if (codec === "arx") {
+    if (codec === "arx" || codec === "arx2") {
       const thirdDot = remainder.indexOf(".");
       const parsedDictVersion =
         thirdDot > 0 && /^\d+$/.test(remainder.slice(0, thirdDot))
@@ -441,13 +467,18 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
           : [decodeArxEncodedPayload(fallbackPayload), decodeArxEncodedPayload(versionedPayload)];
 
       let lastError: Error | null = null;
-      let decodedFromAttempt: string | null = null;
+      let decodedFromAttempt: string | PayloadEnvelope | null = null;
 
       for (const encodedAttempt of decodeAttempts) {
         try {
-          decodedFromAttempt = await arxDecompress(encodedAttempt);
+          decodedFromAttempt = codec === "arx"
+            ? await arxDecompress(encodedAttempt)
+            : await arx2DecompressEnvelope(encodedAttempt);
           break;
         } catch (error) {
+          if (error instanceof ArxDecodedPayloadTooLargeError) {
+            throw error;
+          }
           lastError = error instanceof Error ? error : new Error("Unknown arx decode error");
         }
       }
@@ -456,21 +487,31 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
         throw lastError ?? new Error("Failed to decode arx fragment");
       }
 
-      decodedJson = decodedFromAttempt;
+      if (codec === "arx2") {
+        parsed = decodedFromAttempt;
+        decodedJson = null;
+      } else {
+        decodedJson = decodedFromAttempt as string;
+      }
     } else {
       decodedJson = decodePayload(remainder, codec);
     }
 
-    if (decodedJson === null) {
+    if (parsed === undefined && decodedJson === null) {
       throw new Error("Decoded payload was empty.");
     }
 
-    if (decodedJson.length > MAX_DECODED_PAYLOAD_LENGTH) {
+    if (decodedJson !== null && decodedJson.length > MAX_DECODED_PAYLOAD_LENGTH) {
       return { ok: false, code: "decoded-too-large", message: `The decoded payload exceeds the supported limit of ${MAX_DECODED_PAYLOAD_LENGTH.toLocaleString()} characters.` };
     }
 
-    parsed = JSON.parse(decodedJson);
-  } catch {
+    if (decodedJson !== null) {
+      parsed = JSON.parse(decodedJson);
+    }
+  } catch (error) {
+    if (error instanceof ArxDecodedPayloadTooLargeError) {
+      return { ok: false, code: "decoded-too-large", message: error.message };
+    }
     return { ok: false, code: "invalid-json", message: "The fragment payload could not be decoded as valid JSON." };
   }
 

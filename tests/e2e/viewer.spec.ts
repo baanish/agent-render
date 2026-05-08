@@ -13,9 +13,29 @@ test.beforeEach(async ({ page }) => {
   await stabilizePage(page);
 });
 
-test("renders the empty state", async ({ page }) => {
+test("renders the zero-retention homepage when no fragment is present", async ({ page }) => {
   await waitForViewerState(page, "empty");
-  await expect(page.getByText("Share artifacts in the URL, keep the server out of the payload.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /zero-retention artifact viewer/i })).toBeVisible();
+  await expect(page.getByText(/artifact content lives in the URL fragment/i)).toBeVisible();
+  await expect(page.getByText(/the static host does not receive artifact content/i)).toBeVisible();
+  await expect(page.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
+  await expect(page.getByRole("link", { name: /github/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /payload format docs/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /security page/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /openclaw/i })).toBeVisible();
+});
+
+test("links to the public security page", async ({ page }) => {
+  await waitForViewerState(page, "empty");
+
+  await page.getByRole("link", { name: "Security" }).first().click();
+
+  await expect(page).toHaveURL(/\/security\/?$/);
+  await expect(page.getByRole("heading", { name: "Security", exact: true })).toBeVisible();
+  await expect(page.getByText("Artifact payloads are not sent to the static host as part of the initial page request.")).toBeVisible();
+  await expect(page.getByText("Fragment payloads stay out of the HTTP request path")).toBeVisible();
+  await expect(page.getByText("React Markdown is configured with skipHtml")).toBeVisible();
+  await expect(page.getByText("Mermaid runs with securityLevel: \"strict\"")).toBeVisible();
 });
 
 test("creates, copies, and previews a generated homepage link", async ({ page }) => {
@@ -76,6 +96,16 @@ test("renders code payloads", async ({ page }) => {
   await waitForViewerState(page, "artifact");
   await expect(page.locator("[data-active-kind='code']")).toBeVisible();
   await expect(page.locator(".cm-editor").first()).toBeVisible();
+});
+
+test("renders arx2 fragments through the viewer", async ({ page }) => {
+  const hash = "#agent-render=v1.arx2.1.B.G5YAoIzUVnkjvNDRuYkN71ZNo8KBFL0uoqsrTCc3P6gd25KyFmaWWi2GPGVBSQbV9vIA_tfs6WTMRdo0IIKRQEIMsoI36RDB7jr8YJq3abcYIzEpGs1Ady3VxyHdC-IyHyBG9yZRLJ0t5ClN5wftjQU";
+
+  await goToHash(page, hash);
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "code");
+  await expect(page.locator("[data-active-kind='code']")).toBeVisible();
+  await expect(page.getByText("viewer-shell.tsx").first()).toBeVisible();
 });
 
 test("renders multi-file diffs without mutating the payload hash", async ({ page }) => {
@@ -215,7 +245,7 @@ test("header icon and name navigate to homepage", async ({ page }) => {
 
   await page.getByRole("link", { name: "Go to homepage" }).click();
   await waitForViewerState(page, "empty");
-  await expect(page.getByText("Share artifacts in the URL, keep the server out of the payload.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /zero-retention artifact viewer/i })).toBeVisible();
 });
 
 test("theme switching works", async ({ page }) => {

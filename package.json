@@ -3,6 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "description": "A static, zero-retention artifact viewer for markdown, code, diffs, CSV, and JSON.",
+  "license": "MIT",
+  "homepage": "https://agent-render.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/baanish/agent-render.git"
+  },
+  "bugs": {
+    "url": "https://github.com/baanish/agent-render/issues"
+  },
+  "keywords": [
+    "artifact-viewer",
+    "markdown",
+    "diff",
+    "static-site",
+    "zero-retention",
+    "openclaw",
+    "nextjs"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -15,9 +33,10 @@
     "test:e2e:update": "playwright test --update-snapshots",
     "test:ci": "npm run lint && npm run test && npm run typecheck && npm run test:e2e",
     "test:browsers": "playwright install chromium",
-    "codec:poc": "node scripts/codec-poc.mjs",
+    "bench:codecs": "node scripts/bench-codecs.mjs",
+    "bench:codecs:update": "node scripts/bench-codecs.mjs --write-baseline",
     "typecheck": "node scripts/ensure-next-types.mjs && tsc --noEmit",
-    "check": "npm run lint && npm run test && npm run typecheck && npm run build",
+    "check": "npm run lint && npm run test && npm run bench:codecs && npm run typecheck && npm run build",
     "check:public-export-docs": "node scripts/check-public-export-docs.mjs",
     "selfhosted:dev": "node --import tsx selfhosted/server.ts",
     "selfhosted:build": "tsc -p selfhosted/tsconfig.json",

@@ -1,0 +1,21 @@
+{
+  "linkset": [
+    {
+      "anchor": "/.well-known/api-catalog",
+      "item": [
+        {
+          "href": "/api/artifacts"
+        }
+      ]
+    },
+    {
+      "anchor": "/api/artifacts",
+      "service-desc": [
+        {
+          "href": "/openapi/selfhosted-artifacts.yaml",
+          "type": "application/yaml"
+        }
+      ]
+    }
+  ]
+}
