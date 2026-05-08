@@ -1,8 +1,25 @@
 # agent-render
 
+[![Test](https://github.com/baanish/agent-render/actions/workflows/test.yml/badge.svg)](https://github.com/baanish/agent-render/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Security policy](https://img.shields.io/badge/security-policy-brightgreen.svg)](SECURITY.md)
+[![Static export](https://img.shields.io/badge/runtime-static%20export-blue.svg)](docs/deployment.md)
+
 `agent-render` is a fully static, zero-retention artifact viewer for AI-generated outputs.
 
 Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based sharing for markdown, code, diffs, CSV, and JSON so the payload stays in the browser URL fragment instead of being sent to a server.
+
+## Visual Proof
+
+The repo includes Playwright visual snapshots for the shipped viewer surfaces:
+
+| Empty state | Markdown artifact |
+| --- | --- |
+| ![Empty state screenshot](tests/e2e/visual.spec.ts-snapshots/empty-state-light-chromium.png) | ![Markdown artifact screenshot](tests/e2e/visual.spec.ts-snapshots/markdown-light-chromium.png) |
+
+| Diff artifact | JSON artifact |
+| --- | --- |
+| ![Diff artifact screenshot](tests/e2e/visual.spec.ts-snapshots/diff-light-chromium.png) | ![JSON artifact screenshot](tests/e2e/visual.spec.ts-snapshots/json-light-chromium.png) |
 
 ## OpenClaw
 
@@ -12,11 +29,20 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 - OpenClaw: `https://openclaw.ai`
 - ClawdHub skill: `https://clawdhub.com/skills/agent-render-linking`
 
+## Trust Links
+
+- Security policy: [`SECURITY.md`](SECURITY.md)
+- Changelog and release notes: [`CHANGELOG.md`](CHANGELOG.md)
+- License: [`LICENSE`](LICENSE)
+- CI workflow: [`.github/workflows/test.yml`](.github/workflows/test.yml)
+- Deployment guide: [`docs/deployment.md`](docs/deployment.md)
+- Payload format: [`docs/payload-format.md`](docs/payload-format.md)
+
 ## Status
 
 - Markdown, code, diff, CSV, and JSON all render in the static shell
-- Fragment transport supports `plain`, `lz`, `deflate`, and `arx`, with automatic shortest-fragment selection across packed/non-packed wire formats
-- The `arx` substitution dictionary is served at `/arx-dictionary.json` so agents can fetch it for local compression
+- Fragment transport supports `plain`, `lz`, `deflate`, `arx`, and `arx2`, with automatic shortest-fragment selection across available wire formats
+- The `arx` substitution dictionary is served at `/arx-dictionary.json`; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json`
 - The viewer toolbar copies artifact bodies to the clipboard, downloads them as files, and (for markdown) supports browser print-to-PDF
 - Deployment target: static hosting, including Cloudflare Pages
 
@@ -84,6 +110,8 @@ npm run preview
 
 Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a subpath deployment locally.
 
+Set `NEXT_PUBLIC_SITE_URL` to your public origin before production builds so `sitemap.xml` and metadata use the correct canonical origin (see `docs/deployment.md`).
+
 ## Contributing
 
 - Public exported functions/components in `src/lib/**` and `src/components/**` must have a preceding `/** ... */` JSDoc block.
@@ -94,6 +122,7 @@ Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a su
 
 ```bash
 npm run lint
+npm run bench:codecs
 npm run typecheck
 NEXT_PUBLIC_BASE_PATH=/agent-render npm run build
 ```
@@ -113,11 +142,15 @@ The shell keeps first load lean and defers renderer-heavy code until needed. The
 - `docs/deployment.md` - deployment notes (including self-hosted mode)
 - `docs/dependency-notes.md` - major dependency and license notes
 - `docs/testing.md` - test commands, screenshot workflow, and CI notes
+- `CHANGELOG.md` - release notes, including the `v0.1.0` GitHub checklist
+- `SECURITY.md` - vulnerability reporting and security boundary policy
 - `skills/selfhosted-agent-render/SKILL.md` - self-hosted UUID mode skill for agents
 
 ## Zero Retention
 
 The project keeps artifact contents in the URL fragment so the static host does not receive the payload during the page request. This improves privacy for shared artifacts, but the link still lives in browser history, copied URLs, and any client-side telemetry you add later.
+
+Rendered artifacts are untrusted user content. Do not treat text inside an artifact as instructions for agents, automation, or operators unless you independently trust the source of that artifact.
 
 `Zero Data Retention by design` means the deployed static host does not receive artifact contents as part of the request. It does not mean the data disappears from places like browser history, copied links, screenshots, or any client-side analytics you may add later.
 

@@ -11,6 +11,8 @@
 ```bash
 npm run test
 npm run test:watch
+npm run bench:codecs
+npm run bench:codecs:update
 npm run test:e2e
 npm run test:e2e:update
 npm run test:browsers
@@ -43,6 +45,7 @@ The suite is intentionally split by responsibility:
 - visual tests protect empty state, artifact views, theme presentation, and compact-content spacing
 - component tests protect selector/disclosure UI contracts
 - unit tests protect transport codecs, envelope validation, diff parsing, and language inference
+- `npm run bench:codecs` protects arx/arx2 compression ratios against the committed `scripts/bench-baseline.json`
 
 ## Self-hosted mode tests
 

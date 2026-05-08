@@ -17,6 +17,8 @@ const host = process.env.HOST || "0.0.0.0";
 const outputDirectory = path.resolve(process.env.OUT_DIR || "out");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const API_CATALOG_CONTENT_TYPE = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
+const API_CATALOG_LINK_HEADER = '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"';
 
 const contentTypes = new Map<string, string>([
   [".html", "text/html; charset=utf-8"],
@@ -31,9 +33,29 @@ const contentTypes = new Map<string, string>([
   [".woff", "font/woff"],
   [".woff2", "font/woff2"],
   [".br", "application/octet-stream"],
+  [".yaml", "application/yaml; charset=utf-8"],
+  [".yml", "application/yaml; charset=utf-8"],
 ]);
 
 let indexHtmlCache: string | null = null;
+
+function contentTypeFor(filePath: string): string {
+  if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
+    return API_CATALOG_CONTENT_TYPE;
+  }
+
+  return contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+}
+
+function headersFor(filePath: string): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": contentTypeFor(filePath) };
+
+  if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
+    headers.Link = API_CATALOG_LINK_HEADER;
+  }
+
+  return headers;
+}
 
 /**
  * Read the built index.html from the static output directory.
@@ -102,7 +124,7 @@ function htmlResponse(res: ServerResponse, status: number, body: string): void {
 }
 
 /** Serve a static file from the output directory. */
-async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> {
+async function serveStatic(res: ServerResponse, urlPath: string, method: string): Promise<void> {
   const cleanPath = urlPath.split("?", 1)[0].split("#", 1)[0];
   const normalizedPath = cleanPath === "/" ? "/index.html" : cleanPath;
 
@@ -133,8 +155,18 @@ async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> 
     return;
   }
 
-  const contentType = contentTypes.get(path.extname(filePath)) || "application/octet-stream";
-  res.writeHead(200, { "Content-Type": contentType });
+  if (method !== "GET" && method !== "HEAD") {
+    res.writeHead(405, { Allow: "GET, HEAD" });
+    res.end("Method not allowed");
+    return;
+  }
+
+  res.writeHead(200, headersFor(filePath));
+  if (method === "HEAD") {
+    res.end();
+    return;
+  }
+
   createReadStream(filePath).pipe(res);
 }
 
@@ -288,7 +320,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   }
 
   // Static file fallback
-  await serveStatic(res, pathname);
+  await serveStatic(res, pathname, method);
 }
 
 // Initialize database on startup

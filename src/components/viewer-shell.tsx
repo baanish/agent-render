@@ -69,13 +69,25 @@ const ecosystemLinks = [
     href: "https://github.com/baanish/agent-render",
     kicker: "Source",
     title: "GitHub",
-    description: "Source code, payload format, and deployment docs.",
+    description: "Source code, issues, releases, and self-hosting notes.",
   },
   {
-    href: "https://clawdhub.com/skills/agent-render-linking",
+    href: "https://github.com/baanish/agent-render/blob/main/docs/payload-format.md",
+    kicker: "Protocol",
+    title: "Payload format docs",
+    description: "Fragment key, codecs, envelope fields, and size limits.",
+  },
+  {
+    href: "https://github.com/baanish/agent-render/blob/main/docs/architecture.md#security-posture",
+    kicker: "Safety",
+    title: "Security page",
+    description: "The current security posture and zero-retention boundaries.",
+  },
+  {
+    href: "https://openclaw.ai",
     kicker: "Ecosystem",
-    title: "ClawdHub skill",
-    description: "Let OpenClaw agents generate agent-render links in chat.",
+    title: "OpenClaw",
+    description: "The agent ecosystem this viewer was built to support.",
   },
 ] as const;
 
@@ -610,10 +622,13 @@ export function ViewerShell() {
             <section className="home-hero-section fade-up" style={getAnimationStyle(80)}>
               <p className="section-kicker">Artifact viewer</p>
               <h2 className="font-display mt-4 max-w-4xl text-[2.5rem] font-bold leading-[0.92] tracking-[-0.04em] sm:mt-6 sm:text-6xl sm:leading-[0.92] lg:text-[4.5rem]">
-                Share artifacts in the URL, keep the server out of the payload.
+                Zero-retention artifact viewer for AI outputs.
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-[1.7] text-[color:var(--text-muted)] sm:mt-8 sm:text-lg sm:leading-8">
-                View markdown, code, diffs, CSV, and JSON from a fragment link the static host does not receive.
+                Artifact content lives in the URL fragment, so in static mode the static host does not receive artifact content on the page request.
+              </p>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
+                Fragment links can still appear in browser history, screenshots, copied messages, extensions, and other places you share or run your browser.
               </p>
               <div className="mt-6 flex flex-wrap gap-2 sm:mt-10 sm:gap-3">
                 <span className="mono-pill">
@@ -640,9 +655,9 @@ export function ViewerShell() {
                 </p>
               </div>
               <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
-                <p className="section-kicker">Why</p>
+                <p className="section-kicker">Static boundary</p>
                 <p className="mt-4 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-                  Agent outputs get flattened in chat. This keeps them readable and portable.
+                  The browser decodes markdown, code, diffs, CSV, and JSON locally from the fragment after the shell loads.
                 </p>
               </div>
               {ecosystemLinks.map((link) => (

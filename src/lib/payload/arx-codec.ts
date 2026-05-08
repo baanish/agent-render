@@ -15,6 +15,9 @@
  * cannot be fetched.
  */
 
+import { MAX_DECODED_PAYLOAD_LENGTH } from "@/lib/payload/schema";
+import type { Arx2ArtifactTuple, Arx2EnvelopeTuple, ArtifactPayload, PayloadEnvelope } from "@/lib/payload/schema";
+
 // ---------------------------------------------------------------------------
 // Dictionary types and built-in fallback
 // ---------------------------------------------------------------------------
@@ -23,6 +26,13 @@ export type ArxDictionary = {
   version: number;
   singleByteSlots: string[];
   extendedSlots: string[];
+};
+
+export type ArxWirePayloads = {
+  base76: string;
+  base1k: string;
+  baseBMP: string;
+  base64url: string;
 };
 
 /**
@@ -37,6 +47,9 @@ const SINGLE_BYTE_CODES = [
 
 /** Extended slots use a 0x00 prefix followed by an index byte (1-based). */
 const EXTENDED_PREFIX = "\x00";
+
+const ARX2_SINGLE_BYTE_CODES = [0x1e, 0x7f];
+const ARX2_EXTENDED_PREFIX = "\x1f";
 
 /**
  * Built-in fallback dictionary — used when the external dictionary is not
@@ -78,35 +91,176 @@ const BUILTIN_DICTIONARY: ArxDictionary = {
   ],
 };
 
+const BUILTIN_ARX2_OVERLAY_DICTIONARY: ArxDictionary = {
+  version: 1,
+  singleByteSlots: [
+    "[\"m\",\"",
+    "[\"c\",\"",
+  ],
+  extendedSlots: [
+    "[\"d\",\"",
+    "[\"s\",\"",
+    "[\"j\",\"",
+    "[2,",
+    "[3,",
+    "],[",
+    "\",\"",
+    "\",null",
+    ",null,\"",
+    ",null,null,\"",
+    ",\"split\"",
+    ",\"unified\"",
+    "export const ",
+    "export function ",
+    "export const value = ",
+    "export type ",
+    "export interface ",
+    "import { ",
+    "} from \"",
+    " as const",
+    "async function ",
+    "return <",
+    "className=\"",
+    "\\n## ",
+    "\\n### ",
+    "\\n- [x] ",
+    "\\n- [ ] ",
+    "](#",
+    "diff --git ",
+    "\\n+++",
+    "\\n---",
+    "\\n@@ -",
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Dictionary → substitution pairs
 // ---------------------------------------------------------------------------
 
 type SubstitutionPair = [string, string];
+type SubstitutionTrieNode = {
+  replacement?: string;
+  children: Map<string, SubstitutionTrieNode>;
+};
 
-function buildSubstitutions(dict: ArxDictionary): SubstitutionPair[] {
+type SubstitutionTable = {
+  encodeTrie: SubstitutionTrieNode;
+  decodeTrie: SubstitutionTrieNode;
+};
+
+function buildSubstitutions(
+  dict: ArxDictionary,
+  singleByteCodes = SINGLE_BYTE_CODES,
+  extendedPrefix = EXTENDED_PREFIX,
+): SubstitutionPair[] {
   const pairs: SubstitutionPair[] = [];
 
-  for (let i = 0; i < dict.singleByteSlots.length && i < SINGLE_BYTE_CODES.length; i++) {
-    pairs.push([dict.singleByteSlots[i], String.fromCharCode(SINGLE_BYTE_CODES[i])]);
+  for (let i = 0; i < dict.singleByteSlots.length && i < singleByteCodes.length; i++) {
+    pairs.push([dict.singleByteSlots[i], String.fromCharCode(singleByteCodes[i])]);
   }
 
   for (let i = 0; i < dict.extendedSlots.length; i++) {
-    pairs.push([dict.extendedSlots[i], EXTENDED_PREFIX + String.fromCharCode(i + 1)]);
+    pairs.push([dict.extendedSlots[i], extendedPrefix + String.fromCharCode(i + 1)]);
   }
 
   return pairs;
 }
 
-// Active substitution table — starts with the built-in dictionary
-let activeSubs: SubstitutionPair[] = buildSubstitutions(BUILTIN_DICTIONARY);
+function makeTrieNode(): SubstitutionTrieNode {
+  return { children: new Map() };
+}
+
+function buildSubstitutionTrie(pairs: SubstitutionPair[]): SubstitutionTrieNode {
+  const root = makeTrieNode();
+
+  for (const [from, to] of pairs) {
+    if (from.length === 0) continue;
+
+    let node = root;
+    for (let i = 0; i < from.length; i++) {
+      const char = from[i];
+      let child = node.children.get(char);
+      if (!child) {
+        child = makeTrieNode();
+        node.children.set(char, child);
+      }
+      node = child;
+    }
+
+    node.replacement ??= to;
+  }
+
+  return root;
+}
+
+function buildSubstitutionTable(pairs: SubstitutionPair[]): SubstitutionTable {
+  return {
+    encodeTrie: buildSubstitutionTrie(pairs),
+    decodeTrie: buildSubstitutionTrie(pairs.map(([from, to]) => [to, from])),
+  };
+}
+
+function applySubstitutionTrie(text: string, trie: SubstitutionTrieNode): string {
+  const output: string[] = [];
+  let index = 0;
+
+  while (index < text.length) {
+    let node: SubstitutionTrieNode | undefined = trie;
+    let cursor = index;
+    let replacement: string | undefined;
+    let replacementLength = 0;
+
+    while (cursor < text.length) {
+      node = node.children.get(text[cursor]);
+      if (!node) break;
+      cursor++;
+
+      if (node.replacement !== undefined) {
+        replacement = node.replacement;
+        replacementLength = cursor - index;
+      }
+    }
+
+    if (replacement !== undefined) {
+      output.push(replacement);
+      index += replacementLength;
+    } else {
+      output.push(text[index]);
+      index++;
+    }
+  }
+
+  return output.join("");
+}
+
+function buildOverlaySubstitutions(dict: ArxDictionary): SubstitutionPair[] {
+  const pairs: SubstitutionPair[] = [];
+
+  for (let i = 0; i < dict.singleByteSlots.length && i < ARX2_SINGLE_BYTE_CODES.length; i++) {
+    pairs.push([dict.singleByteSlots[i], String.fromCharCode(ARX2_SINGLE_BYTE_CODES[i])]);
+  }
+
+  for (let i = 0; i < dict.extendedSlots.length; i++) {
+    pairs.push([dict.extendedSlots[i], ARX2_EXTENDED_PREFIX + String.fromCharCode(0x20 + i)]);
+  }
+
+  return pairs;
+}
+
+// Active substitution tables — start with built-in dictionaries.
+let activeSubstitutionTable: SubstitutionTable = buildSubstitutionTable(buildSubstitutions(BUILTIN_DICTIONARY));
+let activeOverlaySubstitutionTable: SubstitutionTable = buildSubstitutionTable(
+  buildOverlaySubstitutions(BUILTIN_ARX2_OVERLAY_DICTIONARY),
+);
 let activeDictVersion = BUILTIN_DICTIONARY.version;
+let activeArx2OverlayVersion = BUILTIN_ARX2_OVERLAY_DICTIONARY.version;
 
 // ---------------------------------------------------------------------------
 // External dictionary loading
 // ---------------------------------------------------------------------------
 
 let dictionaryLoaded = false;
+let arx2OverlayDictionaryLoaded = false;
 
 function isArxDictionary(value: unknown): value is ArxDictionary {
   if (typeof value !== "object" || value === null) return false;
@@ -140,9 +294,14 @@ export async function loadArxDictionary(source?: string | ArxDictionary): Promis
       dict = json;
     }
 
-    activeSubs = buildSubstitutions(dict);
+    activeSubstitutionTable = buildSubstitutionTable(buildSubstitutions(dict));
     activeDictVersion = dict.version;
     dictionaryLoaded = true;
+
+    if (!source || typeof source === "string") {
+      await loadArx2OverlayDictionary();
+    }
+
     return dict.version;
   } catch {
     return -1;
@@ -154,9 +313,48 @@ export async function loadArxDictionary(source?: string | ArxDictionary): Promis
  * Useful in test environments or when the dictionary JSON is already available.
  */
 export function loadArxDictionarySync(dict: ArxDictionary): number {
-  activeSubs = buildSubstitutions(dict);
+  activeSubstitutionTable = buildSubstitutionTable(buildSubstitutions(dict));
   activeDictVersion = dict.version;
   dictionaryLoaded = true;
+  return dict.version;
+}
+
+/**
+ * Load the shared arx2 overlay dictionary from a URL or parsed object.
+ * Returns the overlay dictionary version on success, or -1 on failure.
+ */
+export async function loadArx2OverlayDictionary(source?: string | ArxDictionary): Promise<number> {
+  try {
+    let dict: ArxDictionary;
+
+    if (source && typeof source === "object") {
+      dict = source;
+    } else {
+      const url = typeof source === "string" ? source : resolveDefaultArx2OverlayDictionaryUrl();
+      const response = await fetch(url);
+      if (!response.ok) return -1;
+      const json: unknown = await response.json();
+      if (!isArxDictionary(json)) return -1;
+      dict = json;
+    }
+
+    activeOverlaySubstitutionTable = buildSubstitutionTable(buildOverlaySubstitutions(dict));
+    activeArx2OverlayVersion = dict.version;
+    arx2OverlayDictionaryLoaded = true;
+    return dict.version;
+  } catch {
+    return -1;
+  }
+}
+
+/**
+ * Load the arx2 overlay dictionary from a pre-parsed object (synchronous).
+ * Useful in tests and offline agents that already have the JSON dictionary.
+ */
+export function loadArx2OverlayDictionarySync(dict: ArxDictionary): number {
+  activeOverlaySubstitutionTable = buildSubstitutionTable(buildOverlaySubstitutions(dict));
+  activeArx2OverlayVersion = dict.version;
+  arx2OverlayDictionaryLoaded = true;
   return dict.version;
 }
 
@@ -165,9 +363,19 @@ export function isExternalDictionaryLoaded(): boolean {
   return dictionaryLoaded;
 }
 
+/** Returns true if an external arx2 overlay dictionary has been loaded. */
+export function isExternalArx2OverlayDictionaryLoaded(): boolean {
+  return arx2OverlayDictionaryLoaded;
+}
+
 /** Returns the active dictionary version (0 = built-in fallback). */
 export function getActiveDictVersion(): number {
   return activeDictVersion;
+}
+
+/** Returns the active arx2 overlay dictionary version. */
+export function getActiveArx2OverlayVersion(): number {
+  return activeArx2OverlayVersion;
 }
 
 function resolveDefaultDictionaryUrl(): string {
@@ -178,24 +386,199 @@ function resolveDefaultDictionaryUrl(): string {
   return `${basePath}/arx-dictionary.json`;
 }
 
+function resolveDefaultArx2OverlayDictionaryUrl(): string {
+  const basePath =
+    typeof process !== "undefined" && process.env?.NEXT_PUBLIC_BASE_PATH
+      ? process.env.NEXT_PUBLIC_BASE_PATH
+      : "";
+  return `${basePath}/arx2-dictionary.json`;
+}
+
 // ---------------------------------------------------------------------------
 // Substitution encode / decode
 // ---------------------------------------------------------------------------
 
 function dictEncode(text: string): string {
-  let result = text;
-  for (const [from, to] of activeSubs) {
-    result = result.split(from).join(to);
-  }
-  return result;
+  return applySubstitutionTrie(text, activeSubstitutionTable.encodeTrie);
 }
 
 function dictDecode(text: string): string {
-  let result = text;
-  for (let i = activeSubs.length - 1; i >= 0; i--) {
-    result = result.split(activeSubs[i][1]).join(activeSubs[i][0]);
+  return applySubstitutionTrie(text, activeSubstitutionTable.decodeTrie);
+}
+
+function overlayEncode(text: string): string {
+  return applySubstitutionTrie(text, activeOverlaySubstitutionTable.encodeTrie);
+}
+
+function overlayDecode(text: string): string {
+  return applySubstitutionTrie(text, activeOverlaySubstitutionTable.decodeTrie);
+}
+
+/**
+ * Applies the active arx dictionary substitution.
+ * This is exported for codec conformance tests that compare the trie scanner to the legacy
+ * split/join substitution semantics.
+ */
+export function encodeArxDictionaryForTest(text: string): string {
+  return dictEncode(text);
+}
+
+// ---------------------------------------------------------------------------
+// ARX2 tuple envelope
+// ---------------------------------------------------------------------------
+
+function trimOptionalTuple<T extends unknown[]>(fields: T): T {
+  let end = fields.length;
+  while (end > 0 && fields[end - 1] === undefined) {
+    end--;
   }
-  return result;
+  return fields.slice(0, end).map((field) => field === undefined ? null : field) as T;
+}
+
+function artifactToArx2Tuple(artifact: ArtifactPayload): Arx2ArtifactTuple {
+  switch (artifact.kind) {
+    case "markdown":
+      return trimOptionalTuple(["m", artifact.id, artifact.content, artifact.title, artifact.filename]);
+    case "code":
+      return trimOptionalTuple(["c", artifact.id, artifact.content, artifact.language, artifact.title, artifact.filename]);
+    case "diff":
+      return trimOptionalTuple([
+        "d",
+        artifact.id,
+        artifact.patch,
+        artifact.oldContent,
+        artifact.newContent,
+        artifact.language,
+        artifact.view,
+        artifact.title,
+        artifact.filename,
+      ]);
+    case "csv":
+      return trimOptionalTuple(["s", artifact.id, artifact.content, artifact.title, artifact.filename]);
+    case "json":
+      return trimOptionalTuple(["j", artifact.id, artifact.content, artifact.title, artifact.filename]);
+  }
+}
+
+function envelopeToArx2Tuple(envelope: PayloadEnvelope): Arx2EnvelopeTuple {
+  const artifacts = envelope.artifacts.map(artifactToArx2Tuple);
+
+  if (artifacts.length === 1) {
+    return trimOptionalTuple([3, artifacts[0], envelope.title]);
+  }
+
+  const activeIndex = envelope.activeArtifactId
+    ? envelope.artifacts.findIndex((artifact) => artifact.id === envelope.activeArtifactId)
+    : -1;
+  return trimOptionalTuple([2, artifacts, envelope.title, activeIndex > 0 ? activeIndex : undefined]);
+}
+
+function optionalStringAt(tuple: unknown[], index: number): string | undefined {
+  return typeof tuple[index] === "string" ? tuple[index] : undefined;
+}
+
+function optionalViewAt(tuple: unknown[], index: number): "unified" | "split" | undefined {
+  const value = tuple[index];
+  if (value === undefined || value === null) return undefined;
+  if (value === "unified" || value === "split") return value;
+  throw new Error("Invalid arx2 diff view.");
+}
+
+function decodeArx2ArtifactTuple(value: unknown): ArtifactPayload {
+  if (!Array.isArray(value) || typeof value[0] !== "string" || typeof value[1] !== "string") {
+    throw new Error("Invalid arx2 artifact tuple.");
+  }
+
+  const kindCode = value[0];
+  const id = value[1];
+
+  if (kindCode === "d") {
+    return {
+      id,
+      kind: "diff",
+      patch: optionalStringAt(value, 2),
+      oldContent: optionalStringAt(value, 3),
+      newContent: optionalStringAt(value, 4),
+      language: optionalStringAt(value, 5),
+      view: optionalViewAt(value, 6),
+      title: optionalStringAt(value, 7),
+      filename: optionalStringAt(value, 8),
+    };
+  }
+
+  if (typeof value[2] !== "string") {
+    throw new Error("Invalid arx2 text artifact tuple.");
+  }
+
+  switch (kindCode) {
+    case "m":
+      return {
+        id,
+        kind: "markdown",
+        content: value[2],
+        title: optionalStringAt(value, 3),
+        filename: optionalStringAt(value, 4),
+      };
+    case "c":
+      return {
+        id,
+        kind: "code",
+        content: value[2],
+        language: optionalStringAt(value, 3),
+        title: optionalStringAt(value, 4),
+        filename: optionalStringAt(value, 5),
+      };
+    case "s":
+      return {
+        id,
+        kind: "csv",
+        content: value[2],
+        title: optionalStringAt(value, 3),
+        filename: optionalStringAt(value, 4),
+      };
+    case "j":
+      return {
+        id,
+        kind: "json",
+        content: value[2],
+        title: optionalStringAt(value, 3),
+        filename: optionalStringAt(value, 4),
+      };
+    default:
+      throw new Error("Unsupported arx2 artifact kind.");
+  }
+}
+
+function envelopeFromArx2Tuple(value: unknown): PayloadEnvelope {
+  if (!Array.isArray(value)) {
+    throw new Error("Invalid arx2 envelope tuple.");
+  }
+
+  if (value[0] === 3) {
+    const artifact = decodeArx2ArtifactTuple(value[1]);
+    return {
+      v: 1,
+      codec: "arx2",
+      title: optionalStringAt(value, 2),
+      activeArtifactId: artifact.id,
+      artifacts: [artifact],
+    };
+  }
+
+  if (value[0] === 2 && Array.isArray(value[1]) && value[1].length > 0) {
+    const artifacts = value[1].map(decodeArx2ArtifactTuple);
+    const activeIndex = Number.isInteger(value[3]) ? value[3] as number : 0;
+    const activeArtifact = activeIndex >= 0 && activeIndex < artifacts.length ? artifacts[activeIndex] : artifacts[0];
+    return {
+      v: 1,
+      codec: "arx2",
+      title: optionalStringAt(value, 2),
+      activeArtifactId: activeArtifact.id,
+      artifacts,
+    };
+  }
+
+  throw new Error("Unsupported arx2 envelope tuple.");
 }
 
 // ---------------------------------------------------------------------------
@@ -635,6 +1018,19 @@ export function isBase64urlEncoded(str: string): boolean {
 type BrotliModule = {
   compress: (buf: Uint8Array, options?: { quality?: number }) => Uint8Array;
   decompress: (buf: Uint8Array) => Uint8Array;
+  DecompressStream?: new () => {
+    decompress: (input: Uint8Array, outputSize: number) => {
+      buf: Uint8Array;
+      code: number;
+      input_offset: number;
+    };
+    free?: () => void;
+  };
+  BrotliStreamResultCode?: {
+    ResultSuccess: number;
+    NeedsMoreInput: number;
+    NeedsMoreOutput: number;
+  };
 };
 
 let brotliModule: BrotliModule | null = null;
@@ -646,60 +1042,95 @@ async function getBrotli(): Promise<BrotliModule> {
   return brotliModule;
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
+const BROTLI_OUTPUT_CHUNK_SIZE = 16_384;
+const MAX_BROTLI_OUTPUT_BYTES = MAX_DECODED_PAYLOAD_LENGTH * 4;
 
-/** Public API for `arxCompress`. */
-export async function arxCompress(json: string): Promise<string> {
-  const brotli = await getBrotli();
-  const substituted = dictEncode(json);
-  const compressed = brotli.compress(new TextEncoder().encode(substituted), { quality: 11 });
-  return encodeBase76(compressed);
+export class ArxDecodedPayloadTooLargeError extends Error {
+  constructor() {
+    super(`The decoded payload exceeds the supported limit of ${MAX_DECODED_PAYLOAD_LENGTH.toLocaleString()} characters.`);
+    this.name = "ArxDecodedPayloadTooLargeError";
+  }
 }
 
-/**
- * Compress with the arx pipeline using base1k Unicode encoding.
- * Produces ~42% fewer characters than `arxCompress` at the cost of
- * non-ASCII fragment content.
- */
-export async function arxCompressUnicode(json: string): Promise<string> {
-  const brotli = await getBrotli();
-  const substituted = dictEncode(json);
-  const compressed = brotli.compress(new TextEncoder().encode(substituted), { quality: 11 });
-  return encodeBase1k(compressed);
+function assertDecodedTextBudget(text: string): void {
+  if (text.length > MAX_DECODED_PAYLOAD_LENGTH) {
+    throw new ArxDecodedPayloadTooLargeError();
+  }
 }
 
-/**
- * Compress with the arx pipeline using baseBMP high-density encoding.
- * Produces ~32% fewer characters than base1k (~55% fewer than base76)
- * by using ~62k safe BMP code points (~15.92 bits/char).
- */
-export async function arxCompressBMP(json: string): Promise<string> {
-  const brotli = await getBrotli();
-  const substituted = dictEncode(json);
-  const compressed = brotli.compress(new TextEncoder().encode(substituted), { quality: 11 });
-  return encodeBaseBMP(compressed);
+function concatChunks(chunks: Uint8Array[], totalLength: number): Uint8Array {
+  const out = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return out;
 }
 
-/**
- * Compress with the arx pipeline using base64url for the binary-to-text step.
- * ASCII-only and safe on surfaces that percent-encode non-ASCII (unlike base1k/baseBMP).
- */
-export async function arxCompressBase64url(json: string): Promise<string> {
-  const brotli = await getBrotli();
-  const substituted = dictEncode(json);
-  const compressed = brotli.compress(new TextEncoder().encode(substituted), { quality: 11 });
-  return encodeBase64url(compressed);
+function brotliDecompressWithLimit(brotli: BrotliModule, bytes: Uint8Array): Uint8Array {
+  if (!brotli.DecompressStream || !brotli.BrotliStreamResultCode) {
+    const out = brotli.decompress(bytes);
+    if (out.length > MAX_BROTLI_OUTPUT_BYTES) {
+      throw new ArxDecodedPayloadTooLargeError();
+    }
+    return out;
+  }
+
+  const stream = new brotli.DecompressStream();
+  const chunks: Uint8Array[] = [];
+  let totalLength = 0;
+  let inputOffset = 0;
+
+  try {
+    while (true) {
+      const remainingBudget = MAX_BROTLI_OUTPUT_BYTES - totalLength;
+      const outputSize = Math.min(BROTLI_OUTPUT_CHUNK_SIZE, remainingBudget + 1);
+      const input = inputOffset < bytes.length ? bytes.slice(inputOffset) : new Uint8Array(0);
+      const result = stream.decompress(input, outputSize);
+
+      inputOffset += result.input_offset;
+      if (result.buf.length > 0) {
+        totalLength += result.buf.length;
+        if (totalLength > MAX_BROTLI_OUTPUT_BYTES) {
+          throw new ArxDecodedPayloadTooLargeError();
+        }
+        chunks.push(result.buf);
+      }
+
+      if (result.code === brotli.BrotliStreamResultCode.ResultSuccess) {
+        return concatChunks(chunks, totalLength);
+      }
+
+      if (result.code === brotli.BrotliStreamResultCode.NeedsMoreInput && inputOffset >= bytes.length) {
+        throw new Error("Brotli decompression ended before the stream completed.");
+      }
+    }
+  } finally {
+    stream.free?.();
+  }
 }
 
-/** Public API for `arxDecompress`. */
-export async function arxDecompress(encoded: string): Promise<string> {
+async function compressSubstitutedText(text: string): Promise<Uint8Array> {
+  const brotli = await getBrotli();
+  return brotli.compress(new TextEncoder().encode(text), { quality: 11 });
+}
+
+function encodeWirePayloads(compressed: Uint8Array): ArxWirePayloads {
+  return {
+    base76: encodeBase76(compressed),
+    base1k: encodeBase1k(compressed),
+    baseBMP: encodeBaseBMP(compressed),
+    base64url: encodeBase64url(compressed),
+  };
+}
+
+async function decompressWirePayload(encoded: string): Promise<string> {
   const brotli = await getBrotli();
 
   const decompressFromBytes = (bytes: Uint8Array): string => {
-    const out = brotli.decompress(bytes);
-    return dictDecode(new TextDecoder().decode(out));
+    const out = brotliDecompressWithLimit(brotli, bytes);
+    return new TextDecoder().decode(out);
   };
 
   if (isBaseBMPEncoded(encoded)) {
@@ -709,7 +1140,10 @@ export async function arxDecompress(encoded: string): Promise<string> {
   if (isBase64urlEncoded(encoded)) {
     try {
       return decompressFromBytes(decodeBase64url(encoded));
-    } catch {
+    } catch (error) {
+      if (error instanceof ArxDecodedPayloadTooLargeError) {
+        throw error;
+      }
       // base76 length prefix can also be `B.` (e.g. 140-byte payloads); retry as base76.
     }
   }
@@ -719,4 +1153,72 @@ export async function arxDecompress(encoded: string): Promise<string> {
   }
 
   return decompressFromBytes(decodeBase76(encoded));
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/** Public API for `arxCompress`. */
+export async function arxCompress(json: string): Promise<string> {
+  const compressed = await compressSubstitutedText(dictEncode(json));
+  return encodeBase76(compressed);
+}
+
+/**
+ * Compress with the arx pipeline using base1k Unicode encoding.
+ * Produces ~42% fewer characters than `arxCompress` at the cost of
+ * non-ASCII fragment content.
+ */
+export async function arxCompressUnicode(json: string): Promise<string> {
+  const compressed = await compressSubstitutedText(dictEncode(json));
+  return encodeBase1k(compressed);
+}
+
+/**
+ * Compress with the arx pipeline using baseBMP high-density encoding.
+ * Produces ~32% fewer characters than base1k (~55% fewer than base76)
+ * by using ~62k safe BMP code points (~15.92 bits/char).
+ */
+export async function arxCompressBMP(json: string): Promise<string> {
+  const compressed = await compressSubstitutedText(dictEncode(json));
+  return encodeBaseBMP(compressed);
+}
+
+/**
+ * Compress with the arx pipeline using base64url for the binary-to-text step.
+ * ASCII-only and safe on surfaces that percent-encode non-ASCII (unlike base1k/baseBMP).
+ */
+export async function arxCompressBase64url(json: string): Promise<string> {
+  const compressed = await compressSubstitutedText(dictEncode(json));
+  return encodeBase64url(compressed);
+}
+
+/**
+ * Compresses a payload envelope with the arx2 tuple-envelope pipeline.
+ * Returns all supported binary-to-text wire shapes so callers can choose by transport size.
+ */
+export async function arx2CompressEnvelope(envelope: PayloadEnvelope): Promise<ArxWirePayloads> {
+  const tupleJson = JSON.stringify(envelopeToArx2Tuple(envelope));
+  const substituted = dictEncode(overlayEncode(tupleJson));
+  const compressed = await compressSubstitutedText(substituted);
+  return encodeWirePayloads(compressed);
+}
+
+/** Public API for `arxDecompress`. */
+export async function arxDecompress(encoded: string): Promise<string> {
+  const decoded = dictDecode(await decompressWirePayload(encoded));
+  assertDecodedTextBudget(decoded);
+  return decoded;
+}
+
+/**
+ * Decompresses an arx2 tuple-envelope payload and rebuilds the standard envelope shape.
+ */
+export async function arx2DecompressEnvelope(encoded: string): Promise<PayloadEnvelope> {
+  const v1Decoded = dictDecode(await decompressWirePayload(encoded));
+  assertDecodedTextBudget(v1Decoded);
+  const tupleJson = overlayDecode(v1Decoded);
+  assertDecodedTextBudget(tupleJson);
+  return envelopeFromArx2Tuple(JSON.parse(tupleJson));
 }

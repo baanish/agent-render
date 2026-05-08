@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  title: agent-render self-hosted artifacts API
+  description: |
+    Optional SQLite-backed API for storing agent-render artifact payloads and serving UUID viewer links.
+    Same routes are available when running `npm run selfhosted:dev` or the Docker image.
+  version: "1.0.0"
+servers:
+  - url: "{origin}"
+    variables:
+      origin:
+        default: http://localhost:3000
+        description: Base URL of the self-hosted deployment (scheme + host + optional port + optional subpath).
+paths:
+  /api/artifacts:
+    post:
+      summary: Create artifact
+      operationId: createArtifact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payload]
+              properties:
+                payload:
+                  type: string
+                  minLength: 1
+                  maxLength: 500000
+                  description: Encoded agent-render fragment payload string to store.
+      responses:
+        "201":
+          description: Artifact created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactCreated"
+        "400":
+          description: Invalid body or payload validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/artifacts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get artifact (refreshes TTL)
+      operationId: getArtifact
+      responses:
+        "200":
+          description: Artifact row
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactRow"
+        "404":
+          description: Not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      summary: Update artifact payload
+      operationId: updateArtifact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payload]
+              properties:
+                payload:
+                  type: string
+                  minLength: 1
+                  maxLength: 500000
+                  description: Encoded agent-render fragment payload string to store.
+      responses:
+        "200":
+          description: Updated row
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactRow"
+        "400":
+          description: Invalid body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete artifact
+      operationId: deleteArtifact
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/cleanup:
+    post:
+      summary: Remove all expired artifacts
+      operationId: cleanupExpired
+      responses:
+        "200":
+          description: Count of deleted rows
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+    ArtifactCreated:
+      type: object
+      required: [id, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        expires_at:
+          type: string
+          format: date-time
+    ArtifactRow:
+      type: object
+      required: [id, payload, created_at, updated_at, last_viewed_at, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        payload:
+          type: string
+          minLength: 1
+          maxLength: 500000
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_viewed_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
