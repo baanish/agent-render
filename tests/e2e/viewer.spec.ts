@@ -21,8 +21,21 @@ test("renders the zero-retention homepage when no fragment is present", async ({
   await expect(page.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
   await expect(page.getByRole("link", { name: /github/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /payload format docs/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /security page/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /safety.*security page/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /openclaw/i })).toBeVisible();
+});
+
+test("links to the public security page", async ({ page }) => {
+  await waitForViewerState(page, "empty");
+
+  await page.getByRole("link", { name: "Security" }).first().click();
+
+  await expect(page).toHaveURL(/\/security\/?$/);
+  await expect(page.getByRole("heading", { name: "Security", exact: true })).toBeVisible();
+  await expect(page.getByText("Artifact payloads are not sent to the static host as part of the initial page request.")).toBeVisible();
+  await expect(page.getByText("Fragment payloads stay out of the HTTP request path")).toBeVisible();
+  await expect(page.getByText("React Markdown is configured with skipHtml")).toBeVisible();
+  await expect(page.getByText("Mermaid runs with securityLevel: \"strict\"")).toBeVisible();
 });
 
 test("creates, copies, and previews a generated homepage link", async ({ page }) => {

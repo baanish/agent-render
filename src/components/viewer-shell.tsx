@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -493,7 +494,12 @@ export function ViewerShell() {
           <h1 className="font-display text-lg font-semibold tracking-[-0.03em] sm:text-xl">Agent Render</h1>
         </a>
 
-        <ThemeToggle />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/security" className="nav-text-link">
+            Security
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pb-12 pt-6 sm:gap-16 sm:px-8 sm:pb-24 sm:pt-12 lg:gap-20 lg:px-12 lg:pt-16">
@@ -762,7 +768,7 @@ export function ViewerShell() {
                   <p className="mt-4 max-w-3xl text-sm leading-7 text-[color:var(--text-muted)] sm:mt-5 sm:text-base sm:leading-8">
                     {activeArtifact
                       ? `${getArtifactSubtitle(activeArtifact)} selected.`
-                      : "Select a fragment above to render it here. Everything stays in the URL."}
+                      : "Select a fragment above to render it here. Payloads stay off the host request path, but links still need care."}
                   </p>
                 </div>
 
@@ -810,12 +816,13 @@ export function ViewerShell() {
                     <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">{step}</p>
                   </div>
                 ))}
-                <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
+                <Link href="/security" className="bento-card bento-link px-5 py-6 sm:px-8 sm:py-8">
                   <p className="section-kicker">Security</p>
-                  <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-                    The payload never leaves the URL hash. Rendering is entirely client-side.
+                  <span className="mt-3 block text-base font-semibold leading-6">Read the security page</span>
+                  <p className="mt-2 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
+                    Fragment payloads stay out of the static host request path, but links are not secret-safe.
                   </p>
-                </div>
+                </Link>
                 <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
                   <p className="section-kicker">Hosting</p>
                   <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
@@ -826,6 +833,11 @@ export function ViewerShell() {
             </section>
           </section>
         )}
+
+        <footer className="site-footer print-hide-on-markdown">
+          <span>agent-render</span>
+          <Link href="/security">Security</Link>
+        </footer>
       </div>
     </main>
   );
