@@ -21,7 +21,7 @@ test("renders the zero-retention homepage when no fragment is present", async ({
   await expect(page.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
   await expect(page.getByRole("link", { name: /github/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /payload format docs/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /security page/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /safety.*security page/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /openclaw/i })).toBeVisible();
 });
 
