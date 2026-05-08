@@ -13,9 +13,16 @@ test.beforeEach(async ({ page }) => {
   await stabilizePage(page);
 });
 
-test("renders the empty state", async ({ page }) => {
+test("renders the zero-retention homepage when no fragment is present", async ({ page }) => {
   await waitForViewerState(page, "empty");
-  await expect(page.getByText("Share artifacts in the URL, keep the server out of the payload.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /zero-retention artifact viewer/i })).toBeVisible();
+  await expect(page.getByText(/artifact content lives in the URL fragment/i)).toBeVisible();
+  await expect(page.getByText(/the static host does not receive artifact content/i)).toBeVisible();
+  await expect(page.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
+  await expect(page.getByRole("link", { name: /github/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /payload format docs/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /security page/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /openclaw/i })).toBeVisible();
 });
 
 test("creates, copies, and previews a generated homepage link", async ({ page }) => {
@@ -225,7 +232,7 @@ test("header icon and name navigate to homepage", async ({ page }) => {
 
   await page.getByRole("link", { name: "Go to homepage" }).click();
   await waitForViewerState(page, "empty");
-  await expect(page.getByText("Share artifacts in the URL, keep the server out of the payload.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /zero-retention artifact viewer/i })).toBeVisible();
 });
 
 test("theme switching works", async ({ page }) => {
