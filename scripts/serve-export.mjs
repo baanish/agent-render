@@ -8,6 +8,8 @@ const outputDirectory = path.resolve("out");
 const port = Number(process.env.PORT || 3000);
 const configuredBasePath = (process.env.NEXT_PUBLIC_BASE_PATH || "").trim();
 const basePath = configuredBasePath === "/" ? "" : configuredBasePath.replace(/\/$/, "");
+const apiCatalogContentType = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
+const apiCatalogLinkHeader = '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"';
 
 if (!existsSync(outputDirectory)) {
   console.error("Missing `out/`. Run `npm run build` before `npm run preview`.");
@@ -32,10 +34,20 @@ const contentTypes = new Map([
 
 function contentTypeFor(filePath) {
   if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
-    return 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
+    return apiCatalogContentType;
   }
 
   return contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+}
+
+function headersFor(filePath) {
+  const headers = { "Content-Type": contentTypeFor(filePath) };
+
+  if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
+    headers.Link = apiCatalogLinkHeader;
+  }
+
+  return headers;
 }
 
 function toFilePath(urlPath) {
@@ -100,7 +112,7 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  response.writeHead(200, { "Content-Type": contentTypeFor(finalPath) });
+  response.writeHead(200, headersFor(finalPath));
   if (method === "HEAD") {
     response.end();
     return;

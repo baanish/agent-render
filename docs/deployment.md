@@ -6,6 +6,8 @@
 
 Automated API discovery ([RFC 9727](https://www.rfc-editor.org/rfc/rfc9727)): the static export includes `.well-known/api-catalog` as a Linkset JSON document for the optional self-hosted HTTP API. It points to the OpenAPI description at `/openapi/selfhosted-artifacts.yaml`; hosts should serve the extensionless catalog with the `application/linkset+json` media type when possible.
 
+RFC well-known discovery resolves from the origin root, so `/.well-known/api-catalog` must be served there. Subpath-only static deployments may need host rewrites or copied files for the catalog and `/openapi/selfhosted-artifacts.yaml` hrefs.
+
 Key details:
 
 - Build with `npm ci` and `npm run build`

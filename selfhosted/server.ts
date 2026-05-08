@@ -17,6 +17,8 @@ const host = process.env.HOST || "0.0.0.0";
 const outputDirectory = path.resolve(process.env.OUT_DIR || "out");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const API_CATALOG_CONTENT_TYPE = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
+const API_CATALOG_LINK_HEADER = '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"';
 
 const contentTypes = new Map<string, string>([
   [".html", "text/html; charset=utf-8"],
@@ -39,10 +41,20 @@ let indexHtmlCache: string | null = null;
 
 function contentTypeFor(filePath: string): string {
   if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
-    return 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
+    return API_CATALOG_CONTENT_TYPE;
   }
 
   return contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+}
+
+function headersFor(filePath: string): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": contentTypeFor(filePath) };
+
+  if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
+    headers.Link = API_CATALOG_LINK_HEADER;
+  }
+
+  return headers;
 }
 
 /**
@@ -149,7 +161,7 @@ async function serveStatic(res: ServerResponse, urlPath: string, method: string)
     return;
   }
 
-  res.writeHead(200, { "Content-Type": contentTypeFor(filePath) });
+  res.writeHead(200, headersFor(filePath));
   if (method === "HEAD") {
     res.end();
     return;

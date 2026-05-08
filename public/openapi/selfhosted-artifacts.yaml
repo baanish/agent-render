@@ -26,6 +26,8 @@ paths:
               properties:
                 payload:
                   type: string
+                  minLength: 1
+                  maxLength: 500000
                   description: Encoded agent-render fragment payload string to store.
       responses:
         "201":
@@ -77,6 +79,9 @@ paths:
               properties:
                 payload:
                   type: string
+                  minLength: 1
+                  maxLength: 500000
+                  description: Encoded agent-render fragment payload string to store.
       responses:
         "200":
           description: Updated row
@@ -155,6 +160,8 @@ components:
           format: uuid
         payload:
           type: string
+          minLength: 1
+          maxLength: 500000
         created_at:
           type: string
           format: date-time
