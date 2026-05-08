@@ -27,7 +27,7 @@ describe("ViewerShell homepage", () => {
     expect(screen.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
     expect(screen.getByRole("link", { name: /github/i })).toBeVisible();
     expect(screen.getByRole("link", { name: /payload format docs/i })).toBeVisible();
-    expect(screen.getByRole("link", { name: /security page/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: /safety.*security page/i })).toBeVisible();
     expect(screen.getByRole("link", { name: /openclaw/i })).toBeVisible();
   });
 });
