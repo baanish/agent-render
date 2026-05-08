@@ -24,9 +24,9 @@ test("links to the public security page", async ({ page }) => {
   await page.getByRole("link", { name: "Security" }).first().click();
 
   await expect(page).toHaveURL(/\/security\/?$/);
-  await expect(page.getByRole("heading", { name: "Security" })).toBeVisible();
-  await expect(page.getByText("Static mode sends HTML, CSS, and JavaScript to the browser.")).toBeVisible();
-  await expect(page.getByText("Artifact payloads stay in the URL fragment and are not sent to the static host")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Security", exact: true })).toBeVisible();
+  await expect(page.getByText("Artifact payloads are not sent to the static host as part of the initial page request.")).toBeVisible();
+  await expect(page.getByText("Fragment payloads stay out of the HTTP request path")).toBeVisible();
   await expect(page.getByText("React Markdown is configured with skipHtml")).toBeVisible();
   await expect(page.getByText("Mermaid runs with securityLevel: \"strict\"")).toBeVisible();
 });

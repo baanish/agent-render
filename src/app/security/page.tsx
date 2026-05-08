@@ -10,8 +10,8 @@ const sections = [
   {
     title: "What reaches the server",
     body: [
-      "Static mode sends HTML, CSS, and JavaScript to the browser. It does not send artifact payloads to the static host.",
-      "Artifact payloads stay in the URL fragment and are not sent to the static host as part of the HTTP request path, query string, or request body.",
+      "Static mode sends HTML, CSS, and JavaScript to the browser. Artifact payloads are not sent to the static host as part of the initial page request.",
+      "Fragment payloads stay out of the HTTP request path, query string, and request body for the static host.",
       "The server can still receive normal static asset requests, IP address, user agent, referrer headers, and access logs from the hosting layer.",
     ],
   },
@@ -67,8 +67,8 @@ export default function SecurityPage() {
           <p className="section-kicker">Public security notes</p>
           <h1 className="font-display mt-4 text-4xl font-bold leading-tight sm:text-6xl">Security</h1>
           <p className="mt-5 max-w-3xl text-base leading-8 text-[color:var(--text-muted)] sm:text-lg">
-            agent-render is a static artifact viewer. The core security boundary is simple: artifact data belongs in
-            the URL fragment and is decoded in the browser.
+            agent-render is a static artifact viewer. Its core host boundary is simple: artifact data lives in the
+            URL fragment, so the static host does not receive it as part of the initial page request.
           </p>
         </section>
 

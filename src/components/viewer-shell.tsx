@@ -805,7 +805,7 @@ export function ViewerShell() {
                   <p className="section-kicker">Security</p>
                   <span className="mt-3 block text-base font-semibold leading-6">Read the security page</span>
                   <p className="mt-2 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-                    The payload never leaves the URL hash. Rendering is entirely client-side.
+                    Fragment payloads stay out of the static host request path, but links are not secret-safe.
                   </p>
                 </Link>
                 <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
