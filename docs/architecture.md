@@ -83,6 +83,7 @@ The JSON and markdown paths are now substantially lighter because:
 ## Security posture
 
 - Treat every payload as untrusted input
+- Treat rendered artifact text as untrusted user content, not instructions for agents or automation
 - Disable raw HTML in markdown by default
 - Keep artifact text out of `dangerouslySetInnerHTML`
 - Sanitize any content pipeline that can introduce markup
