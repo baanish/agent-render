@@ -73,7 +73,7 @@ function stopServer(child: ChildProcess): Promise<void> {
 }
 
 describe("RFC 9727 api-catalog", () => {
-  it("only advertises the optional self-hosted API description", () => {
+  it("advertises the optional self-hosted API endpoint and description", () => {
     const catalogPath = path.resolve("public", ".well-known", "api-catalog");
     const raw = readFileSync(catalogPath, "utf8");
     const doc = JSON.parse(raw) as {
@@ -81,13 +81,18 @@ describe("RFC 9727 api-catalog", () => {
     };
 
     expect(Array.isArray(doc.linkset)).toBe(true);
-    expect(doc.linkset.length).toBeGreaterThan(0);
+    expect(doc.linkset).toHaveLength(2);
 
-    const entry = doc.linkset[0];
-    expect(entry.anchor).toBe("/api/artifacts");
-    expect(Object.keys(entry).sort()).toEqual(["anchor", "service-desc"]);
+    const catalogEntry = doc.linkset[0];
+    expect(catalogEntry.anchor).toBe("/.well-known/api-catalog");
+    expect(Object.keys(catalogEntry).sort()).toEqual(["anchor", "item"]);
+    expect(catalogEntry.item).toEqual([{ href: "/api/artifacts" }]);
 
-    const serviceDesc = entry["service-desc"] as Array<{ href: string; type: string }>;
+    const apiEntry = doc.linkset[1];
+    expect(apiEntry.anchor).toBe("/api/artifacts");
+    expect(Object.keys(apiEntry).sort()).toEqual(["anchor", "service-desc"]);
+
+    const serviceDesc = apiEntry["service-desc"] as Array<{ href: string; type: string }>;
     expect(serviceDesc).toEqual([
       {
         href: "/openapi/selfhosted-artifacts.yaml",

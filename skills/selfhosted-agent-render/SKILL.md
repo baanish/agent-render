@@ -23,7 +23,7 @@ If the payload fits in a fragment and the link will work on the target surface, 
 
 The self-hosted server exposes a simple REST API.
 
-Discovery: `GET /.well-known/api-catalog` returns RFC 9727 `application/linkset+json` pointing to the OpenAPI file for this optional self-hosted API.
+Discovery: `GET /.well-known/api-catalog` returns RFC 9727 `application/linkset+json` with an `item` link to `/api/artifacts` and `service-desc` metadata pointing to the OpenAPI file for this optional self-hosted API.
 
 ### Create an artifact
 
