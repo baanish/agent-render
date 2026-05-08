@@ -26,6 +26,8 @@ Supported codecs:
 
 The encoder now also supports a packed wire representation (`p: 1`) that shortens key names before compression. Packed mode is transport-only; decoded envelopes normalize back to the standard shape.
 
+Fragment payloads are the trusted direct-sharing transport. For public posts, broad group sharing, social surfaces, or corporate proxy/link-scanning environments, prefer self-hosted UUID links so the visible URL is short and stable.
+
 ## Envelope
 
 ```json
@@ -101,6 +103,8 @@ Tuple fields:
 - Default sync codec priority is `deflate -> lz -> plain`
 - Default async codec priority is `arx2 -> arx -> deflate -> lz -> plain`
 - Optional budget-aware encoding can target strict limits like 1,500 chars and returns the shortest fragment when none fit
+
+When a payload does not fit the fragment budget or the target surface is hostile to long URLs, use UUID mode instead of weakening the fragment protocol. Current UUID mode stores the encoded payload server-side and is not zero-retention.
 
 ### Codec benchmark
 

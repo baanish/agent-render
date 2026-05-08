@@ -1,6 +1,6 @@
 ---
 name: selfhosted-agent-render
-description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs to share rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal when payloads exceed the ~8 KB fragment budget, when links will be shared on platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds and envelope validation as the fragment-based product. The self-hosted server stores payloads in SQLite with a 24-hour sliding TTL.
+description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs public/share-friendly rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal for public/social sharing, corporate proxy/link-scanning environments, payloads that exceed the ~8 KB fragment budget, platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds and envelope validation as the fragment-based product. The self-hosted server stores payloads in SQLite with a 24-hour sliding TTL.
 ---
 
 # Self-Hosted Agent Render
@@ -11,13 +11,17 @@ Create, view, and manage agent-render artifacts through a self-hosted server tha
 
 Use self-hosted UUID mode instead of fragment links when:
 
+- Links will be posted publicly or shared with a broad audience
+- Links will pass through corporate proxy, link-scanning, or URL-rewriting systems
 - The artifact payload exceeds the ~8,192 character fragment budget
 - Links will be shared on platforms that truncate or mangle long URLs (Slack, Teams, email)
 - The agent and viewer run on the same machine or local network
 - You want stable, short links that do not encode the payload in the URL
 - You need to update or delete artifacts after creation
 
-If the payload fits in a fragment and the link will work on the target surface, prefer fragment-based links using the `agent-render-linking` skill instead. Fragment links are zero-retention, require no server, and work on the public `agent-render.com` deployment.
+If the payload fits in a fragment and the link is going to trusted direct recipients, prefer fragment-based links using the `agent-render-linking` skill instead. Fragment links are zero-retention by static-host design, require no server, and work on the public `agent-render.com` deployment.
+
+Do not describe current UUID links as zero-retention. The self-hosted server stores the encoded payload until TTL expiry or deletion.
 
 ## API
 
@@ -316,7 +320,7 @@ Options for protecting the server:
 
 ### Public access
 
-If you want the server to be publicly accessible, no additional configuration is needed. This is fine for non-sensitive artifacts.
+If you want the server to be publicly accessible, no additional configuration is needed. This is the recommended setup for non-sensitive artifacts that need short, share-friendly public URLs.
 
 ### Cloudflare Tunnel + Zero Trust (recommended for remote access)
 
@@ -366,8 +370,12 @@ Artifacts auto-expire after 24 hours of inactivity. For proactive cleanup:
 
 ## Good defaults
 
-- Use self-hosted mode for large payloads or agent-driven workflows
-- Use fragment links for quick, one-off shares that fit in the budget
+- Use self-hosted mode for public sharing, large payloads, corporate-proxy contexts, or agent-driven workflows
+- Use fragment links for quick, trusted direct shares that fit in the budget
 - Keep the server on the same machine as the agent for simplicity
 - Use Cloudflare Tunnel if you need remote access with authentication
 - Let TTL handle cleanup for most cases
+
+## Future encrypted short-link mode
+
+A future design could encrypt the payload before upload, store only ciphertext in SQLite, and keep the decryption key in the URL fragment. That would preserve the short UUID path while preventing the server from reading plaintext. This skill must not assume that mode exists until the implementation ships.

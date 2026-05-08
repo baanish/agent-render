@@ -320,7 +320,11 @@ When sharing a link:
 
 ## Self-hosted UUID mode
 
-If the payload exceeds the fragment budget or links are getting mangled by chat platforms, consider using the self-hosted UUID mode instead of fragment links. The self-hosted server stores payloads in SQLite and serves short `https://host/{uuid}` links that render the same viewer UI.
+Use fragment links for trusted direct sharing when the payload fits the budget and static zero-retention matters.
+
+Use self-hosted UUID mode for public/social sharing, broad Slack/Teams/email distribution, corporate proxy/link-scanning environments, payloads that exceed the fragment budget, or any surface that mangles long URLs. The self-hosted server stores payloads in SQLite and serves short `https://host/{uuid}` links that render the same viewer UI.
+
+Current UUID mode is not zero-retention because the server stores the encoded payload until TTL expiry or deletion. Do not claim zero-retention for UUID links unless an encrypted short-link mode exists where the server stores ciphertext and the key stays in the fragment.
 
 See `skills/selfhosted-agent-render/SKILL.md` for API usage, deployment, and agent workflow guidance.
 
