@@ -19,6 +19,7 @@ import {
   FileSpreadsheet,
   FileText,
   FolderKanban,
+  HelpCircle,
   Printer,
   ShieldCheck,
   Sparkles,
@@ -63,6 +64,7 @@ const sampleCards = sampleLinks.map((link, index) => ({
 }));
 
 const iconPath = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/icon.svg`;
+const urlExplainerPath = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/url-explainer/`;
 
 const ecosystemLinks = [
   {
@@ -653,6 +655,10 @@ export function ViewerShell() {
                 <p className="font-mono mt-4 text-base leading-8 text-[color:var(--text-muted)] sm:text-lg">
                   #{PAYLOAD_FRAGMENT_KEY}=v1.&lt;codec&gt;.&lt;payload&gt;
                 </p>
+                <a href={urlExplainerPath} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--accent)]">
+                  <HelpCircle className="h-4 w-4" />
+                  Why does this URL look weird?
+                </a>
               </div>
               <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
                 <p className="section-kicker">Static boundary</p>
@@ -816,13 +822,20 @@ export function ViewerShell() {
                     <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">{step}</p>
                   </div>
                 ))}
-                <Link href="/security" className="bento-card bento-link px-5 py-6 sm:px-8 sm:py-8">
+                <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
                   <p className="section-kicker">Security</p>
-                  <span className="mt-3 block text-base font-semibold leading-6">Read the security page</span>
+                  <Link href="/security" className="mt-3 inline-flex items-center gap-2 text-base font-semibold leading-6 text-[color:var(--accent)]">
+                    Read the security page
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
                   <p className="mt-2 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
                     Fragment payloads stay out of the static host request path, but links are not secret-safe.
                   </p>
-                </Link>
+                  <a href={urlExplainerPath} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--accent)]">
+                    Read the privacy tradeoff
+                    <ArrowUpRight className="h-4 w-4" />
+                  </a>
+                </div>
                 <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
                   <p className="section-kicker">Hosting</p>
                   <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
