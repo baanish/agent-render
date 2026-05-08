@@ -613,7 +613,7 @@ export function ViewerShell() {
                 Share artifacts in the URL, keep the server out of the payload.
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-[1.7] text-[color:var(--text-muted)] sm:mt-8 sm:text-lg sm:leading-8">
-                View markdown, code, diffs, CSV, and JSON from a single static link. Nothing leaves the browser.
+                View markdown, code, diffs, CSV, and JSON from a fragment link the static host does not receive.
               </p>
               <div className="mt-6 flex flex-wrap gap-2 sm:mt-10 sm:gap-3">
                 <span className="mono-pill">
@@ -753,7 +753,7 @@ export function ViewerShell() {
                   <p className="mt-4 max-w-3xl text-sm leading-7 text-[color:var(--text-muted)] sm:mt-5 sm:text-base sm:leading-8">
                     {activeArtifact
                       ? `${getArtifactSubtitle(activeArtifact)} selected.`
-                      : "Select a fragment above to render it here. Everything stays in the URL."}
+                      : "Select a fragment above to render it here. Payloads stay off the host request path, but links still need care."}
                   </p>
                 </div>
 
