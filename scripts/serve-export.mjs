@@ -8,6 +8,8 @@ const outputDirectory = path.resolve("out");
 const port = Number(process.env.PORT || 3000);
 const configuredBasePath = (process.env.NEXT_PUBLIC_BASE_PATH || "").trim();
 const basePath = configuredBasePath === "/" ? "" : configuredBasePath.replace(/\/$/, "");
+const apiCatalogContentType = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
+const apiCatalogLinkHeader = '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"';
 
 if (!existsSync(outputDirectory)) {
   console.error("Missing `out/`. Run `npm run build` before `npm run preview`.");
@@ -26,7 +28,27 @@ const contentTypes = new Map([
   [".jpeg", "image/jpeg"],
   [".woff", "font/woff"],
   [".woff2", "font/woff2"],
+  [".yaml", "application/yaml; charset=utf-8"],
+  [".yml", "application/yaml; charset=utf-8"],
 ]);
+
+function contentTypeFor(filePath) {
+  if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
+    return apiCatalogContentType;
+  }
+
+  return contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+}
+
+function headersFor(filePath) {
+  const headers = { "Content-Type": contentTypeFor(filePath) };
+
+  if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
+    headers.Link = apiCatalogLinkHeader;
+  }
+
+  return headers;
+}
 
 function toFilePath(urlPath) {
   const cleanPath = urlPath.split("?", 1)[0].split("#", 1)[0];
@@ -55,6 +77,8 @@ function toFilePath(urlPath) {
 
 const server = createServer(async (request, response) => {
   const requestPath = request.url || "/";
+  const method = (request.method || "GET").toUpperCase();
+
   const filePath = toFilePath(requestPath);
 
   if (!filePath) {
@@ -82,8 +106,18 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  const contentType = contentTypes.get(path.extname(finalPath)) || "application/octet-stream";
-  response.writeHead(200, { "Content-Type": contentType });
+  if (method !== "GET" && method !== "HEAD") {
+    response.writeHead(405, { Allow: "GET, HEAD" });
+    response.end("Method not allowed");
+    return;
+  }
+
+  response.writeHead(200, headersFor(finalPath));
+  if (method === "HEAD") {
+    response.end();
+    return;
+  }
+
   createReadStream(finalPath).pipe(response);
 });
 
