@@ -84,6 +84,8 @@ npm run preview
 
 Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a subpath deployment locally.
 
+Set `NEXT_PUBLIC_SITE_URL` to your public origin before production builds so `sitemap.xml` and metadata use the correct canonical origin (see `docs/deployment.md`).
+
 ## Contributing
 
 - Public exported functions/components in `src/lib/**` and `src/components/**` must have a preceding `/** ... */` JSDoc block.

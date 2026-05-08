@@ -8,6 +8,7 @@ Key details:
 
 - Build with `npm ci` and `npm run build`
 - Upload the generated `out/` directory to your static host
+- Set **`NEXT_PUBLIC_SITE_URL`** to your public origin (for example `https://example.com`) so `sitemap.xml` and metadata resolve to the correct canonical origin in the static export.
 - Set `NEXT_PUBLIC_BASE_PATH` only when you need a subpath deployment
 - `.nojekyll` remains harmless for hosts that ignore it
 

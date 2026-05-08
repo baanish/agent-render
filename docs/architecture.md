@@ -17,6 +17,8 @@ GitHub Pages is strongest when the application behaves like a static shell inste
 - Keeps payload handling entirely client-side
 - Makes deployment portable to any static host
 
+The static export also emits `sitemap.xml` at the site root (and under `NEXT_PUBLIC_BASE_PATH` when set). Set `NEXT_PUBLIC_SITE_URL` at build time so the sitemap and metadata use your real canonical origin.
+
 ## Renderer implementation
 
 - `markdown` - formatted document view with shell copy, download, and print-to-PDF flows plus embedded premium code fences and inline mermaid diagram rendering
