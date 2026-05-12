@@ -174,8 +174,8 @@ function decodeArx2(buf) {
 }
 
 function median(values) {
-  values.sort((a, b) => a - b);
-  return values[Math.floor(values.length / 2)] ?? 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)] ?? 0;
 }
 
 function measure(fn, iterations = 7) {
@@ -215,7 +215,7 @@ function repeatedFixture(block, targetLength, segmentSuffix = (index) => `\nfixt
     fixture += `${block}${segmentSuffix(index)}`;
     index++;
   }
-  return fixture.slice(0, targetLength);
+  return Array.from(fixture).slice(0, targetLength).join("");
 }
 
 const markdownAgentsFixture = repeatedFixture(

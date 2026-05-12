@@ -111,7 +111,10 @@ type FragmentModule = typeof import("@/lib/payload/fragment");
 let fragmentModulePromise: Promise<FragmentModule> | null = null;
 
 function loadFragmentModule() {
-  fragmentModulePromise ??= import("@/lib/payload/fragment");
+  fragmentModulePromise ??= import("@/lib/payload/fragment").catch((error) => {
+    fragmentModulePromise = null;
+    throw error;
+  });
   return fragmentModulePromise;
 }
 
@@ -123,6 +126,20 @@ function getActiveArtifact(envelope: PayloadEnvelope): ArtifactPayload {
   }
 
   return envelope.artifacts[0];
+}
+
+function getArtifactById(envelope: PayloadEnvelope, artifactId: string | null): ArtifactPayload {
+  if (!artifactId) {
+    return getActiveArtifact(envelope);
+  }
+
+  for (const artifact of envelope.artifacts) {
+    if (artifact.id === artifactId) {
+      return artifact;
+    }
+  }
+
+  return getActiveArtifact(envelope);
 }
 
 function getHashPreview(hash: string): string {
@@ -179,6 +196,7 @@ function getStatusTone(parsed: ParsedPayload) {
  */
 export function ViewerShell() {
   const [hash, setHash] = useState("");
+  const [activeArtifactId, setActiveArtifactId] = useState<string | null>(null);
   const [rendererReady, setRendererReady] = useState(true);
   const rendererReadyKeyRef = useRef("");
   const artifactSelectionRequestRef = useRef(0);
@@ -256,10 +274,14 @@ export function ViewerShell() {
   const fragmentLength = hash.startsWith("#") ? hash.length - 1 : hash.length;
   const envelope = parsed.ok ? parsed.envelope : null;
   const activeArtifact = useMemo(
-    () => (envelope ? getActiveArtifact(envelope) : null),
-    [envelope],
+    () => (envelope ? getArtifactById(envelope, activeArtifactId) : null),
+    [activeArtifactId, envelope],
   );
-  const rendererReadyKey = activeArtifact ? hash : "";
+  const rendererReadyKey = activeArtifact ? `${hash}:${activeArtifact.id}` : "";
+
+  useEffect(() => {
+    setActiveArtifactId(parsed.ok ? parsed.envelope.activeArtifactId ?? null : null);
+  }, [parsed]);
 
   useEffect(() => {
     const title = activeArtifact?.title?.trim() || envelope?.title?.trim();
@@ -295,6 +317,8 @@ export function ViewerShell() {
   }, []);
 
   const setFragmentHash = useCallback((nextHash: string) => {
+    injectedPayloadRef.current = false;
+
     if (window.location.hash === nextHash) {
       return;
     }
@@ -305,16 +329,18 @@ export function ViewerShell() {
 
   const handleGoHome = useCallback(() => {
     const url = window.location.pathname + (window.location.search || "");
+    injectedPayloadRef.current = false;
     window.history.replaceState(null, "", url);
     setHash("");
   }, []);
 
   const handleArtifactSelect = useCallback(
     (artifactId: string) => {
-      if (!envelope || envelope.activeArtifactId === artifactId) {
+      if (!envelope || activeArtifact?.id === artifactId) {
         return;
       }
 
+      setActiveArtifactId(artifactId);
       const requestId = artifactSelectionRequestRef.current + 1;
       artifactSelectionRequestRef.current = requestId;
 
@@ -338,7 +364,7 @@ export function ViewerShell() {
           }
         });
     },
-    [envelope, setFragmentHash],
+    [activeArtifact, envelope, setFragmentHash],
   );
 
   return (

@@ -69,14 +69,14 @@ describe("LinkCreator", () => {
       generationMock.pending[1].resolve(createGeneratedLink("Fresh brief"));
     });
 
-    expect(screen.getByLabelText<HTMLInputElement>("Generated agent-render link").value).toContain("Fresh brief");
+    expect(screen.getByLabelText<HTMLTextAreaElement>("Generated agent-render link").value).toContain("Fresh brief");
 
     await act(async () => {
       generationMock.pending[0].resolve(createGeneratedLink("Stale brief"));
     });
 
-    expect(screen.getByLabelText<HTMLInputElement>("Generated agent-render link").value).toContain("Fresh brief");
-    expect(screen.getByLabelText<HTMLInputElement>("Generated agent-render link").value).not.toContain("Stale brief");
+    expect(screen.getByLabelText<HTMLTextAreaElement>("Generated agent-render link").value).toContain("Fresh brief");
+    expect(screen.getByLabelText<HTMLTextAreaElement>("Generated agent-render link").value).not.toContain("Stale brief");
   });
 
   it("keeps generated links fresh when the user reselects the current draft option", async () => {

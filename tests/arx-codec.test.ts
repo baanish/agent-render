@@ -543,8 +543,10 @@ describe("arx2 tuple envelope", () => {
   it("loads the arx2 overlay separately from the shared arx dictionary", async () => {
     const requests: string[] = [];
     vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      requests.push(String(input));
-      return new Response(JSON.stringify(arxDictionaryJson), {
+      const url = String(input);
+      requests.push(url);
+      const dictionary = url.includes("arx2") ? arx2DictionaryJson : arxDictionaryJson;
+      return new Response(JSON.stringify(dictionary), {
         headers: { "Content-Type": "application/json" },
         status: 200,
       });
@@ -552,10 +554,12 @@ describe("arx2 tuple envelope", () => {
 
     try {
       await loadArxDictionary("/arx-dictionary.json");
-      expect(requests).toEqual(["/arx-dictionary.json"]);
+      await loadArx2OverlayDictionary("/arx2-dictionary.json");
+      expect(requests).toEqual(["/arx-dictionary.json", "/arx2-dictionary.json"]);
     } finally {
       vi.unstubAllGlobals();
       loadArxDictionarySync(arxDictionaryJson);
+      loadArx2OverlayDictionarySync(arx2DictionaryJson);
     }
   });
 

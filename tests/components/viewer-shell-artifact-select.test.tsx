@@ -10,7 +10,13 @@ type DeferredEncode = {
   resolve: (encoded: string) => void;
 };
 
-const fragmentMock = vi.hoisted((): { encodes: DeferredEncode[] } => ({
+type DecodeCall = {
+  hash: string;
+  skipFragmentBudget: boolean;
+};
+
+const fragmentMock = vi.hoisted((): { decodes: DecodeCall[]; encodes: DeferredEncode[] } => ({
+  decodes: [],
   encodes: [],
 }));
 
@@ -98,7 +104,11 @@ function createEnvelope(activeArtifactId: string): PayloadEnvelope {
 }
 
 vi.mock("@/lib/payload/fragment", () => ({
-  decodeFragmentAsync: vi.fn(async (hash: string) => {
+  decodeFragmentAsync: vi.fn(async (hash: string, options?: { skipFragmentBudget?: boolean }) => {
+    fragmentMock.decodes.push({
+      hash,
+      skipFragmentBudget: options?.skipFragmentBudget === true,
+    });
     const activeArtifactId = hash.includes("three") ? "three" : hash.includes("two") ? "two" : "one";
 
     return {
@@ -124,6 +134,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  delete (window as unknown as Record<string, unknown>).__AGENT_RENDER_PAYLOAD__;
+  fragmentMock.decodes.length = 0;
   fragmentMock.encodes.length = 0;
   vi.clearAllMocks();
 });
@@ -139,10 +151,16 @@ describe("ViewerShell artifact selection", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "Open two" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-artifact-stage")).toHaveAttribute("data-active-id", "two");
+    });
     await waitFor(() => expect(fragmentMock.encodes).toHaveLength(1));
     expect(fragmentMock.encodes[0].activeArtifactId).toBe("two");
 
     await user.click(screen.getByRole("button", { name: "Open three" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-artifact-stage")).toHaveAttribute("data-active-id", "three");
+    });
     await waitFor(() => expect(fragmentMock.encodes).toHaveLength(2));
     expect(fragmentMock.encodes[1].activeArtifactId).toBe("three");
 
@@ -156,5 +174,60 @@ describe("ViewerShell artifact selection", () => {
     });
 
     await waitFor(() => expect(window.location.hash).toBe("#agent-render=v1.plain.three"));
+  });
+
+  it("keeps the selected artifact visible when hash encoding fails", async () => {
+    const user = userEvent.setup();
+
+    render(<ViewerShell />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-artifact-stage")).toHaveAttribute("data-active-id", "one");
+    });
+
+    await user.click(screen.getByRole("button", { name: "Open two" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-artifact-stage")).toHaveAttribute("data-active-id", "two");
+    });
+
+    await waitFor(() => expect(fragmentMock.encodes).toHaveLength(1));
+    await act(async () => {
+      fragmentMock.encodes[0].reject(new Error("encode failed"));
+    });
+
+    expect(screen.getByTestId("mock-artifact-stage")).toHaveAttribute("data-active-id", "two");
+    expect(window.location.hash).toBe("#agent-render=v1.plain.initial");
+  });
+
+  it("clears injected payload budget bypass after internal hash navigation", async () => {
+    const user = userEvent.setup();
+    (window as unknown as Record<string, unknown>).__AGENT_RENDER_PAYLOAD__ =
+      "agent-render=v1.plain.initial";
+
+    render(<ViewerShell />);
+
+    await waitFor(() => {
+      expect(fragmentMock.decodes[0]).toMatchObject({
+        hash: "#agent-render=v1.plain.initial",
+        skipFragmentBudget: true,
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-artifact-stage")).toHaveAttribute("data-active-id", "one");
+    });
+
+    await user.click(screen.getByRole("button", { name: "Open two" }));
+    await waitFor(() => expect(fragmentMock.encodes).toHaveLength(1));
+
+    await act(async () => {
+      fragmentMock.encodes[0].resolve("agent-render=v1.plain.two");
+    });
+
+    await waitFor(() => {
+      expect(fragmentMock.decodes.at(-1)).toMatchObject({
+        hash: "#agent-render=v1.plain.two",
+        skipFragmentBudget: false,
+      });
+    });
   });
 });

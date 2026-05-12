@@ -60,40 +60,48 @@ afterEach(() => {
 });
 
 describe("MarkdownRenderer", () => {
-  it("renders language-less fenced code blocks through the embedded code renderer", async () => {
-    const onReady = vi.fn();
-
-    render(<MarkdownRenderer artifact={createArtifact({ content: "```\nplain text\n```" })} onReady={onReady} />);
-
-    const embeddedCode = await screen.findByTestId("mock-code-renderer");
-    expect(embeddedCode).toHaveAttribute("data-language", "text");
-    expect(embeddedCode).toHaveTextContent("plain text");
+  it("renders language-less fenced code blocks with the text fallback language", async () => {
+    const { container } = render(<MarkdownRenderer artifact={createArtifact({ content: "```\nplain text\n```" })} />);
 
     await waitFor(() => {
-      expect(screen.getByTestId("renderer-markdown")).toHaveAttribute("data-renderer-ready", "true");
-      expect(onReady).toHaveBeenCalled();
+      expect(
+        Array.from(container.querySelectorAll(".markdown-code-chip")).map((node) => node.textContent),
+      ).toEqual(["text"]);
+      expect(container).toHaveTextContent("plain text");
     });
   });
 
-  it("waits for every fenced code block before reporting ready", async () => {
-    const onReady = vi.fn();
-
+  it("renders every fenced code block with its language chip", async () => {
     const { container } = render(
       <MarkdownRenderer
         artifact={createArtifact({
           content: "```ts\nconst a = 1;\n```\n\n```json\n{\"ok\":true}\n```",
         })}
-        onReady={onReady}
       />,
     );
 
     await waitFor(() => {
-      expect(container.querySelectorAll(".markdown-code-frame")).toHaveLength(2);
+      expect(
+        Array.from(container.querySelectorAll(".markdown-code-chip")).map((node) => node.textContent),
+      ).toEqual(["ts", "json"]);
+      expect(container).toHaveTextContent("const a = 1");
+      expect(container).toHaveTextContent('{"ok":true}');
     });
+  });
+
+  it("preserves non-alphanumeric fenced code language ids", async () => {
+    const { container } = render(
+      <MarkdownRenderer
+        artifact={createArtifact({
+          content: "```c++\nint main() {}\n```\n\n```c#\nConsole.WriteLine();\n```",
+        })}
+      />,
+    );
 
     await waitFor(() => {
-      expect(screen.getByTestId("renderer-markdown")).toHaveAttribute("data-renderer-ready", "true");
-      expect(onReady).toHaveBeenCalled();
+      expect(
+        Array.from(container.querySelectorAll(".markdown-code-chip")).map((node) => node.textContent),
+      ).toEqual(["c++", "c#"]);
     });
   });
 

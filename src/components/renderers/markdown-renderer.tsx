@@ -35,6 +35,11 @@ const MermaidBlock = dynamic(
 const EMBEDDED_CODE_BLOCK_PATTERN = /(?:^|\n)```[^\n]*\n[\s\S]*?\n```(?=\n|$)/g;
 const LANGUAGE_CLASS_PREFIX = "language-";
 
+type ReadyBlockState = {
+  key: string;
+  count: number;
+};
+
 function countEmbeddedCodeBlocks(content: string): number {
   EMBEDDED_CODE_BLOCK_PATTERN.lastIndex = 0;
   let count = 0;
@@ -46,30 +51,27 @@ function countEmbeddedCodeBlocks(content: string): number {
 
 function getCodeLanguage(className?: string): string {
   const value = className ?? "";
-  const start = value.indexOf(LANGUAGE_CLASS_PREFIX);
-  if (start === -1) {
-    return "text";
-  }
+  let tokenStart = 0;
 
-  const languageStart = start + LANGUAGE_CLASS_PREFIX.length;
-  let languageEnd = languageStart;
-  while (languageEnd < value.length) {
-    const code = value.charCodeAt(languageEnd);
-    const isAlphaNumeric =
-      (code >= 48 && code <= 57) ||
-      (code >= 65 && code <= 90) ||
-      (code >= 97 && code <= 122);
-
-    if (!isAlphaNumeric && code !== 45 && code !== 95) {
-      break;
+  while (tokenStart < value.length) {
+    while (tokenStart < value.length && /\s/.test(value[tokenStart]!)) {
+      tokenStart += 1;
     }
 
-    languageEnd += 1;
+    let tokenEnd = tokenStart;
+    while (tokenEnd < value.length && !/\s/.test(value[tokenEnd]!)) {
+      tokenEnd += 1;
+    }
+
+    if (value.startsWith(LANGUAGE_CLASS_PREFIX, tokenStart)) {
+      const language = value.slice(tokenStart + LANGUAGE_CLASS_PREFIX.length, tokenEnd).trim().toLowerCase();
+      return language || "text";
+    }
+
+    tokenStart = tokenEnd + 1;
   }
 
-  return languageEnd > languageStart
-    ? value.slice(languageStart, languageEnd).toLowerCase()
-    : "text";
+  return "text";
 }
 
 function appendNodeText(node: HastNode | undefined, parts: string[]): void {
@@ -152,29 +154,58 @@ const markdownSchema = {
  */
 export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   const heading = artifact.title ?? artifact.filename ?? artifact.id;
+  const readyKey = `${artifact.id}\u0000${artifact.content}`;
   const embeddedBlockCount = useMemo(() => countEmbeddedCodeBlocks(artifact.content), [artifact.content]);
   const readyBlockIdsRef = useRef<Set<string>>(new Set());
-  const [readyBlockCount, setReadyBlockCount] = useState(0);
+  const readyKeyRef = useRef(readyKey);
+  const onReadyRef = useRef(onReady);
+  const reportedReadyKeyRef = useRef<string | null>(null);
+  const [readyBlockState, setReadyBlockState] = useState<ReadyBlockState>({ key: readyKey, count: 0 });
+  const readyBlockCount = readyBlockState.key === readyKey ? readyBlockState.count : 0;
 
   useEffect(() => {
-    readyBlockIdsRef.current.clear();
-    setReadyBlockCount(0);
-  }, [artifact.content, artifact.id]);
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
-  useEffect(() => {
-    if (readyBlockCount >= embeddedBlockCount) {
-      onReady?.();
+  const reportReady = useCallback((key: string) => {
+    if (reportedReadyKeyRef.current === key) {
+      return;
     }
-  }, [embeddedBlockCount, onReady, readyBlockCount]);
+
+    reportedReadyKeyRef.current = key;
+    onReadyRef.current?.();
+  }, []);
+
+  useEffect(() => {
+    readyKeyRef.current = readyKey;
+    readyBlockIdsRef.current.clear();
+    reportedReadyKeyRef.current = null;
+    setReadyBlockState({ key: readyKey, count: 0 });
+
+    if (embeddedBlockCount === 0) {
+      reportReady(readyKey);
+    }
+  }, [embeddedBlockCount, readyKey, reportReady]);
 
   const markBlockReady = useCallback((blockId: string) => {
+    if (readyKeyRef.current !== readyKey) {
+      readyKeyRef.current = readyKey;
+      readyBlockIdsRef.current.clear();
+      reportedReadyKeyRef.current = null;
+    }
+
     if (readyBlockIdsRef.current.has(blockId)) {
       return;
     }
 
     readyBlockIdsRef.current.add(blockId);
-    setReadyBlockCount(readyBlockIdsRef.current.size);
-  }, []);
+    const nextCount = readyBlockIdsRef.current.size;
+    setReadyBlockState({ key: readyKey, count: nextCount });
+
+    if (nextCount >= embeddedBlockCount) {
+      reportReady(readyKey);
+    }
+  }, [embeddedBlockCount, readyKey, reportReady]);
 
   let blockIndex = 0;
   const markdownComponents: Components = {

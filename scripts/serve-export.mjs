@@ -57,29 +57,26 @@ function contentTypeFor(filePath) {
     return apiCatalogContentType;
   }
 
-  if (filePath.endsWith(".json.br")) {
-    return "application/json; charset=utf-8";
-  }
+  const typePath = filePath.endsWith(".br") ? filePath.slice(0, -3) : filePath;
 
-  if (filePath.endsWith(".css.br")) {
-    return "text/css; charset=utf-8";
-  }
-
-  return contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+  return contentTypes.get(path.extname(typePath)) || "application/octet-stream";
 }
 
 function isNextStaticAsset(filePath) {
   return filePath.includes(`${path.sep}_next${path.sep}static${path.sep}`);
 }
 
-function headersFor(filePath) {
-  const headers = { "Content-Type": contentTypeFor(filePath) };
+function headersFor(filePath, contentLength) {
+  const headers = {
+    "Content-Length": String(contentLength),
+    "Content-Type": contentTypeFor(filePath),
+  };
 
   if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
     headers.Link = apiCatalogLinkHeader;
   }
 
-  if (filePath.endsWith(".json.br") || filePath.endsWith(".css.br")) {
+  if (filePath.endsWith(".br")) {
     headers["Content-Encoding"] = "br";
     headers.Vary = "Accept-Encoding";
   }
@@ -162,13 +159,15 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  const finalDetails = await stat(finalPath);
+
   if (method !== "GET" && method !== "HEAD") {
     response.writeHead(405, { Allow: "GET, HEAD" });
     response.end("Method not allowed");
     return;
   }
 
-  response.writeHead(200, headersFor(finalPath));
+  response.writeHead(200, headersFor(finalPath, finalDetails.size));
   if (method === "HEAD") {
     response.end();
     return;

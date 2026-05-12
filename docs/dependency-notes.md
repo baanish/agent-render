@@ -27,6 +27,7 @@
 ## Why these libraries
 
 - `react-markdown` plus `remark-gfm` plus `rehype-sanitize` covers the markdown path without introducing unsafe raw HTML by default.
+- `next` pins its nested `postcss` dependency to `8.5.14` via `package.json` overrides so Tailwind CSS v4's `postcss ^8.5.6` peer range is satisfied in the Next.js toolchain.
 - CodeMirror handles source artifacts and markdown code fences because it is excellent at read-only code presentation; JSON, markdown raw, and CSV raw views use lighter native source blocks.
 - `@replit/codemirror-indentation-markers` replaces custom indent-guide logic with a maintained CM6 extension.
 - `@git-diff-view/*` fits review-style diffs better than a generic merge editor for the current viewer. Its pure CSS file is mirrored into `public/vendor/diff-view-pure.css` with a Brotli-compressed `public/vendor/diff-view-pure.css.br` copy by `npm run assets:compress`, and loaded only by the diff renderer; `tests/diff-style-asset.test.ts` keeps those assets in sync with the package copy.

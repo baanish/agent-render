@@ -61,6 +61,12 @@ function parsePatchSections(patch: string): ParsedPatchFile[] {
     if (previousStart !== -1) {
       files.push(parsePatchSection(normalized.slice(previousStart, match.index).trim(), sectionIndex));
       sectionIndex += 1;
+    } else if (match.index > 0) {
+      const preamble = normalized.slice(0, match.index).trim();
+      if (preamble) {
+        files.push(parsePatchSection(preamble, sectionIndex));
+        sectionIndex += 1;
+      }
     }
     previousStart = match.index;
   }

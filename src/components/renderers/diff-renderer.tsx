@@ -23,6 +23,7 @@ const diffViewStylesheetHrefs = [
 ];
 
 let diffViewStylesheetPromise: Promise<void> | null = null;
+let diffViewStylesheetRefCount = 0;
 
 type DiffViewModule = typeof import("@git-diff-view/react");
 type DiffViewLibrary = Pick<DiffViewModule, "DiffFile" | "DiffModeEnum" | "DiffView">;
@@ -195,7 +196,16 @@ function loadDiffViewStylesheet() {
   return diffViewStylesheetPromise;
 }
 
-function removeDiffViewStylesheet() {
+function retainDiffViewStylesheet() {
+  diffViewStylesheetRefCount += 1;
+}
+
+function releaseDiffViewStylesheet() {
+  diffViewStylesheetRefCount = Math.max(0, diffViewStylesheetRefCount - 1);
+  if (diffViewStylesheetRefCount > 0) {
+    return;
+  }
+
   document.getElementById(DIFF_VIEW_STYLESHEET_ID)?.remove();
   diffViewStylesheetPromise = null;
 }
@@ -623,14 +633,29 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
 
     if (renderedDiff.kind !== "rich" || !diffFilesHaveRenderableFile(renderedDiff.diffFiles)) {
       setStylesReady(true);
-      removeDiffViewStylesheet();
       return;
     }
 
+    let released = false;
+    const releaseStylesheet = () => {
+      if (released) {
+        return;
+      }
+      released = true;
+      releaseDiffViewStylesheet();
+    };
+
+    retainDiffViewStylesheet();
     setStylesReady(false);
     loadDiffViewStylesheet()
-      .catch(() => undefined)
       .then(() => {
+        if (!cancelled) {
+          setStylesReady(true);
+        }
+      })
+      .catch((error) => {
+        console.warn("Failed to load diff stylesheet", error);
+        releaseStylesheet();
         if (!cancelled) {
           setStylesReady(true);
         }
@@ -638,6 +663,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
 
     return () => {
       cancelled = true;
+      releaseStylesheet();
     };
   }, [renderedDiff]);
 

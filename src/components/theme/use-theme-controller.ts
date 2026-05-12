@@ -74,6 +74,8 @@ function snapshotEquals(left: ThemeSnapshot, right: ThemeSnapshot): boolean {
  * Reads and writes the shell theme using the static app's `theme` localStorage contract.
  * Keeps the `html.dark` class synchronized with system preference, cross-tab storage changes,
  * and local toggle clicks without installing an app-wide client provider.
+ *
+ * @returns The current stored preference, resolved light/dark theme, and setter for updates.
  */
 export function useThemeController() {
   const [snapshot, setSnapshot] = useState<ThemeSnapshot>(() => readThemeSnapshot());
