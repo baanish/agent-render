@@ -1,13 +1,11 @@
 import { createServer } from "node:http";
-import { existsSync, createReadStream } from "node:fs";
+import { existsSync, createReadStream, readFileSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
 const outputDirectory = path.resolve("out");
 const port = Number(process.env.PORT || 3000);
-const configuredBasePath = (process.env.NEXT_PUBLIC_BASE_PATH || "").trim();
-const basePath = configuredBasePath === "/" ? "" : configuredBasePath.replace(/\/$/, "");
 const apiCatalogContentType = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
 const apiCatalogLinkHeader = '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"';
 
@@ -28,16 +26,50 @@ const contentTypes = new Map([
   [".jpeg", "image/jpeg"],
   [".woff", "font/woff"],
   [".woff2", "font/woff2"],
+  [".wasm", "application/wasm"],
   [".yaml", "application/yaml; charset=utf-8"],
   [".yml", "application/yaml; charset=utf-8"],
 ]);
+
+function normalizeBasePath(value) {
+  const configuredBasePath = (value || "").trim();
+  if (configuredBasePath === "" || configuredBasePath === "/") {
+    return "";
+  }
+
+  const withLeadingSlash = configuredBasePath.startsWith("/") ? configuredBasePath : `/${configuredBasePath}`;
+  return withLeadingSlash.endsWith("/") ? withLeadingSlash.slice(0, -1) : withLeadingSlash;
+}
+
+function readManifestBasePath() {
+  try {
+    const manifest = JSON.parse(readFileSync(path.resolve(".next", "routes-manifest.json"), "utf8"));
+    return normalizeBasePath(typeof manifest.basePath === "string" ? manifest.basePath : "");
+  } catch {
+    return "";
+  }
+}
+
+const basePath = normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH) || readManifestBasePath();
 
 function contentTypeFor(filePath) {
   if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
     return apiCatalogContentType;
   }
 
+  if (filePath.endsWith(".json.br")) {
+    return "application/json; charset=utf-8";
+  }
+
+  if (filePath.endsWith(".css.br")) {
+    return "text/css; charset=utf-8";
+  }
+
   return contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+}
+
+function isNextStaticAsset(filePath) {
+  return filePath.includes(`${path.sep}_next${path.sep}static${path.sep}`);
 }
 
 function headersFor(filePath) {
@@ -47,11 +79,30 @@ function headersFor(filePath) {
     headers.Link = apiCatalogLinkHeader;
   }
 
+  if (filePath.endsWith(".json.br") || filePath.endsWith(".css.br")) {
+    headers["Content-Encoding"] = "br";
+    headers.Vary = "Accept-Encoding";
+  }
+
+  if (isNextStaticAsset(filePath)) {
+    headers["Cache-Control"] = "public, max-age=31536000, immutable";
+  }
+
   return headers;
 }
 
+function isInsideOutputDirectory(filePath) {
+  const relativePath = path.relative(outputDirectory, filePath);
+  return relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath));
+}
+
 function toFilePath(urlPath) {
-  const cleanPath = urlPath.split("?", 1)[0].split("#", 1)[0];
+  const queryIndex = urlPath.indexOf("?");
+  const hashIndex = urlPath.indexOf("#");
+  let pathEnd = urlPath.length;
+  if (queryIndex !== -1) pathEnd = Math.min(pathEnd, queryIndex);
+  if (hashIndex !== -1) pathEnd = Math.min(pathEnd, hashIndex);
+  const cleanPath = urlPath.slice(0, pathEnd);
   let relativePath = cleanPath;
 
   if (basePath) {
@@ -63,7 +114,7 @@ function toFilePath(urlPath) {
       relativePath = `${basePath}/`;
     }
 
-    if (!relativePath.startsWith(basePath)) {
+    if (!relativePath.startsWith(`${basePath}/`)) {
       return null;
     }
 
@@ -71,7 +122,12 @@ function toFilePath(urlPath) {
   }
 
   const normalizedPath = relativePath === "/" ? "/index.html" : relativePath;
-  const tentativePath = path.join(outputDirectory, normalizedPath);
+  const tentativePath = path.resolve(outputDirectory, normalizedPath.replace(/^\/+/, ""));
+
+  if (!isInsideOutputDirectory(tentativePath)) {
+    return null;
+  }
+
   return normalizedPath.endsWith("/") ? path.join(tentativePath, "index.html") : tentativePath;
 }
 

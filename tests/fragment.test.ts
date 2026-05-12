@@ -88,6 +88,32 @@ describe("fragment payload transport", () => {
     expect(parsed.ok).toBe(true);
   });
 
+  it("deduplicates codec priorities without changing sync selection", () => {
+    const hash = encodeEnvelope(envelope, {
+      codecPriority: ["plain", "plain"],
+    });
+    const parsed = decodeFragment(`#${hash}`);
+
+    expect(hash.startsWith("agent-render=v1.plain.")).toBe(true);
+    expect(parsed.ok).toBe(true);
+  });
+
+  it("skips async-only codec priorities when sync alternatives are available", () => {
+    const hash = encodeEnvelope(envelope, {
+      codecPriority: ["arx2", "arx", "plain"],
+    });
+    const parsed = decodeFragment(`#${hash}`);
+
+    expect(hash.startsWith("agent-render=v1.plain.")).toBe(true);
+    expect(parsed.ok).toBe(true);
+  });
+
+  it("keeps async-only sync priority errors clear", () => {
+    expect(() => encodeEnvelope(envelope, { codecPriority: ["arx2"] })).toThrow(
+      "arx codec requires async encoding — use encodeEnvelopeAsync instead.",
+    );
+  });
+
   it("round-trips a deflate envelope", () => {
     const hash = `#${encodeEnvelope(envelope, { codec: "deflate" })}`;
     const parsed = decodeFragment(hash);

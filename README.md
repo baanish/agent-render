@@ -50,7 +50,7 @@ The repo includes Playwright visual snapshots for the shipped viewer surfaces:
 
 - Markdown, code, diff, CSV, and JSON all render in the static shell
 - Fragment transport supports `plain`, `lz`, `deflate`, `arx`, and `arx2`, with automatic shortest-fragment selection across available wire formats
-- The `arx` substitution dictionary is served at `/arx-dictionary.json`; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json`
+- The `arx` substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json` with a pre-compressed `/arx2-dictionary.json.br` variant
 - The viewer toolbar copies artifact bodies to the clipboard, downloads them as files, and (for markdown) supports browser print-to-PDF
 - Deployment target: static hosting, including Cloudflare Pages
 
@@ -60,7 +60,7 @@ The repo includes Playwright visual snapshots for the shipped viewer surfaces:
 - `code` - read-only CodeMirror view with line numbers, wrap toggle, syntax-tree-aware rainbow brackets, and maintained indentation markers
 - `diff` - review-style multi-file git patch viewer with unified and split modes
 - `csv` - parsed table view with sticky headers and horizontal overflow handling
-- `json` - lightweight read-only tree view plus raw code view, with graceful malformed JSON fallback
+- `json` - lightweight read-only tree view plus native raw source view, with graceful malformed JSON fallback
 
 ## Principles
 
@@ -126,6 +126,7 @@ npm run preview
 ```
 
 Set `NEXT_PUBLIC_BASE_PATH` before `npm run build` when you want to preview a subpath deployment locally.
+The local preview server auto-detects the generated base path from the build manifest, so the same `npm run preview` command works for root and subpath exports.
 
 Set `NEXT_PUBLIC_SITE_URL` to your public origin before production builds so `sitemap.xml` and metadata use the correct canonical origin (see `docs/deployment.md`).
 

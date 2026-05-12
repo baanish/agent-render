@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Children, isValidElement, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
@@ -14,6 +14,14 @@ type MarkdownRendererProps = {
   onReady?: () => void;
 };
 
+type HastNode = {
+  type?: string;
+  tagName?: string;
+  properties?: Record<string, unknown>;
+  children?: HastNode[];
+  value?: unknown;
+};
+
 const EmbeddedCodeRenderer = dynamic(
   () => import("@/components/renderers/code-renderer").then((module) => module.CodeRenderer),
   { ssr: false },
@@ -24,26 +32,103 @@ const MermaidBlock = dynamic(
   { ssr: false },
 );
 
-function getCodeLanguage(className?: string): string {
-  const match = /language-([\w-]+)/.exec(className ?? "");
-  return match?.[1]?.toLowerCase() ?? "text";
+const EMBEDDED_CODE_BLOCK_PATTERN = /(?:^|\n)```[^\n]*\n[\s\S]*?\n```(?=\n|$)/g;
+const LANGUAGE_CLASS_PREFIX = "language-";
+
+function countEmbeddedCodeBlocks(content: string): number {
+  EMBEDDED_CODE_BLOCK_PATTERN.lastIndex = 0;
+  let count = 0;
+  while (EMBEDDED_CODE_BLOCK_PATTERN.exec(content)) {
+    count += 1;
+  }
+  return count;
 }
 
-function getCodeContents(children: ReactNode): string {
-  return Children.toArray(children)
-    .map((child) => {
-      if (typeof child === "string") {
-        return child;
-      }
+function getCodeLanguage(className?: string): string {
+  const value = className ?? "";
+  const start = value.indexOf(LANGUAGE_CLASS_PREFIX);
+  if (start === -1) {
+    return "text";
+  }
 
-      if (isValidElement<{ children?: ReactNode }>(child)) {
-        return getCodeContents(child.props.children);
-      }
+  const languageStart = start + LANGUAGE_CLASS_PREFIX.length;
+  let languageEnd = languageStart;
+  while (languageEnd < value.length) {
+    const code = value.charCodeAt(languageEnd);
+    const isAlphaNumeric =
+      (code >= 48 && code <= 57) ||
+      (code >= 65 && code <= 90) ||
+      (code >= 97 && code <= 122);
 
-      return "";
-    })
-    .join("")
-    .replace(/\n$/, "");
+    if (!isAlphaNumeric && code !== 45 && code !== 95) {
+      break;
+    }
+
+    languageEnd += 1;
+  }
+
+  return languageEnd > languageStart
+    ? value.slice(languageStart, languageEnd).toLowerCase()
+    : "text";
+}
+
+function appendNodeText(node: HastNode | undefined, parts: string[]): void {
+  if (!node) {
+    return;
+  }
+
+  if (typeof node.value === "string") {
+    parts.push(node.value);
+    return;
+  }
+
+  const children = node.children;
+  if (!children) {
+    return;
+  }
+
+  for (const child of children) {
+    appendNodeText(child, parts);
+  }
+}
+
+function getNodeText(node: HastNode | undefined): string {
+  const parts: string[] = [];
+  appendNodeText(node, parts);
+  return parts.join("");
+}
+
+function getNodeClassName(node: HastNode | undefined): string | undefined {
+  const className = node?.properties?.className;
+  if (typeof className === "string") {
+    return className;
+  }
+  if (Array.isArray(className)) {
+    let joined = "";
+    for (const value of className) {
+      if (typeof value !== "string") {
+        continue;
+      }
+      joined = joined ? `${joined} ${value}` : value;
+    }
+    return joined || undefined;
+  }
+  return undefined;
+}
+
+function getPreCodeNode(node: HastNode | undefined): HastNode | undefined {
+  const children = node?.children;
+  if (!children) {
+    return undefined;
+  }
+
+  for (const child of children) {
+    if (child.tagName === "code") {
+      return child;
+    }
+  }
+
+  return undefined;
 }
 
 const markdownSchema = {
@@ -67,18 +152,29 @@ const markdownSchema = {
  */
 export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   const heading = artifact.title ?? artifact.filename ?? artifact.id;
-  const embeddedBlockCount = useMemo(() => (artifact.content.match(/```[\s\S]*?```/g) ?? []).length, [artifact.content]);
-  const [readyBlockIds, setReadyBlockIds] = useState<string[]>([]);
+  const embeddedBlockCount = useMemo(() => countEmbeddedCodeBlocks(artifact.content), [artifact.content]);
+  const readyBlockIdsRef = useRef<Set<string>>(new Set());
+  const [readyBlockCount, setReadyBlockCount] = useState(0);
 
   useEffect(() => {
-    setReadyBlockIds([]);
+    readyBlockIdsRef.current.clear();
+    setReadyBlockCount(0);
   }, [artifact.content, artifact.id]);
 
   useEffect(() => {
-    if (readyBlockIds.length >= embeddedBlockCount) {
+    if (readyBlockCount >= embeddedBlockCount) {
       onReady?.();
     }
-  }, [embeddedBlockCount, onReady, readyBlockIds.length]);
+  }, [embeddedBlockCount, onReady, readyBlockCount]);
+
+  const markBlockReady = useCallback((blockId: string) => {
+    if (readyBlockIdsRef.current.has(blockId)) {
+      return;
+    }
+
+    readyBlockIdsRef.current.add(blockId);
+    setReadyBlockCount(readyBlockIdsRef.current.size);
+  }, []);
 
   let blockIndex = 0;
   const markdownComponents: Components = {
@@ -86,14 +182,17 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
       return <a {...props} className={cn("markdown-link", className)} rel="noreferrer" target="_blank" />;
     },
     code({ node: _node, className, children, ...props }) {
-      const isBlock = typeof className === "string" && className.includes("language-");
-
-      if (!isBlock) {
-        return <code {...props} className={cn("markdown-inline-code", className)}>{children}</code>;
+      return <code {...props} className={cn("markdown-inline-code", className)}>{children}</code>;
+    },
+    pre({ node, children }) {
+      const codeNode = getPreCodeNode(node as HastNode | undefined);
+      if (!codeNode) {
+        return <pre>{children}</pre>;
       }
 
+      const className = getNodeClassName(codeNode);
       const language = getCodeLanguage(className);
-      const code = getCodeContents(children);
+      const code = getNodeText(codeNode).replace(/\n$/, "");
       const blockId = `${artifact.id}-code-${blockIndex}`;
       blockIndex += 1;
 
@@ -107,7 +206,7 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
             <MermaidBlock
               code={code}
               onReady={() => {
-                setReadyBlockIds((current) => (current.includes(blockId) ? current : [...current, blockId]));
+                markBlockReady(blockId);
               }}
             />
           </div>
@@ -129,14 +228,11 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
               language,
             }}
             onReady={() => {
-              setReadyBlockIds((current) => (current.includes(blockId) ? current : [...current, blockId]));
+              markBlockReady(blockId);
             }}
           />
         </div>
       );
-    },
-    pre({ node: _node, children }) {
-      return <>{children}</>;
     },
     table({ node: _node, className, ...props }) {
       return (
@@ -148,7 +244,7 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   };
 
   return (
-    <div className="markdown-document" data-testid="renderer-markdown" data-renderer-ready={readyBlockIds.length >= embeddedBlockCount ? "true" : "false"}>
+    <div className="markdown-document" data-testid="renderer-markdown" data-renderer-ready={readyBlockCount >= embeddedBlockCount ? "true" : "false"}>
       <header className="markdown-print-heading">
         <p className="section-kicker">Markdown artifact</p>
         <h1>{heading}</h1>

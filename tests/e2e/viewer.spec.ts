@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { getFragmentHash, invalidFragments } from "../fixtures/payloads";
 import { goToHash, stabilizePage, waitForRendererReady, waitForViewerState } from "./helpers";
+import { encodeEnvelope } from "@/lib/payload/fragment";
+import type { PayloadEnvelope } from "@/lib/payload/schema";
 
 declare global {
   interface Window {
@@ -91,6 +93,32 @@ test("renders markdown payloads and triggers print", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => Boolean(window.__printCalled))).toBe(true);
 });
 
+test("renders markdown raw view without mounting CodeMirror", async ({ page }) => {
+  const plainMarkdownEnvelope = {
+    v: 1,
+    codec: "plain",
+    activeArtifactId: "notes",
+    artifacts: [
+      {
+        id: "notes",
+        kind: "markdown",
+        title: "Plain notes",
+        filename: "notes.md",
+        content: "# Plain notes\n\nNo fenced code here.",
+      },
+    ],
+  } satisfies PayloadEnvelope;
+
+  await goToHash(page, `#${encodeEnvelope(plainMarkdownEnvelope)}`);
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "markdown");
+
+  await page.getByRole("button", { name: /^Raw$/ }).click();
+
+  await expect(page.getByTestId("renderer-markdown-raw")).toContainText("No fenced code here.");
+  await expect(page.locator(".cm-editor")).toHaveCount(0);
+});
+
 test("renders code payloads", async ({ page }) => {
   await goToHash(page, getFragmentHash("Viewer bootstrap"));
   await waitForViewerState(page, "artifact");
@@ -115,6 +143,48 @@ test("renders multi-file diffs without mutating the payload hash", async ({ page
   await expect(page.locator(".patch-file-section")).toHaveCount(2);
   await page.locator("button.patch-bundle-link").nth(1).click();
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(beforeHash);
+});
+
+test("loads the compressed diff stylesheet only after opening a diff artifact", async ({ page }) => {
+  await waitForViewerState(page, "empty");
+  await expect
+    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some((link) => link.getAttribute("href")?.includes("diff-view-pure.css"))))
+    .toBe(false);
+
+  await goToHash(page, getFragmentHash("Phase 1 sample diff"));
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "diff");
+  await expect(page.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "rich");
+
+  const stylesheetHrefs = await page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]'), (link) => link.getAttribute("href") ?? ""));
+  expect(stylesheetHrefs.some((href) => href.endsWith("/vendor/diff-view-pure.css.br"))).toBe(true);
+  expect(stylesheetHrefs.some((href) => href.endsWith("/vendor/diff-view-pure.css"))).toBe(false);
+});
+
+test("keeps fallback diffs off the rich diff stylesheet path", async ({ page }) => {
+  const fallbackDiffEnvelope = {
+    v: 1,
+    codec: "plain",
+    activeArtifactId: "notes",
+    artifacts: [
+      {
+        id: "notes",
+        kind: "diff",
+        title: "notes.patch",
+        filename: "notes.patch",
+        patch: "not a unified diff\njust plain review notes\n",
+      },
+    ],
+  } satisfies PayloadEnvelope;
+
+  await goToHash(page, `#${encodeEnvelope(fallbackDiffEnvelope)}`);
+  await waitForViewerState(page, "artifact");
+  await expect(page.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "fallback");
+  await expect(page.locator('[data-testid="viewer-shell"][data-renderer-ready="true"]')).toBeVisible();
+  await expect(page.getByTestId("renderer-diff-fallback-raw")).toContainText("not a unified diff");
+  await expect
+    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some((link) => link.getAttribute("href")?.includes("diff-view-pure.css"))))
+    .toBe(false);
 });
 
 test.describe("mobile UX", () => {
@@ -219,6 +289,17 @@ test("renders compact CSV payloads without giant whitespace", async ({ page }) =
   await expect(page.locator("table.csv-table")).toBeVisible();
 });
 
+test("renders CSV raw view without mounting CodeMirror", async ({ page }) => {
+  await goToHash(page, getFragmentHash("Data export preview"));
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "csv");
+
+  await page.getByRole("button", { name: /^Raw$/ }).click();
+
+  await expect(page.getByTestId("renderer-csv-raw")).toContainText("artifact,kind,summary");
+  await expect(page.locator(".cm-editor")).toHaveCount(0);
+});
+
 test("renders JSON tree and raw views", async ({ page }) => {
   await goToHash(page, getFragmentHash("arx showcase"));
   await waitForViewerState(page, "artifact");
@@ -226,7 +307,8 @@ test("renders JSON tree and raw views", async ({ page }) => {
   await expect(page.locator("[data-active-kind='json']")).toBeVisible();
   await expect(page.locator(".json-tree-shell")).toBeVisible();
   await page.getByRole("button", { name: "Raw" }).click();
-  await expect(page.locator(".json-renderer-shell .cm-editor")).toBeVisible();
+  await expect(page.getByTestId("renderer-json-raw")).toBeVisible();
+  await expect(page.locator(".json-renderer-shell .cm-editor")).toHaveCount(0);
 });
 
 test("switches artifacts within a bundle", async ({ page }) => {

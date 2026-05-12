@@ -10,6 +10,20 @@ const baseEnvelope: PayloadEnvelope = {
 };
 
 describe("normalizeEnvelope", () => {
+  it("normalizes single-artifact bundles to the only artifact id", () => {
+    const result = normalizeEnvelope({
+      ...baseEnvelope,
+      activeArtifactId: "missing",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.envelope.activeArtifactId).toBe("one");
+  });
+
   it("rejects duplicate artifact ids", () => {
     const result = normalizeEnvelope({
       ...baseEnvelope,

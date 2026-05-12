@@ -1,15 +1,7 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { ViewerShell } from "@/components/viewer-shell";
-
-vi.mock("@/lib/payload/arx-codec", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/payload/arx-codec")>();
-  return {
-    ...actual,
-    loadArxDictionary: vi.fn().mockResolvedValue(undefined),
-  };
-});
 
 describe("ViewerShell homepage", () => {
   beforeEach(() => {

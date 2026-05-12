@@ -1,4 +1,3 @@
-import React from "react";
 import type { LucideIcon } from "lucide-react";
 import type { ArtifactKind, ArtifactPayload } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
@@ -29,6 +28,8 @@ export function ArtifactSelector({
     <div className="artifact-selector-row" data-testid="artifact-selector-row">
       {artifacts.map((artifact) => {
         const Icon = kindIcons[artifact.kind];
+        const heading = getHeading(artifact);
+        const supportingLabel = getSupportingLabel(artifact);
         const isCurrent = artifact.id === activeArtifactId;
 
         return (
@@ -38,16 +39,16 @@ export function ArtifactSelector({
             className={cn("artifact-switcher", isCurrent && "is-active")}
             onClick={() => onSelect(artifact.id)}
             aria-pressed={isCurrent}
-            aria-label={`Open artifact ${getHeading(artifact)}`}
+            aria-label={`Open artifact ${heading}`}
           >
             <span className="artifact-switcher-icon">
               <Icon className="h-4 w-4" />
             </span>
             <span className="artifact-switcher-content min-w-0 flex-1 text-left">
-              <span className="artifact-switcher-title block truncate text-sm font-semibold leading-5">{getHeading(artifact)}</span>
+              <span className="artifact-switcher-title block truncate text-sm font-semibold leading-5">{heading}</span>
               <span className="artifact-switcher-meta mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-[color:var(--text-muted)]">
                 <span className="section-kicker !text-[0.64rem] !tracking-[0.1em]">{artifact.kind}</span>
-                <span className="truncate">{getSupportingLabel(artifact)}</span>
+                <span className="truncate">{supportingLabel}</span>
               </span>
             </span>
           </button>

@@ -30,16 +30,8 @@ export type GeneratedArtifactLink = {
   fragmentLength: number;
 };
 
-export const defaultLinkCreatorDraft: LinkCreatorDraft = {
-  kind: "markdown",
-  title: "Product brief",
-  filename: "brief.md",
-  content:
-    "# Launch note\n\nShare one artifact at a time without uploading it anywhere.\n\n- Markdown stays readable\n- Code keeps its language hint\n- The link works from a static export",
-  language: "tsx",
-  diffView: "unified",
-  codec: "auto",
-};
+const NON_WHITESPACE_PATTERN = /\S/;
+const supportedCodecSet = new Set<string>(codecs);
 
 function normalizeOptionalField(value: string) {
   const normalized = value.trim();
@@ -55,21 +47,21 @@ function slugifyId(value: string) {
   return slug || "artifact";
 }
 
-function getDraftHeading(draft: LinkCreatorDraft) {
-  return normalizeOptionalField(draft.title) ?? normalizeOptionalField(draft.filename) ?? `Untitled ${draft.kind}`;
+function getDraftHeading(kind: ArtifactKind, title?: string, filename?: string) {
+  return title ?? filename ?? `Untitled ${kind}`;
 }
 
-function getArtifactId(draft: LinkCreatorDraft) {
-  const filenameStem = normalizeOptionalField(draft.filename)?.replace(/\.[^./\\]+$/, "");
-  return slugifyId(normalizeOptionalField(draft.title) ?? filenameStem ?? draft.kind);
+function getArtifactId(kind: ArtifactKind, title?: string, filename?: string) {
+  const filenameStem = filename?.replace(/\.[^./\\]+$/, "");
+  return slugifyId(title ?? filenameStem ?? kind);
 }
 
 function buildArtifact(draft: LinkCreatorDraft): ArtifactPayload {
   const title = normalizeOptionalField(draft.title);
   const filename = normalizeOptionalField(draft.filename);
-  const id = getArtifactId(draft);
+  const id = getArtifactId(draft.kind, title, filename);
 
-  if (!draft.content.trim()) {
+  if (!NON_WHITESPACE_PATTERN.test(draft.content)) {
     throw new Error(draft.kind === "diff" ? "Paste a diff patch before generating a link." : "Paste some content before generating a link.");
   }
 
@@ -116,7 +108,7 @@ function getFragmentCodec(fragmentBody: string): PayloadCodec {
   }
 
   const codec = fragmentBody.slice(prefix.length, codecEnd);
-  return codecs.includes(codec as PayloadCodec) ? (codec as PayloadCodec) : "plain";
+  return supportedCodecSet.has(codec) ? (codec as PayloadCodec) : "plain";
 }
 
 /**
@@ -132,7 +124,7 @@ export function createDraftEnvelope(draft: LinkCreatorDraft): PayloadEnvelope {
   return {
     v: 1,
     codec: "plain",
-    title: getDraftHeading(draft),
+    title: getDraftHeading(draft.kind, artifact.title, artifact.filename),
     activeArtifactId: artifact.id,
     artifacts: [artifact],
   };
@@ -158,7 +150,7 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
 
   const fragmentBody = encodeEnvelope(normalized.envelope);
   const hash = `#${fragmentBody}`;
-  const fragmentLength = hash.length - 1;
+  const fragmentLength = fragmentBody.length;
 
   if (fragmentLength > MAX_FRAGMENT_LENGTH) {
     throw new Error(
@@ -170,7 +162,7 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
 
   if (baseUrl) {
     const nextUrl = new URL(baseUrl);
-    nextUrl.hash = hash.slice(1);
+    nextUrl.hash = fragmentBody;
     url = nextUrl.toString();
   }
 
@@ -201,7 +193,7 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
   const encodeOptions = draft.codec && draft.codec !== "auto" ? { codec: draft.codec } : {};
   const fragmentBody = await encodeEnvelopeAsync(normalized.envelope, encodeOptions);
   const hash = `#${fragmentBody}`;
-  const fragmentLength = hash.length - 1;
+  const fragmentLength = fragmentBody.length;
 
   if (fragmentLength > MAX_FRAGMENT_LENGTH) {
     throw new Error(
@@ -213,7 +205,7 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
 
   if (baseUrl) {
     const nextUrl = new URL(baseUrl);
-    nextUrl.hash = hash.slice(1);
+    nextUrl.hash = fragmentBody;
     url = nextUrl.toString();
   }
 
@@ -225,11 +217,4 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
     url,
     fragmentLength,
   };
-}
-
-/**
- * Returns the body-field label used by the link creator for the selected artifact kind.
- */
-export function getBodyFieldLabel(kind: ArtifactKind) {
-  return kind === "diff" ? "Patch" : "Content";
 }

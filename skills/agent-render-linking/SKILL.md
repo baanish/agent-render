@@ -35,7 +35,7 @@ Supported codecs:
 - `lz`: `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate`: deflate-compressed UTF-8 JSON bytes encoded as base64url
 - `arx`: domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding (~70% smaller than deflate with baseBMP). Fetch the shared dictionary from `https://agent-render.com/arx-dictionary.json` to apply substitutions locally before brotli compression. Four wire shapes: baseBMP (~62k safe BMP code points, ~15.92 bits/char, best raw density), base1k (1774 Unicode code points U+00A1–U+07FF), base64url (ASCII `A-Za-z0-9-_`, `B.` prefix — good when Unicode would be percent-encoded), and base76 (77-char ASCII). The product encoder tries all four and picks the shortest **transport** length.
-- `arx2`: tuple-envelope transport + `https://agent-render.com/arx2-dictionary.json` overlay + the shared arx dictionary + brotli (quality 11) + the same four wire shapes. Existing arx links remain valid; prefer arx2 when it is the shortest transport.
+- `arx2`: tuple-envelope transport + `https://agent-render.com/arx2-dictionary.json` overlay (or pre-compressed `https://agent-render.com/arx2-dictionary.json.br`) + the shared arx dictionary + brotli (quality 11) + the same four wire shapes. Existing arx links remain valid; prefer arx2 when it is the shortest transport.
 - packed wire mode (`p: 1`) may be used automatically to shorten transport keys
 
 Prefer:
@@ -213,7 +213,7 @@ To use the dictionary for local `arx` encoding:
     - Base76 uses 77 ASCII fragment-safe characters. ~6.27 bits/char
 5. Prepend `v1.arx.<dictVersion>.` to form the fragment payload (use the same dictionary version used for substitution)
 
-The dictionary includes JSON envelope boilerplate patterns (like `","kind":"Markdown","content":"`), JSON-escaped Markdown syntax, programming keywords, and common English words. The viewer loads the same dictionary on startup to reverse substitutions during decode.
+The dictionary includes JSON envelope boilerplate patterns (like `","kind":"Markdown","content":"`), JSON-escaped Markdown syntax, programming keywords, and common English words. The viewer tries the pre-compressed dictionary first on default ARX/ARX2 encode or decode paths, falls back to the JSON file, and falls back again to its built-in table if external fetches fail.
 
 If the dictionary fetch fails, fall back to `deflate` codec.
 

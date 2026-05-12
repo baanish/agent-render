@@ -21,7 +21,7 @@ Supported codecs:
 - `plain` - base64url-encoded JSON
 - `lz` - `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate` - deflate-compressed UTF-8 JSON bytes encoded as base64url
-- `arx` - domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding. arx fragments include dictionary version metadata in the outer format (`v1.arx.<dictVersion>.<payload>`) so links stay portable across dictionary updates. Four wire shapes are tried and the shortest **transport** size wins (see `computeTransportLength` in `fragment.ts` — non-ASCII Unicode may count longer after percent-encoding): **base76** (ASCII-only, 77 fragment-safe chars), **base64url** (standard RFC 4648 alphabet `A-Za-z0-9-_`, no padding, prefixed with `B.` for detection), **base1k** (Unicode, 1774 chars from U+00A1–U+07FF), and **baseBMP** (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). BaseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes. BaseBMP payloads are prefixed with a U+FFF0 marker for detection. The viewer’s `arxDecompress` auto-detects the wire shape (including the rare case where a base76 length prefix is also `B.` — it tries base64url first and falls back to base76 if Brotli fails). The substitution dictionary is served at `/arx-dictionary.json` (with a pre-compressed `/arx-dictionary.json.br` variant) so agents can fetch it for local compression.
+- `arx` - domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding. arx fragments include dictionary version metadata in the outer format (`v1.arx.<dictVersion>.<payload>`) so links stay portable across dictionary updates. Four wire shapes are tried and the shortest **transport** size wins (see `computeTransportLength` in `fragment.ts` — non-ASCII Unicode may count longer after percent-encoding): **base76** (ASCII-only, 77 fragment-safe chars), **base64url** (standard RFC 4648 alphabet `A-Za-z0-9-_`, no padding, prefixed with `B.` for detection), **base1k** (Unicode, 1774 chars from U+00A1–U+07FF), and **baseBMP** (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). BaseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes. BaseBMP payloads are prefixed with a U+FFF0 marker for detection. The viewer’s `arxDecompress` auto-detects the wire shape (including the rare case where a base76 length prefix is also `B.` — it tries base64url first and falls back to base76 if Brotli fails). The substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the viewer tries the `.br` file first on default loads and falls back to JSON. The arx2 overlay dictionary follows the same `.br`-then-JSON default load pattern.
 - `arx2` - tuple-envelope transport + arx2 overlay substitution + the shared arx dictionary + brotli (quality 11) + the same four binary-to-text wire shapes. arx2 fragments use `v1.arx2.<dictVersion>.<payload>`, where `dictVersion` is the shared arx dictionary version. Existing `arx` links remain valid; async auto-selection tries arx2 and arx and keeps the shortest transport.
 
 The encoder now also supports a packed wire representation (`p: 1`) that shortens key names before compression. Packed mode is transport-only; decoded envelopes normalize back to the standard shape.
@@ -110,9 +110,9 @@ When a payload does not fit the fragment budget or the target surface is hostile
 
 Running `npm run bench:codecs` checks a fixed corpus across markdown, code, diff, CSV, JSON, and multi-artifact bundles. The current committed baseline shows:
 
-- total `arx`: 11,889 brotli bytes
-- total `arx2`: 11,767 brotli bytes
-- `arx2` delta: 1.03% smaller overall
+- total `arx`: 3,307 brotli bytes
+- total `arx2`: 3,192 brotli bytes
+- `arx2` delta: 3.48% smaller overall
 
 The gate fails if arx2 is less than 0.5% smaller overall or if any individual corpus row regresses by more than 0.5%. Use `npm run bench:codecs:update` only when intentionally refreshing the committed baseline.
 
@@ -124,7 +124,7 @@ Internal viewer navigation, such as moving between files inside a multi-file dif
 
 ## Examples
 
-Two sample envelopes live in `src/lib/payload/examples.ts` for local development and documentation.
+Sample envelopes live in `src/lib/payload/examples.ts` for local development and documentation. The homepage uses precomputed sample link data that is checked against those generated examples in tests, keeping the large sample strings out of the initial shell chunk.
 
 ### Markdown artifact example
 

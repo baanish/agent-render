@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import arxDictionaryJson from "../public/arx-dictionary.json";
+import arx2DictionaryJson from "../public/arx2-dictionary.json";
 import {
   encodeBase76,
   decodeBase76,
@@ -13,6 +14,7 @@ import {
   decodeBase64url,
   isBase64urlEncoded,
   arxCompress,
+  arxCompressPayloads,
   arxCompressUnicode,
   arxCompressBMP,
   arxCompressBase64url,
@@ -22,7 +24,10 @@ import {
   ArxDecodedPayloadTooLargeError,
   encodeArxDictionaryForTest,
   getActiveDictVersion,
+  loadArxDictionary,
   loadArxDictionarySync,
+  loadArx2OverlayDictionary,
+  loadArx2OverlayDictionarySync,
 } from "@/lib/payload/arx-codec";
 import { encodeEnvelopeAsync, decodeFragmentAsync } from "@/lib/payload/fragment";
 import { MAX_DECODED_PAYLOAD_LENGTH, type PayloadEnvelope } from "@/lib/payload/schema";
@@ -226,6 +231,20 @@ describe("arx compress/decompress", () => {
     expect(isBase64urlEncoded(compressed)).toBe(true);
     const decompressed = await arxDecompress(compressed);
     expect(decompressed).toBe(input);
+  });
+
+  it("single-pass payload generation matches the individual ARX encoders", async () => {
+    const input = JSON.stringify({
+      content: "The quick brown fox. ".repeat(50),
+    });
+    const payloads = await arxCompressPayloads(input);
+
+    expect(payloads).toEqual({
+      base76: await arxCompress(input),
+      base1k: await arxCompressUnicode(input),
+      baseBMP: await arxCompressBMP(input),
+      base64url: await arxCompressBase64url(input),
+    });
   });
 
   it("produces shorter output than base64url for compressible text", async () => {
@@ -519,6 +538,197 @@ describe("arx2 tuple envelope", () => {
     expect(parsed.ok).toBe(false);
     if (parsed.ok) return;
     expect(parsed.code).toBe("decoded-too-large");
+  });
+
+  it("loads the arx2 overlay separately from the shared arx dictionary", async () => {
+    const requests: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      requests.push(String(input));
+      return new Response(JSON.stringify(arxDictionaryJson), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    });
+
+    try {
+      await loadArxDictionary("/arx-dictionary.json");
+      expect(requests).toEqual(["/arx-dictionary.json"]);
+    } finally {
+      vi.unstubAllGlobals();
+      loadArxDictionarySync(arxDictionaryJson);
+    }
+  });
+
+  it("loads the precompressed default arx dictionary before the json fallback", async () => {
+    const requests: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      requests.push(String(input));
+      return new Response(JSON.stringify(arxDictionaryJson), {
+        headers: {
+          "Content-Encoding": "br",
+          "Content-Type": "application/json",
+        },
+        status: 200,
+      });
+    });
+
+    try {
+      await expect(loadArxDictionary()).resolves.toBe(arxDictionaryJson.version);
+      expect(requests).toEqual(["/arx-dictionary.json.br"]);
+    } finally {
+      vi.unstubAllGlobals();
+      loadArxDictionarySync(arxDictionaryJson);
+    }
+  });
+
+  it("prefixes default dictionary requests with the normalized public base path", async () => {
+    const requests: string[] = [];
+    vi.stubEnv("NEXT_PUBLIC_BASE_PATH", "agent-render");
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      requests.push(String(input));
+      return new Response(JSON.stringify(arxDictionaryJson), {
+        headers: {
+          "Content-Encoding": "br",
+          "Content-Type": "application/json",
+        },
+        status: 200,
+      });
+    });
+
+    try {
+      await expect(loadArxDictionary()).resolves.toBe(arxDictionaryJson.version);
+      expect(requests).toEqual(["/agent-render/arx-dictionary.json.br"]);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+      loadArxDictionarySync(arxDictionaryJson);
+    }
+  });
+
+  it("falls back to the default json arx dictionary when the precompressed copy is unavailable", async () => {
+    const requests: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requests.push(url);
+      if (url.endsWith(".br")) {
+        return new Response("", { status: 404 });
+      }
+      return new Response(JSON.stringify(arxDictionaryJson), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    });
+
+    try {
+      await expect(loadArxDictionary()).resolves.toBe(arxDictionaryJson.version);
+      expect(requests).toEqual([
+        "/arx-dictionary.json.br",
+        "/arx-dictionary.json",
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+      loadArxDictionarySync(arxDictionaryJson);
+    }
+  });
+
+  it("falls back to the default json arx dictionary when the precompressed copy is not valid JSON", async () => {
+    const requests: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requests.push(url);
+      if (url.endsWith(".br")) {
+        return new Response("not-json", { status: 200 });
+      }
+      return new Response(JSON.stringify(arxDictionaryJson), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    });
+
+    try {
+      await expect(loadArxDictionary()).resolves.toBe(arxDictionaryJson.version);
+      expect(requests).toEqual([
+        "/arx-dictionary.json.br",
+        "/arx-dictionary.json",
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+      loadArxDictionarySync(arxDictionaryJson);
+    }
+  });
+
+  it("loads the precompressed default arx2 overlay before the json fallback", async () => {
+    const requests: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      requests.push(String(input));
+      return new Response(JSON.stringify(arx2DictionaryJson), {
+        headers: {
+          "Content-Encoding": "br",
+          "Content-Type": "application/json",
+        },
+        status: 200,
+      });
+    });
+
+    try {
+      await expect(loadArx2OverlayDictionary()).resolves.toBe(arx2DictionaryJson.version);
+      expect(requests).toEqual(["/arx2-dictionary.json.br"]);
+    } finally {
+      vi.unstubAllGlobals();
+      loadArx2OverlayDictionarySync(arx2DictionaryJson);
+    }
+  });
+
+  it("falls back to the default json arx2 overlay when the precompressed copy is unavailable", async () => {
+    const requests: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requests.push(url);
+      if (url.endsWith(".br")) {
+        return new Response("", { status: 404 });
+      }
+      return new Response(JSON.stringify(arx2DictionaryJson), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    });
+
+    try {
+      await expect(loadArx2OverlayDictionary()).resolves.toBe(arx2DictionaryJson.version);
+      expect(requests).toEqual([
+        "/arx2-dictionary.json.br",
+        "/arx2-dictionary.json",
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+      loadArx2OverlayDictionarySync(arx2DictionaryJson);
+    }
+  });
+
+  it("falls back to the default json arx2 overlay when the precompressed copy is not valid JSON", async () => {
+    const requests: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requests.push(url);
+      if (url.endsWith(".br")) {
+        return new Response("not-json", { status: 200 });
+      }
+      return new Response(JSON.stringify(arx2DictionaryJson), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    });
+
+    try {
+      await expect(loadArx2OverlayDictionary()).resolves.toBe(arx2DictionaryJson.version);
+      expect(requests).toEqual([
+        "/arx2-dictionary.json.br",
+        "/arx2-dictionary.json",
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+      loadArx2OverlayDictionarySync(arx2DictionaryJson);
+    }
   });
 });
 

@@ -43,4 +43,16 @@ describe("git patch parsing", () => {
       isBinary: true,
     });
   });
+
+  it("rejects malformed hunk headers before rich diff rendering", () => {
+    expect(() =>
+      parseGitPatchBundle(`diff --git a/src/alpha.ts b/src/alpha.ts
+--- a/src/alpha.ts
++++ b/src/alpha.ts
+@@ nope @@
+-export const alpha = 1;
++export const alpha = 2;
+`),
+    ).toThrow(/invalid hunk header/i);
+  });
 });
