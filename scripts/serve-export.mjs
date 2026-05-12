@@ -1,6 +1,5 @@
 import { createServer } from "node:http";
-import { existsSync, createReadStream, readFileSync } from "node:fs";
-import { stat } from "node:fs/promises";
+import { createReadStream, existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
@@ -93,73 +92,88 @@ function isInsideOutputDirectory(filePath) {
   return relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath));
 }
 
-function toFilePath(urlPath) {
+function addStaticRoute(files, routePath, file) {
+  if (!files.has(routePath)) {
+    files.set(routePath, file);
+  }
+}
+
+function addStaticRouteAliases(files, routePath, file) {
+  addStaticRoute(files, routePath, file);
+
+  if (routePath === "/index.html") {
+    addStaticRoute(files, "/", file);
+    return;
+  }
+
+  if (routePath.endsWith("/index.html")) {
+    const directoryRoute = routePath.slice(0, -"index.html".length);
+    addStaticRoute(files, directoryRoute, file);
+    addStaticRoute(files, directoryRoute.slice(0, -1), file);
+  }
+}
+
+function collectStaticFiles(directory, files = new Map()) {
+  const entries = readdirSync(directory, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const entryPath = path.join(directory, entry.name);
+    if (!isInsideOutputDirectory(entryPath)) {
+      continue;
+    }
+
+    if (entry.isDirectory()) {
+      collectStaticFiles(entryPath, files);
+      continue;
+    }
+
+    if (!entry.isFile()) {
+      continue;
+    }
+
+    const routePath = `/${path.relative(outputDirectory, entryPath).split(path.sep).join("/")}`;
+    addStaticRouteAliases(files, routePath, {
+      filePath: entryPath,
+      size: statSync(entryPath).size,
+    });
+  }
+
+  return files;
+}
+
+const staticFiles = collectStaticFiles(outputDirectory);
+
+function toRoutePath(urlPath) {
   const queryIndex = urlPath.indexOf("?");
   const hashIndex = urlPath.indexOf("#");
   let pathEnd = urlPath.length;
   if (queryIndex !== -1) pathEnd = Math.min(pathEnd, queryIndex);
   if (hashIndex !== -1) pathEnd = Math.min(pathEnd, hashIndex);
   const cleanPath = urlPath.slice(0, pathEnd);
-  let relativePath = cleanPath;
+  let routePath = cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`;
 
   if (basePath) {
-    if (relativePath === "/") {
-      relativePath = `${basePath}/`;
+    if (routePath === "/") {
+      routePath = `${basePath}/`;
     }
 
-    if (relativePath === basePath) {
-      relativePath = `${basePath}/`;
+    if (routePath === basePath) {
+      routePath = `${basePath}/`;
     }
 
-    if (!relativePath.startsWith(`${basePath}/`)) {
+    if (!routePath.startsWith(`${basePath}/`)) {
       return null;
     }
 
-    relativePath = relativePath.slice(basePath.length) || "/";
+    routePath = routePath.slice(basePath.length) || "/";
   }
 
-  const normalizedPath = relativePath === "/" ? "/index.html" : relativePath;
-  const tentativePath = path.resolve(outputDirectory, normalizedPath.replace(/^\/+/, ""));
-
-  if (!isInsideOutputDirectory(tentativePath)) {
-    return null;
-  }
-
-  return normalizedPath.endsWith("/") ? path.join(tentativePath, "index.html") : tentativePath;
+  return routePath || "/";
 }
 
 const server = createServer(async (request, response) => {
   const requestPath = request.url || "/";
   const method = (request.method || "GET").toUpperCase();
-
-  const filePath = toFilePath(requestPath);
-
-  if (!filePath) {
-    response.writeHead(404);
-    response.end("Not found");
-    return;
-  }
-
-  let finalPath = filePath;
-
-  try {
-    const details = await stat(finalPath);
-    if (details.isDirectory()) {
-      finalPath = path.join(finalPath, "index.html");
-    }
-  } catch {
-    if (!path.extname(finalPath)) {
-      finalPath = path.join(finalPath, "index.html");
-    }
-  }
-
-  if (!existsSync(finalPath)) {
-    response.writeHead(404);
-    response.end("Not found");
-    return;
-  }
-
-  const finalDetails = await stat(finalPath);
 
   if (method !== "GET" && method !== "HEAD") {
     response.writeHead(405, { Allow: "GET, HEAD" });
@@ -167,13 +181,22 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  response.writeHead(200, headersFor(finalPath, finalDetails.size));
+  const routePath = toRoutePath(requestPath);
+  const staticFile = routePath ? staticFiles.get(routePath) : null;
+
+  if (!staticFile) {
+    response.writeHead(404);
+    response.end("Not found");
+    return;
+  }
+
+  response.writeHead(200, headersFor(staticFile.filePath, staticFile.size));
   if (method === "HEAD") {
     response.end();
     return;
   }
 
-  createReadStream(finalPath).pipe(response);
+  createReadStream(staticFile.filePath).pipe(response);
 });
 
 server.listen(port, () => {
