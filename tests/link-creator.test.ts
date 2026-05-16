@@ -1,4 +1,8 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import arx2DictionaryJson from "../public/arx2-dictionary.json";
+import arxDictionaryJson from "../public/arx-dictionary.json";
+import { loadArx2OverlayDictionarySync, loadArxDictionarySync } from "@/lib/payload/arx-codec";
 import { decodeFragment, decodeFragmentAsync } from "@/lib/payload/fragment";
 import { createDraftEnvelope, createGeneratedArtifactLink, createGeneratedArtifactLinkAsync, type LinkCreatorDraft } from "@/lib/payload/link-creator";
 
@@ -104,6 +108,30 @@ describe("link creator payloads", () => {
     expect(generatedLink.url).toContain("#agent-render=v1.arx2.");
     expect(generatedLink.codec).toBe("arx2");
     expect(generatedLink.envelope.codec).toBe("plain");
+    expect(parsed.ok).toBe(true);
+  });
+
+  it("lets the async auto encoder pick ARX3 when it wins the visible URL budget", async () => {
+    loadArxDictionarySync(arxDictionaryJson);
+    loadArx2OverlayDictionarySync(arx2DictionaryJson);
+
+    const draft: LinkCreatorDraft = {
+      kind: "markdown",
+      title: "Baanish Code Bench",
+      filename: "results.md",
+      content: readFileSync("tests/fixtures/baanish-code-bench-report.md", "utf8"),
+      language: "",
+      diffView: "unified",
+      codec: "auto",
+    };
+
+    const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
+    const parsed = await decodeFragmentAsync(generatedLink.hash);
+
+    expect(generatedLink.codec).toBe("arx3");
+    expect(generatedLink.hash).toContain("#agent-render=v1.arx3.1.");
+    expect(generatedLink.url).toContain("#agent-render=v1.arx3.1.");
+    expect(generatedLink.fragmentLength).toBeLessThan(1900);
     expect(parsed.ok).toBe(true);
   });
 

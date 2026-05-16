@@ -17,7 +17,7 @@
 
 import { MAX_DECODED_PAYLOAD_LENGTH } from "@/lib/payload/schema";
 import { withBasePath } from "@/lib/site/base-path";
-import type { Arx2ArtifactTuple, Arx2EnvelopeTuple, ArtifactPayload, PayloadEnvelope } from "@/lib/payload/schema";
+import type { Arx2ArtifactTuple, Arx2EnvelopeTuple, ArtifactPayload, PayloadCodec, PayloadEnvelope } from "@/lib/payload/schema";
 
 // ---------------------------------------------------------------------------
 // Dictionary types and built-in fallback
@@ -593,7 +593,7 @@ function decodeArx2ArtifactTuple(value: unknown): ArtifactPayload {
   }
 }
 
-function envelopeFromArx2Tuple(value: unknown): PayloadEnvelope {
+function envelopeFromArxTuple(value: unknown, codec: Extract<PayloadCodec, "arx2" | "arx3">): PayloadEnvelope {
   if (!Array.isArray(value)) {
     throw new Error("Invalid arx2 envelope tuple.");
   }
@@ -602,7 +602,7 @@ function envelopeFromArx2Tuple(value: unknown): PayloadEnvelope {
     const artifact = decodeArx2ArtifactTuple(value[1]);
     return {
       v: 1,
-      codec: "arx2",
+      codec,
       title: optionalStringAt(value, 2),
       activeArtifactId: artifact.id,
       artifacts: [artifact],
@@ -621,7 +621,7 @@ function envelopeFromArx2Tuple(value: unknown): PayloadEnvelope {
     const activeArtifact = activeIndex >= 0 && activeIndex < artifacts.length ? artifacts[activeIndex] : artifacts[0];
     return {
       v: 1,
-      codec: "arx2",
+      codec,
       title: optionalStringAt(value, 2),
       activeArtifactId: activeArtifact.id,
       artifacts,
@@ -1268,11 +1268,28 @@ export async function arxCompressBase64url(json: string): Promise<string> {
  * Compresses a payload envelope with the arx2 tuple-envelope pipeline.
  * Returns all supported binary-to-text wire shapes so callers can choose by transport size.
  */
-export async function arx2CompressEnvelope(envelope: PayloadEnvelope): Promise<ArxWirePayloads> {
+async function compressTupleEnvelope(envelope: PayloadEnvelope): Promise<ArxWirePayloads> {
   const tupleJson = JSON.stringify(envelopeToArx2Tuple(envelope));
   const substituted = dictEncode(overlayEncode(tupleJson));
   const compressed = await compressSubstitutedText(substituted);
   return encodeWirePayloads(compressed);
+}
+
+/**
+ * Compresses a payload envelope with the arx2 tuple-envelope pipeline.
+ * Returns all supported binary-to-text wire shapes so callers can choose by transport size.
+ */
+export async function arx2CompressEnvelope(envelope: PayloadEnvelope): Promise<ArxWirePayloads> {
+  return compressTupleEnvelope(envelope);
+}
+
+/**
+ * Compresses a payload envelope with the arx3 compact tuple pipeline.
+ * ARX3 intentionally reuses the proven ARX2 tuple/overlay/Brotli bytes; the protocol
+ * distinction is that fragment selection may prefer the dense visible baseBMP wire.
+ */
+export async function arx3CompressEnvelope(envelope: PayloadEnvelope): Promise<ArxWirePayloads> {
+  return compressTupleEnvelope(envelope);
 }
 
 /** Public API for `arxDecompress`. */
@@ -1290,5 +1307,16 @@ export async function arx2DecompressEnvelope(encoded: string): Promise<PayloadEn
   assertDecodedTextBudget(v1Decoded);
   const tupleJson = overlayDecode(v1Decoded);
   assertDecodedTextBudget(tupleJson);
-  return envelopeFromArx2Tuple(JSON.parse(tupleJson));
+  return envelopeFromArxTuple(JSON.parse(tupleJson), "arx2");
+}
+
+/**
+ * Decompresses an arx3 tuple-envelope payload and rebuilds the standard envelope shape.
+ */
+export async function arx3DecompressEnvelope(encoded: string): Promise<PayloadEnvelope> {
+  const v1Decoded = dictDecode(await decompressWirePayload(encoded));
+  assertDecodedTextBudget(v1Decoded);
+  const tupleJson = overlayDecode(v1Decoded);
+  assertDecodedTextBudget(tupleJson);
+  return envelopeFromArxTuple(JSON.parse(tupleJson), "arx3");
 }

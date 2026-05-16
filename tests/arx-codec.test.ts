@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import arxDictionaryJson from "../public/arx-dictionary.json";
 import arx2DictionaryJson from "../public/arx2-dictionary.json";
@@ -21,6 +22,8 @@ import {
   arxDecompress,
   arx2CompressEnvelope,
   arx2DecompressEnvelope,
+  arx3CompressEnvelope,
+  arx3DecompressEnvelope,
   ArxDecodedPayloadTooLargeError,
   encodeArxDictionaryForTest,
   getActiveDictVersion,
@@ -30,7 +33,7 @@ import {
   loadArx2OverlayDictionarySync,
 } from "@/lib/payload/arx-codec";
 import { encodeEnvelopeAsync, decodeFragmentAsync } from "@/lib/payload/fragment";
-import { MAX_DECODED_PAYLOAD_LENGTH, type PayloadEnvelope } from "@/lib/payload/schema";
+import { codecs, MAX_DECODED_PAYLOAD_LENGTH, MAX_FRAGMENT_LENGTH, type PayloadEnvelope } from "@/lib/payload/schema";
 
 describe("base76 encoding", () => {
   it("round-trips empty input", () => {
@@ -318,7 +321,7 @@ describe("arx fragment round-trip", () => {
     };
 
     const autoHash = await encodeEnvelopeAsync(bigEnvelope);
-    expect(autoHash).toMatch(new RegExp(`v1\\.arx2?\\.${getActiveDictVersion()}\\.`));
+    expect(autoHash).toMatch(new RegExp(`v1\\.arx(?:2|3)?\\.${getActiveDictVersion()}\\.`));
   });
 
   it("async arx selection can choose the chat-safe base64url wire form", async () => {
@@ -733,6 +736,111 @@ describe("arx2 tuple envelope", () => {
       vi.unstubAllGlobals();
       loadArx2OverlayDictionarySync(arx2DictionaryJson);
     }
+  });
+});
+
+describe("arx3 compact tuple envelope", () => {
+  const bundle: PayloadEnvelope = {
+    v: 1,
+    codec: "plain",
+    title: "Compact arx3 bundle",
+    activeArtifactId: "notes",
+    artifacts: [
+      {
+        id: "notes",
+        kind: "markdown",
+        title: "Notes",
+        filename: "notes.md",
+        content: [
+          "# Notes",
+          "",
+          "## Product contract",
+          "",
+          "- [x] Fragment payloads stay client-side.",
+          "- [ ] Update docs, tests, and benchmark evidence.",
+          "",
+          "```ts",
+          "export const value = 1 as const;",
+          "```",
+        ].join("\n"),
+      },
+      {
+        id: "source",
+        kind: "code",
+        filename: "source.tsx",
+        language: "tsx",
+        content: "import { value } from \"./value\";\n\nexport function View() {\n  return <main className=\"viewer\">{value}</main>;\n}\n",
+      },
+      {
+        id: "patch",
+        kind: "diff",
+        filename: "change.patch",
+        patch: "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-export const a = 1;\n+export const a = 2;\n",
+        view: "unified",
+      },
+    ],
+  };
+
+  it("registers arx3 as a supported async codec", () => {
+    expect(codecs).toContain("arx3");
+  });
+
+  it("round-trips bundles through arx3 fragments", async () => {
+    const hash = `#${await encodeEnvelopeAsync(bundle, { codec: "arx3" })}`;
+    expect(hash).toContain(`v1.arx3.${getActiveDictVersion()}.`);
+
+    const parsed = await decodeFragmentAsync(hash);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.envelope).toEqual({ ...bundle, codec: "arx3" });
+  });
+
+  it("can decode arx3 payloads directly through the codec API", async () => {
+    const payloads = await arx3CompressEnvelope(bundle);
+    const decoded = await arx3DecompressEnvelope(payloads.base64url);
+
+    expect(decoded).toEqual({ ...bundle, codec: "arx3" });
+  });
+
+  it("keeps the real code-bench report URL under 1900 visible characters", async () => {
+    const report = readFileSync("tests/fixtures/baanish-code-bench-report.md", "utf8");
+    const targetEnvelope: PayloadEnvelope = {
+      v: 1,
+      codec: "plain",
+      title: "Baanish Code Bench",
+      activeArtifactId: "baanish-code-bench",
+      artifacts: [
+        {
+          id: "baanish-code-bench",
+          kind: "markdown",
+          title: "Baanish Code Bench",
+          filename: "results.md",
+          content: report,
+        },
+      ],
+    };
+
+    const fragment = await encodeEnvelopeAsync(targetEnvelope, { codec: "arx3" });
+    const url = `https://agent-render.com/#${fragment}`;
+    const payload = fragment.split(`v1.arx3.${getActiveDictVersion()}.`)[1] ?? "";
+
+    expect(fragment).toContain(`v1.arx3.${getActiveDictVersion()}.`);
+    expect(isBaseBMPEncoded(payload)).toBe(true);
+    expect(url.length).toBeLessThan(1900);
+
+    const parsed = await decodeFragmentAsync(`#${fragment}`);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.envelope).toEqual({ ...targetEnvelope, codec: "arx3" });
+
+    const escapedHash = `#${fragment}`.replace(/[^\x00-\x7F]/g, (char) => encodeURIComponent(char));
+    expect(escapedHash.length).toBeGreaterThan(MAX_FRAGMENT_LENGTH);
+
+    const escapedParsed = await decodeFragmentAsync(escapedHash);
+    expect(escapedParsed.ok).toBe(true);
+    if (!escapedParsed.ok) return;
+    expect(escapedParsed.rawLength).toBe(fragment.length);
   });
 });
 

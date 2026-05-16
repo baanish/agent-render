@@ -136,6 +136,16 @@ test("renders arx2 fragments through the viewer", async ({ page }) => {
   await expect(page.getByText("viewer-shell.tsx").first()).toBeVisible();
 });
 
+test("renders arx3 fragments through the viewer", async ({ page }) => {
+  const hash = "#agent-render=v1.arx3.1.B.Gz0AGBSh0s1uS-13u93SKE5yUrMgFAFBAxtwAhJQmOks54ADECrAEqH_Fwaf-xXuTLWNpXtgkc7IlAg";
+
+  await goToHash(page, hash);
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "code");
+  await expect(page.locator("[data-active-kind='code']")).toBeVisible();
+  await expect(page.getByText("arx3-sample.ts").first()).toBeVisible();
+});
+
 test("renders multi-file diffs without mutating the payload hash", async ({ page }) => {
   await goToHash(page, getFragmentHash("Phase 1 sample diff"));
   await waitForViewerState(page, "artifact");

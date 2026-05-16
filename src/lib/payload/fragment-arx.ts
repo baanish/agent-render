@@ -2,6 +2,8 @@ import {
   ArxDecodedPayloadTooLargeError,
   arx2CompressEnvelope,
   arx2DecompressEnvelope,
+  arx3CompressEnvelope,
+  arx3DecompressEnvelope,
   arxCompressPayloads,
   arxDecompress,
   getActiveDictVersion,
@@ -76,12 +78,16 @@ function splitArxFragmentRemainder(remainder: string): {
 }
 
 async function decodeArxAttempt(
-  codec: Extract<PayloadCodec, "arx" | "arx2">,
+  codec: Extract<PayloadCodec, "arx" | "arx2" | "arx3">,
   encodedPayload: string,
 ): Promise<string | PayloadEnvelope> {
-  return codec === "arx"
-    ? await arxDecompress(encodedPayload)
-    : await arx2DecompressEnvelope(encodedPayload);
+  if (codec === "arx") {
+    return await arxDecompress(encodedPayload);
+  }
+
+  return codec === "arx2"
+    ? await arx2DecompressEnvelope(encodedPayload)
+    : await arx3DecompressEnvelope(encodedPayload);
 }
 
 function normalizeArxDecodeError(error: unknown): Error {
@@ -155,13 +161,45 @@ export async function buildArx2Candidates(
 }
 
 /**
+ * Builds deferred `arx3` codec fragment candidates.
+ * ARX3 uses the ARX2 tuple/overlay bytes, then lets the dense baseBMP wire compete by visible
+ * URL length so large report-like artifacts can stay human-copyable when the surface preserves
+ * Unicode fragments.
+ */
+export async function buildArx3Candidates(
+  envelope: PayloadEnvelope,
+  computeTransportLength: TransportLengthCalculator,
+): Promise<CandidateFragment[]> {
+  await ensureArx2DictionariesLoaded();
+
+  const payloadEnvelope = { ...envelope, codec: "arx3" as PayloadCodec };
+  const dictVersion = getActiveDictVersion();
+  const payloads = await arx3CompressEnvelope(payloadEnvelope);
+  const makeCandidate = (payload: string, preferVisibleChars = false): CandidateFragment => {
+    const value = `${PAYLOAD_FRAGMENT_KEY}=v1.arx3.${dictVersion}.${payload}`;
+    return {
+      value,
+      codec: "arx3",
+      packed: false,
+      transportLength: preferVisibleChars ? value.length : computeTransportLength(value),
+    };
+  };
+  return [
+    makeCandidate(payloads.base76),
+    makeCandidate(payloads.base1k),
+    makeCandidate(payloads.baseBMP, true),
+    makeCandidate(payloads.base64url),
+  ];
+}
+
+/**
  * Decodes an ARX fragment remainder with the same versioned-payload fallback behavior as the main decoder.
  */
 export async function decodeArxFragmentPayload(
-  codec: Extract<PayloadCodec, "arx" | "arx2">,
+  codec: Extract<PayloadCodec, "arx" | "arx2" | "arx3">,
   remainder: string,
 ): Promise<string | PayloadEnvelope> {
-  if (codec === "arx2") {
+  if (codec === "arx3" || codec === "arx2") {
     await ensureArx2DictionariesLoaded();
   } else {
     await ensureArxDictionaryLoaded();

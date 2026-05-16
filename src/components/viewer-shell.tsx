@@ -30,6 +30,15 @@ const sampleAnimationStyle: CSSProperties = { animationDelay: "180ms" };
 const inspectorAnimationStyle: CSSProperties = { animationDelay: "220ms" };
 const initializeAnimationStyle: CSSProperties = { animationDelay: "260ms" };
 
+function getVisibleHashLength(hash: string): number {
+  const fragmentBody = hash.startsWith("#") ? hash.slice(1) : hash;
+  try {
+    return decodeURIComponent(fragmentBody).length;
+  } catch {
+    return fragmentBody.length;
+  }
+}
+
 const ecosystemLinks = [
   {
     href: "https://github.com/baanish/agent-render",
@@ -271,7 +280,7 @@ export function ViewerShell() {
     };
   }, [hash]);
 
-  const fragmentLength = hash.startsWith("#") ? hash.length - 1 : hash.length;
+  const fragmentLength = getVisibleHashLength(hash);
   const envelope = parsed.ok ? parsed.envelope : null;
   const activeArtifact = useMemo(
     () => (envelope ? getArtifactById(envelope, activeArtifactId) : null),

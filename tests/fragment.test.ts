@@ -46,6 +46,12 @@ describe("fragment payload transport", () => {
     );
   });
 
+  it("throws a clear error when sync encoding is explicitly asked to use arx3", () => {
+    expect(() => encodeEnvelope(envelope, { codec: "arx3" })).toThrow(
+      "arx codec requires async encoding — use encodeEnvelopeAsync instead.",
+    );
+  });
+
   it("rejects fragments with the wrong key", () => {
     const parsed = decodeFragment("#not-agent-render=v1.plain.abc");
 
@@ -100,7 +106,7 @@ describe("fragment payload transport", () => {
 
   it("skips async-only codec priorities when sync alternatives are available", () => {
     const hash = encodeEnvelope(envelope, {
-      codecPriority: ["arx2", "arx", "plain"],
+      codecPriority: ["arx3", "arx2", "arx", "plain"],
     });
     const parsed = decodeFragment(`#${hash}`);
 
@@ -256,5 +262,20 @@ describe("fragment payload transport", () => {
     if (!parsed.ok) return;
 
     expect(parsed.envelope).toEqual({ ...envelope, codec: "arx2" });
+  });
+
+  it("decodes arx3 fragments through the async path", async () => {
+    const hash = `#${await encodeEnvelopeAsync(envelope, { codec: "arx3" })}`;
+    const syncParsed = decodeFragment(hash);
+    expect(syncParsed.ok).toBe(false);
+    if (!syncParsed.ok) {
+      expect(syncParsed.code).toBe("invalid-format");
+    }
+
+    const parsed = await decodeFragmentAsync(hash);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.envelope).toEqual({ ...envelope, codec: "arx3" });
   });
 });

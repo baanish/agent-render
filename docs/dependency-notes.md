@@ -33,7 +33,7 @@
 - `@git-diff-view/*` fits review-style diffs better than a generic merge editor for the current viewer. Its pure CSS file is mirrored into `public/vendor/diff-view-pure.css` with a Brotli-compressed `public/vendor/diff-view-pure.css.br` copy by `npm run assets:compress`, and loaded only by the diff renderer; `tests/diff-style-asset.test.ts` keeps those assets in sync with the package copy.
 - `papaparse` handles CSV parsing; CSV rendering uses a native read-only table to avoid a data-grid dependency for the shipped static viewer.
 - `fflate` provides portable deflate/inflate support across iOS Safari and Android Chromium without relying on browser-specific compression streams.
-- `brotli-wasm` provides the arx/arx2 Brotli compression layer, including streaming decompression used to cap expanded output before allocating oversized decoded payloads.
+- `brotli-wasm` provides the arx/arx2/arx3 Brotli compression layer, including streaming decompression used to cap expanded output before allocating oversized decoded payloads.
 - `mermaid` renders diagram definitions (flowcharts, sequence diagrams, etc.) to SVG client-side. Dynamically imported within the markdown renderer so it does not affect initial bundle size.
 - `better-sqlite3` provides synchronous SQLite access for the optional self-hosted server mode. Only used by `selfhosted/` code and not bundled into the static frontend export.
 

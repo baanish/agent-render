@@ -8,9 +8,12 @@ const BASELINE_PATH = "scripts/bench-baseline.json";
 const WRITE_BASELINE = process.argv.includes("--write-baseline");
 const MAX_BASELINE_REGRESSION = 0.005;
 const MIN_ARX2_TOTAL_WIN = 0.005;
+const MIN_ARX3_VISIBLE_TOTAL_WIN = 0.35;
+const BMP_BASE_SIZE = 62_000;
 
 const v1Dictionary = JSON.parse(readFileSync("public/arx-dictionary.json", "utf8"));
 const overlayDictionary = JSON.parse(readFileSync("public/arx2-dictionary.json", "utf8"));
+const codeBenchReportFixture = readFileSync("tests/fixtures/baanish-code-bench-report.md", "utf8");
 
 const singleByteCodes = [
   0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x0b, 0x0e, 0x0f, 0x10,
@@ -163,6 +166,11 @@ function encodeArx2(envelope) {
   return applyTrie(applyTrie(tupleJson, overlayEncodeTrie), v1EncodeTrie);
 }
 
+function encodeArx3(envelope) {
+  const tupleJson = JSON.stringify(tupleEnvelope({ ...envelope, codec: "arx3" }));
+  return applyTrie(applyTrie(tupleJson, overlayEncodeTrie), v1EncodeTrie);
+}
+
 function decodeArx(buf) {
   const substituted = brotliDecompressSync(buf).toString("utf8");
   return JSON.parse(applyTrie(substituted, v1DecodeTrie));
@@ -171,6 +179,25 @@ function decodeArx(buf) {
 function decodeArx2(buf) {
   const substituted = brotliDecompressSync(buf).toString("utf8");
   return JSON.parse(applyTrie(applyTrie(substituted, v1DecodeTrie), overlayDecodeTrie));
+}
+
+function decodeArx3(buf) {
+  const substituted = brotliDecompressSync(buf).toString("utf8");
+  return JSON.parse(applyTrie(applyTrie(substituted, v1DecodeTrie), overlayDecodeTrie));
+}
+
+function base64urlPayloadChars(byteLength) {
+  return 2 + Math.ceil(byteLength * 4 / 3);
+}
+
+function baseBmpPayloadChars(byteLength) {
+  return 3 + Math.ceil((byteLength * 8) / Math.log2(BMP_BASE_SIZE));
+}
+
+function visibleFragmentChars(codec, byteLength) {
+  const headerLength = `agent-render=v1.${codec}.1.`.length;
+  const payloadLength = codec === "arx3" ? baseBmpPayloadChars(byteLength) : base64urlPayloadChars(byteLength);
+  return headerLength + payloadLength;
 }
 
 function median(values) {
@@ -229,7 +256,7 @@ const markdownAgentsFixture = repeatedFixture(
     "",
     "- Fragment payloads use `#agent-render=v1.<codec>.<payload>`.",
     "- Artifact contents stay out of the host request path.",
-    "- Supported codecs are `plain`, `lz`, `deflate`, `arx`, and `arx2`.",
+    "- Supported codecs are `plain`, `lz`, `deflate`, `arx`, `arx2`, and `arx3`.",
     "- Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.",
     "",
     "Preserve the static shell, the zero-retention wording, and the renderer-first layout.",
@@ -397,6 +424,13 @@ const corpus = [
     }),
   },
   {
+    name: "code-bench-report",
+    kind: "markdown",
+    envelope: textEnvelope("markdown", "Baanish Code Bench", codeBenchReportFixture, {
+      filename: "results.md",
+    }),
+  },
+  {
     name: "code-fragment",
     kind: "code",
     envelope: textEnvelope("code", "fragment.ts excerpt", codeFragmentFixture, {
@@ -471,10 +505,15 @@ const corpus = [
 
 const rows = [];
 
+const codecImplementations = {
+  arx: [encodeArx, decodeArx],
+  arx2: [encodeArx2, decodeArx2],
+  arx3: [encodeArx3, decodeArx3],
+};
+
 for (const entry of corpus) {
-  for (const codec of ["arx", "arx2"]) {
-    const encoder = codec === "arx" ? encodeArx : encodeArx2;
-    const decoder = codec === "arx" ? decodeArx : decodeArx2;
+  for (const codec of ["arx", "arx2", "arx3"]) {
+    const [encoder, decoder] = codecImplementations[codec];
     const rawJson = JSON.stringify({ ...entry.envelope, codec });
     const encodedInput = encoder(entry.envelope);
     const encode = measure(() => brotli(encodedInput));
@@ -487,6 +526,7 @@ for (const entry of corpus) {
       name: entry.name,
       rawBytes: Buffer.byteLength(rawJson, "utf8"),
       encodedBytes: encode.result.length,
+      visibleChars: visibleFragmentChars(codec, encode.result.length),
       ratio: Buffer.byteLength(rawJson, "utf8") / encode.result.length,
       encodeMs: encode.ms,
       decodeMs: decode.ms,
@@ -495,13 +535,13 @@ for (const entry of corpus) {
 }
 
 const baseline = {
-  version: 1,
+  version: 2,
   generatedAt: new Date().toISOString(),
   rows: {},
 };
 
 for (const row of rows) {
-  baseline.rows[row.id] = { encodedBytes: row.encodedBytes };
+  baseline.rows[row.id] = { encodedBytes: row.encodedBytes, visibleChars: row.visibleChars };
 }
 
 if (WRITE_BASELINE) {
@@ -509,36 +549,52 @@ if (WRITE_BASELINE) {
 }
 
 const table = [
-  "| codec | kind | name | raw B | encoded B | ratio | encode ms | decode ms |",
-  "|---|---:|---|---:|---:|---:|---:|---:|",
+  "| codec | kind | name | raw B | encoded B | visible chars | ratio | encode ms | decode ms |",
+  "|---|---:|---|---:|---:|---:|---:|---:|---:|",
 ];
 
 for (const row of rows) {
-  table.push(`| ${row.codec} | ${row.kind} | ${row.name} | ${row.rawBytes} | ${row.encodedBytes} | ${row.ratio.toFixed(2)}x | ${row.encodeMs.toFixed(2)} | ${row.decodeMs.toFixed(2)} |`);
+  table.push(`| ${row.codec} | ${row.kind} | ${row.name} | ${row.rawBytes} | ${row.encodedBytes} | ${row.visibleChars} | ${row.ratio.toFixed(2)}x | ${row.encodeMs.toFixed(2)} | ${row.decodeMs.toFixed(2)} |`);
 }
 
 console.log(table.join("\n"));
 
 const totals = {};
+const visibleTotals = {};
 for (const row of rows) {
   totals[row.codec] = (totals[row.codec] ?? 0) + row.encodedBytes;
+  visibleTotals[row.codec] = (visibleTotals[row.codec] ?? 0) + row.visibleChars;
 }
 const arx2Win = (totals.arx - totals.arx2) / totals.arx;
+const arx3VisibleWin = (visibleTotals.arx2 - visibleTotals.arx3) / visibleTotals.arx2;
 console.log(`\nTotal arx: ${totals.arx} B`);
 console.log(`Total arx2: ${totals.arx2} B`);
+console.log(`Total arx3: ${totals.arx3} B`);
+console.log(`Total arx2 visible: ${visibleTotals.arx2} chars`);
+console.log(`Total arx3 visible: ${visibleTotals.arx3} chars`);
 console.log(`arx2 delta: ${(arx2Win * 100).toFixed(2)}%`);
+console.log(`arx3 visible delta vs arx2: ${(arx3VisibleWin * 100).toFixed(2)}%`);
 
 const failures = [];
 if (arx2Win < MIN_ARX2_TOTAL_WIN) {
   failures.push(`arx2 total win ${(arx2Win * 100).toFixed(2)}% is below ${(MIN_ARX2_TOTAL_WIN * 100).toFixed(2)}%.`);
 }
 
+if (arx3VisibleWin < MIN_ARX3_VISIBLE_TOTAL_WIN) {
+  failures.push(`arx3 visible-character win ${(arx3VisibleWin * 100).toFixed(2)}% is below ${(MIN_ARX3_VISIBLE_TOTAL_WIN * 100).toFixed(2)}%.`);
+}
+
 for (const entry of corpus) {
   const arx = rows.find((row) => row.id === `${entry.name}:arx`);
   const arx2 = rows.find((row) => row.id === `${entry.name}:arx2`);
+  const arx3 = rows.find((row) => row.id === `${entry.name}:arx3`);
   const delta = (arx.encodedBytes - arx2.encodedBytes) / arx.encodedBytes;
   if (delta < -MAX_BASELINE_REGRESSION) {
     failures.push(`${entry.name} arx2 regressed vs arx by ${(-delta * 100).toFixed(2)}%.`);
+  }
+  const arx3VisibleDelta = (arx2.visibleChars - arx3.visibleChars) / arx2.visibleChars;
+  if (arx3VisibleDelta < -MAX_BASELINE_REGRESSION) {
+    failures.push(`${entry.name} arx3 visible chars regressed vs arx2 by ${(-arx3VisibleDelta * 100).toFixed(2)}%.`);
   }
 }
 
@@ -553,6 +609,13 @@ if (!WRITE_BASELINE && existsSync(BASELINE_PATH)) {
     const regression = (row.encodedBytes - baselineRow.encodedBytes) / baselineRow.encodedBytes;
     if (regression > MAX_BASELINE_REGRESSION) {
       failures.push(`${row.id} regressed ${(regression * 100).toFixed(2)}% vs baseline.`);
+    }
+
+    if (typeof baselineRow.visibleChars === "number") {
+      const visibleRegression = (row.visibleChars - baselineRow.visibleChars) / baselineRow.visibleChars;
+      if (visibleRegression > MAX_BASELINE_REGRESSION) {
+        failures.push(`${row.id} visible chars regressed ${(visibleRegression * 100).toFixed(2)}% vs baseline.`);
+      }
     }
   }
 }

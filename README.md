@@ -49,8 +49,8 @@ The repo includes Playwright visual snapshots for the shipped viewer surfaces:
 ## Status
 
 - Markdown, code, diff, CSV, and JSON all render in the static shell
-- Fragment transport supports `plain`, `lz`, `deflate`, `arx`, and `arx2`, with automatic shortest-fragment selection across available wire formats
-- The `arx` substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json` with a pre-compressed `/arx2-dictionary.json.br` variant
+- Fragment transport supports `plain`, `lz`, `deflate`, `arx`, `arx2`, and `arx3`, with automatic shortest-fragment selection across available wire formats
+- The `arx` substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json` with a pre-compressed `/arx2-dictionary.json.br` variant; `arx3` reuses those proven bytes and optimizes for compact visible Unicode fragments
 - The viewer toolbar copies artifact bodies to the clipboard, downloads them as files, and (for markdown) supports browser print-to-PDF
 - Deployment target: static hosting, including Cloudflare Pages
 

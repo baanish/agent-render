@@ -3,7 +3,7 @@ export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 
 export const artifactKinds = ["markdown", "code", "diff", "csv", "json"] as const;
-export const codecs = ["plain", "lz", "deflate", "arx", "arx2"] as const;
+export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3"] as const;
 
 export type ArtifactKind = (typeof artifactKinds)[number];
 export type PayloadCodec = (typeof codecs)[number];

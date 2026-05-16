@@ -1,5 +1,5 @@
 import { normalizeEnvelope } from "@/lib/payload/envelope";
-import { encodeEnvelope, encodeEnvelopeAsync } from "@/lib/payload/fragment";
+import { encodeEnvelope, encodeEnvelopeAsync, getVisibleFragmentLength } from "@/lib/payload/fragment";
 import {
   codecs,
   MAX_FRAGMENT_LENGTH,
@@ -150,7 +150,7 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
 
   const fragmentBody = encodeEnvelope(normalized.envelope);
   const hash = `#${fragmentBody}`;
-  const fragmentLength = fragmentBody.length;
+  const fragmentLength = getVisibleFragmentLength(fragmentBody);
 
   if (fragmentLength > MAX_FRAGMENT_LENGTH) {
     throw new Error(
@@ -177,8 +177,8 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
 }
 
 /**
- * Async variant of {@link createGeneratedArtifactLink} that can leverage async codecs (including
- * `arx`) via {@link encodeEnvelopeAsync}.
+ * Async variant of {@link createGeneratedArtifactLink} that can leverage the ARX family of async
+ * codecs via {@link encodeEnvelopeAsync}.
  *
  * Error and return semantics match the sync variant: throws on invalid draft/normalized payload
  * or over-budget fragments, and returns `{ hash, url, codec, fragmentLength, envelope, artifact }`.
@@ -193,7 +193,7 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
   const encodeOptions = draft.codec && draft.codec !== "auto" ? { codec: draft.codec } : {};
   const fragmentBody = await encodeEnvelopeAsync(normalized.envelope, encodeOptions);
   const hash = `#${fragmentBody}`;
-  const fragmentLength = fragmentBody.length;
+  const fragmentLength = getVisibleFragmentLength(fragmentBody);
 
   if (fragmentLength > MAX_FRAGMENT_LENGTH) {
     throw new Error(
