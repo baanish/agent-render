@@ -10,6 +10,9 @@ export type ParsedPatchFile = {
   isBinary: boolean;
 };
 
+const UNIFIED_HUNK_HEADER_RE = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@(?: .*)?$/;
+const DIFF_SECTION_HEADER_RE = /^diff --git .*$/gm;
+
 function stripDiffPrefix(filePath: string | null): string | null {
   if (!filePath || filePath === "/dev/null") {
     return null;
@@ -18,26 +21,65 @@ function stripDiffPrefix(filePath: string | null): string | null {
   return filePath.replace(/^[ab]\//, "");
 }
 
-function splitPatchSections(patch: string): string[] {
-  const normalized = patch.replace(/\r\n/g, "\n").trim();
+function normalizePatch(patch: string): string {
+  return patch.replace(/\r\n/g, "\n").trim();
+}
+
+function getFirstLine(value: string): string {
+  const newlineIndex = value.indexOf("\n");
+  return newlineIndex === -1 ? value : value.slice(0, newlineIndex);
+}
+
+function scanLines(value: string, visitLine: (line: string) => void): void {
+  let lineStart = 0;
+
+  while (lineStart <= value.length) {
+    const lineEnd = value.indexOf("\n", lineStart);
+    if (lineEnd === -1) {
+      visitLine(value.slice(lineStart));
+      return;
+    }
+
+    visitLine(value.slice(lineStart, lineEnd));
+    lineStart = lineEnd + 1;
+  }
+}
+
+function parsePatchSections(patch: string): ParsedPatchFile[] {
+  const normalized = normalizePatch(patch);
   if (!normalized) {
     return [];
   }
 
-  const matches = [...normalized.matchAll(/^diff --git .*$/gm)];
-  if (matches.length === 0) {
-    return [normalized];
+  DIFF_SECTION_HEADER_RE.lastIndex = 0;
+
+  const files: ParsedPatchFile[] = [];
+  let previousStart = -1;
+  let sectionIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = DIFF_SECTION_HEADER_RE.exec(normalized)) !== null) {
+    if (previousStart !== -1) {
+      files.push(parsePatchSection(normalized.slice(previousStart, match.index).trim(), sectionIndex));
+      sectionIndex += 1;
+    } else if (match.index > 0) {
+      const preamble = normalized.slice(0, match.index).trim();
+      if (preamble) {
+        files.push(parsePatchSection(preamble, sectionIndex));
+        sectionIndex += 1;
+      }
+    }
+    previousStart = match.index;
   }
 
-  return matches.map((match, index) => {
-    const start = match.index ?? 0;
-    const end = matches[index + 1]?.index ?? normalized.length;
-    return normalized.slice(start, end).trim();
-  });
+  if (previousStart === -1) {
+    return [parsePatchSection(normalized, 0)];
+  }
+
+  files.push(parsePatchSection(normalized.slice(previousStart).trim(), sectionIndex));
+  return files;
 }
 
 function parsePatchSection(section: string, index: number): ParsedPatchFile {
-  const lines = section.split("\n");
   let oldPath: string | null = null;
   let newPath: string | null = null;
   let renameFrom: string | null = null;
@@ -45,55 +87,59 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
   let status: PatchFileStatus = "modified";
   let isBinary = false;
 
-  const headerMatch = /^diff --git a\/(.+) b\/(.+)$/.exec(lines[0] ?? "");
+  const headerMatch = /^diff --git a\/(.+) b\/(.+)$/.exec(getFirstLine(section));
   if (headerMatch) {
     oldPath = headerMatch[1] ?? null;
     newPath = headerMatch[2] ?? null;
   }
 
-  for (const line of lines) {
+  scanLines(section, (line) => {
     if (line.startsWith("new file mode ")) {
       status = "added";
-      continue;
+      return;
     }
 
     if (line.startsWith("deleted file mode ")) {
       status = "deleted";
-      continue;
+      return;
     }
 
     if (line.startsWith("rename from ")) {
       renameFrom = line.slice("rename from ".length).trim();
       status = "renamed";
-      continue;
+      return;
     }
 
     if (line.startsWith("rename to ")) {
       renameTo = line.slice("rename to ".length).trim();
       status = "renamed";
-      continue;
+      return;
     }
 
     if (line.startsWith("copy from ")) {
       oldPath = line.slice("copy from ".length).trim();
       status = "copied";
-      continue;
+      return;
     }
 
     if (line.startsWith("copy to ")) {
       newPath = line.slice("copy to ".length).trim();
       status = "copied";
-      continue;
+      return;
     }
 
     if (line.startsWith("--- ")) {
       oldPath = stripDiffPrefix(line.slice(4).trim()) ?? oldPath;
-      continue;
+      return;
     }
 
     if (line.startsWith("+++ ")) {
       newPath = stripDiffPrefix(line.slice(4).trim()) ?? newPath;
-      continue;
+      return;
+    }
+
+    if (line.startsWith("@@") && !UNIFIED_HUNK_HEADER_RE.test(line)) {
+      throw new Error(`Invalid hunk header: ${line}`);
     }
 
     if (line.startsWith("Binary files ") || line === "GIT binary patch") {
@@ -107,7 +153,7 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
       isBinary = true;
       status = "binary";
     }
-  }
+  });
 
   oldPath = stripDiffPrefix(renameFrom ?? oldPath);
   newPath = stripDiffPrefix(renameTo ?? newPath);
@@ -138,8 +184,9 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
  * @param patch - Unified git patch text that may include one or many file sections.
  * @returns Parsed file-level patch records ready for diff rendering.
  *
- * Failure/fallback: empty or whitespace-only input returns an empty array.
+ * Failure/fallback: empty or whitespace-only input returns an empty array; malformed hunk
+ * headers throw so callers can stay on the lightweight raw fallback path.
  */
 export function parseGitPatchBundle(patch: string): ParsedPatchFile[] {
-  return splitPatchSections(patch).map((section, index) => parsePatchSection(section, index));
+  return parsePatchSections(patch);
 }

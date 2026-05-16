@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const port = Number(process.env.PLAYWRIGHT_PORT || 4401);
+const cleanColorEnv = "env -u NO_COLOR";
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -24,7 +25,7 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: `NEXT_PUBLIC_BASE_PATH=/agent-render npm run build && PORT=${port} NEXT_PUBLIC_BASE_PATH=/agent-render npm run preview`,
+    command: `${cleanColorEnv} NEXT_PUBLIC_BASE_PATH=/agent-render npm run build && ${cleanColorEnv} PORT=${port} NEXT_PUBLIC_BASE_PATH=/agent-render npm run preview`,
     port,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,

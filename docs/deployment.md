@@ -33,7 +33,7 @@ NEXT_PUBLIC_BASE_PATH=/agent-render npm run build
 npm run preview
 ```
 
-Then serve `out/` under `/agent-render/` and open the sample fragment links from the landing page.
+The preview server reads the generated build manifest, serves `out/` under `/agent-render/`, and keeps root requests working for convenience. Open the sample fragment links from the landing page.
 
 The preview server intentionally preserves the fragment payload and does not rely on hash-based in-page navigation for diff files.
 

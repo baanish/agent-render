@@ -1,48 +1,102 @@
 {
-  "version": 1,
-  "generatedAt": "2026-04-24T01:27:55.503Z",
+  "version": 2,
+  "generatedAt": "2026-05-16T07:56:40.375Z",
   "rows": {
     "markdown-agents:arx": {
-      "encodedBytes": 2664
+      "encodedBytes": 408,
+      "visibleChars": 568
     },
     "markdown-agents:arx2": {
-      "encodedBytes": 2644
+      "encodedBytes": 401,
+      "visibleChars": 560
+    },
+    "markdown-agents:arx3": {
+      "encodedBytes": 401,
+      "visibleChars": 228
+    },
+    "code-bench-report:arx": {
+      "encodedBytes": 2238,
+      "visibleChars": 3008
+    },
+    "code-bench-report:arx2": {
+      "encodedBytes": 2219,
+      "visibleChars": 2984
+    },
+    "code-bench-report:arx3": {
+      "encodedBytes": 2219,
+      "visibleChars": 1142
     },
     "code-fragment:arx": {
-      "encodedBytes": 2101
+      "encodedBytes": 395,
+      "visibleChars": 551
     },
     "code-fragment:arx2": {
-      "encodedBytes": 2084
+      "encodedBytes": 388,
+      "visibleChars": 543
+    },
+    "code-fragment:arx3": {
+      "encodedBytes": 388,
+      "visibleChars": 221
     },
     "diff-patch:arx": {
-      "encodedBytes": 129
+      "encodedBytes": 129,
+      "visibleChars": 196
     },
     "diff-patch:arx2": {
-      "encodedBytes": 113
+      "encodedBytes": 113,
+      "visibleChars": 176
+    },
+    "diff-patch:arx3": {
+      "encodedBytes": 113,
+      "visibleChars": 83
     },
     "diff-pair:arx": {
-      "encodedBytes": 101
+      "encodedBytes": 101,
+      "visibleChars": 159
     },
     "diff-pair:arx2": {
-      "encodedBytes": 92
+      "encodedBytes": 92,
+      "visibleChars": 148
+    },
+    "diff-pair:arx3": {
+      "encodedBytes": 92,
+      "visibleChars": 73
     },
     "csv-grid:arx": {
-      "encodedBytes": 629
+      "encodedBytes": 629,
+      "visibleChars": 863
     },
     "csv-grid:arx2": {
-      "encodedBytes": 623
+      "encodedBytes": 623,
+      "visibleChars": 856
+    },
+    "csv-grid:arx3": {
+      "encodedBytes": 623,
+      "visibleChars": 340
     },
     "json-package:arx": {
-      "encodedBytes": 991
+      "encodedBytes": 345,
+      "visibleChars": 484
     },
     "json-package:arx2": {
-      "encodedBytes": 972
+      "encodedBytes": 321,
+      "visibleChars": 453
+    },
+    "json-package:arx3": {
+      "encodedBytes": 321,
+      "visibleChars": 188
     },
     "multi-bundle:arx": {
-      "encodedBytes": 5274
+      "encodedBytes": 1299,
+      "visibleChars": 1756
     },
     "multi-bundle:arx2": {
-      "encodedBytes": 5239
+      "encodedBytes": 1253,
+      "visibleChars": 1696
+    },
+    "multi-bundle:arx3": {
+      "encodedBytes": 1253,
+      "visibleChars": 656
     }
   }
 }

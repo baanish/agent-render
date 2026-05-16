@@ -1,8 +1,8 @@
 "use client";
 
 import { MoonStar, SunMedium } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useThemeController } from "@/components/theme/use-theme-controller";
 import { cn } from "@/lib/utils";
 
 type ThemeToggleProps = {
@@ -11,11 +11,11 @@ type ThemeToggleProps = {
 
 /**
  * Provides the viewer header control for switching between dark and light presentation modes.
- * Uses an optional `className` and next-themes setters to update active theme selection.
+ * Uses an optional `className` and the local theme controller to update active theme selection.
  * Delays interaction until mount so icon/label state remains hydration-safe.
  */
 export function ThemeToggle({ className }: ThemeToggleProps) {
-  const { resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useThemeController();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

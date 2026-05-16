@@ -1,5 +1,20 @@
 import type { Extension } from "@codemirror/state";
 
+const languageSupportCache = new Map<string, Promise<Extension | null>>();
+
+function getLanguageSupportCacheKey(language: string): string {
+  switch (language) {
+    case "javascript":
+      return "js";
+    case "py":
+      return "python";
+    case "yml":
+      return "yaml";
+    default:
+      return language;
+  }
+}
+
 /**
  * Determines the code language token used by the viewer.
  *
@@ -46,7 +61,7 @@ export function detectCodeLanguage(filename?: string, explicit?: string) {
  *
  * Failure/fallback: unsupported language keys return `null` so callers can render plain text.
  */
-export async function loadLanguageSupport(language: string): Promise<Extension | null> {
+async function loadLanguageSupportUncached(language: string): Promise<Extension | null> {
   switch (language) {
     case "tsx": {
       const { javascript } = await import("@codemirror/lang-javascript");
@@ -60,8 +75,7 @@ export async function loadLanguageSupport(language: string): Promise<Extension |
       const { javascript } = await import("@codemirror/lang-javascript");
       return javascript({ jsx: true });
     }
-    case "js":
-    case "javascript": {
+    case "js": {
       const { javascript } = await import("@codemirror/lang-javascript");
       return javascript();
     }
@@ -77,8 +91,7 @@ export async function loadLanguageSupport(language: string): Promise<Extension |
       const { html } = await import("@codemirror/lang-html");
       return html();
     }
-    case "python":
-    case "py": {
+    case "python": {
       const { python } = await import("@codemirror/lang-python");
       return python();
     }
@@ -86,12 +99,32 @@ export async function loadLanguageSupport(language: string): Promise<Extension |
       const { markdown } = await import("@codemirror/lang-markdown");
       return markdown();
     }
-    case "yaml":
-    case "yml": {
+    case "yaml": {
       const { yaml } = await import("@codemirror/lang-yaml");
       return yaml();
     }
     default:
       return null;
   }
+}
+
+/**
+ * Lazily loads and caches CodeMirror language support for a normalized language key.
+ *
+ * Returns an extension for supported languages and aliases; unsupported language keys resolve
+ * to `null` so callers can render plain text.
+ */
+export async function loadLanguageSupport(language: string): Promise<Extension | null> {
+  const cacheKey = getLanguageSupportCacheKey(language);
+  const cached = languageSupportCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const supportPromise = loadLanguageSupportUncached(cacheKey).catch((error) => {
+    languageSupportCache.delete(cacheKey);
+    throw error;
+  });
+  languageSupportCache.set(cacheKey, supportPromise);
+  return supportPromise;
 }

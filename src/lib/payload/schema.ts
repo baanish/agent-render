@@ -3,7 +3,7 @@ export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 
 export const artifactKinds = ["markdown", "code", "diff", "csv", "json"] as const;
-export const codecs = ["plain", "lz", "deflate", "arx", "arx2"] as const;
+export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3"] as const;
 
 export type ArtifactKind = (typeof artifactKinds)[number];
 export type PayloadCodec = (typeof codecs)[number];
@@ -62,6 +62,8 @@ export type PayloadEnvelope = {
 
 type OptionalTupleString = string | null | undefined;
 type OptionalTupleView = "unified" | "split" | null | undefined;
+const artifactKindSet = new Set<string>(artifactKinds);
+const codecSet = new Set<string>(codecs);
 
 export type Arx2KindCode = "m" | "c" | "d" | "s" | "j";
 export type Arx2TextArtifactTuple = ["m" | "s" | "j", string, string, OptionalTupleString?, OptionalTupleString?];
@@ -95,11 +97,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isArtifactKind(value: unknown): value is ArtifactKind {
-  return typeof value === "string" && artifactKinds.includes(value as ArtifactKind);
+  return typeof value === "string" && artifactKindSet.has(value);
 }
 
 function isCodec(value: unknown): value is PayloadCodec {
-  return typeof value === "string" && codecs.includes(value as PayloadCodec);
+  return typeof value === "string" && codecSet.has(value);
 }
 
 function hasString(value: unknown): value is string {
@@ -136,7 +138,7 @@ export function isPayloadEnvelope(value: unknown): value is PayloadEnvelope {
     return false;
   }
 
-  return value.artifacts.every((artifact) => {
+  for (const artifact of value.artifacts) {
     if (!isBaseArtifact(artifact)) {
       return false;
     }
@@ -148,9 +150,16 @@ export function isPayloadEnvelope(value: unknown): value is PayloadEnvelope {
         newContent?: unknown;
       };
 
-      return hasString(diffArtifact.patch) || (hasString(diffArtifact.oldContent) && hasString(diffArtifact.newContent));
+      if (!hasString(diffArtifact.patch) && (!hasString(diffArtifact.oldContent) || !hasString(diffArtifact.newContent))) {
+        return false;
+      }
+      continue;
     }
 
-    return hasString((artifact as { content?: unknown }).content);
-  });
+    if (!hasString((artifact as { content?: unknown }).content)) {
+      return false;
+    }
+  }
+
+  return true;
 }

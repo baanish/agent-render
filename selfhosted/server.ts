@@ -15,6 +15,7 @@ import { validatePayload } from "./validate.js";
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || "0.0.0.0";
 const outputDirectory = path.resolve(process.env.OUT_DIR || "out");
+const outputDirectoryWithSeparator = `${outputDirectory}${path.sep}`;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const API_CATALOG_CONTENT_TYPE = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
@@ -32,6 +33,7 @@ const contentTypes = new Map<string, string>([
   [".jpeg", "image/jpeg"],
   [".woff", "font/woff"],
   [".woff2", "font/woff2"],
+  [".wasm", "application/wasm"],
   [".br", "application/octet-stream"],
   [".yaml", "application/yaml; charset=utf-8"],
   [".yml", "application/yaml; charset=utf-8"],
@@ -44,7 +46,19 @@ function contentTypeFor(filePath: string): string {
     return API_CATALOG_CONTENT_TYPE;
   }
 
+  if (filePath.endsWith(".json.br")) {
+    return "application/json; charset=utf-8";
+  }
+
+  if (filePath.endsWith(".css.br")) {
+    return "text/css; charset=utf-8";
+  }
+
   return contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+}
+
+function isNextStaticAsset(filePath: string): boolean {
+  return filePath.includes(`${path.sep}_next${path.sep}static${path.sep}`);
 }
 
 function headersFor(filePath: string): Record<string, string> {
@@ -52,6 +66,15 @@ function headersFor(filePath: string): Record<string, string> {
 
   if (filePath.endsWith(`${path.sep}.well-known${path.sep}api-catalog`)) {
     headers.Link = API_CATALOG_LINK_HEADER;
+  }
+
+  if (filePath.endsWith(".json.br") || filePath.endsWith(".css.br")) {
+    headers["Content-Encoding"] = "br";
+    headers.Vary = "Accept-Encoding";
+  }
+
+  if (isNextStaticAsset(filePath)) {
+    headers["Cache-Control"] = "public, max-age=31536000, immutable";
   }
 
   return headers;
@@ -125,14 +148,12 @@ function htmlResponse(res: ServerResponse, status: number, body: string): void {
 
 /** Serve a static file from the output directory. */
 async function serveStatic(res: ServerResponse, urlPath: string, method: string): Promise<void> {
-  const cleanPath = urlPath.split("?", 1)[0].split("#", 1)[0];
-  const normalizedPath = cleanPath === "/" ? "/index.html" : cleanPath;
+  const normalizedPath = urlPath === "/" ? "/index.html" : urlPath;
 
   let filePath = path.resolve(path.join(outputDirectory, normalizedPath));
-  const resolvedOutputDir = path.resolve(outputDirectory);
 
   // Prevent path traversal outside the output directory
-  if (!filePath.startsWith(resolvedOutputDir + path.sep) && filePath !== resolvedOutputDir) {
+  if (!filePath.startsWith(outputDirectoryWithSeparator) && filePath !== outputDirectory) {
     res.writeHead(403);
     res.end("Forbidden");
     return;

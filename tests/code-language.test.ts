@@ -15,4 +15,11 @@ describe("code language detection", () => {
   it("returns null support for unknown languages", async () => {
     await expect(loadLanguageSupport("unknown-language")).resolves.toBeNull();
   });
+
+  it("shares cached support across language aliases", async () => {
+    const pySupport = await loadLanguageSupport("py");
+    const pythonSupport = await loadLanguageSupport("python");
+
+    expect(pySupport).toBe(pythonSupport);
+  });
 });
