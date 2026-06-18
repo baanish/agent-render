@@ -13,6 +13,7 @@ import {
   Copy,
   Download,
   Eye,
+  Link2,
   FileCode2,
   FileDiff,
   FileJson2,
@@ -41,6 +42,7 @@ import {
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
 import { copyTextToClipboard } from "@/lib/copy-text";
+import { formatMarkdownLink } from "@/lib/markdown-link";
 import { cn } from "@/lib/utils";
 import { LinkCreator } from "@/components/home/link-creator";
 import { ArtifactSelector } from "@/components/viewer/artifact-selector";
@@ -260,10 +262,12 @@ export function ViewerShell() {
   const [hash, setHash] = useState("");
   const [rendererReady, setRendererReady] = useState(true);
   const [artifactCopyState, setArtifactCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [markdownLinkCopyState, setMarkdownLinkCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
   const activeArtifactRef = useRef<ArtifactPayload | null>(null);
   /** Incremented on each copy click so stale async completions cannot overwrite state from a newer request. */
   const artifactCopyTokenRef = useRef(0);
+  const markdownLinkCopyTokenRef = useRef(0);
   /** True when the current hash originated from a server-injected payload (self-hosted UUID mode). */
   const injectedPayloadRef = useRef(false);
 
@@ -354,6 +358,7 @@ export function ViewerShell() {
 
   useEffect(() => {
     setArtifactCopyState("idle");
+    setMarkdownLinkCopyState("idle");
     setViewMode("rendered");
   }, [activeArtifact?.id]);
 
@@ -370,6 +375,20 @@ export function ViewerShell() {
       window.clearTimeout(timer);
     };
   }, [artifactCopyState]);
+
+  useEffect(() => {
+    if (markdownLinkCopyState !== "copied" && markdownLinkCopyState !== "failed") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setMarkdownLinkCopyState("idle");
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [markdownLinkCopyState]);
 
   const setFragmentHash = useCallback((nextHash: string) => {
     if (window.location.hash === nextHash) {
@@ -420,6 +439,32 @@ export function ViewerShell() {
         return;
       }
       setArtifactCopyState("failed");
+    }
+  }, []);
+
+  const handleCopyMarkdownLink = useCallback(async () => {
+    const artifact = activeArtifactRef.current;
+    if (!artifact) {
+      return;
+    }
+
+    const requestArtifactId = artifact.id;
+    const requestToken = ++markdownLinkCopyTokenRef.current;
+    const label = getArtifactHeading(artifact);
+    const href = window.location.href;
+    const markdownLink = formatMarkdownLink(label, href);
+
+    try {
+      await copyTextToClipboard(markdownLink);
+      if (activeArtifactRef.current?.id !== requestArtifactId || markdownLinkCopyTokenRef.current !== requestToken) {
+        return;
+      }
+      setMarkdownLinkCopyState("copied");
+    } catch {
+      if (activeArtifactRef.current?.id !== requestArtifactId || markdownLinkCopyTokenRef.current !== requestToken) {
+        return;
+      }
+      setMarkdownLinkCopyState("failed");
     }
   }, []);
 
@@ -525,6 +570,18 @@ export function ViewerShell() {
                 >
                   {artifactCopyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   {artifactCopyState === "copied" ? "Copied" : artifactCopyState === "failed" ? "Copy failed" : "Copy"}
+                </button>
+                <button
+                  type="button"
+                  className={cn("artifact-action", markdownLinkCopyState === "copied" && "is-primary")}
+                  onClick={handleCopyMarkdownLink}
+                >
+                  {markdownLinkCopyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+                  {markdownLinkCopyState === "copied"
+                    ? "Copied"
+                    : markdownLinkCopyState === "failed"
+                      ? "Copy failed"
+                      : "Markdown link"}
                 </button>
                 {markdownArtifact && viewMode === "rendered" ? (
                   <button type="button" className="artifact-action" onClick={handleMarkdownPrint}>
