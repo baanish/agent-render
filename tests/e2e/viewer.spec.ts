@@ -282,10 +282,35 @@ test("copy action copies artifact body to clipboard", async ({ page }) => {
   });
 
   await page.getByRole("button", { name: "Copy" }).click();
-  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copied" }).first()).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => window.localStorage.getItem("copied-artifact-body")))
     .toBe('export function ViewerShell() {\n  return <main>Fragment-powered artifact viewer shell</main>;\n}');
+});
+
+test("markdown link action copies the current URL as a markdown link", async ({ page }) => {
+  await goToHash(page, getFragmentHash("Viewer bootstrap"));
+  await waitForViewerState(page, "artifact");
+
+  await page.evaluate(() => {
+    window.localStorage.removeItem("copied-markdown-link");
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: (value: string) => {
+          window.localStorage.setItem("copied-markdown-link", value);
+          return Promise.resolve();
+        },
+      },
+    });
+  });
+
+  await page.getByRole("button", { name: "Markdown link" }).click();
+  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+
+  const copied = await page.evaluate(() => window.localStorage.getItem("copied-markdown-link"));
+  const href = await page.evaluate(() => window.location.href);
+  expect(copied).toBe(`[viewer-shell.tsx](${href})`);
 });
 
 test("copy action shows failure when clipboard API and execCommand fallback fail", async ({ page }) => {
