@@ -58,8 +58,10 @@ The self-hosted server has its own test suite under `tests/selfhosted/`:
 - `db.test.ts` — CRUD operations, TTL refresh, expiry cleanup
 - `validate.test.ts` — Payload validation rules
 - `ttl.test.ts` — TTL computation and expiry checks
+- `api-catalog.test.ts` — RFC 9727 `/.well-known/api-catalog` discovery headers over a spawned export server
+- `static-headers.test.ts` — precompressed `.br` static-asset header contract (Content-Type/Content-Encoding/Vary, immutable `_next` caching)
 
-These tests use `// @vitest-environment node` to run with Node.js instead of jsdom, since they depend on `better-sqlite3` (a native module).
+Most of these tests use `// @vitest-environment node` to run with Node.js instead of jsdom, since the SQLite-backed tests depend on `better-sqlite3` (a native module); `api-catalog.test.ts` instead runs in the default environment and exercises the self-hosted export server in a spawned child process.
 
 They run as part of the standard `npm run test` command.
 

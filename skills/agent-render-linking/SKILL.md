@@ -34,9 +34,10 @@ character identifying the codec:
 #c<payload>   (arx3)
 ```
 
-The single tag char encodes the codec (and, for `arx`/`arx2`/`arx3`, the active
-dictionary version); the payload follows immediately after it. The legacy
-`#agent-render=v1.<codec>.<dictVersion>.<payload>` form still decodes, but the
+The single tag char identifies the codec; for `arx`/`arx2`/`arx3` it implies the
+current dictionary but does not carry a dictionary version. The payload follows
+immediately after it. The legacy `#agent-render=v1.<codec>.<payload>` form
+(arx-family carry an extra `<dictVersion>.` segment) still decodes, but the
 viewer no longer emits it — always build the compact form.
 
 Supported codecs:
@@ -224,7 +225,7 @@ To use the dictionary for local `arx` encoding:
     - Base1k uses 1774 Unicode code points (U+00A1–U+07FF, skipping combining diacriticals and soft hyphen). ~10.79 bits/char
     - Base64url: standard `A-Za-z0-9-_` (no padding), prefix `B.` — ASCII-only, survives Discord/Slack/Teams-style handling better than Unicode-heavy fragments
     - Base76 uses 77 ASCII fragment-safe characters. ~6.27 bits/char
-5. Prepend the tag `a` to form the fragment (the compact tag encodes the active dictionary version, so use the same dictionary version for substitution)
+5. Prepend the tag `a` to form the fragment (the compact tag does not carry a dictionary version — it implies the current dictionary, so always substitute using the build's current dictionary)
 
 The dictionary includes JSON envelope boilerplate patterns, JSON-escaped Markdown syntax, and programming-language patterns that are already present in the shipped corpus. The viewer tries the pre-compressed dictionary first on default ARX/ARX2/ARX3 encode or decode paths, falls back to the JSON file, and falls back again to its built-in table if external fetches fail.
 
@@ -245,9 +246,9 @@ Then apply substitutions in this order:
 2. Fetch and apply `https://agent-render.com/arx-dictionary.json`
 3. Brotli-compress at quality 11
 4. Try baseBMP, base1k, base64url, and base76; choose the shortest transport representation
-5. Prepend the tag `b` (the compact tag encodes the shared arx dictionary version)
+5. Prepend the tag `b` (the compact tag does not carry a dictionary version — it implies the current shared arx dictionary and arx2 overlay)
 
-For `arx3`, use the same tuple, substitution, and brotli bytes as arx2, then choose the baseBMP wire when the visible character count is the optimization target. Prepend the tag `c` (the compact tag encodes the shared arx dictionary version). Do not invent a new dictionary entry unless it is backed by corpus evidence and improves the benchmark gate.
+For `arx3`, use the same tuple, substitution, and brotli bytes as arx2, then try the same four wire shapes, but measure the baseBMP wire by decoded visible character length (rather than conservative transport length) and pick the shortest candidate — so the dense baseBMP wire can win on Unicode-preserving surfaces. Prepend the tag `c` (the compact tag does not carry a dictionary version — it implies the current shared arx dictionary and arx2 overlay). Do not invent a new dictionary entry unless it is backed by corpus evidence and improves the benchmark gate.
 
 ## Practical limits
 
@@ -282,20 +283,20 @@ Use platform-specific link text only on surfaces that support it cleanly.
 Prefer standard Markdown links:
 
 ```md
-[Short summary](https://agent-render.com/#agent-render=...)
+[Short summary](https://agent-render.com/#<tag><payload>)
 ```
 
 Examples:
-- `[Weekly report](https://agent-render.com/#agent-render=...)`
-- `[Config diff](https://agent-render.com/#agent-render=...)`
-- `[CSV snapshot](https://agent-render.com/#agent-render=...)`
+- `[Weekly report](https://agent-render.com/#<tag><payload>)`
+- `[Config diff](https://agent-render.com/#<tag><payload>)`
+- `[CSV snapshot](https://agent-render.com/#<tag><payload>)`
 
 ### Telegram
 
 Prefer HTML links because OpenClaw Telegram outbound text uses `parse_mode: "HTML"`.
 
 ```html
-<a href="https://agent-render.com/#agent-render=...">Short summary</a>
+<a href="https://agent-render.com/#<tag><payload>">Short summary</a>
 ```
 
 ### Slack
@@ -303,7 +304,7 @@ Prefer HTML links because OpenClaw Telegram outbound text uses `parse_mode: "HTM
 Prefer Slack `mrkdwn` link syntax:
 
 ```text
-<https://agent-render.com/#agent-render=...|Short summary>
+<https://agent-render.com/#<tag><payload>|Short summary>
 ```
 
 ### All other OpenClaw chat surfaces

@@ -150,3 +150,6 @@ final-light*.png
 
 # Playwright MCP snapshots
 .playwright-mcp/
+
+# Self-hosted server runtime database (local default ./data/agent-render.db; see selfhosted/db.ts)
+/data/*.db*
