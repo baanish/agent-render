@@ -1195,6 +1195,18 @@ function assertWireByteLen(byteLen: number): void {
   }
 }
 
+/**
+ * Bounds an intermediate dict/overlay-decoded string by the brotli output budget. These strings can
+ * expand past the final payload (each control byte becomes a dictionary string), so this guards
+ * against an expansion bomb. The real decoded-payload limit is enforced on the parsed tuple, where
+ * the arx2/arx3 DEL escape collapses back to a single character.
+ */
+function assertWithinExpansionBudget(text: string): void {
+  if (text.length > MAX_BROTLI_OUTPUT_BYTES) {
+    throw new ArxDecodedPayloadTooLargeError();
+  }
+}
+
 function concatChunks(chunks: Uint8Array[], totalLength: number): Uint8Array {
   const out = new Uint8Array(totalLength);
   let offset = 0;
@@ -1394,10 +1406,16 @@ export async function arxDecompress(encoded: string): Promise<string> {
  */
 export async function arx2DecompressEnvelope(encoded: string): Promise<PayloadEnvelope> {
   const v1Decoded = dictDecode(await decompressWirePayload(encoded));
-  assertDecodedTextBudget(v1Decoded);
+  assertWithinExpansionBudget(v1Decoded);
   const tupleJson = overlayDecode(v1Decoded);
-  assertDecodedTextBudget(tupleJson);
-  return envelopeFromArxTuple(JSON.parse(tupleJson), "arx2");
+  assertWithinExpansionBudget(tupleJson);
+  // Budget the real decoded payload, not the intermediate strings: the encode path escapes literal
+  // DEL bytes to the 6-char  JSON escape, which inflates the tuple ~6x for DEL-heavy content.
+  // Re-serializing the parsed tuple collapses each escape back to one character, so a valid
+  // sub-limit payload is no longer falsely rejected as decoded-too-large.
+  const tuple = JSON.parse(tupleJson);
+  assertDecodedTextBudget(JSON.stringify(tuple));
+  return envelopeFromArxTuple(tuple, "arx2");
 }
 
 /**
@@ -1405,8 +1423,12 @@ export async function arx2DecompressEnvelope(encoded: string): Promise<PayloadEn
  */
 export async function arx3DecompressEnvelope(encoded: string): Promise<PayloadEnvelope> {
   const v1Decoded = dictDecode(await decompressWirePayload(encoded));
-  assertDecodedTextBudget(v1Decoded);
+  assertWithinExpansionBudget(v1Decoded);
   const tupleJson = overlayDecode(v1Decoded);
-  assertDecodedTextBudget(tupleJson);
-  return envelopeFromArxTuple(JSON.parse(tupleJson), "arx3");
+  assertWithinExpansionBudget(tupleJson);
+  // See arx2DecompressEnvelope: budget the parsed tuple so the DEL escape does not inflate the
+  // decoded-size check.
+  const tuple = JSON.parse(tupleJson);
+  assertDecodedTextBudget(JSON.stringify(tuple));
+  return envelopeFromArxTuple(tuple, "arx3");
 }

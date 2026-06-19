@@ -54,6 +54,18 @@ describe("arx2/arx3 preserve a literal U+007F (DEL) byte in content", () => {
       expect(decoded.envelope.artifacts[0]).toMatchObject({ content });
     }
   });
+
+  it("does not falsely reject a DEL-heavy payload as decoded-too-large", async () => {
+    // ~40k DEL bytes: each escapes to the 6-char  on encode, so the intermediate tuple is ~240k.
+    // The decoded-size budget now runs on the parsed tuple (~40k real chars), well under the 200k
+    // limit, instead of on the inflated tuple string.
+    const content = "\x7f".repeat(40000);
+    const env = markdownEnvelope(content);
+    const payloads = await arx2CompressEnvelope({ ...env, codec: "arx2" });
+    expect((await arx2DecompressEnvelope(payloads.base64url)).artifacts[0]).toMatchObject({ content });
+    const arx3Payloads = await arx3CompressEnvelope({ ...env, codec: "arx3" });
+    expect((await arx3DecompressEnvelope(arx3Payloads.base64url)).artifacts[0]).toMatchObject({ content });
+  });
 });
 
 describe("base-N decoders reject an implausible wire length instead of hanging", () => {
