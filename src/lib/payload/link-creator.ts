@@ -1,6 +1,7 @@
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { encodeEnvelope, encodeEnvelopeAsync, getVisibleFragmentLength } from "@/lib/payload/fragment";
 import {
+  codecForCompactTag,
   codecs,
   MAX_FRAGMENT_LENGTH,
   PAYLOAD_FRAGMENT_KEY,
@@ -97,18 +98,20 @@ function buildArtifact(draft: LinkCreatorDraft): ArtifactPayload {
 }
 
 function getFragmentCodec(fragmentBody: string): PayloadCodec {
-  const prefix = `${PAYLOAD_FRAGMENT_KEY}=v1.`;
-  if (!fragmentBody.startsWith(prefix)) {
-    return "plain";
+  // Legacy header: agent-render=v1.<codec>.<payload>
+  const legacyPrefix = `${PAYLOAD_FRAGMENT_KEY}=v1.`;
+  if (fragmentBody.startsWith(legacyPrefix)) {
+    const codecEnd = fragmentBody.indexOf(".", legacyPrefix.length);
+    if (codecEnd === -1) {
+      return "plain";
+    }
+
+    const codec = fragmentBody.slice(legacyPrefix.length, codecEnd);
+    return supportedCodecSet.has(codec) ? (codec as PayloadCodec) : "plain";
   }
 
-  const codecEnd = fragmentBody.indexOf(".", prefix.length);
-  if (codecEnd === -1) {
-    return "plain";
-  }
-
-  const codec = fragmentBody.slice(prefix.length, codecEnd);
-  return supportedCodecSet.has(codec) ? (codec as PayloadCodec) : "plain";
+  // Compact header: a single leading tag char encodes the codec.
+  return codecForCompactTag(fragmentBody.charAt(0)) ?? "plain";
 }
 
 /**

@@ -33,7 +33,7 @@ import {
   loadArx2OverlayDictionarySync,
 } from "@/lib/payload/arx-codec";
 import { encodeEnvelopeAsync, decodeFragmentAsync } from "@/lib/payload/fragment";
-import { codecs, MAX_DECODED_PAYLOAD_LENGTH, MAX_FRAGMENT_LENGTH, type PayloadEnvelope } from "@/lib/payload/schema";
+import { codecs, compactTagForCodec, MAX_DECODED_PAYLOAD_LENGTH, MAX_FRAGMENT_LENGTH, type PayloadEnvelope } from "@/lib/payload/schema";
 
 describe("base76 encoding", () => {
   it("round-trips empty input", () => {
@@ -329,7 +329,7 @@ describe("arx fragment round-trip", () => {
 
   it("round-trips an envelope through arx codec", async () => {
     const hash = `#${await encodeEnvelopeAsync(envelope, { codec: "arx" })}`;
-    expect(hash).toContain(`v1.arx.${getActiveDictVersion()}.`);
+    expect(hash.startsWith(`#${compactTagForCodec("arx")}`)).toBe(true);
 
     const parsed = await decodeFragmentAsync(hash);
     expect(parsed.ok).toBe(true);
@@ -374,7 +374,8 @@ describe("arx fragment round-trip", () => {
     };
 
     const autoHash = await encodeEnvelopeAsync(bigEnvelope);
-    expect(autoHash).toMatch(new RegExp(`v1\\.arx(?:2|3)?\\.${getActiveDictVersion()}\\.`));
+    const arxTags = [compactTagForCodec("arx"), compactTagForCodec("arx2"), compactTagForCodec("arx3")];
+    expect(arxTags).toContain(autoHash.charAt(0));
   });
 
   it("async arx selection can choose the chat-safe base64url wire form", async () => {
@@ -395,7 +396,7 @@ describe("arx fragment round-trip", () => {
     };
 
     const autoHash = await encodeEnvelopeAsync(bigEnvelope, { codec: "arx" });
-    expect(autoHash).toContain(`v1.arx.${getActiveDictVersion()}.B.`);
+    expect(autoHash.startsWith(`${compactTagForCodec("arx")}B.`)).toBe(true);
   });
 
 
@@ -469,7 +470,7 @@ describe("arx2 tuple envelope", () => {
       artifacts: [bundle.artifacts[0]],
     };
     const hash = `#${await encodeEnvelopeAsync(single, { codec: "arx2" })}`;
-    expect(hash).toContain(`v1.arx2.${getActiveDictVersion()}.`);
+    expect(hash.startsWith(`#${compactTagForCodec("arx2")}`)).toBe(true);
 
     const parsed = await decodeFragmentAsync(hash);
     expect(parsed.ok).toBe(true);
@@ -840,7 +841,7 @@ describe("arx3 compact tuple envelope", () => {
 
   it("round-trips bundles through arx3 fragments", async () => {
     const hash = `#${await encodeEnvelopeAsync(bundle, { codec: "arx3" })}`;
-    expect(hash).toContain(`v1.arx3.${getActiveDictVersion()}.`);
+    expect(hash.startsWith(`#${compactTagForCodec("arx3")}`)).toBe(true);
 
     const parsed = await decodeFragmentAsync(hash);
     expect(parsed.ok).toBe(true);
@@ -876,9 +877,10 @@ describe("arx3 compact tuple envelope", () => {
 
     const fragment = await encodeEnvelopeAsync(targetEnvelope, { codec: "arx3" });
     const url = `https://agent-render.com/#${fragment}`;
-    const payload = fragment.split(`v1.arx3.${getActiveDictVersion()}.`)[1] ?? "";
+    const arx3Tag = compactTagForCodec("arx3");
+    const payload = fragment.startsWith(arx3Tag) ? fragment.slice(arx3Tag.length) : "";
 
-    expect(fragment).toContain(`v1.arx3.${getActiveDictVersion()}.`);
+    expect(fragment.startsWith(arx3Tag)).toBe(true);
     expect(isBaseBMPEncoded(payload)).toBe(true);
     expect(url.length).toBeLessThan(1900);
 

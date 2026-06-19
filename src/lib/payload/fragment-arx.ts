@@ -6,7 +6,6 @@ import {
   arx3DecompressEnvelope,
   arxCompressPayloads,
   arxDecompress,
-  getActiveDictVersion,
   isExternalArx2OverlayDictionaryLoaded,
   isExternalDictionaryLoaded,
   loadArxDictionary,
@@ -14,7 +13,7 @@ import {
 } from "@/lib/payload/arx-codec";
 import { packEnvelope } from "@/lib/payload/wire-format";
 import {
-  PAYLOAD_FRAGMENT_KEY,
+  compactTagForCodec,
   type PayloadCodec,
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
@@ -122,10 +121,9 @@ export async function buildArxCandidates(
   const json = JSON.stringify(
     packed ? packEnvelope(payloadEnvelope) : payloadEnvelope,
   );
-  const dictVersion = getActiveDictVersion();
   const payloads = await arxCompressPayloads(json);
   const makeCandidate = (payload: string): CandidateFragment => {
-    const value = `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${payload}`;
+    const value = `${compactTagForCodec("arx")}${payload}`;
     return {
       value,
       codec: "arx",
@@ -151,10 +149,9 @@ export async function buildArx2Candidates(
   await ensureArx2DictionariesLoaded();
 
   const payloadEnvelope = { ...envelope, codec: "arx2" as PayloadCodec };
-  const dictVersion = getActiveDictVersion();
   const payloads = await arx2CompressEnvelope(payloadEnvelope);
   const makeCandidate = (payload: string): CandidateFragment => {
-    const value = `${PAYLOAD_FRAGMENT_KEY}=v1.arx2.${dictVersion}.${payload}`;
+    const value = `${compactTagForCodec("arx2")}${payload}`;
     return {
       value,
       codec: "arx2",
@@ -198,10 +195,9 @@ export async function buildArx3Candidates(
   await ensureArx2DictionariesLoaded();
 
   const payloadEnvelope = { ...envelope, codec: "arx3" as PayloadCodec };
-  const dictVersion = getActiveDictVersion();
   const payloads = await arx3CompressEnvelope(payloadEnvelope);
   const makeCandidate = (payload: string, preferVisibleChars = false): CandidateFragment => {
-    const value = `${PAYLOAD_FRAGMENT_KEY}=v1.arx3.${dictVersion}.${payload}`;
+    const value = `${compactTagForCodec("arx3")}${payload}`;
     return {
       value,
       codec: "arx3",

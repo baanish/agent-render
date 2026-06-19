@@ -5,6 +5,7 @@ import arxDictionaryJson from "../public/arx-dictionary.json";
 import { loadArx2OverlayDictionarySync, loadArxDictionarySync } from "@/lib/payload/arx-codec";
 import { decodeFragment, decodeFragmentAsync } from "@/lib/payload/fragment";
 import { createDraftEnvelope, createGeneratedArtifactLink, createGeneratedArtifactLinkAsync, type LinkCreatorDraft } from "@/lib/payload/link-creator";
+import { compactTagForCodec } from "@/lib/payload/schema";
 
 describe("link creator payloads", () => {
   it("builds a single-artifact envelope for pasted markdown", () => {
@@ -45,8 +46,8 @@ describe("link creator payloads", () => {
     const generatedLink = createGeneratedArtifactLink(draft, "https://agent-render.com/");
     const parsed = decodeFragment(generatedLink.hash);
 
-    expect(generatedLink.url).toContain("#agent-render=");
-    expect(generatedLink.hash).toContain(`v1.${generatedLink.codec}.`);
+    expect(generatedLink.url).toContain(`#${compactTagForCodec(generatedLink.codec)}`);
+    expect(generatedLink.hash.startsWith(`#${compactTagForCodec(generatedLink.codec)}`)).toBe(true);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) {
       return;
@@ -104,8 +105,8 @@ describe("link creator payloads", () => {
     const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
     const parsed = await decodeFragmentAsync(generatedLink.hash);
 
-    expect(generatedLink.hash).toContain("#agent-render=v1.arx2.");
-    expect(generatedLink.url).toContain("#agent-render=v1.arx2.");
+    expect(generatedLink.hash.startsWith(`#${compactTagForCodec("arx2")}`)).toBe(true);
+    expect(generatedLink.url).toContain(`#${compactTagForCodec("arx2")}`);
     expect(generatedLink.codec).toBe("arx2");
     expect(generatedLink.envelope.codec).toBe("plain");
     expect(parsed.ok).toBe(true);
@@ -129,8 +130,8 @@ describe("link creator payloads", () => {
     const parsed = await decodeFragmentAsync(generatedLink.hash);
 
     expect(generatedLink.codec).toBe("arx3");
-    expect(generatedLink.hash).toContain("#agent-render=v1.arx3.1.");
-    expect(generatedLink.url).toContain("#agent-render=v1.arx3.1.");
+    expect(generatedLink.hash.startsWith(`#${compactTagForCodec("arx3")}`)).toBe(true);
+    expect(generatedLink.url).toContain(`#${compactTagForCodec("arx3")}`);
     expect(generatedLink.fragmentLength).toBeLessThan(1900);
     expect(parsed.ok).toBe(true);
   });

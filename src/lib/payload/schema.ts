@@ -8,6 +8,35 @@ export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3"] as const
 export type ArtifactKind = (typeof artifactKinds)[number];
 export type PayloadCodec = (typeof codecs)[number];
 
+// Compact fragment header: a single URL-unreserved tag char replaces the legacy
+// `agent-render=v1.<codec>.<dictVersion>.` prefix. The tag encodes (wire version 1, codec, and
+// dictVersion); arx-family tags imply dictVersion 1. The payload stays self-describing (base64url
+// `B.` prefix, baseBMP U+FFF0 marker, base76/base1k length prefix), so the alphabet is not in the
+// header. Tags come from the RFC-3986 unreserved set so they never percent-escape, and none can
+// begin the legacy `agent-render=` literal, which keeps the two header forms unambiguous on decode.
+export const compactCodecTags = {
+  plain: "p",
+  lz: "l",
+  deflate: "d",
+  arx: "a",
+  arx2: "b",
+  arx3: "c",
+} as const satisfies Record<PayloadCodec, string>;
+
+const compactTagToCodec = new Map<string, PayloadCodec>(
+  (Object.entries(compactCodecTags) as [PayloadCodec, string][]).map(([codec, tag]) => [tag, codec]),
+);
+
+/** Returns the single-character compact header tag for a codec. */
+export function compactTagForCodec(codec: PayloadCodec): string {
+  return compactCodecTags[codec];
+}
+
+/** Resolves a compact header tag char back to its codec, or null when the tag is unknown. */
+export function codecForCompactTag(tag: string): PayloadCodec | null {
+  return compactTagToCodec.get(tag) ?? null;
+}
+
 type BaseArtifact = {
   id: string;
   kind: ArtifactKind;

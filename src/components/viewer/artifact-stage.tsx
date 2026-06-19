@@ -21,7 +21,6 @@ import { copyTextToClipboard } from "@/lib/copy-text";
 import { cn } from "@/lib/utils";
 import {
   MAX_FRAGMENT_LENGTH,
-  PAYLOAD_FRAGMENT_KEY,
   type ArtifactKind,
   type ArtifactPayload,
   type CodeArtifact,
@@ -176,7 +175,7 @@ function getDownloadFilename(artifact: ArtifactPayload): string {
 
 function getHashPreview(hash: string): string {
   if (!hash) {
-    return `#${PAYLOAD_FRAGMENT_KEY}=v1.plain.<base64url-encoded-json>`;
+    return "#d<base64url-encoded-json>";
   }
 
   if (hash.length <= 220) {

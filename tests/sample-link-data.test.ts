@@ -3,6 +3,7 @@ import { sampleLinkCards } from "@/components/home/sample-link-data";
 import { loadArx2OverlayDictionarySync, loadArxDictionarySync } from "@/lib/payload/arx-codec";
 import { sampleEnvelopes, sampleLinks } from "@/lib/payload/examples";
 import { decodeFragmentAsync } from "@/lib/payload/fragment";
+import { compactTagForCodec } from "@/lib/payload/schema";
 import arx2DictionaryJson from "../public/arx2-dictionary.json";
 import arxDictionaryJson from "../public/arx-dictionary.json";
 
@@ -41,7 +42,7 @@ describe("homepage sample link data", () => {
 
     const sample = sampleLinkCards.find((card) => card.title === "arx showcase");
 
-    expect(sample?.hash).toContain("#agent-render=v1.arx3.1.");
+    expect(sample?.hash?.startsWith(`#${compactTagForCodec("arx3")}`)).toBe(true);
     expect(sample?.fragmentLength).toBeLessThan(1900);
 
     const parsed = await decodeFragmentAsync(sample?.hash ?? "");
