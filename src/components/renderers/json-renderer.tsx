@@ -95,6 +95,12 @@ class JsonTreeBoundary extends Component<{ fallback: ReactNode; children: ReactN
     return { hasError: true };
   }
 
+  componentDidCatch(error: unknown): void {
+    // Log the swallowed throw (parity with DiffRendererBoundary) so a future JsonNode regression
+    // that slips past the depth cap leaves a trace instead of silently falling back to raw.
+    console.error("JSON tree render failed; falling back to raw source view.", error);
+  }
+
   render(): ReactNode {
     return this.state.hasError ? this.props.fallback : this.props.children;
   }

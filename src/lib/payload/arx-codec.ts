@@ -722,6 +722,11 @@ export function decodeBase76(str: string): Uint8Array {
 
   if (str[0] === BASE76_EXTENDED_LENGTH_MARKER) {
     const digitCount = CHAR_TO_INDEX[str.charCodeAt(1)];
+    if (str.length < 2 + digitCount) {
+      // Truncated extended prefix (e.g. "=B" claims one length digit but carries none): reading
+      // the missing digit would index past the string -> NaN byteLen. Treat as malformed -> empty.
+      return new Uint8Array(0);
+    }
     byteLen = 0;
     for (let i = 0; i < digitCount; i++) {
       byteLen = byteLen * ALPHABET.length + CHAR_TO_INDEX[str.charCodeAt(2 + i)];
@@ -1182,7 +1187,10 @@ function assertDecodedTextBudget(text: string): void {
  * implausible and rejected as decoded-too-large (caught upstream in decodeFragmentAsync).
  */
 function assertWireByteLen(byteLen: number): void {
-  if (byteLen > MAX_BROTLI_OUTPUT_BYTES) {
+  // Reject non-integer lengths too: a malformed prefix can yield NaN (e.g. an out-of-range
+  // charCodeAt), and `NaN > MAX_BROTLI_OUTPUT_BYTES` is false, which would otherwise slip the
+  // guard and decode to a misleading empty array instead of a rejection.
+  if (!Number.isInteger(byteLen) || byteLen > MAX_BROTLI_OUTPUT_BYTES) {
     throw new ArxDecodedPayloadTooLargeError();
   }
 }

@@ -116,6 +116,13 @@ describe("base76 encoding", () => {
     const wire = encodeBase76(input);
     expect(decodeBase76(wire)).toEqual(input);
   });
+
+  it("treats a truncated extended length prefix as empty instead of producing a NaN byteLen", () => {
+    // "=B" sets the extended marker and claims one length digit but carries none; reading the
+    // missing digit used to give byteLen=NaN (which slips `NaN > max`). Must decode to empty.
+    expect(decodeBase76("=B")).toEqual(new Uint8Array(0));
+    expect(decodeBase76("=")).toEqual(new Uint8Array(0));
+  });
 });
 
 describe("base1k encoding", () => {
