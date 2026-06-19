@@ -131,7 +131,9 @@ async function rawHttpGet(
     });
 
     socket.once("error", reject);
-    socket.on("data", (chunk) => {
+    // No encoding is set on the socket, so each `data` chunk is a Buffer. @types/node 26 widened the
+    // listener's parameter to `string | Buffer`, so narrow it explicitly to keep `chunks: Buffer[]`.
+    socket.on("data", (chunk: Buffer) => {
       chunks.push(chunk);
     });
     socket.once("end", () => {
