@@ -545,8 +545,18 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
     if (error instanceof Error && error.name === "ArxDecodedPayloadTooLargeError") {
       return { ok: false, code: "decoded-too-large", message: error.message };
     }
-    return { ok: false, code: "invalid-json", message: "The fragment payload could not be decoded as valid JSON." };
+    const arxHint =
+      codec === "arx" || codec === "arx2" || codec === "arx3"
+        ? " It may have been encoded with a different ARX dictionary version."
+        : "";
+    return { ok: false, code: "invalid-json", message: `The fragment payload could not be decoded as valid JSON.${arxHint}` };
   }
 
-  return resolveEnvelope(parsed, header.fragmentLength);
+  const resolved = resolveEnvelope(parsed, header.fragmentLength);
+  if (!resolved.ok && resolved.code === "invalid-envelope" && (codec === "arx" || codec === "arx2" || codec === "arx3")) {
+    // An ARX payload that decoded but is not a valid envelope almost always means the active
+    // dictionary differs from the one it was encoded with (see tests/arx-dictionary-pin.test.ts).
+    return { ...resolved, message: `${resolved.message} It may have been encoded with a different ARX dictionary version.` };
+  }
+  return resolved;
 }
