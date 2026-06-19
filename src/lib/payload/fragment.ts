@@ -145,8 +145,14 @@ function encodePayload(json: string, codec: PayloadCodec): string {
 function inflateDeflatePayload(bytes: Uint8Array): Uint8Array {
   try {
     return inflateSync(bytes);
-  } catch {
-    return unzlibSync(bytes);
+  } catch (rawDeflateError) {
+    // Fall back to zlib-wrapped (legacy) deflate. If that also fails the input is not valid deflate
+    // at all, so surface the original raw-inflate error rather than a misleading zlib one.
+    try {
+      return unzlibSync(bytes);
+    } catch {
+      throw rawDeflateError;
+    }
   }
 }
 

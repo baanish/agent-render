@@ -10,6 +10,9 @@ import { describe, expect, it } from "vitest";
 // the same commit. The version bump is the only thing that lets a future build distinguish (and
 // reject, rather than garble) a fragment that was encoded with an older dictionary. Do NOT just
 // re-pin the hash to make this test pass — that re-creates the silent-drift bug.
+//
+// arx3 reuses public/arx-dictionary.json (via arx3DecompressEnvelope), so pinning it also covers
+// arx3; if arx3 is ever given its own dictionary file, add a pin entry for it here.
 const PINNED: Record<string, { version: number; sha256: string }> = {
   "public/arx-dictionary.json": {
     version: 1,
