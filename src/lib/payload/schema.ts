@@ -148,9 +148,14 @@ export function isPayloadEnvelope(value: unknown): value is PayloadEnvelope {
         patch?: unknown;
         oldContent?: unknown;
         newContent?: unknown;
+        view?: unknown;
       };
 
       if (!hasString(diffArtifact.patch) && (!hasString(diffArtifact.oldContent) || !hasString(diffArtifact.newContent))) {
+        return false;
+      }
+      // Reject unknown diff view modes so only renderer-supported values reach the diff renderer.
+      if (diffArtifact.view !== undefined && diffArtifact.view !== "unified" && diffArtifact.view !== "split") {
         return false;
       }
       continue;
