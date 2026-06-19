@@ -15,9 +15,11 @@ import {
   FileJson2,
   FileSpreadsheet,
   FileText,
+  Link2,
   Printer,
 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
+import { formatMarkdownLink } from "@/lib/markdown-link";
 import { cn } from "@/lib/utils";
 import {
   MAX_FRAGMENT_LENGTH,
@@ -236,6 +238,9 @@ export function ArtifactStage({
   const [artifactCopyState, setArtifactCopyState] = useState<
     "idle" | "copied" | "failed"
   >("idle");
+  const [markdownLinkCopyState, setMarkdownLinkCopyState] = useState<
+    "idle" | "copied" | "failed"
+  >("idle");
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
   const activeArtifactRef = useRef<ArtifactPayload | null>(activeArtifact);
   const activeArtifactBody = useMemo(() => getArtifactBody(activeArtifact), [activeArtifact]);
@@ -251,6 +256,7 @@ export function ArtifactStage({
   );
   const activeArtifactBodyRef = useRef(activeArtifactBody);
   const artifactCopyTokenRef = useRef(0);
+  const markdownLinkCopyTokenRef = useRef(0);
   const markdownArtifact: MarkdownArtifact | null =
     activeArtifact.kind === "markdown" ? activeArtifact : null;
   const codeArtifact: CodeArtifact | null =
@@ -272,6 +278,7 @@ export function ArtifactStage({
 
   useEffect(() => {
     setArtifactCopyState("idle");
+    setMarkdownLinkCopyState("idle");
     setViewMode("rendered");
   }, [activeArtifact.id]);
 
@@ -288,6 +295,23 @@ export function ArtifactStage({
       window.clearTimeout(timer);
     };
   }, [artifactCopyState]);
+
+  useEffect(() => {
+    if (
+      markdownLinkCopyState !== "copied" &&
+      markdownLinkCopyState !== "failed"
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setMarkdownLinkCopyState("idle");
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [markdownLinkCopyState]);
 
   const handleArtifactCopy = useCallback(async () => {
     const artifact = activeArtifactRef.current;
@@ -316,6 +340,38 @@ export function ArtifactStage({
         return;
       }
       setArtifactCopyState("failed");
+    }
+  }, []);
+
+  const handleCopyMarkdownLink = useCallback(async () => {
+    const artifact = activeArtifactRef.current;
+    if (!artifact) {
+      return;
+    }
+
+    const requestArtifactId = artifact.id;
+    const requestToken = ++markdownLinkCopyTokenRef.current;
+    const label = getArtifactHeading(artifact);
+    const href = window.location.href;
+    const markdownLink = formatMarkdownLink(label, href);
+
+    try {
+      await copyTextToClipboard(markdownLink);
+      if (
+        activeArtifactRef.current?.id !== requestArtifactId ||
+        markdownLinkCopyTokenRef.current !== requestToken
+      ) {
+        return;
+      }
+      setMarkdownLinkCopyState("copied");
+    } catch {
+      if (
+        activeArtifactRef.current?.id !== requestArtifactId ||
+        markdownLinkCopyTokenRef.current !== requestToken
+      ) {
+        return;
+      }
+      setMarkdownLinkCopyState("failed");
     }
   }, []);
 
@@ -402,6 +458,25 @@ export function ArtifactStage({
               : artifactCopyState === "failed"
                 ? "Copy failed"
                 : "Copy"}
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "artifact-action",
+              markdownLinkCopyState === "copied" && "is-primary",
+            )}
+            onClick={handleCopyMarkdownLink}
+          >
+            {markdownLinkCopyState === "copied" ? (
+              <Check className="h-3.5 w-3.5" />
+            ) : (
+              <Link2 className="h-3.5 w-3.5" />
+            )}
+            {markdownLinkCopyState === "copied"
+              ? "Copied"
+              : markdownLinkCopyState === "failed"
+                ? "Copy failed"
+                : "Markdown link"}
           </button>
           {markdownArtifact && viewMode === "rendered" ? (
             <button
