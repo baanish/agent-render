@@ -55,7 +55,7 @@
     "@codemirror/language": "^6.12.3",
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.38.2",
-    "@git-diff-view/react": "^0.1.1",
+    "@git-diff-view/react": "^0.1.5",
     "@replit/codemirror-indentation-markers": "^6.5.3",
     "brotli-wasm": "^3.0.1",
     "fflate": "^0.8.2",
@@ -71,13 +71,13 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4.0.6",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^22.13.10",
+    "@types/node": "^22.19.21",
     "@types/papaparse": "^5.3.16",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
@@ -87,7 +87,7 @@
     "tailwindcss": "^4.0.6",
     "tsx": "^4.21.0",
     "typescript": "^5.8.2",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.9"
   },
   "optionalDependencies": {
     "better-sqlite3": "^12.8.0"
