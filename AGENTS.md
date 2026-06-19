@@ -23,7 +23,7 @@ Core product traits right now:
 Treat these as core constraints unless the owner explicitly changes the product direction.
 
 - The app is a single exported client-side shell, not a backend product.
-- Artifact payloads live in the URL fragment, using `#agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`, `#agent-render=v1.arx.<dictVersion>.<payload>` for `arx`, and `#agent-render=v1.arx2.<dictVersion>.<payload>` for `arx2`.
+- Artifact payloads live in the URL fragment, using the compact `#<tag><payload>` form where the single tag char identifies the codec: `p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2. Legacy `#agent-render=v1.<codec>.<dictVersion>.<payload>` links still decode but are no longer emitted.
 - The deployed host should not receive artifact contents as part of the initial page request.
 - Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.
 - Supported codecs are `plain`, `lz`, `deflate`, `arx`, and `arx2`.
@@ -83,8 +83,9 @@ Rules:
 The fragment transport is part of the product surface, not an implementation detail.
 
 Current rules:
-- fragment key: `agent-render`
-- format: `v1.<codec>.<payload>` for `plain|lz|deflate`, `v1.arx.<dictVersion>.<payload>` for `arx`, and `v1.arx2.<dictVersion>.<payload>` for `arx2`
+- fragment key: `agent-render` (legacy decode path only; the compact form has no key)
+- emitted format: compact `#<tag><payload>`, where the single tag char identifies the codec (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2); the tag also encodes the active dictionary version for `arx`/`arx2`
+- legacy format (still decodable, no longer emitted): `agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`, `agent-render=v1.arx.<dictVersion>.<payload>` for `arx`, and `agent-render=v1.arx2.<dictVersion>.<payload>` for `arx2`
 - codecs: `plain`, `lz`, `deflate`, `arx`, and `arx2`
 - fragment size budget: `8192` characters
 - decoded payload budget: `200000` characters

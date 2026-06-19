@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decodeFragment, decodeFragmentAsync, encodeEnvelope, encodeEnvelopeAsync } from "@/lib/payload/fragment";
-import type { PayloadEnvelope } from "@/lib/payload/schema";
+import { compactTagForCodec, type PayloadEnvelope } from "@/lib/payload/schema";
 import { packEnvelope } from "@/lib/payload/wire-format";
 import { arxCompressBMP, getActiveDictVersion } from "@/lib/payload/arx-codec";
 
@@ -52,7 +52,8 @@ describe("fragment payload transport", () => {
     );
   });
 
-  it("rejects fragments with the wrong key", () => {
+  it("rejects fragments that are neither a legacy key nor a known compact tag", () => {
+    // Not `agent-render=...`, so it is read as a compact fragment; "n" is not a codec tag.
     const parsed = decodeFragment("#not-agent-render=v1.plain.abc");
 
     expect(parsed.ok).toBe(false);
@@ -60,7 +61,7 @@ describe("fragment payload transport", () => {
       return;
     }
 
-    expect(parsed.code).toBe("missing-key");
+    expect(parsed.code).toBe("invalid-format");
   });
 
   it("rejects invalid json payloads", () => {
@@ -89,7 +90,7 @@ describe("fragment payload transport", () => {
 
     const hash = encodeEnvelope(repetitiveEnvelope);
 
-    expect(hash.startsWith("agent-render=v1.plain.")).toBe(false);
+    expect(hash.startsWith(compactTagForCodec("plain"))).toBe(false);
     const parsed = decodeFragment(`#${hash}`);
     expect(parsed.ok).toBe(true);
   });
@@ -100,7 +101,7 @@ describe("fragment payload transport", () => {
     });
     const parsed = decodeFragment(`#${hash}`);
 
-    expect(hash.startsWith("agent-render=v1.plain.")).toBe(true);
+    expect(hash.startsWith(compactTagForCodec("plain"))).toBe(true);
     expect(parsed.ok).toBe(true);
   });
 
@@ -110,7 +111,7 @@ describe("fragment payload transport", () => {
     });
     const parsed = decodeFragment(`#${hash}`);
 
-    expect(hash.startsWith("agent-render=v1.plain.")).toBe(true);
+    expect(hash.startsWith(compactTagForCodec("plain"))).toBe(true);
     expect(parsed.ok).toBe(true);
   });
 

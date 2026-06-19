@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import {
   MAX_FRAGMENT_LENGTH,
-  PAYLOAD_FRAGMENT_KEY,
   artifactKinds,
   type ArtifactPayload,
   type ParsedPayload,
@@ -157,7 +156,7 @@ function getArtifactById(envelope: PayloadEnvelope, artifactId: string | null): 
 
 function getHashPreview(hash: string): string {
   if (!hash) {
-    return `#${PAYLOAD_FRAGMENT_KEY}=v1.plain.<base64url-encoded-json>`;
+    return "#d<base64url-encoded-json>";
   }
 
   if (hash.length <= 220) {
@@ -467,7 +466,7 @@ export function ViewerShell() {
               <div className="bento-card bento-wide px-5 py-6 sm:px-8 sm:py-8">
                 <p className="section-kicker">Protocol shape</p>
                 <p className="font-mono mt-4 text-base leading-8 text-[color:var(--text-muted)] sm:text-lg">
-                  #{PAYLOAD_FRAGMENT_KEY}=v1.&lt;codec&gt;.&lt;payload&gt;
+                  #&lt;codec-tag&gt;&lt;payload&gt;
                 </p>
                 <a
                   href={urlExplainerPath}

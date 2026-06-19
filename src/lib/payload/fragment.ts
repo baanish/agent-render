@@ -4,6 +4,8 @@ import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
 import {
   codecs,
+  codecForCompactTag,
+  compactTagForCodec,
   MAX_DECODED_PAYLOAD_LENGTH,
   MAX_FRAGMENT_LENGTH,
   PAYLOAD_FRAGMENT_KEY,
@@ -152,7 +154,7 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
 function buildFragment(envelope: PayloadEnvelope, codec: PayloadCodec, packed: boolean): CandidateFragment {
   const payloadEnvelope = { ...envelope, codec };
   const json = JSON.stringify(packed ? packEnvelope(payloadEnvelope) : payloadEnvelope);
-  const value = `${PAYLOAD_FRAGMENT_KEY}=v1.${codec}.${encodePayload(json, codec)}`;
+  const value = `${compactTagForCodec(codec)}${encodePayload(json, codec)}`;
   // Non-ARX codecs produce ASCII-only output, so transport length equals string length.
   return { value, codec, packed, transportLength: value.length };
 }
@@ -289,8 +291,8 @@ function selectCandidate(candidates: CandidateFragment[], budget?: number): Cand
 }
 
 /**
- * Encodes a payload envelope into the fragment body expected after `#`, for example
- * `agent-render=v1.deflate.<payload>`.
+ * Encodes a payload envelope into the fragment body expected after `#`. The body uses the compact
+ * header — a single codec tag char followed by the payload (e.g. `d<payload>` for deflate).
  *
  * The sync encoder supports `plain`, `lz`, and `deflate` codecs. If options explicitly
  * require an arx-family codec, this function throws because ARX compression is async-only.
@@ -307,9 +309,9 @@ export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions
 /**
  * Async variant of {@link encodeEnvelope} that also supports ARX candidates.
  *
- * Returns the fragment body string expected after `#`, for example
- * `agent-render=v1.arx.<dictVersion>.<payload>` for ARX codecs, or
- * `agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`.
+ * Returns the compact fragment body expected after `#`: a single codec tag char followed by the
+ * payload (e.g. `c<payload>` for arx3). The legacy `agent-render=v1.<codec>.<payload>` form is still
+ * accepted on decode for back-compat.
  *
  * Like the sync version, candidate encodings are generated across enabled codecs and packed
  * transport variants, then the smallest transport representation is selected (or the smallest
@@ -343,11 +345,30 @@ function parseFragmentHeader(hash: string, options?: DecodeOptions): ParsedFragm
     return { ok: false, errorResponse: { ok: false, code: "too-large", message: `This payload exceeds the supported fragment budget of ${MAX_FRAGMENT_LENGTH.toLocaleString()} characters.` } };
   }
 
-  const separatorIndex = fragment.indexOf("=");
-  const key = separatorIndex === -1 ? fragment : fragment.slice(0, separatorIndex);
-  const value = separatorIndex === -1 ? "" : fragment.slice(separatorIndex + 1);
+  // Legacy header: `agent-render=v1.<codec>.<payload>` (arx adds a `<dictVersion>.` segment).
+  if (fragment.startsWith(`${PAYLOAD_FRAGMENT_KEY}=`)) {
+    return parseLegacyFragmentHeader(fragment, fragmentLength);
+  }
 
-  if (key !== PAYLOAD_FRAGMENT_KEY || !value) {
+  // Compact header: a single tag char encodes (version, codec, dictVersion); the payload follows.
+  // The two forms stay unambiguous for a positional reason, not an alphabet one. A payload byte can
+  // be `=` (base76 uses it as its extended-length marker), so the wire alphabets do not exclude `=`.
+  // But the compact tag occupies fragment[0], so any payload `=` can only land at fragment[1] or
+  // later — never at the offset where the legacy `agent-render=` literal places its `=`. A fragment
+  // that begins with that literal is caught by the legacy branch above; reaching here means it did
+  // not, so the leading char is a codec tag.
+  const codec = codecForCompactTag(fragment.charAt(0));
+  if (!codec || fragment.length < 2) {
+    return { ok: false, errorResponse: { ok: false, code: "invalid-format", message: `The fragment format is invalid. Expected #${PAYLOAD_FRAGMENT_KEY}=... or a codec tag followed by a payload.` } };
+  }
+
+  return { ok: true, fragment, version: "v1", codec, encoded: fragment.slice(1), fragmentLength };
+}
+
+function parseLegacyFragmentHeader(fragment: string, fragmentLength: number): ParsedFragmentHeader {
+  const value = fragment.slice(fragment.indexOf("=") + 1);
+
+  if (!value) {
     return { ok: false, errorResponse: { ok: false, code: "missing-key", message: `Expected a fragment starting with #${PAYLOAD_FRAGMENT_KEY}=...` } };
   }
 
@@ -376,8 +397,8 @@ function parseFragmentHeader(hash: string, options?: DecodeOptions): ParsedFragm
 /**
  * Decodes a fragment string (with or without leading `#`) into a parsed payload result.
  *
- * Expected fragment format is `#agent-render=v1.<codec>.<payload>`. Validation first enforces
- * fragment-key and shape checks and the global visible fragment size budget. On failure, returns a
+ * Accepts the compact `#<codec-tag><payload>` form or the legacy `#agent-render=v1.<codec>.<payload>`
+ * form. Validation first enforces header and shape checks and the global visible fragment size budget. On failure, returns a
  * structured `ParsedPayload` error (`empty`, `missing-key`, `invalid-format`, `too-large`,
  * `invalid-json`, `decoded-too-large`, or `invalid-envelope`) instead of throwing.
  *
@@ -458,9 +479,9 @@ function resolveEnvelope(parsed: unknown, rawLength: number): ParsedPayload {
 /**
  * Async fragment decoder that supports all codecs, including the ARX family.
  *
- * Accepted input follows `#agent-render=v1...` where non-ARX payloads use
- * `v1.<codec>.<payload>`, and ARX codecs support versioned dictionary payloads (plus legacy arx
- * fallback forms). This decoder applies the same header and visible fragment-size checks as the
+ * Accepts the compact `#<codec-tag><payload>` form or the legacy `#agent-render=v1...` form; in the
+ * legacy form ARX codecs additionally carry a versioned dictionary segment. This decoder applies the
+ * same header and visible fragment-size checks as the
  * sync path, then enforces decoded payload size limits before JSON parsing and envelope validation.
  *
  * Pass `{ skipFragmentBudget: true }` to bypass the visible fragment size check,

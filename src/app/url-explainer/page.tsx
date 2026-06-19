@@ -44,7 +44,7 @@ export default function UrlExplainerPage() {
             Why does this URL look weird?
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-8 text-[color:var(--text-muted)] sm:mt-7 sm:text-lg">
-            The long part after <span className="font-mono">#agent-render=</span> is the artifact itself, compressed into the URL fragment so a static host can show it without receiving the content in the page request.
+            The long part after the <span className="font-mono">#</span> (which starts with a one-character codec tag) is the artifact itself, compressed into the URL fragment so a static host can show it without receiving the content in the page request.
           </p>
         </section>
 
@@ -52,7 +52,7 @@ export default function UrlExplainerPage() {
           <div className="bento-card bento-wide px-5 py-6 sm:px-8 sm:py-8">
             <p className="section-kicker">The shape</p>
             <p className="font-mono mt-4 break-all text-sm leading-7 text-[color:var(--text-muted)] sm:text-base">
-              https://agent-render.com/#agent-render=v1.arx.1.&lt;compressed-payload&gt;
+              https://agent-render.com/#a&lt;compressed-payload&gt;
             </p>
             <p className="mt-4 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
               Everything before <span className="font-mono">#</span> loads the app. Everything after <span className="font-mono">#</span> stays in the browser and tells the app what to render.

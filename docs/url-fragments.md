@@ -3,32 +3,36 @@
 agent-render links carry the artifact in the URL fragment:
 
 ```text
-https://agent-render.com/#agent-render=v1.arx3.1.<compressed-payload>
+https://agent-render.com/#c<compressed-payload>
 ```
 
 Everything before `#` loads the static app. Everything after `#` is the artifact payload the browser decodes locally.
 
 ## What the parts mean
 
-- `agent-render` tells the app this hash belongs to agent-render.
-- `v1` is the payload format version.
-- `arx3` is the compression codec.
-- `1` is the arx dictionary version.
+- The first character after `#` is a single codec tag. Here `c` means the `arx3` codec (and its active dictionary version).
 - `<compressed-payload>` is the encoded artifact bundle.
 
-Other links may use a shorter shape:
+The tag char identifies the codec:
+
+```text
+#p<payload>   (plain)
+#l<payload>   (lz)
+#d<payload>   (deflate)
+#a<payload>   (arx)
+#b<payload>   (arx2)
+#c<payload>   (arx3)
+```
+
+For `arx`, `arx2`, and `arx3`, the tag also encodes the active dictionary version.
+
+Older links may use the legacy shape, which the viewer still decodes:
 
 ```text
 #agent-render=v1.<codec>.<payload>
 ```
 
-where `<codec>` is `plain`, `lz`, or `deflate`. ARX-family links include the dictionary version:
-
-```text
-#agent-render=v1.arx.<dictVersion>.<payload>
-#agent-render=v1.arx2.<dictVersion>.<payload>
-#agent-render=v1.arx3.<dictVersion>.<payload>
-```
+where `<codec>` is `plain`, `lz`, or `deflate`, and the ARX-family legacy links include the dictionary version (`#agent-render=v1.arx.<dictVersion>.<payload>`, `arx2`, `arx3`). These legacy links are no longer emitted.
 
 ## Why arx exists
 

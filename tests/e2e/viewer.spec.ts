@@ -63,12 +63,15 @@ test("creates, copies, and previews a generated homepage link", async ({ page })
   await page.getByRole("button", { name: "Generate link" }).click();
 
   const generatedLink = page.getByLabel("Generated agent-render link");
-  await expect(generatedLink).toHaveValue(/#agent-render=/);
+  // Compact header: the fragment is `#<1-char codec tag>…`, never the legacy `#agent-render=…`.
+  await expect(generatedLink).not.toHaveValue(/#agent-render=/);
+  await expect(generatedLink).toHaveValue(/\/#\w/);
   await expect(page.getByText(/chars$/).first()).toBeVisible();
+  const linkValue = await generatedLink.inputValue();
 
   await page.getByRole("button", { name: "Copy link" }).click();
   await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("copied-link"))).toContain("#agent-render=");
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("copied-link"))).toBe(linkValue);
 
   await page.getByRole("button", { name: "Preview here" }).click();
   await waitForViewerState(page, "artifact");

@@ -2,10 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import arx2DictionaryJson from "../public/arx2-dictionary.json";
 import arxDictionaryJson from "../public/arx-dictionary.json";
-import { getActiveDictVersion, isBaseBMPEncoded, loadArx2OverlayDictionarySync, loadArxDictionarySync } from "@/lib/payload/arx-codec";
+import { isBaseBMPEncoded, loadArx2OverlayDictionarySync, loadArxDictionarySync } from "@/lib/payload/arx-codec";
 import { buildArx2Candidates, buildArx3Candidates } from "@/lib/payload/fragment-arx";
 import { encodeEnvelopeAsync } from "@/lib/payload/fragment";
-import { PAYLOAD_FRAGMENT_KEY, type PayloadEnvelope } from "@/lib/payload/schema";
+import { compactTagForCodec, type PayloadEnvelope } from "@/lib/payload/schema";
 
 // Mirror of fragment.ts `computeTransportLength` so the candidate pool here is measured with the
 // exact metric production auto-selection uses. The arx3 baseBMP candidate intentionally opts out of
@@ -39,7 +39,8 @@ function computeTransportLength(value: string): number {
 }
 
 function getArx3PayloadBody(value: string): string {
-  return value.split(`${PAYLOAD_FRAGMENT_KEY}=v1.arx3.${getActiveDictVersion()}.`)[1] ?? "";
+  const tag = compactTagForCodec("arx3");
+  return value.startsWith(tag) ? value.slice(tag.length) : "";
 }
 
 describe("arx3-vs-arx2 selection policy", () => {
@@ -83,15 +84,16 @@ describe("arx3-vs-arx2 selection policy", () => {
 
     // The arx2 baseBMP payload is byte-identical work measured with percent-escaped transport length,
     // so its budget is far larger than the arx3 baseBMP visible-length budget that wins.
+    const arx2Tag = compactTagForCodec("arx2");
     const arx2BaseBMP = arx2Candidates.find((candidate) =>
-      isBaseBMPEncoded(candidate.value.split(`${PAYLOAD_FRAGMENT_KEY}=v1.arx2.${getActiveDictVersion()}.`)[1] ?? ""),
+      isBaseBMPEncoded(candidate.value.startsWith(arx2Tag) ? candidate.value.slice(arx2Tag.length) : ""),
     );
     expect(arx2BaseBMP).toBeDefined();
     expect(arx2BaseBMP!.transportLength).toBeGreaterThan(chosen.transportLength);
 
     // End-to-end: the public auto encoder commits to the same arx3 baseBMP wire.
     const fragment = await encodeEnvelopeAsync(reportEnvelope);
-    expect(fragment).toContain(`v1.arx3.${getActiveDictVersion()}.`);
+    expect(fragment.startsWith(compactTagForCodec("arx3"))).toBe(true);
     expect(isBaseBMPEncoded(getArx3PayloadBody(fragment))).toBe(true);
   });
 });
