@@ -8,9 +8,12 @@ const BASELINE_PATH = "scripts/bench-baseline.json";
 const WRITE_BASELINE = process.argv.includes("--write-baseline");
 const MAX_BASELINE_REGRESSION = 0.005;
 const MIN_ARX2_TOTAL_WIN = 0.005;
+const MIN_ARX3_VISIBLE_TOTAL_WIN = 0.35;
+const BMP_BASE_SIZE = 62_000;
 
 const v1Dictionary = JSON.parse(readFileSync("public/arx-dictionary.json", "utf8"));
 const overlayDictionary = JSON.parse(readFileSync("public/arx2-dictionary.json", "utf8"));
+const codeBenchReportFixture = readFileSync("tests/fixtures/baanish-code-bench-report.md", "utf8");
 
 const singleByteCodes = [
   0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x0b, 0x0e, 0x0f, 0x10,
@@ -30,16 +33,21 @@ function buildPairs(dict, singleCodes = singleByteCodes, extendedPrefix = "\x00"
 }
 
 const v1Pairs = buildPairs(v1Dictionary);
-const overlayPairs = [
-  ...buildPairs({ singleByteSlots: overlayDictionary.singleByteSlots, extendedSlots: [] }, [0x1e, 0x7f]),
-  ...overlayDictionary.extendedSlots.map((slot, index) => [slot, "\x1f" + String.fromCharCode(0x20 + index)]),
-];
+const overlayPairs = buildPairs(
+  overlayDictionary,
+  [0x1e, 0x7f],
+  "\x1f",
+  0x20,
+);
 
-function buildTrie(pairs) {
+function buildTrie(pairs, reversed = false) {
   const root = { children: new Map() };
   for (const [from, to] of pairs) {
+    const match = reversed ? to : from;
+    const replacement = reversed ? from : to;
+
     let node = root;
-    for (const char of from) {
+    for (const char of match) {
       let child = node.children.get(char);
       if (!child) {
         child = { children: new Map() };
@@ -47,7 +55,7 @@ function buildTrie(pairs) {
       }
       node = child;
     }
-    node.replacement ??= to;
+    node.replacement ??= replacement;
   }
   return root;
 }
@@ -81,9 +89,9 @@ function applyTrie(text, trie) {
 }
 
 const v1EncodeTrie = buildTrie(v1Pairs);
-const v1DecodeTrie = buildTrie(v1Pairs.map(([from, to]) => [to, from]));
+const v1DecodeTrie = buildTrie(v1Pairs, true);
 const overlayEncodeTrie = buildTrie(overlayPairs);
-const overlayDecodeTrie = buildTrie(overlayPairs.map(([from, to]) => [to, from]));
+const overlayDecodeTrie = buildTrie(overlayPairs, true);
 
 function brotli(input) {
   return brotliCompressSync(Buffer.from(input, "utf8"), {
@@ -94,7 +102,11 @@ function brotli(input) {
 function trimOptional(fields) {
   let end = fields.length;
   while (end > 0 && fields[end - 1] === undefined) end--;
-  return fields.slice(0, end).map((field) => field === undefined ? null : field);
+  const trimmed = new Array(end);
+  for (let index = 0; index < end; index++) {
+    trimmed[index] = fields[index] === undefined ? null : fields[index];
+  }
+  return trimmed;
 }
 
 function artifactTuple(artifact) {
@@ -125,13 +137,22 @@ function artifactTuple(artifact) {
 }
 
 function tupleEnvelope(envelope) {
-  const artifacts = envelope.artifacts.map(artifactTuple);
+  const artifacts = new Array(envelope.artifacts.length);
+  const activeArtifactId = envelope.activeArtifactId;
+  let activeIndex = -1;
+
+  for (let index = 0; index < envelope.artifacts.length; index++) {
+    const artifact = envelope.artifacts[index];
+    artifacts[index] = artifactTuple(artifact);
+
+    if (artifact.id === activeArtifactId) {
+      activeIndex = index;
+    }
+  }
+
   if (artifacts.length === 1) {
     return trimOptional([3, artifacts[0], envelope.title]);
   }
-  const activeIndex = envelope.activeArtifactId
-    ? envelope.artifacts.findIndex((artifact) => artifact.id === envelope.activeArtifactId)
-    : -1;
   return trimOptional([2, artifacts, envelope.title, activeIndex > 0 ? activeIndex : undefined]);
 }
 
@@ -145,6 +166,11 @@ function encodeArx2(envelope) {
   return applyTrie(applyTrie(tupleJson, overlayEncodeTrie), v1EncodeTrie);
 }
 
+function encodeArx3(envelope) {
+  const tupleJson = JSON.stringify(tupleEnvelope({ ...envelope, codec: "arx3" }));
+  return applyTrie(applyTrie(tupleJson, overlayEncodeTrie), v1EncodeTrie);
+}
+
 function decodeArx(buf) {
   const substituted = brotliDecompressSync(buf).toString("utf8");
   return JSON.parse(applyTrie(substituted, v1DecodeTrie));
@@ -153,6 +179,25 @@ function decodeArx(buf) {
 function decodeArx2(buf) {
   const substituted = brotliDecompressSync(buf).toString("utf8");
   return JSON.parse(applyTrie(applyTrie(substituted, v1DecodeTrie), overlayDecodeTrie));
+}
+
+function decodeArx3(buf) {
+  const substituted = brotliDecompressSync(buf).toString("utf8");
+  return JSON.parse(applyTrie(applyTrie(substituted, v1DecodeTrie), overlayDecodeTrie));
+}
+
+function base64urlPayloadChars(byteLength) {
+  return 2 + Math.ceil(byteLength * 4 / 3);
+}
+
+function baseBmpPayloadChars(byteLength) {
+  return 3 + Math.ceil((byteLength * 8) / Math.log2(BMP_BASE_SIZE));
+}
+
+function visibleFragmentChars(codec, byteLength) {
+  const headerLength = `agent-render=v1.${codec}.1.`.length;
+  const payloadLength = codec === "arx3" ? baseBmpPayloadChars(byteLength) : base64urlPayloadChars(byteLength);
+  return headerLength + payloadLength;
 }
 
 function median(values) {
@@ -190,6 +235,170 @@ function textEnvelope(kind, title, content, extra = {}) {
   };
 }
 
+function repeatedFixture(block, targetLength, segmentSuffix = (index) => `\nfixture segment ${index}\n`) {
+  let fixture = "";
+  let index = 0;
+  while (fixture.length < targetLength) {
+    fixture += `${block}${segmentSuffix(index)}`;
+    index++;
+  }
+  return Array.from(fixture).slice(0, targetLength).join("");
+}
+
+const markdownAgentsFixture = repeatedFixture(
+  [
+    "# AGENTS.md excerpt",
+    "",
+    "`agent-render` is a static artifact viewer for AI-generated outputs.",
+    "Keep markdown, code, diffs, CSV, and JSON readable across chat surfaces.",
+    "",
+    "## Product contract",
+    "",
+    "- Fragment payloads use `#agent-render=v1.<codec>.<payload>`.",
+    "- Artifact contents stay out of the host request path.",
+    "- Supported codecs are `plain`, `lz`, `deflate`, `arx`, `arx2`, and `arx3`.",
+    "- Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.",
+    "",
+    "Preserve the static shell, the zero-retention wording, and the renderer-first layout.",
+    "",
+  ].join("\n"),
+  8000,
+  (index) => `\nFixture note ${index}: fragment transport, renderer readiness, and artifact metadata stay aligned.\n\n`,
+);
+
+const codeFragmentFixture = repeatedFixture(
+  [
+    "export async function decodeFragmentAsync(hash: string, options?: DecodeOptions) {",
+    "  const parsed = parseFragmentPrefix(hash);",
+    "  if (!parsed.ok) return parsed;",
+    "  if (parsed.codec === \"arx\" || parsed.codec === \"arx2\") {",
+    "    const { decodeArxFragmentAsync } = await import(\"./fragment-arx\");",
+    "    return decodeArxFragmentAsync(parsed, options);",
+    "  }",
+    "  return decodePlainFragment(parsed.payload, options);",
+    "}",
+    "",
+    "export async function encodeEnvelopeAsync(envelope: PayloadEnvelope, options: EncodeOptions = {}) {",
+    "  const codec = options.codec ?? envelope.codec ?? \"deflate\";",
+    "  if (codec === \"arx\" || codec === \"arx2\") {",
+    "    const { encodeArxEnvelopeAsync } = await import(\"./fragment-arx\");",
+    "    return encodeArxEnvelopeAsync(envelope, codec);",
+    "  }",
+    "  return encodeEnvelope(envelope, { codec });",
+    "}",
+    "",
+  ].join("\n"),
+  8000,
+  (index) => `\n// fixture segment ${index}: codec branch coverage and bundle shape stay stable.\n`,
+);
+
+const packageManifestFixture = JSON.stringify(
+  {
+    name: "agent-render",
+    version: "0.1.0",
+    private: true,
+    scripts: {
+      build: "next build",
+      preview: "node scripts/serve-export.mjs",
+      check: "npm run lint && npm run test && npm run bench:codecs && npm run typecheck && npm run build",
+    },
+    dependencies: {
+      "@codemirror/view": "^6.38.2",
+      "@git-diff-view/react": "^0.1.1",
+      "brotli-wasm": "^3.0.1",
+      "fflate": "^0.8.2",
+      "lucide-react": "^0.577.0",
+      "next": "15.1.11",
+      "react": "19.1.0",
+      "react-dom": "19.1.0",
+      "react-markdown": "^10.1.0",
+    },
+    devDependencies: {
+      "@playwright/test": "^1.58.2",
+      "typescript": "^5.8.2",
+      "vitest": "^4.0.18",
+    },
+  },
+  null,
+  2,
+);
+
+const readmeFixture = repeatedFixture(
+  [
+    "# agent-render",
+    "",
+    "A static, open artifact viewer for AI outputs.",
+    "",
+    "Paste content into the browser-side link creator, choose a renderer, and share the resulting fragment URL.",
+    "The static host serves the shell; the browser decodes the artifact from the fragment.",
+    "",
+    "## Supported artifacts",
+    "",
+    "- Markdown with sanitized GFM and Mermaid fences.",
+    "- Code with a read-only CodeMirror surface.",
+    "- Review-style git patches with unified and split modes.",
+    "- CSV tables and JSON trees.",
+    "",
+  ].join("\n"),
+  9000,
+  (index) => `\nFixture section ${index}: static export links should remain inspectable across chat clients.\n\n`,
+);
+
+const arxCodecFixture = repeatedFixture(
+  [
+    "const singleByteCodes = [0x01, 0x02, 0x03, 0x04, 0x05];",
+    "function buildPairs(dictionary, prefix = \"\\\\x00\") {",
+    "  return dictionary.extendedSlots.map((slot, index) => [slot, prefix + String.fromCharCode(index + 1)]);",
+    "}",
+    "function applyTrie(text, trie) {",
+    "  const out = [];",
+    "  let index = 0;",
+    "  while (index < text.length) {",
+    "    let node = trie;",
+    "    let cursor = index;",
+    "    let replacement;",
+    "    while (cursor < text.length) {",
+    "      node = node.children.get(text[cursor]);",
+    "      if (!node) break;",
+    "      cursor++;",
+    "      if (node.replacement !== undefined) replacement = node.replacement;",
+    "    }",
+    "    out.push(replacement ?? text[index]);",
+    "    index++;",
+    "  }",
+    "  return out.join(\"\");",
+    "}",
+    "",
+  ].join("\n"),
+  12000,
+  (index) => `\n// fixture segment ${index}: trie substitutions and tuple overlays remain comparable.\n`,
+);
+
+const tsconfigFixture = JSON.stringify(
+  {
+    compilerOptions: {
+      target: "ES2022",
+      lib: ["dom", "dom.iterable", "esnext"],
+      allowJs: false,
+      skipLibCheck: true,
+      strict: true,
+      noEmit: true,
+      module: "esnext",
+      moduleResolution: "bundler",
+      resolveJsonModule: true,
+      isolatedModules: true,
+      jsx: "preserve",
+      paths: {
+        "@/*": ["./src/*"],
+      },
+    },
+    include: ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+    exclude: ["node_modules"],
+  },
+  null,
+  2,
+);
+
 const patch = [
   "diff --git a/src/a.ts b/src/a.ts",
   "--- a/src/a.ts",
@@ -200,23 +409,31 @@ const patch = [
   "",
 ].join("\n").repeat(12);
 
-const csv = [
-  "name,value,notes",
-  ...Array.from({ length: 180 }, (_, index) => `row-${index},${index},"export const value ${index}"`),
-].join("\n");
+const csvRows = ["name,value,notes"];
+for (let index = 0; index < 180; index++) {
+  csvRows.push(`row-${index},${index},"export const value ${index}"`);
+}
+const csv = csvRows.join("\n");
 
 const corpus = [
   {
     name: "markdown-agents",
     kind: "markdown",
-    envelope: textEnvelope("markdown", "AGENTS.md excerpt", readFileSync("AGENTS.md", "utf8").slice(0, 8000), {
+    envelope: textEnvelope("markdown", "AGENTS.md excerpt", markdownAgentsFixture, {
       filename: "AGENTS.md",
+    }),
+  },
+  {
+    name: "code-bench-report",
+    kind: "markdown",
+    envelope: textEnvelope("markdown", "Baanish Code Bench", codeBenchReportFixture, {
+      filename: "results.md",
     }),
   },
   {
     name: "code-fragment",
     kind: "code",
-    envelope: textEnvelope("code", "fragment.ts excerpt", readFileSync("src/lib/payload/fragment.ts", "utf8").slice(0, 8000), {
+    envelope: textEnvelope("code", "fragment.ts excerpt", codeFragmentFixture, {
       filename: "fragment.ts",
       language: "ts",
     }),
@@ -259,7 +476,7 @@ const corpus = [
   {
     name: "json-package",
     kind: "json",
-    envelope: textEnvelope("json", "package.json", readFileSync("package.json", "utf8"), { filename: "package.json" }),
+    envelope: textEnvelope("json", "package.json", packageManifestFixture, { filename: "package.json" }),
   },
   {
     name: "multi-bundle",
@@ -270,17 +487,17 @@ const corpus = [
       title: "Mixed bundle",
       activeArtifactId: "source",
       artifacts: [
-        { id: "readme", kind: "markdown", filename: "README.md", content: readFileSync("README.md", "utf8") },
+        { id: "readme", kind: "markdown", filename: "README.md", content: readmeFixture },
         {
           id: "source",
           kind: "code",
           filename: "arx-codec.ts",
           language: "ts",
-          content: readFileSync("src/lib/payload/arx-codec.ts", "utf8").slice(0, 12000),
+          content: arxCodecFixture,
         },
         { id: "patch", kind: "diff", filename: "bundle.patch", patch, view: "split" },
         { id: "table", kind: "csv", filename: "table.csv", content: csv.slice(0, 1200) },
-        { id: "manifest", kind: "json", filename: "tsconfig.json", content: readFileSync("tsconfig.json", "utf8") },
+        { id: "manifest", kind: "json", filename: "tsconfig.json", content: tsconfigFixture },
       ],
     },
   },
@@ -288,10 +505,15 @@ const corpus = [
 
 const rows = [];
 
+const codecImplementations = {
+  arx: [encodeArx, decodeArx],
+  arx2: [encodeArx2, decodeArx2],
+  arx3: [encodeArx3, decodeArx3],
+};
+
 for (const entry of corpus) {
-  for (const codec of ["arx", "arx2"]) {
-    const encoder = codec === "arx" ? encodeArx : encodeArx2;
-    const decoder = codec === "arx" ? decodeArx : decodeArx2;
+  for (const codec of ["arx", "arx2", "arx3"]) {
+    const [encoder, decoder] = codecImplementations[codec];
     const rawJson = JSON.stringify({ ...entry.envelope, codec });
     const encodedInput = encoder(entry.envelope);
     const encode = measure(() => brotli(encodedInput));
@@ -304,6 +526,7 @@ for (const entry of corpus) {
       name: entry.name,
       rawBytes: Buffer.byteLength(rawJson, "utf8"),
       encodedBytes: encode.result.length,
+      visibleChars: visibleFragmentChars(codec, encode.result.length),
       ratio: Buffer.byteLength(rawJson, "utf8") / encode.result.length,
       encodeMs: encode.ms,
       decodeMs: decode.ms,
@@ -312,43 +535,66 @@ for (const entry of corpus) {
 }
 
 const baseline = {
-  version: 1,
+  version: 2,
   generatedAt: new Date().toISOString(),
-  rows: Object.fromEntries(rows.map((row) => [row.id, { encodedBytes: row.encodedBytes }])),
+  rows: {},
 };
+
+for (const row of rows) {
+  baseline.rows[row.id] = { encodedBytes: row.encodedBytes, visibleChars: row.visibleChars };
+}
 
 if (WRITE_BASELINE) {
   writeFileSync(BASELINE_PATH, `${JSON.stringify(baseline, null, 2)}\n`);
 }
 
 const table = [
-  "| codec | kind | name | raw B | encoded B | ratio | encode ms | decode ms |",
-  "|---|---:|---|---:|---:|---:|---:|---:|",
-  ...rows.map((row) => `| ${row.codec} | ${row.kind} | ${row.name} | ${row.rawBytes} | ${row.encodedBytes} | ${row.ratio.toFixed(2)}x | ${row.encodeMs.toFixed(2)} | ${row.decodeMs.toFixed(2)} |`),
+  "| codec | kind | name | raw B | encoded B | visible chars | ratio | encode ms | decode ms |",
+  "|---|---:|---|---:|---:|---:|---:|---:|---:|",
 ];
+
+for (const row of rows) {
+  table.push(`| ${row.codec} | ${row.kind} | ${row.name} | ${row.rawBytes} | ${row.encodedBytes} | ${row.visibleChars} | ${row.ratio.toFixed(2)}x | ${row.encodeMs.toFixed(2)} | ${row.decodeMs.toFixed(2)} |`);
+}
 
 console.log(table.join("\n"));
 
-const totals = rows.reduce((acc, row) => {
-  acc[row.codec] = (acc[row.codec] ?? 0) + row.encodedBytes;
-  return acc;
-}, {});
+const totals = {};
+const visibleTotals = {};
+for (const row of rows) {
+  totals[row.codec] = (totals[row.codec] ?? 0) + row.encodedBytes;
+  visibleTotals[row.codec] = (visibleTotals[row.codec] ?? 0) + row.visibleChars;
+}
 const arx2Win = (totals.arx - totals.arx2) / totals.arx;
+const arx3VisibleWin = (visibleTotals.arx2 - visibleTotals.arx3) / visibleTotals.arx2;
 console.log(`\nTotal arx: ${totals.arx} B`);
 console.log(`Total arx2: ${totals.arx2} B`);
+console.log(`Total arx3: ${totals.arx3} B`);
+console.log(`Total arx2 visible: ${visibleTotals.arx2} chars`);
+console.log(`Total arx3 visible: ${visibleTotals.arx3} chars`);
 console.log(`arx2 delta: ${(arx2Win * 100).toFixed(2)}%`);
+console.log(`arx3 visible delta vs arx2: ${(arx3VisibleWin * 100).toFixed(2)}%`);
 
 const failures = [];
 if (arx2Win < MIN_ARX2_TOTAL_WIN) {
   failures.push(`arx2 total win ${(arx2Win * 100).toFixed(2)}% is below ${(MIN_ARX2_TOTAL_WIN * 100).toFixed(2)}%.`);
 }
 
+if (arx3VisibleWin < MIN_ARX3_VISIBLE_TOTAL_WIN) {
+  failures.push(`arx3 visible-character win ${(arx3VisibleWin * 100).toFixed(2)}% is below ${(MIN_ARX3_VISIBLE_TOTAL_WIN * 100).toFixed(2)}%.`);
+}
+
 for (const entry of corpus) {
   const arx = rows.find((row) => row.id === `${entry.name}:arx`);
   const arx2 = rows.find((row) => row.id === `${entry.name}:arx2`);
+  const arx3 = rows.find((row) => row.id === `${entry.name}:arx3`);
   const delta = (arx.encodedBytes - arx2.encodedBytes) / arx.encodedBytes;
   if (delta < -MAX_BASELINE_REGRESSION) {
     failures.push(`${entry.name} arx2 regressed vs arx by ${(-delta * 100).toFixed(2)}%.`);
+  }
+  const arx3VisibleDelta = (arx2.visibleChars - arx3.visibleChars) / arx2.visibleChars;
+  if (arx3VisibleDelta < -MAX_BASELINE_REGRESSION) {
+    failures.push(`${entry.name} arx3 visible chars regressed vs arx2 by ${(-arx3VisibleDelta * 100).toFixed(2)}%.`);
   }
 }
 
@@ -363,6 +609,13 @@ if (!WRITE_BASELINE && existsSync(BASELINE_PATH)) {
     const regression = (row.encodedBytes - baselineRow.encodedBytes) / baselineRow.encodedBytes;
     if (regression > MAX_BASELINE_REGRESSION) {
       failures.push(`${row.id} regressed ${(regression * 100).toFixed(2)}% vs baseline.`);
+    }
+
+    if (typeof baselineRow.visibleChars === "number") {
+      const visibleRegression = (row.visibleChars - baselineRow.visibleChars) / baselineRow.visibleChars;
+      if (visibleRegression > MAX_BASELINE_REGRESSION) {
+        failures.push(`${row.id} visible chars regressed ${(visibleRegression * 100).toFixed(2)}% vs baseline.`);
+      }
     }
   }
 }

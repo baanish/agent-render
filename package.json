@@ -23,27 +23,28 @@
   ],
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/clean-build-output.mjs && next build",
     "preview": "node scripts/serve-export.mjs",
     "start": "npm run preview",
     "lint": "eslint . && npm run check:public-export-docs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
-    "test:e2e:update": "playwright test --update-snapshots",
-    "test:ci": "npm run lint && npm run test && npm run typecheck && npm run test:e2e",
+    "test:e2e": "env -u NO_COLOR playwright test",
+    "test:e2e:update": "env -u NO_COLOR playwright test --update-snapshots",
+    "test:ci": "npm run lint && npm run test && npm run typecheck && npm run test:e2e && npm run check:build-budgets",
     "test:browsers": "playwright install chromium",
     "bench:codecs": "node scripts/bench-codecs.mjs",
     "bench:codecs:update": "node scripts/bench-codecs.mjs --write-baseline",
+    "assets:compress": "node scripts/compress-dictionary.mjs",
     "typecheck": "node scripts/ensure-next-types.mjs && tsc --noEmit",
-    "check": "npm run lint && npm run test && npm run bench:codecs && npm run typecheck && npm run build",
+    "check": "npm run lint && npm run test && npm run bench:codecs && npm run typecheck && npm run build && npm run check:build-budgets",
+    "check:build-budgets": "node scripts/check-build-budgets.mjs",
     "check:public-export-docs": "node scripts/check-public-export-docs.mjs",
     "selfhosted:dev": "node --import tsx selfhosted/server.ts",
     "selfhosted:build": "tsc -p selfhosted/tsconfig.json",
     "selfhosted:start": "node selfhosted/dist/server.js"
   },
   "dependencies": {
-    "@codemirror/commands": "^6.10.1",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-html": "^6.4.9",
     "@codemirror/lang-javascript": "^6.2.4",
@@ -52,28 +53,22 @@
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/lang-yaml": "^6.1.2",
     "@codemirror/language": "^6.12.3",
-    "@codemirror/search": "^6.5.10",
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.38.2",
-    "@git-diff-view/file": "^0.1.1",
     "@git-diff-view/react": "^0.1.1",
     "@replit/codemirror-indentation-markers": "^6.5.3",
-    "@tanstack/react-table": "^8.21.3",
     "brotli-wasm": "^3.0.1",
-    "clsx": "^2.1.1",
     "fflate": "^0.8.2",
     "lucide-react": "^0.577.0",
     "lz-string": "^1.5.0",
-    "mermaid": "^11.14.0",
-    "next": "15.1.11",
-    "next-themes": "^0.4.6",
+    "mermaid": "^11.15.0",
+    "next": "15.5.18",
     "papaparse": "^5.5.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
     "rehype-sanitize": "^6.0.0",
-    "remark-gfm": "^4.0.1",
-    "tailwind-merge": "^3.4.0"
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
@@ -87,7 +82,7 @@
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "eslint": "^9.22.0",
-    "eslint-config-next": "15.1.11",
+    "eslint-config-next": "15.5.18",
     "jsdom": "^28.1.0",
     "tailwindcss": "^4.0.6",
     "tsx": "^4.21.0",
@@ -96,6 +91,11 @@
   },
   "optionalDependencies": {
     "better-sqlite3": "^12.8.0"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.14"
+    }
   },
   "engines": {
     "node": ">=20.10.0"

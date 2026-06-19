@@ -30,6 +30,29 @@ function validateArtifact(artifact: ArtifactPayload): string | null {
  * - otherwise `activeArtifactId` is normalized to the first artifact id
  */
 export function normalizeEnvelope(envelope: PayloadEnvelope): EnvelopeValidationResult {
+  if (envelope.artifacts.length === 0) {
+    return {
+      ok: false,
+      message: "A payload bundle must contain at least one artifact.",
+    };
+  }
+
+  if (envelope.artifacts.length === 1) {
+    const artifact = envelope.artifacts[0]!;
+    const artifactError = validateArtifact(artifact);
+    if (artifactError) {
+      return { ok: false, message: artifactError };
+    }
+
+    return {
+      ok: true,
+      envelope: {
+        ...envelope,
+        activeArtifactId: artifact.id,
+      },
+    };
+  }
+
   const seenIds = new Set<string>();
 
   for (const artifact of envelope.artifacts) {
@@ -52,13 +75,6 @@ export function normalizeEnvelope(envelope: PayloadEnvelope): EnvelopeValidation
     envelope.activeArtifactId && seenIds.has(envelope.activeArtifactId)
       ? envelope.activeArtifactId
       : envelope.artifacts[0]?.id;
-
-  if (!activeArtifactId) {
-    return {
-      ok: false,
-      message: "A payload bundle must contain at least one artifact.",
-    };
-  }
 
   return {
     ok: true,

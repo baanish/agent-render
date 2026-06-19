@@ -43,4 +43,38 @@ describe("git patch parsing", () => {
       isBinary: true,
     });
   });
+
+  it("rejects malformed hunk headers before rich diff rendering", () => {
+    expect(() =>
+      parseGitPatchBundle(`diff --git a/src/alpha.ts b/src/alpha.ts
+--- a/src/alpha.ts
++++ b/src/alpha.ts
+@@ nope @@
+-export const alpha = 1;
++export const alpha = 2;
+`),
+    ).toThrow(/invalid hunk header/i);
+  });
+
+  it("keeps leading patch preambles as their own section", () => {
+    const files = parseGitPatchBundle(`From 123 Mon Sep 17 00:00:00 2001
+Subject: [PATCH] preserve preamble
+
+diff --git a/src/alpha.ts b/src/alpha.ts
+--- a/src/alpha.ts
++++ b/src/alpha.ts
+@@ -1 +1 @@
+-export const alpha = 1;
++export const alpha = 2;
+`);
+
+    expect(files).toHaveLength(2);
+    expect(files[0]).toMatchObject({
+      displayPath: "file-1",
+      patch: expect.stringContaining("Subject: [PATCH] preserve preamble"),
+    });
+    expect(files[1]).toMatchObject({
+      displayPath: "src/alpha.ts",
+    });
+  });
 });

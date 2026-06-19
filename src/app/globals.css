@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "@git-diff-view/react/styles/diff-view-pure.css";
 
 :root {
   /* ── Surface hierarchy — warm ivory with sunset undertone ── */
@@ -750,6 +749,7 @@ select {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
+  scroll-margin-top: 4.5rem;
 }
 
 /* ── Compact toolbar ribbon ── */
@@ -1400,6 +1400,22 @@ select {
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
   padding: 0.75rem 0;
+}
+
+.artifact-raw-source,
+.json-raw-source {
+  max-height: min(68vh, 42rem);
+  overflow: auto;
+  margin: 0;
+  border: 1px solid var(--surface-code-chrome-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-code);
+  color: var(--surface-code-text);
+  padding: 1rem 1.05rem 1.15rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  white-space: pre;
 }
 
 .json-node {

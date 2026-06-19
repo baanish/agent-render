@@ -3,17 +3,6 @@ import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
 import {
-  arxCompress,
-  arxCompressUnicode,
-  arxCompressBMP,
-  arxCompressBase64url,
-  arxDecompress,
-  arx2CompressEnvelope,
-  arx2DecompressEnvelope,
-  ArxDecodedPayloadTooLargeError,
-  getActiveDictVersion,
-} from "@/lib/payload/arx-codec";
-import {
   codecs,
   MAX_DECODED_PAYLOAD_LENGTH,
   MAX_FRAGMENT_LENGTH,
@@ -39,7 +28,26 @@ type CandidateFragment = {
   transportLength: number;
 };
 
-const CHAT_SAFE_ASCII_FRAGMENT_CHARS = /^[A-Za-z0-9\-._~=#]+$/;
+const BINARY_STRING_CHUNK_SIZE = 0x8000;
+const DEFAULT_SYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["deflate", "lz", "plain"];
+const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx3", "arx2", "arx", "deflate", "lz", "plain"];
+const PACKED_WIRE_MODES: readonly boolean[] = [true, false];
+const UNPACKED_ONLY_WIRE_MODES: readonly boolean[] = [false];
+const supportedCodecSet = new Set<string>(codecs);
+
+function isChatSafeAsciiFragmentCodePoint(cp: number): boolean {
+  return (
+    (cp >= 48 && cp <= 57) ||
+    (cp >= 65 && cp <= 90) ||
+    (cp >= 97 && cp <= 122) ||
+    cp === 35 || // #
+    cp === 45 || // -
+    cp === 46 || // .
+    cp === 61 || // =
+    cp === 95 || // _
+    cp === 126 // ~
+  );
+}
 
 /**
  * Computes the serialized length of a fragment value after conservative transport escaping.
@@ -55,7 +63,7 @@ function computeTransportLength(value: string): number {
   for (let i = 0; i < value.length; i++) {
     const cp = value.codePointAt(i)!;
     if (cp < 128) {
-      len += CHAT_SAFE_ASCII_FRAGMENT_CHARS.test(value[i]) ? 1 : 3;
+      len += isChatSafeAsciiFragmentCodePoint(cp) ? 1 : 3;
     } else if (cp < 0x800) {
       len += 6; // 2 UTF-8 bytes → %XX%XX
     } else if (cp < 0x10000) {
@@ -68,8 +76,26 @@ function computeTransportLength(value: string): number {
   return len;
 }
 
+/**
+ * Returns the decoded visible length of a fragment body or hash.
+ * Browsers may expose Unicode fragments as percent-escaped text, while ARX3 budgets by the
+ * visible characters a user copies from the URL bar.
+ */
+export function getVisibleFragmentLength(fragment: string): number {
+  const fragmentBody = fragment.startsWith("#") ? fragment.slice(1) : fragment;
+  try {
+    return decodeURIComponent(fragmentBody).length;
+  } catch {
+    return fragmentBody.length;
+  }
+}
+
 function toBase64UrlBytes(bytes: Uint8Array): string {
-  const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
+  const chunks: string[] = [];
+  for (let offset = 0; offset < bytes.length; offset += BINARY_STRING_CHUNK_SIZE) {
+    chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + BINARY_STRING_CHUNK_SIZE)));
+  }
+  const binary = chunks.join("");
   const base64 = btoa(binary);
   return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
@@ -78,7 +104,11 @@ function fromBase64UrlBytes(input: string): Uint8Array {
   const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
   const padding = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4));
   const binary = atob(`${normalized}${padding}`);
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
 }
 
 function toBase64Url(input: string): string {
@@ -99,6 +129,7 @@ function encodePayload(json: string, codec: PayloadCodec): string {
       return toBase64UrlBytes(deflateSync(strToU8(json)));
     case "arx":
     case "arx2":
+    case "arx3":
       throw new Error("arx codec requires async encoding — use encodeEnvelopeAsync instead.");
   }
 }
@@ -113,6 +144,7 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
       return strFromU8(inflateSync(fromBase64UrlBytes(encoded)));
     case "arx":
     case "arx2":
+    case "arx3":
       throw new Error("arx codec requires async decoding — use decodeFragmentAsync instead.");
   }
 }
@@ -125,7 +157,23 @@ function buildFragment(envelope: PayloadEnvelope, codec: PayloadCodec, packed: b
   return { value, codec, packed, transportLength: value.length };
 }
 
-function getCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
+function dedupeCodecs(requested: readonly PayloadCodec[]): PayloadCodec[] {
+  const seen = new Set<PayloadCodec>();
+  const unique: PayloadCodec[] = [];
+
+  for (const codec of requested) {
+    if (seen.has(codec)) {
+      continue;
+    }
+
+    seen.add(codec);
+    unique.push(codec);
+  }
+
+  return unique;
+}
+
+function getCandidateCodecs(options: EncodeOptions, defaultPriority: readonly PayloadCodec[]): readonly PayloadCodec[] {
   if (options.codec) {
     return [options.codec];
   }
@@ -134,36 +182,29 @@ function getCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
     return ["plain"];
   }
 
-  const requested = options.codecPriority ?? ["deflate", "lz", "plain"];
-  return requested.filter((codec, index) => requested.indexOf(codec) === index);
+  return options.codecPriority ? dedupeCodecs(options.codecPriority) : defaultPriority;
 }
 
-function getSyncCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
-  const candidates = getCandidateCodecs(options);
+function getSyncCandidateCodecs(options: EncodeOptions): readonly PayloadCodec[] {
+  const candidates = getCandidateCodecs(options, DEFAULT_SYNC_CODEC_PRIORITY);
+  const syncCandidates: PayloadCodec[] = [];
 
-  if (candidates.length === 1 && (candidates[0] === "arx" || candidates[0] === "arx2")) {
-    return [candidates[0]];
+  for (const codec of candidates) {
+    if (codec !== "arx" && codec !== "arx2" && codec !== "arx3") {
+      syncCandidates.push(codec);
+    }
   }
 
-  return candidates.filter((c) => c !== "arx" && c !== "arx2");
+  return syncCandidates.length === 0 && candidates.length === 1 ? candidates : syncCandidates;
 }
 
-function getAsyncCandidateCodecs(options: EncodeOptions): PayloadCodec[] {
-  if (options.codec) {
-    return [options.codec];
-  }
-
-  if (options.preferCompressed === false) {
-    return ["plain"];
-  }
-
-  const requested = options.codecPriority ?? ["arx2", "arx", "deflate", "lz", "plain"];
-  return requested.filter((codec, index) => requested.indexOf(codec) === index);
+function getAsyncCandidateCodecs(options: EncodeOptions): readonly PayloadCodec[] {
+  return getCandidateCodecs(options, DEFAULT_ASYNC_CODEC_PRIORITY);
 }
 
 function buildCandidates(envelope: PayloadEnvelope, options: EncodeOptions): CandidateFragment[] {
   const codecsToTry = getSyncCandidateCodecs(options);
-  const wireModes = options.preferPacked === false ? [false] : [true, false];
+  const wireModes = options.preferPacked === false ? UNPACKED_ONLY_WIRE_MODES : PACKED_WIRE_MODES;
   const candidates: CandidateFragment[] = [];
 
   for (const codec of codecsToTry) {
@@ -176,44 +217,31 @@ function buildCandidates(envelope: PayloadEnvelope, options: EncodeOptions): Can
 }
 
 async function buildArxCandidates(envelope: PayloadEnvelope, packed: boolean): Promise<CandidateFragment[]> {
-  const payloadEnvelope = { ...envelope, codec: "arx" as PayloadCodec };
-  const json = JSON.stringify(packed ? packEnvelope(payloadEnvelope) : payloadEnvelope);
-  const dictVersion = getActiveDictVersion();
-  const [ascii, unicode, bmp, b64url] = await Promise.all([
-    arxCompress(json),
-    arxCompressUnicode(json),
-    arxCompressBMP(json),
-    arxCompressBase64url(json),
-  ]);
-  const makeCandidate = (payload: string): CandidateFragment => {
-    const value = `${PAYLOAD_FRAGMENT_KEY}=v1.arx.${dictVersion}.${payload}`;
-    return { value, codec: "arx", packed, transportLength: computeTransportLength(value) };
-  };
-  return [makeCandidate(ascii), makeCandidate(unicode), makeCandidate(bmp), makeCandidate(b64url)];
+  const { buildArxCandidates: buildDeferredArxCandidates } = await import("@/lib/payload/fragment-arx");
+  return buildDeferredArxCandidates(envelope, packed, computeTransportLength);
 }
 
 async function buildArx2Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
-  const payloadEnvelope = { ...envelope, codec: "arx2" as PayloadCodec };
-  const dictVersion = getActiveDictVersion();
-  const payloads = await arx2CompressEnvelope(payloadEnvelope);
-  const makeCandidate = (payload: string): CandidateFragment => {
-    const value = `${PAYLOAD_FRAGMENT_KEY}=v1.arx2.${dictVersion}.${payload}`;
-    return { value, codec: "arx2", packed: false, transportLength: computeTransportLength(value) };
-  };
-  return [
-    makeCandidate(payloads.base76),
-    makeCandidate(payloads.base1k),
-    makeCandidate(payloads.baseBMP),
-    makeCandidate(payloads.base64url),
-  ];
+  const { buildArx2Candidates: buildDeferredArx2Candidates } = await import("@/lib/payload/fragment-arx");
+  return buildDeferredArx2Candidates(envelope, computeTransportLength);
+}
+
+async function buildArx3Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
+  const { buildArx3Candidates: buildDeferredArx3Candidates } = await import("@/lib/payload/fragment-arx");
+  return buildDeferredArx3Candidates(envelope, computeTransportLength);
 }
 
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {
   const codecsToTry = getAsyncCandidateCodecs(options);
-  const wireModes = options.preferPacked === false ? [false] : [true, false];
+  const wireModes = options.preferPacked === false ? UNPACKED_ONLY_WIRE_MODES : PACKED_WIRE_MODES;
   const candidates: CandidateFragment[] = [];
 
   for (const codec of codecsToTry) {
+    if (codec === "arx3") {
+      candidates.push(...await buildArx3Candidates(envelope));
+      continue;
+    }
+
     if (codec === "arx2") {
       candidates.push(...await buildArx2Candidates(envelope));
       continue;
@@ -236,13 +264,28 @@ function selectCandidate(candidates: CandidateFragment[], budget?: number): Cand
     throw new Error("No payload codec candidates are available.");
   }
 
-  const sorted = [...candidates].sort((a, b) => a.transportLength - b.transportLength);
-  if (typeof budget !== "number") {
-    return sorted[0];
+  let shortest = candidates[0];
+  let shortestInBudget: CandidateFragment | null = null;
+
+  for (const candidate of candidates) {
+    if (candidate.transportLength < shortest.transportLength) {
+      shortest = candidate;
+    }
+
+    if (
+      typeof budget === "number" &&
+      candidate.transportLength <= budget &&
+      (!shortestInBudget || candidate.transportLength < shortestInBudget.transportLength)
+    ) {
+      shortestInBudget = candidate;
+    }
   }
 
-  const inBudget = sorted.find((candidate) => candidate.transportLength <= budget);
-  return inBudget ?? sorted[0];
+  if (typeof budget !== "number") {
+    return shortest;
+  }
+
+  return shortestInBudget ?? shortest;
 }
 
 /**
@@ -250,7 +293,7 @@ function selectCandidate(candidates: CandidateFragment[], budget?: number): Cand
  * `agent-render=v1.deflate.<payload>`.
  *
  * The sync encoder supports `plain`, `lz`, and `deflate` codecs. If options explicitly
- * require `arx`, this function throws because `arx` compression is async-only.
+ * require an arx-family codec, this function throws because ARX compression is async-only.
  *
  * Candidate encodings are generated across enabled codecs (and packed/unpacked wire
  * transport variants) and the shortest transport length is selected, or the shortest option
@@ -262,10 +305,10 @@ export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions
 }
 
 /**
- * Async variant of {@link encodeEnvelope} that also supports `arx` candidates.
+ * Async variant of {@link encodeEnvelope} that also supports ARX candidates.
  *
  * Returns the fragment body string expected after `#`, for example
- * `agent-render=v1.arx.<dictVersion>.<payload>` for `arx`, or
+ * `agent-render=v1.arx.<dictVersion>.<payload>` for ARX codecs, or
  * `agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`.
  *
  * Like the sync version, candidate encodings are generated across enabled codecs and packed
@@ -294,11 +337,15 @@ function parseFragmentHeader(hash: string, options?: DecodeOptions): ParsedFragm
     return { ok: false, errorResponse: { ok: false, code: "empty", message: "Add a fragment payload to start rendering artifacts." } };
   }
 
-  if (!options?.skipFragmentBudget && fragment.length > MAX_FRAGMENT_LENGTH) {
+  const fragmentLength = getVisibleFragmentLength(fragment);
+
+  if (!options?.skipFragmentBudget && fragmentLength > MAX_FRAGMENT_LENGTH) {
     return { ok: false, errorResponse: { ok: false, code: "too-large", message: `This payload exceeds the supported fragment budget of ${MAX_FRAGMENT_LENGTH.toLocaleString()} characters.` } };
   }
 
-  const [key, value] = fragment.split("=", 2);
+  const separatorIndex = fragment.indexOf("=");
+  const key = separatorIndex === -1 ? fragment : fragment.slice(0, separatorIndex);
+  const value = separatorIndex === -1 ? "" : fragment.slice(separatorIndex + 1);
 
   if (key !== PAYLOAD_FRAGMENT_KEY || !value) {
     return { ok: false, errorResponse: { ok: false, code: "missing-key", message: `Expected a fragment starting with #${PAYLOAD_FRAGMENT_KEY}=...` } };
@@ -319,22 +366,22 @@ function parseFragmentHeader(hash: string, options?: DecodeOptions): ParsedFragm
     return { ok: false, errorResponse: { ok: false, code: "invalid-format", message: "The fragment format is invalid. Expected v1.<codec>.<payload>." } };
   }
 
-  if (!codecs.includes(codecRaw as PayloadCodec)) {
+  if (!supportedCodecSet.has(codecRaw)) {
     return { ok: false, errorResponse: { ok: false, code: "invalid-format", message: `Unsupported codec "${codecRaw}". Supported codecs are ${codecs.join(", ")}.` } };
   }
 
-  return { ok: true, fragment, version, codec: codecRaw as PayloadCodec, encoded, fragmentLength: fragment.length };
+  return { ok: true, fragment, version, codec: codecRaw as PayloadCodec, encoded, fragmentLength };
 }
 
 /**
  * Decodes a fragment string (with or without leading `#`) into a parsed payload result.
  *
  * Expected fragment format is `#agent-render=v1.<codec>.<payload>`. Validation first enforces
- * fragment-key and shape checks and the global fragment size budget. On failure, returns a
+ * fragment-key and shape checks and the global visible fragment size budget. On failure, returns a
  * structured `ParsedPayload` error (`empty`, `missing-key`, `invalid-format`, `too-large`,
  * `invalid-json`, `decoded-too-large`, or `invalid-envelope`) instead of throwing.
  *
- * Sync decoding supports `plain`, `lz`, and `deflate` codecs only. `arx` fragments return an
+ * Sync decoding supports `plain`, `lz`, and `deflate` codecs only. ARX fragments return an
  * `invalid-format` result instructing callers to use {@link decodeFragmentAsync}.
  */
 export function decodeFragment(hash: string): ParsedPayload {
@@ -343,9 +390,9 @@ export function decodeFragment(hash: string): ParsedPayload {
     return header.errorResponse;
   }
 
-  const { fragment, codec, encoded } = header;
+  const { codec, encoded } = header;
 
-  if (codec === "arx" || codec === "arx2") {
+  if (codec === "arx" || codec === "arx2" || codec === "arx3") {
     return {
       ok: false,
       code: "invalid-format",
@@ -378,7 +425,7 @@ export function decodeFragment(hash: string): ParsedPayload {
     };
   }
 
-  return resolveEnvelope(parsed, fragment.length);
+  return resolveEnvelope(parsed, header.fragmentLength);
 }
 
 function resolveEnvelope(parsed: unknown, rawLength: number): ParsedPayload {
@@ -408,32 +455,15 @@ function resolveEnvelope(parsed: unknown, rawLength: number): ParsedPayload {
   };
 }
 
-function decodeArxEncodedPayload(encoded: string): string {
-  try {
-    return decodeURIComponent(encoded);
-  } catch {
-    return encoded;
-  }
-}
-
-
-function resolveArxDictVersion(version: number | null): boolean {
-  if (version === null) {
-    return true;
-  }
-
-  return version === getActiveDictVersion();
-}
-
 /**
- * Async fragment decoder that supports all codecs, including `arx`.
+ * Async fragment decoder that supports all codecs, including the ARX family.
  *
- * Accepted input follows `#agent-render=v1...` where non-`arx` payloads use
- * `v1.<codec>.<payload>`, and `arx` supports `v1.arx.<dictVersion>.<payload>` (plus legacy
- * fallback forms). This decoder applies the same header and fragment-size checks as the sync
- * path, then enforces decoded payload size limits before JSON parsing and envelope validation.
+ * Accepted input follows `#agent-render=v1...` where non-ARX payloads use
+ * `v1.<codec>.<payload>`, and ARX codecs support versioned dictionary payloads (plus legacy arx
+ * fallback forms). This decoder applies the same header and visible fragment-size checks as the
+ * sync path, then enforces decoded payload size limits before JSON parsing and envelope validation.
  *
- * Pass `{ skipFragmentBudget: true }` to bypass the fragment transport size check,
+ * Pass `{ skipFragmentBudget: true }` to bypass the visible fragment size check,
  * for example when decoding server-injected payloads that are not constrained by URL length.
  *
  * Returns structured `ParsedPayload` error responses for malformed fragments or invalid
@@ -445,49 +475,17 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
     return header.errorResponse;
   }
 
-  const { fragment, codec, encoded: remainder } = header;
+  const { codec, encoded: remainder } = header;
   let parsed: unknown;
 
   try {
     let decodedJson: string | null;
 
-    if (codec === "arx" || codec === "arx2") {
-      const thirdDot = remainder.indexOf(".");
-      const parsedDictVersion =
-        thirdDot > 0 && /^\d+$/.test(remainder.slice(0, thirdDot))
-          ? Number.parseInt(remainder.slice(0, thirdDot), 10)
-          : null;
-      const versionedPayload = parsedDictVersion === null ? remainder : remainder.slice(thirdDot + 1);
-      const fallbackPayload = remainder;
-      const useVersionedPayload = resolveArxDictVersion(parsedDictVersion);
-      const decodeAttempts = useVersionedPayload && parsedDictVersion !== null
-        ? [decodeArxEncodedPayload(fallbackPayload), decodeArxEncodedPayload(versionedPayload)]
-        : useVersionedPayload
-          ? [decodeArxEncodedPayload(versionedPayload)]
-          : [decodeArxEncodedPayload(fallbackPayload), decodeArxEncodedPayload(versionedPayload)];
+    if (codec === "arx" || codec === "arx2" || codec === "arx3") {
+      const { decodeArxFragmentPayload } = await import("@/lib/payload/fragment-arx");
+      const decodedFromAttempt = await decodeArxFragmentPayload(codec, remainder);
 
-      let lastError: Error | null = null;
-      let decodedFromAttempt: string | PayloadEnvelope | null = null;
-
-      for (const encodedAttempt of decodeAttempts) {
-        try {
-          decodedFromAttempt = codec === "arx"
-            ? await arxDecompress(encodedAttempt)
-            : await arx2DecompressEnvelope(encodedAttempt);
-          break;
-        } catch (error) {
-          if (error instanceof ArxDecodedPayloadTooLargeError) {
-            throw error;
-          }
-          lastError = error instanceof Error ? error : new Error("Unknown arx decode error");
-        }
-      }
-
-      if (decodedFromAttempt === null) {
-        throw lastError ?? new Error("Failed to decode arx fragment");
-      }
-
-      if (codec === "arx2") {
+      if (codec === "arx2" || codec === "arx3") {
         parsed = decodedFromAttempt;
         decodedJson = null;
       } else {
@@ -509,11 +507,11 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
       parsed = JSON.parse(decodedJson);
     }
   } catch (error) {
-    if (error instanceof ArxDecodedPayloadTooLargeError) {
+    if (error instanceof Error && error.name === "ArxDecodedPayloadTooLargeError") {
       return { ok: false, code: "decoded-too-large", message: error.message };
     }
     return { ok: false, code: "invalid-json", message: "The fragment payload could not be decoded as valid JSON." };
   }
 
-  return resolveEnvelope(parsed, fragment.length);
+  return resolveEnvelope(parsed, header.fragmentLength);
 }

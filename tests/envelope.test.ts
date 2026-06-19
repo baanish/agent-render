@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
-import type { PayloadEnvelope } from "@/lib/payload/schema";
+import { isPayloadEnvelope, type PayloadEnvelope } from "@/lib/payload/schema";
 
 const baseEnvelope: PayloadEnvelope = {
   v: 1,
@@ -10,6 +10,29 @@ const baseEnvelope: PayloadEnvelope = {
 };
 
 describe("normalizeEnvelope", () => {
+  it("normalizes single-artifact bundles to the only artifact id", () => {
+    const result = normalizeEnvelope({
+      ...baseEnvelope,
+      activeArtifactId: "missing",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.envelope.activeArtifactId).toBe("one");
+  });
+
+  it("rejects bundles without artifacts", () => {
+    const result = normalizeEnvelope({
+      ...baseEnvelope,
+      artifacts: [],
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
   it("rejects duplicate artifact ids", () => {
     const result = normalizeEnvelope({
       ...baseEnvelope,
@@ -30,5 +53,20 @@ describe("normalizeEnvelope", () => {
     });
 
     expect(result.ok).toBe(false);
+  });
+
+});
+
+describe("isPayloadEnvelope", () => {
+  it("rejects diff artifacts with an unknown view mode", () => {
+    const withView = (view: string) => ({
+      v: 1,
+      codec: "plain",
+      activeArtifactId: "diff",
+      artifacts: [{ id: "diff", kind: "diff", patch: "--- a\n+++ b\n", view }],
+    });
+
+    expect(isPayloadEnvelope(withView("split"))).toBe(true);
+    expect(isPayloadEnvelope(withView("side-by-side"))).toBe(false);
   });
 });

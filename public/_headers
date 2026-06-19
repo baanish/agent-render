@@ -4,3 +4,18 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Permissions-Policy: accelerometer=(), ambient-light-sensor=(), autoplay=(), bluetooth=(), camera=(), clipboard-read=(), clipboard-write=(self), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), xr-spatial-tracking=()
+
+/arx-dictionary.json.br
+  Content-Type: application/json; charset=utf-8
+  Content-Encoding: br
+  Vary: Accept-Encoding
+
+/arx2-dictionary.json.br
+  Content-Type: application/json; charset=utf-8
+  Content-Encoding: br
+  Vary: Accept-Encoding
+
+/vendor/diff-view-pure.css.br
+  Content-Type: text/css; charset=utf-8
+  Content-Encoding: br
+  Vary: Accept-Encoding

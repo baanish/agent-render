@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { DiffFile } from "@git-diff-view/react";
@@ -14,10 +14,6 @@ vi.mock("@git-diff-view/react", async () => {
     DiffView: () => <div data-testid="mock-rich-diff-view">Rich diff view</div>,
   };
 });
-
-vi.mock("next-themes", () => ({
-  useTheme: () => ({ resolvedTheme: "light" }),
-}));
 
 const validPatch = `diff --git a/src/hello.ts b/src/hello.ts
 index 1111111..2222222 100644
@@ -46,6 +42,18 @@ new file mode 100644
 index 0000000..1111111
 Binary files /dev/null and b/assets/logo.png differ
 `;
+
+// CRLF binary-only patch: no `diff --git`/`---`/`+++`/`@@` anchors, so the unified-diff gate must
+// recognize it via the `GIT binary patch` marker alone. Pins the contract that a CRLF binary patch
+// still routes to the rich/binary path rather than the raw fallback (regression guard for the
+// `\r?$`-tolerant marker regexes in looksLikeUnifiedDiff).
+const crlfBinaryPatch = [
+  "GIT binary patch",
+  "literal 4",
+  "Lc${NkF#rGn1ONa4",
+  "",
+  "",
+].join("\r\n");
 
 function createArtifact(overrides: Partial<DiffArtifact> = {}): DiffArtifact {
   return {
@@ -85,6 +93,7 @@ afterAll(() => {
 
 afterEach(() => {
   cleanup();
+  document.getElementById("agent-render-diff-view-styles")?.remove();
   vi.restoreAllMocks();
 });
 
@@ -92,11 +101,22 @@ describe("DiffRenderer", () => {
   it("keeps the rich diff renderer for valid patches", async () => {
     render(<DiffRenderer artifact={createArtifact()} />);
 
-    const renderer = await screen.findByTestId("renderer-diff");
-    expect(renderer).toHaveAttribute("data-diff-state", "rich");
+    await waitFor(() => {
+      expect(screen.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "rich");
+    });
     expect(screen.queryByText(/could not be rendered as a valid unified diff/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /src\/hello\.ts/i })).toBeVisible();
     expect(screen.getByTestId("mock-rich-diff-view")).toBeVisible();
+  });
+
+  it("loads the diff-view stylesheet only from the deferred public asset", async () => {
+    render(<DiffRenderer artifact={createArtifact()} />);
+
+    await waitFor(() => {
+      const stylesheet = document.getElementById("agent-render-diff-view-styles");
+      expect(stylesheet).toBeInstanceOf(HTMLLinkElement);
+      expect((stylesheet as HTMLLinkElement).href).toContain("/vendor/diff-view-pure.css.br");
+    });
   });
 
   it("falls back to the raw patch when the diff parser rejects malformed hunks", async () => {
@@ -104,8 +124,9 @@ describe("DiffRenderer", () => {
 
     render(<DiffRenderer artifact={createArtifact({ patch: malformedPatch })} />);
 
-    const renderer = await screen.findByTestId("renderer-diff");
-    expect(renderer).toHaveAttribute("data-diff-state", "fallback");
+    await waitFor(() => {
+      expect(screen.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "fallback");
+    });
     expect(screen.getByText(/could not be rendered as a valid unified diff/i)).toBeVisible();
     expect(screen.getByTestId("renderer-diff-fallback-raw")).toHaveTextContent("@@ invalid @@");
 
@@ -121,18 +142,52 @@ describe("DiffRenderer", () => {
     expect(screen.getByTestId("renderer-diff-fallback-raw")).toHaveTextContent("this is not a unified diff");
   });
 
+  it("does not report fallback readiness again when only the callback identity changes", async () => {
+    const artifact = createArtifact({ patch: nonDiffPatch });
+    const firstReady = vi.fn();
+    const secondReady = vi.fn();
+    const { rerender } = render(<DiffRenderer artifact={artifact} onReady={firstReady} />);
+
+    await waitFor(() => expect(firstReady).toHaveBeenCalledTimes(1));
+
+    rerender(<DiffRenderer artifact={artifact} onReady={secondReady} />);
+
+    expect(secondReady).not.toHaveBeenCalled();
+  });
+
+  it("removes the rich diff stylesheet when switching to the fallback path", async () => {
+    const { rerender } = render(<DiffRenderer artifact={createArtifact()} />);
+
+    await waitFor(() => {
+      expect(document.getElementById("agent-render-diff-view-styles")).toBeInstanceOf(HTMLLinkElement);
+    });
+
+    rerender(<DiffRenderer artifact={createArtifact({ id: "notes", patch: nonDiffPatch })} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "fallback");
+    });
+    expect(document.getElementById("agent-render-diff-view-styles")).not.toBeInTheDocument();
+  });
+
   it("falls back to the raw patch when the diff library throws during parsing", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(DiffFile.prototype, "init").mockImplementation(() => {
       throw new Error("Invalid hunk header format");
     });
 
-    render(<DiffRenderer artifact={createArtifact()} />);
+    try {
+      render(<DiffRenderer artifact={createArtifact()} />);
 
-    const renderer = await screen.findByTestId("renderer-diff");
-    expect(renderer).toHaveAttribute("data-diff-state", "fallback");
-    expect(screen.getByText(/could not be rendered as a valid unified diff/i)).toBeVisible();
-    expect(screen.getByText(/parser detail: Invalid hunk header format/i)).toBeVisible();
-    expect(screen.getByTestId("renderer-diff-fallback-raw")).toHaveTextContent('export const hello = "new";');
+      await waitFor(() => {
+        expect(screen.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "fallback");
+      });
+      expect(screen.getByText(/could not be rendered as a valid unified diff/i)).toBeVisible();
+      expect(screen.getByText(/parser detail: Invalid hunk header format/i)).toBeVisible();
+      expect(screen.getByTestId("renderer-diff-fallback-raw")).toHaveTextContent('export const hello = "new";');
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it("skips diff parsing for binary patches and keeps the rich renderer shell", async () => {
@@ -147,6 +202,19 @@ describe("DiffRenderer", () => {
     expect(screen.queryByText(/could not be rendered as a valid unified diff/i)).not.toBeInTheDocument();
   });
 
+  it("keeps the rich/binary path for a CRLF binary patch instead of the raw fallback", async () => {
+    const initSpy = vi.spyOn(DiffFile.prototype, "init");
+
+    render(<DiffRenderer artifact={createArtifact({ patch: crlfBinaryPatch, filename: "assets/logo.png" })} />);
+
+    const renderer = await screen.findByTestId("renderer-diff");
+    expect(renderer).toHaveAttribute("data-diff-state", "rich");
+    expect(initSpy).not.toHaveBeenCalled();
+    expect(screen.getByText(/binary patch preview is not expanded/i)).toBeVisible();
+    expect(screen.queryByTestId("renderer-diff-fallback-raw")).not.toBeInTheDocument();
+    expect(screen.queryByText(/not a valid unified diff/i)).not.toBeInTheDocument();
+  });
+
   it("copies the raw patch from the fallback view", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, {
@@ -155,11 +223,39 @@ describe("DiffRenderer", () => {
       },
     });
 
-    render(<DiffRenderer artifact={createArtifact({ patch: malformedPatch })} />);
+    render(<DiffRenderer artifact={createArtifact({ patch: nonDiffPatch })} />);
 
     await userEvent.click(await screen.findByRole("button", { name: /copy raw diff/i }));
 
-    expect(writeText).toHaveBeenCalledWith(malformedPatch);
+    expect(writeText).toHaveBeenCalledWith(nonDiffPatch);
     expect(screen.getByRole("button", { name: /copied raw diff/i })).toBeVisible();
+  });
+
+  it("uses the shared clipboard fallback when copying a raw diff", async () => {
+    const originalExecCommand = document.execCommand;
+    const execCommand = vi.fn(() => true);
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: execCommand,
+    });
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockRejectedValue(new Error("denied")),
+      },
+    });
+
+    try {
+      render(<DiffRenderer artifact={createArtifact({ patch: nonDiffPatch })} />);
+
+      await userEvent.click(await screen.findByRole("button", { name: /copy raw diff/i }));
+
+      expect(execCommand).toHaveBeenCalledWith("copy");
+      expect(screen.getByRole("button", { name: /copied raw diff/i })).toBeVisible();
+    } finally {
+      Object.defineProperty(document, "execCommand", {
+        configurable: true,
+        value: originalExecCommand,
+      });
+    }
   });
 });

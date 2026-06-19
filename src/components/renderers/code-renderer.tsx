@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { WrapText } from "lucide-react";
 import { EditorState, RangeSetBuilder } from "@codemirror/state";
@@ -11,14 +10,11 @@ import {
   EditorView,
   ViewPlugin,
   type ViewUpdate,
-  drawSelection,
   highlightActiveLine,
-  keymap,
   lineNumbers,
 } from "@codemirror/view";
-import { defaultKeymap } from "@codemirror/commands";
-import { searchKeymap } from "@codemirror/search";
 import { bracketMatching, defaultHighlightStyle, syntaxTree, syntaxHighlighting } from "@codemirror/language";
+import { useResolvedTheme } from "@/components/theme/use-theme-controller";
 import { detectCodeLanguage, loadLanguageSupport } from "@/lib/code/language";
 import type { CodeArtifact } from "@/lib/payload/schema";
 
@@ -32,8 +28,18 @@ type CodeRendererProps = {
   onReady?: () => void;
 };
 
+type LoadedLanguageExtension = Awaited<ReturnType<typeof loadLanguageSupport>>;
+
 const MAX_DECORATED_CONTENT_LENGTH = 120000;
 const RAINBOW_BRACKET_LEVELS = 6;
+const BRACKET_DECORATION_PATTERN = /[()[\]{}]/;
+const rainbowBracketThemeRules: Record<string, { color: string }> = {};
+
+for (let index = 0; index < RAINBOW_BRACKET_LEVELS; index += 1) {
+  rainbowBracketThemeRules[`.cm-rb-${index}`] = {
+    color: `var(--rb-${index}) !important`,
+  };
+}
 
 /**
  * Builds the read-only CodeMirror theme. Passes `dark` so CodeMirror’s theme facet
@@ -79,14 +85,7 @@ function createEditorTheme(isDark: boolean) {
       ".cm-rainbow-bracket": {
         fontWeight: "700",
       },
-      ...Object.fromEntries(
-        Array.from({ length: RAINBOW_BRACKET_LEVELS }, (_, index) => [
-          `.cm-rb-${index}`,
-          {
-            color: `var(--rb-${index}) !important`,
-          },
-        ]),
-      ),
+      ...rainbowBracketThemeRules,
     },
     { dark: isDark },
   );
@@ -94,21 +93,32 @@ function createEditorTheme(isDark: boolean) {
 
 function buildIgnoredRanges(state: EditorState) {
   const ignored: Array<{ from: number; to: number }> = [];
+  let previousFrom = -1;
+  let needsSort = false;
 
   syntaxTree(state).iterate({
     enter(node) {
       if (/(Comment|String|Template|RegExp)/i.test(node.name)) {
+        if (node.from < previousFrom) {
+          needsSort = true;
+        }
+        previousFrom = node.from;
         ignored.push({ from: node.from, to: node.to });
       }
     },
   });
 
-  return ignored.sort((left, right) => left.from - right.from);
+  return needsSort ? ignored.sort((left, right) => left.from - right.from) : ignored;
 }
 
 function buildRainbowDecorations(state: EditorState): DecorationSet {
-  const builder = new RangeSetBuilder<Decoration>();
   const text = state.doc.toString();
+
+  if (!BRACKET_DECORATION_PATTERN.test(text)) {
+    return Decoration.none;
+  }
+
+  const builder = new RangeSetBuilder<Decoration>();
   const ignored = buildIgnoredRanges(state);
 
   let ignoredIndex = 0;
@@ -167,27 +177,28 @@ const rainbowBrackets = ViewPlugin.fromClass(
  */
 export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendererProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const onReadyRef = useRef(onReady);
   const wrapPreferenceRef = useRef<WrapPreference>("auto");
   const [wrapLines, setWrapLines] = useState(compact);
-  const [languageExtension, setLanguageExtension] = useState<Awaited<ReturnType<typeof loadLanguageSupport>>>(null);
+  const [languageSupport, setLanguageSupport] = useState<{
+    extension: LoadedLanguageExtension;
+    language: string;
+  }>({ extension: null, language: "" });
   const [isReady, setIsReady] = useState(false);
-  const { resolvedTheme } = useTheme();
+  const resolvedTheme = useResolvedTheme();
   /**
-   * CodeMirror’s `dark` facet (syntax + indentation markers). When `resolvedTheme` is still
-   * undefined, read `html.dark` so the first mount matches the class next-themes applies before
-   * React state catches up.
+   * CodeMirror’s `dark` facet (syntax + indentation markers) follows the resolved shell theme.
    */
   const isCmDark = useMemo(() => {
-    if (resolvedTheme === "dark") {
-      return true;
-    }
-    if (resolvedTheme === "light") {
-      return false;
-    }
-    return typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+    return resolvedTheme === "dark";
   }, [resolvedTheme]);
   const editorTheme = useMemo(() => createEditorTheme(isCmDark), [isCmDark]);
   const language = useMemo(() => detectCodeLanguage(artifact.filename, artifact.language), [artifact.filename, artifact.language]);
+  const languageExtension = languageSupport.language === language ? languageSupport.extension : null;
+
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
   // Runs before paint so the first CodeMirror mount matches the viewport (call sites use dynamic(..., { ssr: false })).
   // Preference stays on wrapPreferenceRef (not state) so the matchMedia listener closure stays correct without
@@ -236,12 +247,12 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
     void loadLanguageSupport(language)
       .then((extension) => {
         if (!cancelled) {
-          setLanguageExtension(extension);
+          setLanguageSupport({ extension, language });
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setLanguageExtension(null);
+          setLanguageSupport({ extension: null, language });
         }
       });
 
@@ -260,9 +271,7 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
 
     const extensions = [
       lineNumbers(),
-      drawSelection(),
       highlightActiveLine(),
-      keymap.of([...defaultKeymap, ...searchKeymap]),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
       bracketMatching(),
       indentationMarkers({
@@ -290,7 +299,7 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
       extensions.push(languageExtension);
     }
 
-    if (artifact.content.length <= MAX_DECORATED_CONTENT_LENGTH) {
+    if (artifact.content.length <= MAX_DECORATED_CONTENT_LENGTH && BRACKET_DECORATION_PATTERN.test(artifact.content)) {
       extensions.push(rainbowBrackets);
     }
 
@@ -306,7 +315,7 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
     const animationFrame = window.requestAnimationFrame(() => {
       if (!cancelled) {
         setIsReady(true);
-        onReady?.();
+        onReadyRef.current?.();
       }
     });
 
@@ -315,7 +324,7 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
       window.cancelAnimationFrame(animationFrame);
       view.destroy();
     };
-  }, [artifact.content, editorTheme, languageExtension, onReady, wrapLines]);
+  }, [artifact.content, editorTheme, languageExtension, wrapLines]);
 
   return (
     <div

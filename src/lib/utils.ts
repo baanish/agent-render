@@ -1,17 +1,26 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+type ClassNameValue = string | false | null | undefined;
 
 /**
- * Merges conditional class values into a single Tailwind-aware class string.
+ * Joins conditional class names into a single class string.
  *
- * Combines `clsx` for variadic/conditional normalization with `tailwind-merge` conflict
- * resolution so later utilities override earlier conflicting Tailwind classes.
+ * Accepts the simple string/falsey pattern used by the viewer components without pulling a
+ * Tailwind conflict-resolution runtime into the client bundle.
  *
- * @param inputs - Class values accepted by `clsx` (strings, arrays, objects, booleans, etc.).
- * @returns A merged className string with Tailwind conflicts deduplicated.
+ * @param inputs - Class name strings or falsey values to omit.
+ * @returns A space-separated className string.
  *
- * Failure/fallback: invalid values are ignored by `clsx`, potentially yielding an empty string.
+ * Failure/fallback: falsey values are ignored, potentially yielding an empty string.
  */
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+export function cn(...inputs: ClassNameValue[]) {
+  let className = "";
+
+  for (const input of inputs) {
+    if (!input) {
+      continue;
+    }
+
+    className = className ? `${className} ${input}` : input;
+  }
+
+  return className;
 }

@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { useTheme } from "next-themes";
+import { useResolvedTheme } from "@/components/theme/use-theme-controller";
 
 type MermaidBlockProps = {
   code: string;
   onReady?: () => void;
 };
+
+let mermaidImportPromise: Promise<typeof import("mermaid").default> | null = null;
+
+function loadMermaid() {
+  mermaidImportPromise ??= import("mermaid").then((module) => module.default);
+  return mermaidImportPromise;
+}
 
 /**
  * Renders a mermaid diagram from raw mermaid syntax.
@@ -18,15 +25,20 @@ type MermaidBlockProps = {
 export function MermaidBlock({ code, onReady }: MermaidBlockProps) {
   const containerId = useId().replace(/:/g, "_");
   const containerRef = useRef<HTMLDivElement>(null);
+  const onReadyRef = useRef(onReady);
   const [error, setError] = useState<string | null>(null);
-  const { resolvedTheme } = useTheme();
+  const resolvedTheme = useResolvedTheme();
+
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function render() {
       try {
-        const mermaid = (await import("mermaid")).default;
+        const mermaid = await loadMermaid();
 
         mermaid.initialize({
           startOnLoad: false,
@@ -45,7 +57,7 @@ export function MermaidBlock({ code, onReady }: MermaidBlockProps) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : "Failed to render mermaid diagram");
       } finally {
-        if (!cancelled) onReady?.();
+        if (!cancelled) onReadyRef.current?.();
       }
     }
 
@@ -54,7 +66,7 @@ export function MermaidBlock({ code, onReady }: MermaidBlockProps) {
     return () => {
       cancelled = true;
     };
-  }, [code, containerId, resolvedTheme, onReady]);
+  }, [code, containerId, resolvedTheme]);
 
   if (error) {
     return (

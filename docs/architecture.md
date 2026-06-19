@@ -25,7 +25,7 @@ The static export also emits `sitemap.xml` at the site root (and under `NEXT_PUB
 - `code` - read-only CodeMirror view with syntax-aware rendering and code affordances
 - `diff` - review-style diff view with unified and split modes
 - `csv` - table-focused data grid built from parsed rows and dynamic columns
-- `json` - lightweight read-only tree view plus a raw CodeMirror view
+- `json` - lightweight read-only tree view plus a native raw source view
 
 The viewer shell now routes all five artifact kinds through dynamically imported client-only renderers so the landing shell stays light and static-host friendly.
 
@@ -60,12 +60,13 @@ That keeps the viewer static-hosting friendly while removing the brittle parts o
 
 ## Bundle tradeoffs
 
-The largest remaining deferred cost is still the diff renderer stack, primarily `@git-diff-view/*` and its highlighting internals. It remains because it still provides the best review-style UX for multi-file git patches, split/unified modes, and syntax-aware rendering with less product code than a bespoke replacement.
+The largest remaining deferred cost is still the diff renderer stack, primarily `@git-diff-view/*` and its highlighting internals. Its vendor stylesheet is served from `public/vendor/diff-view-pure.css` with a precompressed `.css.br` variant and injected only when a rich diff mounts, so the empty shell and non-diff artifacts do not pay that CSS cost. The stack remains because it still provides the best review-style UX for multi-file git patches, split/unified modes, and syntax-aware rendering with less product code than a bespoke replacement.
 
 The JSON and markdown paths are now substantially lighter because:
 
 - `vanilla-jsoneditor` was removed in favor of a lighter read-only tree view
 - `rehype-highlight` and its Highlight.js stack were removed
+- raw markdown and CSV views use native source blocks instead of mounting CodeMirror
 - CodeMirror language support now loads on demand per active language
 
 ## Diff choice
@@ -76,7 +77,7 @@ The JSON and markdown paths are now substantially lighter because:
 - split and unified views are built in
 - syntax highlighting and diff affordances are stronger out of the box for artifact viewing
 - individual file patches can be rendered as a sequence while preserving filenames and boundaries
-- CodeMirror remains the better fit for raw source and raw JSON views
+- CodeMirror remains the better fit for full source artifacts and markdown code fences
 
 `@codemirror/merge` stays a reasonable future option if the project ever needs a more editor-centric comparison workflow, but it is not the best default for shareable review artifacts.
 
@@ -95,12 +96,13 @@ The fragment protocol keeps the JSON envelope stable and treats compression stri
 - `plain` stores base64url-encoded JSON for compatibility and debugging
 - `lz` stores compressed JSON via `lz-string` when it produces a smaller fragment
 - `deflate` stores deflate-compressed UTF-8 JSON bytes when it outperforms other codecs
-- `arx` applies domain-dictionary substitution, brotli compression (quality 11), and binary-to-text encoding for best-in-class compression. Four wire shapes are candidates: base76 (ASCII, 77 fragment-safe chars), base64url (RFC 4648 `A-Za-z0-9-_` with a `B.` prefix for detection), base1k (Unicode, 1774 chars from U+00A1–U+07FF), and baseBMP (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). The async encoder tries all four and picks the shortest **transport** length (percent-encoded UTF-8 length for non-ASCII), so base64url can win over Unicode encodings on chat-style surfaces. baseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes, achieving ~70% smaller fragments than deflate on typical payloads (~6.1x compression ratio for 8k markdown). Full pipeline timing is on the order of ~8–14ms for 8k payloads depending on the wire encoding. The substitution dictionary is served as a static file at `/arx-dictionary.json` so agents can fetch it for local compression; a pre-compressed `/arx-dictionary.json.br` variant is also available. The viewer loads the dictionary on startup and falls back to a built-in table if the fetch fails.
-- `arx2` keeps the arx compression stack but replaces the JSON envelope with a compact tuple envelope and applies `/arx2-dictionary.json` as an overlay before the shared arx dictionary. It uses `v1.arx2.<dictVersion>.<payload>` and decodes back to the standard envelope before validation/rendering.
+- `arx` applies domain-dictionary substitution, brotli compression (quality 11), and binary-to-text encoding for best-in-class compression. Four wire shapes are candidates: base76 (ASCII, 77 fragment-safe chars), base64url (RFC 4648 `A-Za-z0-9-_` with a `B.` prefix for detection), base1k (Unicode, 1774 chars from U+00A1–U+07FF), and baseBMP (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). The async encoder tries all four and picks the shortest **transport** length (percent-encoded UTF-8 length for non-ASCII), so base64url can win over Unicode encodings on chat-style surfaces. baseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes, achieving ~70% smaller fragments than deflate on typical payloads (~6.1x compression ratio for 8k markdown). Full pipeline timing is on the order of ~8–14ms for 8k payloads depending on the wire encoding. The substitution dictionary is served as a static file at `/arx-dictionary.json` so agents can fetch it for local compression; a pre-compressed `/arx-dictionary.json.br` variant is also available. The viewer tries the pre-compressed dictionary first on default ARX-family loads, falls back to the JSON file, and only loads external dictionaries when an ARX/ARX2/ARX3 encode or decode path needs them.
+- `arx2` keeps the arx compression stack but replaces the JSON envelope with a compact tuple envelope and applies `/arx2-dictionary.json` as an overlay before the shared arx dictionary. The viewer tries `/arx2-dictionary.json.br` first for default overlay loads and falls back to JSON. It uses `v1.arx2.<dictVersion>.<payload>` and decodes back to the standard envelope before validation/rendering.
+- `arx3` uses the same tuple envelope, overlay dictionary, shared arx dictionary, and brotli bytes as arx2, then allows the dense baseBMP wire to win by decoded visible character length. This deliberately optimizes copyable visible URL length for trusted Unicode-preserving surfaces; it is not a stronger compressed-byte format than arx2.
 - packed wire mode (`p: 1`) shortens transport keys before compression, then unpacks back to the standard envelope during decode
-- automatic async codec selection tries `arx2 -> arx -> deflate -> lz -> plain`; arx compares packed + non-packed candidates, while arx2 uses its tuple envelope
+- automatic async codec selection tries `arx3 -> arx2 -> arx -> deflate -> lz -> plain`; arx compares packed + non-packed candidates, while arx2/arx3 use tuple envelopes
 - sync codec selection (used by examples and legacy paths) tries `deflate -> lz -> plain`
-- decode enforces both fragment length and decoded payload size ceilings before UI rendering; arx/arx2 Brotli decompression uses a streaming output cap before final JSON or tuple parsing
+- decode enforces both visible fragment length and decoded payload size ceilings before UI rendering; arx/arx2/arx3 Brotli decompression uses a streaming output cap before final JSON or tuple parsing
 - invalid bundle state is normalized or rejected before renderers mount
 
 ## Zero-retention boundaries

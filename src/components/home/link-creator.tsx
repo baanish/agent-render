@@ -1,10 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ArrowUpRight, Check, Copy, ExternalLink, FileCode2, FileDiff, FileJson2, FileSpreadsheet, FileText, Link2 } from "lucide-react";
+import {
+  ArrowUpRight,
+  Check,
+  Copy,
+  ExternalLink,
+  FileCode2,
+  FileDiff,
+  FileJson2,
+  FileSpreadsheet,
+  FileText,
+  Link2,
+} from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
-import { createGeneratedArtifactLinkAsync, defaultLinkCreatorDraft, getBodyFieldLabel, type GeneratedArtifactLink, type LinkCreatorDraft } from "@/lib/payload/link-creator";
+import type {
+  GeneratedArtifactLink,
+  LinkCreatorDraft,
+} from "@/lib/payload/link-creator";
 import { artifactKinds, codecs, type ArtifactKind } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
 
@@ -19,21 +33,35 @@ const kindIcons: Record<ArtifactKind, LucideIcon> = {
   csv: FileSpreadsheet,
   json: FileJson2,
 };
+const numberFormatter = new Intl.NumberFormat("en-US");
 
 const fieldHints: Record<ArtifactKind, string> = {
   markdown: "Paste markdown notes, release docs, or a spec excerpt.",
   code: "Paste a code snippet and add a language hint when it helps.",
   diff: "Paste a unified git patch to open the review-style diff renderer.",
   csv: "Paste raw CSV and the table renderer will take it from there.",
-  json: "Paste formatted or compact JSON for a tree and raw-code preview.",
+  json: "Paste formatted or compact JSON for a tree and raw source preview.",
 };
 
 const fieldPlaceholders: Record<ArtifactKind, string> = {
   markdown: "# Notes\n\nPaste markdown here.",
-  code: "export function hello() {\n  return \"world\";\n}",
-  diff: "diff --git a/src/example.ts b/src/example.ts\nindex 1111111..2222222 100644\n--- a/src/example.ts\n+++ b/src/example.ts\n@@ -1 +1 @@\n-export const value = \"old\";\n+export const value = \"new\";\n",
+  code: 'export function hello() {\n  return "world";\n}',
+  diff: 'diff --git a/src/example.ts b/src/example.ts\nindex 1111111..2222222 100644\n--- a/src/example.ts\n+++ b/src/example.ts\n@@ -1 +1 @@\n-export const value = "old";\n+export const value = "new";\n',
   csv: "name,status\nviewer,ready\ncreator,draft",
   json: '{\n  "status": "ready",\n  "artifacts": 1\n}',
+};
+
+const codecOptions = ["auto", ...codecs] as const;
+
+const defaultLinkCreatorDraft: LinkCreatorDraft = {
+  kind: "markdown",
+  title: "Product brief",
+  filename: "brief.md",
+  content:
+    "# Launch note\n\nShare one artifact at a time without uploading it anywhere.\n\n- Markdown stays readable\n- Code keeps its language hint\n- The link works from a static export",
+  language: "tsx",
+  diffView: "unified",
+  codec: "auto",
 };
 
 function getBaseUrl() {
@@ -46,8 +74,8 @@ function getBaseUrl() {
   return url.toString();
 }
 
-function getDraftSignature(draft: LinkCreatorDraft) {
-  return JSON.stringify(draft);
+function getBodyFieldLabel(kind: ArtifactKind) {
+  return kind === "diff" ? "Patch" : "Content";
 }
 
 /**
@@ -56,40 +84,80 @@ function getDraftSignature(draft: LinkCreatorDraft) {
  * Generates links client-side with validation, and exposes inline copy/error/stale-result states.
  */
 export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
-  const [draft, setDraft] = useState<LinkCreatorDraft>(defaultLinkCreatorDraft);
-  const [generatedLink, setGeneratedLink] = useState<GeneratedArtifactLink | null>(null);
-  const [generatedSignature, setGeneratedSignature] = useState<string>("");
+  const [{ draft, version: draftVersion }, setDraftState] = useState({
+    draft: defaultLinkCreatorDraft,
+    version: 0,
+  });
+  const [generatedLink, setGeneratedLink] =
+    useState<GeneratedArtifactLink | null>(null);
+  const [generatedVersion, setGeneratedVersion] = useState(-1);
   const [error, setError] = useState<string | null>(null);
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
-  const draftSignature = useMemo(() => getDraftSignature(draft), [draft]);
-  const isGeneratedLinkStale = Boolean(generatedLink) && draftSignature !== generatedSignature;
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
+  const generationRequestRef = useRef(0);
+  const isGeneratedLinkStale =
+    Boolean(generatedLink) && draftVersion !== generatedVersion;
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
-  const GeneratedKindIcon = kindIcons[generatedLink?.artifact.kind ?? draft.kind];
+  const GeneratedKindIcon =
+    kindIcons[generatedLink?.artifact.kind ?? draft.kind];
 
   useEffect(() => {
     setCopyState("idle");
     setError(null);
-  }, [draftSignature]);
+  }, [draftVersion]);
 
-  const updateDraft = <K extends keyof LinkCreatorDraft>(field: K, value: LinkCreatorDraft[K]) => {
-    setDraft((current) => ({
-      ...current,
-      [field]: value,
-    }));
+  const updateDraft = <K extends keyof LinkCreatorDraft>(
+    field: K,
+    value: LinkCreatorDraft[K],
+  ) => {
+    setDraftState((current) => {
+      if (Object.is(current.draft[field], value)) {
+        return current;
+      }
+
+      return {
+        draft: {
+          ...current.draft,
+          [field]: value,
+        },
+        version: current.version + 1,
+      };
+    });
   };
 
   const handleGenerate = async () => {
+    const requestId = generationRequestRef.current + 1;
+    generationRequestRef.current = requestId;
+
     try {
-      const nextGeneratedLink = await createGeneratedArtifactLinkAsync(draft, getBaseUrl());
+      const { createGeneratedArtifactLinkAsync } =
+        await import("@/lib/payload/link-creator");
+      const nextGeneratedLink = await createGeneratedArtifactLinkAsync(
+        draft,
+        getBaseUrl(),
+      );
+      if (generationRequestRef.current !== requestId) {
+        return;
+      }
+
       setGeneratedLink(nextGeneratedLink);
-      setGeneratedSignature(draftSignature);
+      setGeneratedVersion(draftVersion);
       setError(null);
       setCopyState("idle");
     } catch (generationError) {
+      if (generationRequestRef.current !== requestId) {
+        return;
+      }
+
       setGeneratedLink(null);
-      setGeneratedSignature("");
+      setGeneratedVersion(-1);
       setCopyState("idle");
-      setError(generationError instanceof Error ? generationError.message : "The link could not be generated.");
+      setError(
+        generationError instanceof Error
+          ? generationError.message
+          : "The link could not be generated.",
+      );
     }
   };
 
@@ -107,7 +175,10 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   };
 
   return (
-    <section className="home-generator-section fade-up" style={{ animationDelay: "120ms" }}>
+    <section
+      className="home-generator-section fade-up"
+      style={{ animationDelay: "120ms" }}
+    >
       <div className="home-generator-grid">
         <div>
           <div className="home-generator-heading">
@@ -118,11 +189,16 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
               </h3>
             </div>
             <p className="max-w-2xl text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-              Paste content, pick a format, and get a shareable URL. Everything encodes client-side.
+              Paste content, pick a format, and get a shareable URL. Everything
+              encodes client-side.
             </p>
           </div>
 
-          <div className="creator-kind-grid" role="group" aria-label="Artifact kind">
+          <div
+            className="creator-kind-grid"
+            role="group"
+            aria-label="Artifact kind"
+          >
             {artifactKinds.map((kind) => {
               const Icon = kindIcons[kind];
               const isActive = draft.kind === kind;
@@ -167,7 +243,9 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
               <input
                 name="filename"
                 value={draft.filename}
-                onChange={(event) => updateDraft("filename", event.target.value)}
+                onChange={(event) =>
+                  updateDraft("filename", event.target.value)
+                }
                 placeholder="update.md"
                 className="creator-input"
               />
@@ -179,7 +257,9 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                 <input
                   name="language"
                   value={draft.language}
-                  onChange={(event) => updateDraft("language", event.target.value)}
+                  onChange={(event) =>
+                    updateDraft("language", event.target.value)
+                  }
                   placeholder="tsx"
                   className="creator-input"
                 />
@@ -192,7 +272,12 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                 <select
                   name="diffView"
                   value={draft.diffView}
-                  onChange={(event) => updateDraft("diffView", event.target.value as LinkCreatorDraft["diffView"])}
+                  onChange={(event) =>
+                    updateDraft(
+                      "diffView",
+                      event.target.value as LinkCreatorDraft["diffView"],
+                    )
+                  }
                   className="creator-input"
                 >
                   <option value="unified">Unified</option>
@@ -204,7 +289,9 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             <label className="creator-field creator-field-full">
               <span className="creator-field-head">
                 <span className="metric-label">{contentFieldLabel}</span>
-                <span className="creator-field-hint">{fieldHints[draft.kind]}</span>
+                <span className="creator-field-hint">
+                  {fieldHints[draft.kind]}
+                </span>
               </span>
               <textarea
                 name="content"
@@ -221,13 +308,20 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                 <Link2 className="h-3.5 w-3.5" />
                 Generate link
               </button>
-              <div className="creator-codec-row" role="group" aria-label="Compression algorithm">
+              <div
+                className="creator-codec-row"
+                role="group"
+                aria-label="Compression algorithm"
+              >
                 <span className="metric-label">Compression</span>
-                {(["auto", ...codecs] as const).map((option) => (
+                {codecOptions.map((option) => (
                   <button
                     key={option}
                     type="button"
-                    className={cn("artifact-action", (draft.codec ?? "auto") === option && "is-primary")}
+                    className={cn(
+                      "artifact-action",
+                      (draft.codec ?? "auto") === option && "is-primary",
+                    )}
                     aria-pressed={(draft.codec ?? "auto") === option}
                     onClick={() => updateDraft("codec", option)}
                   >
@@ -244,7 +338,9 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             <div className="creator-result-head">
               <div>
                 <p className="section-kicker">Generated link</p>
-                <h4 className="mt-2 text-xl font-semibold tracking-[-0.03em]">Output</h4>
+                <h4 className="mt-2 text-xl font-semibold tracking-[-0.03em]">
+                  Output
+                </h4>
               </div>
               <span className="mono-pill">
                 <GeneratedKindIcon className="h-3.5 w-3.5" />
@@ -272,20 +368,46 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                   </div>
                   <div className="metric-card">
                     <p className="metric-label">Fragment size</p>
-                    <p className="metric-value">{generatedLink.fragmentLength.toLocaleString()} chars</p>
+                    <p className="metric-value">
+                      {numberFormatter.format(generatedLink.fragmentLength)} chars
+                    </p>
                   </div>
                 </div>
 
                 <div className="creator-result-actions">
-                  <button type="button" className={cn("artifact-action", copyState === "copied" && "is-primary")} onClick={handleCopy}>
-                    {copyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                    {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy link"}
+                  <button
+                    type="button"
+                    className={cn(
+                      "artifact-action",
+                      copyState === "copied" && "is-primary",
+                    )}
+                    onClick={handleCopy}
+                  >
+                    {copyState === "copied" ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                    {copyState === "copied"
+                      ? "Copied"
+                      : copyState === "failed"
+                        ? "Copy failed"
+                        : "Copy link"}
                   </button>
-                  <button type="button" className="artifact-action" onClick={() => onPreviewHash(generatedLink.hash)}>
+                  <button
+                    type="button"
+                    className="artifact-action"
+                    onClick={() => onPreviewHash(generatedLink.hash)}
+                  >
                     <ArrowUpRight className="h-3.5 w-3.5" />
                     Preview here
                   </button>
-                  <a href={generatedLink.url} target="_blank" rel="noreferrer" className="artifact-action">
+                  <a
+                    href={generatedLink.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="artifact-action"
+                  >
                     <ExternalLink className="h-3.5 w-3.5" />
                     Open in new tab
                   </a>
@@ -293,7 +415,9 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
 
                 <div className="creator-result-note">
                   <p className="metric-label">Bundle title</p>
-                  <p className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">{generatedLink.envelope.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
+                    {generatedLink.envelope.title}
+                  </p>
                   {isGeneratedLinkStale ? (
                     <p className="creator-inline-status" role="status">
                       Draft changed since last generation.

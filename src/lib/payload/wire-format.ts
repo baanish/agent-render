@@ -46,6 +46,42 @@ function isRecord(value: unknown): value is RecordValue {
   return typeof value === "object" && value !== null;
 }
 
+function packArtifact(artifact: ArtifactPayload): PackedArtifact {
+  switch (artifact.kind) {
+    case "markdown":
+    case "csv":
+    case "json":
+      return {
+        i: artifact.id,
+        k: artifact.kind,
+        t: artifact.title,
+        f: artifact.filename,
+        c: artifact.content,
+      };
+    case "code":
+      return {
+        i: artifact.id,
+        k: artifact.kind,
+        t: artifact.title,
+        f: artifact.filename,
+        c: artifact.content,
+        l: artifact.language,
+      };
+    case "diff":
+      return {
+        i: artifact.id,
+        k: artifact.kind,
+        t: artifact.title,
+        f: artifact.filename,
+        p: artifact.patch,
+        o: artifact.oldContent,
+        n: artifact.newContent,
+        l: artifact.language,
+        w: artifact.view,
+      };
+  }
+}
+
 /**
  * Packs a full payload envelope into the compact wire transport shape (`p: 1`) used when
  * fragment size pressure favors shorter field keys.
@@ -55,47 +91,18 @@ function isRecord(value: unknown): value is RecordValue {
  * to round-trip through {@link unpackEnvelope} back to the standard envelope contract.
  */
 export function packEnvelope(envelope: PayloadEnvelope): PackedEnvelope {
+  const artifacts = new Array<PackedArtifact>(envelope.artifacts.length);
+  for (let index = 0; index < envelope.artifacts.length; index += 1) {
+    artifacts[index] = packArtifact(envelope.artifacts[index]);
+  }
+
   return {
     p: 1,
     v: envelope.v,
     c: envelope.codec,
     t: envelope.title,
     a: envelope.activeArtifactId,
-    r: envelope.artifacts.map((artifact) => {
-      switch (artifact.kind) {
-        case "markdown":
-        case "csv":
-        case "json":
-          return {
-            i: artifact.id,
-            k: artifact.kind,
-            t: artifact.title,
-            f: artifact.filename,
-            c: artifact.content,
-          };
-        case "code":
-          return {
-            i: artifact.id,
-            k: artifact.kind,
-            t: artifact.title,
-            f: artifact.filename,
-            c: artifact.content,
-            l: artifact.language,
-          };
-        case "diff":
-          return {
-            i: artifact.id,
-            k: artifact.kind,
-            t: artifact.title,
-            f: artifact.filename,
-            p: artifact.patch,
-            o: artifact.oldContent,
-            n: artifact.newContent,
-            l: artifact.language,
-            w: artifact.view,
-          };
-      }
-    }),
+    r: artifacts,
   };
 }
 
@@ -166,7 +173,13 @@ function looksLikePackedEnvelope(value: unknown): value is PackedEnvelope {
     return false;
   }
 
-  return value.r.every(looksLikePackedArtifact);
+  for (const artifact of value.r) {
+    if (!looksLikePackedArtifact(artifact)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -181,11 +194,16 @@ export function unpackEnvelope(value: unknown): unknown {
     return value;
   }
 
+  const artifacts = new Array<ArtifactPayload>(value.r.length);
+  for (let index = 0; index < value.r.length; index += 1) {
+    artifacts[index] = unpackArtifact(value.r[index]);
+  }
+
   return {
     v: value.v,
     codec: value.c,
     title: typeof value.t === "string" ? value.t : undefined,
     activeArtifactId: typeof value.a === "string" ? value.a : undefined,
-    artifacts: value.r.map(unpackArtifact),
+    artifacts,
   } satisfies PayloadEnvelope;
 }

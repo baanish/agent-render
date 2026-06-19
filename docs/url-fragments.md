@@ -3,7 +3,7 @@
 agent-render links carry the artifact in the URL fragment:
 
 ```text
-https://agent-render.com/#agent-render=v1.arx.1.<compressed-payload>
+https://agent-render.com/#agent-render=v1.arx3.1.<compressed-payload>
 ```
 
 Everything before `#` loads the static app. Everything after `#` is the artifact payload the browser decodes locally.
@@ -12,21 +12,27 @@ Everything before `#` loads the static app. Everything after `#` is the artifact
 
 - `agent-render` tells the app this hash belongs to agent-render.
 - `v1` is the payload format version.
-- `arx` is the compression codec.
+- `arx3` is the compression codec.
 - `1` is the arx dictionary version.
 - `<compressed-payload>` is the encoded artifact bundle.
 
-For non-arx links the shape is shorter:
+Other links may use a shorter shape:
 
 ```text
 #agent-render=v1.<codec>.<payload>
 ```
 
-where `<codec>` is `plain`, `lz`, or `deflate`.
+where `<codec>` is `plain`, `lz`, or `deflate`. ARX-family links include the dictionary version:
+
+```text
+#agent-render=v1.arx.<dictVersion>.<payload>
+#agent-render=v1.arx2.<dictVersion>.<payload>
+#agent-render=v1.arx3.<dictVersion>.<payload>
+```
 
 ## Why arx exists
 
-Artifacts can be bigger than a comfortable URL. `arx` keeps links shorter by applying an agent-render substitution dictionary, Brotli compression, and URL-safe binary-to-text encoding. The result can look strange because it is optimized for transport, not human reading.
+Artifacts can be bigger than a comfortable URL. The ARX family keeps links shorter by applying agent-render substitution dictionaries, Brotli compression, tuple envelopes for arx2/arx3, and binary-to-text encoding. `arx3` favors compact visible Unicode fragments, so it can look especially strange even though the browser decodes it locally.
 
 ## Privacy tradeoff
 

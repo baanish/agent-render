@@ -1,5 +1,7 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import { withBasePath } from "@/lib/site/base-path";
+
+const homePath = withBasePath("/");
 
 export const metadata: Metadata = {
   title: "Security - agent-render",
@@ -57,9 +59,9 @@ export default function SecurityPage() {
   return (
     <main className="app-shell min-h-screen">
       <header className="nav-bar sticky top-0 z-30 flex items-center justify-between px-4 py-3 sm:px-8 sm:py-4 lg:px-12">
-        <Link href="/" className="nav-text-link">
+        <a href={homePath} className="nav-text-link">
           Agent Render
-        </Link>
+        </a>
       </header>
 
       <div className="mx-auto grid w-full max-w-4xl gap-10 px-4 py-10 sm:px-8 sm:py-16 lg:px-12">

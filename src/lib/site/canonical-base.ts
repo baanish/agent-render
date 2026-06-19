@@ -1,12 +1,6 @@
-const DEFAULT_SITE_ORIGIN = "https://agent-render.com";
+import { normalizeBasePath } from "@/lib/site/base-path";
 
-function normalizeConfiguredBasePath(raw: string | undefined): string {
-  const configured = raw?.trim() ?? "";
-  if (configured === "" || configured === "/") {
-    return "";
-  }
-  return configured.replace(/\/$/, "");
-}
+const DEFAULT_SITE_ORIGIN = "https://agent-render.com";
 
 /**
  * Returns the origin (scheme + host + port) for the deployed site, without a trailing slash.
@@ -20,7 +14,7 @@ export function getCanonicalSiteOrigin(): string {
   return DEFAULT_SITE_ORIGIN;
 }
 
-const basePath = normalizeConfiguredBasePath(process.env.NEXT_PUBLIC_BASE_PATH);
+const basePath = normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH);
 
 /**
  * Builds an absolute URL for a path under the configured `NEXT_PUBLIC_BASE_PATH`.
