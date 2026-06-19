@@ -77,4 +77,14 @@ diff --git a/src/alpha.ts b/src/alpha.ts
       displayPath: "src/alpha.ts",
     });
   });
+
+  it("falls back to a file-N label when a rename target strips to an empty path", () => {
+    // `rename to a/` reduces to "" after stripping the a/ prefix; the display label must not be
+    // empty and the id must not be degenerate ("-0"). Fuzz regression (git-patch parser).
+    const files = parseGitPatchBundle("rename to a/");
+
+    expect(files).toHaveLength(1);
+    expect(files[0]).toMatchObject({ displayPath: "file-1", id: "file-1-0" });
+    expect(files[0].displayPath).not.toBe("");
+  });
 });

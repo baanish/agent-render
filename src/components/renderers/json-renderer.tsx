@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Braces, ChevronRight, ListTree } from "lucide-react";
 import type { JsonArtifact } from "@/lib/payload/schema";
 
@@ -11,12 +11,31 @@ type JsonRendererProps = {
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
+// Policy (owned decision): collapse nodes deeper than this to a leaf so a pathological or deeply
+// nested payload can never overflow React's client render stack. A MAX_DECODED_PAYLOAD_LENGTH
+// (200k char) payload can nest thousands deep in only a few KB, which crashes the reconciler with
+// a RangeError; 200 is far beyond any human-readable JSON. Change only by maintainer decision.
+const MAX_JSON_TREE_DEPTH = 200;
+
 function JsonNode({ label, value, level = 0 }: { label?: string; value: JsonValue; level?: number }) {
   if (value === null || typeof value !== "object") {
     return (
       <div className="json-leaf-row" style={{ paddingLeft: `${level * 1.1}rem` }}>
         {label ? <span className="json-key">{label}</span> : null}
         <span className={`json-value json-${value === null ? "null" : typeof value}`}>{String(value)}</span>
+      </div>
+    );
+  }
+
+  if (level >= MAX_JSON_TREE_DEPTH) {
+    return (
+      <div className="json-leaf-row" style={{ paddingLeft: `${level * 1.1}rem` }}>
+        {label ? <span className="json-key">{label}</span> : null}
+        <span className="json-value json-truncated">
+          {Array.isArray(value)
+            ? `Array(${value.length}) — max depth reached`
+            : `Object(${Object.keys(value).length}) — max depth reached`}
+        </span>
       </div>
     );
   }
@@ -63,6 +82,22 @@ function JsonRawSource({ content }: { content: string }) {
       <code>{content}</code>
     </pre>
   );
+}
+
+// Defense-in-depth (mirrors DiffRendererBoundary): if the recursive tree render throws for any
+// reason, degrade to the raw source view instead of crashing the whole viewer. The depth cap above
+// is the primary guard; this catches anything it doesn't. Keyed by artifact id so a new artifact
+// resets the error state and retries the tree.
+class JsonTreeBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(): { hasError: true } {
+    return { hasError: true };
+  }
+
+  render(): ReactNode {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
 }
 
 /**
@@ -114,9 +149,11 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
         <span className="mono-pill">read-only</span>
       </div>
       {view === "tree" ? (
-        <div className="json-tree-shell">
-          <JsonNode value={parsed.json} />
-        </div>
+        <JsonTreeBoundary key={artifact.id} fallback={<JsonRawSource content={artifact.content} />}>
+          <div className="json-tree-shell">
+            <JsonNode value={parsed.json} />
+          </div>
+        </JsonTreeBoundary>
       ) : (
         <JsonRawSource content={artifact.content} />
       )}

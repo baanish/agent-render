@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import arxDictionaryJson from "../public/arx-dictionary.json";
 import arx2DictionaryJson from "../public/arx2-dictionary.json";
 import {
@@ -69,6 +69,52 @@ describe("base76 encoding", () => {
     for (let i = 0; i < 100; i++) bytes[i] = Math.floor(Math.random() * 256);
     const encoded = encodeBase76(bytes);
     expect(encoded).toMatch(/^[A-Za-z0-9\-._~!$*()',;:@/]+$/);
+  });
+
+  // The 2-char length prefix encodes the byte count as floor(len/77) and len%77 over a
+  // 77-char alphabet, so it can only represent 76*77+76 = 5928 bytes. Past that the legacy
+  // encoder emitted "undefined" for the overflowing prefix char and the payload corrupted.
+  // Lengths up to the ceiling keep the legacy 2-char prefix (existing shared links stay
+  // decodable); longer payloads switch to an "=" marked variable-width length prefix.
+  const CEILING = 76 * 77 + 76; // 5928
+
+  function ramp(n: number): Uint8Array {
+    const bytes = new Uint8Array(n);
+    for (let i = 0; i < n; i++) bytes[i] = (i * 31 + 7) & 0xff;
+    return bytes;
+  }
+
+  it("keeps the legacy 2-char prefix at the ceiling (5928 bytes) and round-trips", () => {
+    const input = ramp(CEILING);
+    const wire = encodeBase76(input);
+    expect(wire.startsWith("=")).toBe(false);
+    expect(decodeBase76(wire)).toEqual(input);
+  });
+
+  it("round-trips one byte past the ceiling (5929 bytes) without emitting 'undefined'", () => {
+    const input = ramp(CEILING + 1);
+    const wire = encodeBase76(input);
+    expect(wire.startsWith("undefined")).toBe(false);
+    expect(wire.startsWith("=")).toBe(true);
+    expect(decodeBase76(wire)).toEqual(input);
+  });
+
+  // base76's BigInt packing is O(n^2), so 60000 bytes takes a few seconds — far past any real
+  // fragment (the 8192-char budget caps base76 near 6400 bytes), but it pins the exported
+  // function's contract at the size from the original overflow report. Hence the raised timeout.
+  it("round-trips a large payload (60000 bytes)", () => {
+    const input = ramp(60000);
+    const wire = encodeBase76(input);
+    expect(wire.startsWith("undefined")).toBe(false);
+    expect(decodeBase76(wire)).toEqual(input);
+  }, 30000);
+
+  it("preserves leading zero bytes past the ceiling", () => {
+    // All-zero bytes are the worst case for the length prefix: the BigInt packing drops every
+    // leading zero, so the byte count must come entirely from the prefix.
+    const input = new Uint8Array(CEILING + 1); // 5929 zero bytes
+    const wire = encodeBase76(input);
+    expect(decodeBase76(wire)).toEqual(input);
   });
 });
 
@@ -841,6 +887,87 @@ describe("arx3 compact tuple envelope", () => {
     expect(escapedParsed.ok).toBe(true);
     if (!escapedParsed.ok) return;
     expect(escapedParsed.rawLength).toBe(fragment.length);
+  });
+});
+
+describe("arx2/arx3 preserve control bytes in artifact content", () => {
+  // The arx2/arx3 overlay assigns byte 0x7F (DEL) as a substitution code
+  // (ARX2_SINGLE_BYTE_CODES). JSON.stringify escapes every C0 control (< 0x20)
+  // — which covers all the other code bytes — but leaves a literal 0x7F because
+  // DEL is >= 0x20. These tests pin that a literal DEL (and every other byte in
+  // 0x00..0x9F) round-trips losslessly through the tuple pipeline rather than
+  // being mistaken for the overlay code on decode.
+  //
+  // Characterization: if these break after a refactor, the canonical decoded
+  // envelope below changed — update the expectation AND confirm the DEL
+  // escaping in compressTupleEnvelope is still in place; do not relax the test.
+  beforeAll(() => {
+    loadArxDictionarySync(arxDictionaryJson);
+    loadArx2OverlayDictionarySync(arx2DictionaryJson);
+  });
+
+  function markdownEnvelope(content: string): PayloadEnvelope {
+    return {
+      v: 1,
+      codec: "plain",
+      activeArtifactId: "a",
+      artifacts: [{ id: "a", kind: "markdown", content }],
+    };
+  }
+
+  const allControlBytes = Array.from({ length: 0xa0 }, (_, byte) => String.fromCharCode(byte)).join("");
+
+  it("round-trips a literal DEL (U+007F) through the arx2 codec API to the canonical envelope", async () => {
+    const envelope = markdownEnvelope("log\x7fend");
+    const payloads = await arx2CompressEnvelope(envelope);
+    const decoded = await arx2DecompressEnvelope(payloads.base64url);
+    expect(decoded).toEqual({ ...envelope, codec: "arx2" });
+  });
+
+  it("round-trips a literal DEL (U+007F) through the arx3 codec API to the canonical envelope", async () => {
+    const envelope = markdownEnvelope("log\x7fend");
+    const payloads = await arx3CompressEnvelope(envelope);
+    const decoded = await arx3DecompressEnvelope(payloads.base64url);
+    expect(decoded).toEqual({ ...envelope, codec: "arx3" });
+  });
+
+  it("round-trips a lone DEL byte as the entire content through arx2", async () => {
+    const envelope = markdownEnvelope("\x7f");
+    const payloads = await arx2CompressEnvelope(envelope);
+    const decoded = await arx2DecompressEnvelope(payloads.base64url);
+    expect(decoded).toEqual({ ...envelope, codec: "arx2" });
+  });
+
+  it("round-trips every byte 0x00..0x9F through the arx2 codec API", async () => {
+    const envelope = markdownEnvelope(allControlBytes);
+    const payloads = await arx2CompressEnvelope(envelope);
+    const decoded = await arx2DecompressEnvelope(payloads.base64url);
+    expect(decoded).toEqual({ ...envelope, codec: "arx2" });
+  });
+
+  it("round-trips every byte 0x00..0x9F through the arx3 codec API", async () => {
+    const envelope = markdownEnvelope(allControlBytes);
+    const payloads = await arx3CompressEnvelope(envelope);
+    const decoded = await arx3DecompressEnvelope(payloads.base64url);
+    expect(decoded).toEqual({ ...envelope, codec: "arx3" });
+  });
+
+  it("decodes a DEL-containing arx2 fragment through the public fragment path", async () => {
+    const content = "log\x7fend";
+    const hash = `#${await encodeEnvelopeAsync(markdownEnvelope(content), { codec: "arx2" })}`;
+    const parsed = await decodeFragmentAsync(hash, { skipFragmentBudget: true });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.envelope.artifacts[0]).toMatchObject({ content });
+  });
+
+  it("decodes a DEL-containing arx3 fragment through the public fragment path", async () => {
+    const content = "log\x7fend";
+    const hash = `#${await encodeEnvelopeAsync(markdownEnvelope(content), { codec: "arx3" })}`;
+    const parsed = await decodeFragmentAsync(hash, { skipFragmentBudget: true });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.envelope.artifacts[0]).toMatchObject({ content });
   });
 });
 

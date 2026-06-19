@@ -69,4 +69,16 @@ describe("JsonRenderer", () => {
     expect(screen.getByText(/expected property name/i)).toBeVisible();
     expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent("{ nope");
   });
+
+  it("renders deeply nested JSON without overflowing the render stack", () => {
+    // ~3000-deep nesting crashed the client reconciler with RangeError before the depth cap.
+    // Built as a string so the test setup itself does not recurse. Fuzz regression (json tree).
+    const depth = 3000;
+    const content = "[".repeat(depth) + "0" + "]".repeat(depth);
+    const artifact = createArtifact({ content });
+
+    expect(() => render(<JsonRenderer artifact={artifact} />)).not.toThrow();
+    expect(screen.getByTestId("renderer-json")).toBeInTheDocument();
+    expect(screen.getAllByText(/max depth reached/i).length).toBeGreaterThan(0);
+  });
 });
