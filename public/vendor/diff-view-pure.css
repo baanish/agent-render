@@ -1,27 +1,45 @@
+.diff-tailwindcss-wrapper .\!container {
+  width: 100% !important;
+}
 .diff-tailwindcss-wrapper .container {
   width: 100%;
 }
 @media (min-width: 640px) {
+  .diff-tailwindcss-wrapper .\!container {
+    max-width: 640px !important;
+  }
   .diff-tailwindcss-wrapper .container {
     max-width: 640px;
   }
 }
 @media (min-width: 768px) {
+  .diff-tailwindcss-wrapper .\!container {
+    max-width: 768px !important;
+  }
   .diff-tailwindcss-wrapper .container {
     max-width: 768px;
   }
 }
 @media (min-width: 1024px) {
+  .diff-tailwindcss-wrapper .\!container {
+    max-width: 1024px !important;
+  }
   .diff-tailwindcss-wrapper .container {
     max-width: 1024px;
   }
 }
 @media (min-width: 1280px) {
+  .diff-tailwindcss-wrapper .\!container {
+    max-width: 1280px !important;
+  }
   .diff-tailwindcss-wrapper .container {
     max-width: 1280px;
   }
 }
 @media (min-width: 1536px) {
+  .diff-tailwindcss-wrapper .\!container {
+    max-width: 1536px !important;
+  }
   .diff-tailwindcss-wrapper .container {
     max-width: 1536px;
   }
@@ -408,11 +426,104 @@
 .diff-tailwindcss-wrapper .diff-widget-tooltip:hover::after {
   display: block;
 }
+.diff-line-extend-wrapper,
+.diff-line-widget-wrapper {
+  display: flow-root;
+}
 .diff-line-extend-wrapper * {
   color: initial;
 }
 .diff-line-widget-wrapper * {
   color: initial;
+}
+/* Multi-select styles for line range selection */
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-new-num,
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-old-num,
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-num {
+  z-index: 2;
+}
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-content,
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-new-content,
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-old-content {
+  position: relative;
+}
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-new-num::after,
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-old-num::after,
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-num::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  opacity: 0.15;
+  background-color: var(--diff-multi-select-bg, #f0c000);
+  pointer-events: none;
+}
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-new-num::before,
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-old-num::before,
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-num::before {
+  content: "";
+  z-index: 2;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -2px;
+  width: 4px;
+  background-color: var(--diff-multi-select-border, #2588fa);
+}
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-new-content::after,
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-old-content::after,
+.diff-tailwindcss-wrapper .diff-multi-select-active.diff-line-content::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  opacity: 0.15;
+  background-color: var(--diff-multi-select-bg, #f0c000);
+  pointer-events: none;
+}
+/* Multi-select: ensure proper positioning for line number cells */
+.diff-multi-selecting .diff-line-old-num,
+.diff-multi-selecting .diff-line-new-num,
+.diff-multi-selecting .diff-line-num {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.diff-multi-selecting .diff-line-old-content,
+.diff-multi-selecting .diff-line-new-content,
+.diff-multi-selecting .diff-line-content {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+/* Prevent text selection during multi-line selection */
+.diff-multi-selecting {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.diff-multi-selecting * {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+/* Hide addWidget button during active dragging selection */
+.diff-multi-selecting .diff-add-widget-wrapper {
+  display: none;
+}
+/* Ensure addWidget button is above selection overlay */
+.diff-multiselect-wrapper .diff-add-widget-wrapper {
+  z-index: 10 !important;
+}
+/* Line number span should not interfere with click events */
+.diff-tailwindcss-wrapper .diff-line-new-num span[data-line-num],
+.diff-tailwindcss-wrapper .diff-line-old-num span[data-line-num] {
+  pointer-events: none;
+}
+.diff-multiselect-wrapper .diff-line-old-num,
+.diff-multiselect-wrapper .diff-line-new-num,
+.diff-multiselect-wrapper .diff-line-num {
+  cursor: pointer;
 }
 .diff-tailwindcss-wrapper[data-theme="light"] .diff-line-syntax-raw pre code.hljs {
   display: block;
