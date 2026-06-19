@@ -543,7 +543,7 @@ describe("arx2 tuple envelope", () => {
     expect(parsed.ok).toBe(true);
   });
 
-  it("decodes arx and arx2 payloads when the active dictionary version differs", async () => {
+  it("refuses to decode when the active dictionary is newer than the build supports", async () => {
     loadArxDictionarySync(arxDictionaryJson);
     const arxHash = `#${await encodeEnvelopeAsync(bundle, { codec: "arx" })}`;
     const arx2Hash = `#${await encodeEnvelopeAsync(bundle, { codec: "arx2" })}`;
@@ -553,14 +553,15 @@ describe("arx2 tuple envelope", () => {
     };
 
     loadArxDictionarySync(shiftedDictionary);
-
-    const arxParsed = await decodeFragmentAsync(arxHash);
-    const arx2Parsed = await decodeFragmentAsync(arx2Hash);
-
-    expect(arxParsed.ok).toBe(true);
-    expect(arx2Parsed.ok).toBe(true);
-
-    loadArxDictionarySync(arxDictionaryJson);
+    try {
+      // A dictionary newer than this build supports is rejected: a compact arx link carries no
+      // version of its own, so decoding it against a forward-incompatible dictionary could silently
+      // mis-decode. Hard-failing is the safe behavior.
+      expect((await decodeFragmentAsync(arxHash)).ok).toBe(false);
+      expect((await decodeFragmentAsync(arx2Hash)).ok).toBe(false);
+    } finally {
+      loadArxDictionarySync(arxDictionaryJson);
+    }
   });
 
   it("can decode arx2 payloads directly through the codec API", async () => {

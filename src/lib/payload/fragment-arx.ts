@@ -6,6 +6,8 @@ import {
   arx3DecompressEnvelope,
   arxCompressPayloads,
   arxDecompress,
+  getActiveArx2OverlayVersion,
+  getActiveDictVersion,
   isExternalArx2OverlayDictionaryLoaded,
   isExternalDictionaryLoaded,
   loadArxDictionary,
@@ -30,36 +32,79 @@ type TransportLengthCalculator = (value: string) => number;
 let arxDictionaryLoadPromise: Promise<void> | null = null;
 let arx2OverlayDictionaryLoadPromise: Promise<void> | null = null;
 
+// Compact ARX fragments (tags `a`/`b`/`c`) do NOT carry a dictionary version — the tag implies the
+// CURRENT dictionary, which keeps links short. The safety cost is that a build must not decode with
+// a dictionary NEWER than it was built for (a CDN/asset split serving a future dictionary, or a
+// version bump), because it would lack the new slots and could produce a structurally-valid-but-
+// wrong envelope. We pin the newest supported version and reject anything newer so decode hard-fails
+// instead of mis-decoding. The built-in fallback dictionary (version 0) and the current external
+// dictionary (version 1) are both <= this and remain usable. Bumping a dictionary version is
+// therefore a wire change that also requires new compact tags and updating
+// tests/arx-dictionary-pin.test.ts.
+const EXPECTED_ARX_DICTIONARY_VERSION = 1;
+const EXPECTED_ARX2_OVERLAY_VERSION = 1;
+
+function assertArxDictionaryNotNewerThanExpected(): void {
+  const version = getActiveDictVersion();
+  if (version > EXPECTED_ARX_DICTIONARY_VERSION) {
+    throw new Error(
+      `Active arx dictionary version ${version} is newer than this build supports (${EXPECTED_ARX_DICTIONARY_VERSION}); refusing to decode with a forward-incompatible dictionary.`,
+    );
+  }
+}
+
+function assertArx2OverlayNotNewerThanExpected(): void {
+  const version = getActiveArx2OverlayVersion();
+  if (version > EXPECTED_ARX2_OVERLAY_VERSION) {
+    throw new Error(
+      `Active arx2 overlay dictionary version ${version} is newer than this build supports (${EXPECTED_ARX2_OVERLAY_VERSION}); refusing to decode with a forward-incompatible dictionary.`,
+    );
+  }
+}
+
 async function ensureArxDictionaryLoaded(): Promise<void> {
-  if (isExternalDictionaryLoaded()) {
-    return;
+  if (!isExternalDictionaryLoaded()) {
+    arxDictionaryLoadPromise ??= loadArxDictionary()
+      .then((version) => {
+        if (version < 0) {
+          // The external fetch failed and the built-in fallback is now active. Don't cache this, so
+          // a later call can retry the external dictionary once the endpoint recovers; the current
+          // call still proceeds (degraded) on the built-in dictionary rather than being poisoned.
+          arxDictionaryLoadPromise = null;
+        }
+      })
+      .catch((error) => {
+        arxDictionaryLoadPromise = null;
+        throw error;
+      });
+    await arxDictionaryLoadPromise;
   }
 
-  // Reset the cached promise on failure so a transient dictionary load error can be retried
-  // instead of permanently poisoning every arx encode/decode for the page's lifetime.
-  arxDictionaryLoadPromise ??= loadArxDictionary()
-    .then(() => undefined)
-    .catch((error) => {
-      arxDictionaryLoadPromise = null;
-      throw error;
-    });
-  await arxDictionaryLoadPromise;
+  // Runs for both fetched and injected (sync) dictionaries so a forward-incompatible skew can't slip
+  // through whichever way the dictionary was loaded.
+  assertArxDictionaryNotNewerThanExpected();
 }
 
 async function ensureArx2DictionariesLoaded(): Promise<void> {
   await ensureArxDictionaryLoaded();
 
-  if (isExternalArx2OverlayDictionaryLoaded()) {
-    return;
+  if (!isExternalArx2OverlayDictionaryLoaded()) {
+    // Same retry-on-failure contract as the base dictionary (loadArx2OverlayDictionary also resolves
+    // -1 on a transient fetch failure rather than rejecting).
+    arx2OverlayDictionaryLoadPromise ??= loadArx2OverlayDictionary()
+      .then((version) => {
+        if (version < 0) {
+          arx2OverlayDictionaryLoadPromise = null;
+        }
+      })
+      .catch((error) => {
+        arx2OverlayDictionaryLoadPromise = null;
+        throw error;
+      });
+    await arx2OverlayDictionaryLoadPromise;
   }
 
-  arx2OverlayDictionaryLoadPromise ??= loadArx2OverlayDictionary()
-    .then(() => undefined)
-    .catch((error) => {
-      arx2OverlayDictionaryLoadPromise = null;
-      throw error;
-    });
-  await arx2OverlayDictionaryLoadPromise;
+  assertArx2OverlayNotNewerThanExpected();
 }
 
 function decodeArxEncodedPayload(encoded: string): string {

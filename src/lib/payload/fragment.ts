@@ -1,5 +1,5 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
-import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate";
+import { deflateSync, inflateSync, strFromU8, strToU8, unzlibSync } from "fflate";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
 import {
@@ -136,6 +136,26 @@ function encodePayload(json: string, codec: PayloadCodec): string {
   }
 }
 
+/**
+ * Inflates a `deflate` payload, accepting both raw deflate (current encoder) and zlib-wrapped
+ * deflate (emitted by an older encoder version). Raw is tried first so current output is never at
+ * risk of header mis-detection; zlib is a back-compat fallback so historical shared links keep
+ * decoding instead of failing as invalid-json.
+ */
+function inflateDeflatePayload(bytes: Uint8Array): Uint8Array {
+  try {
+    return inflateSync(bytes);
+  } catch (rawDeflateError) {
+    // Fall back to zlib-wrapped (legacy) deflate. If that also fails the input is not valid deflate
+    // at all, so surface the original raw-inflate error rather than a misleading zlib one.
+    try {
+      return unzlibSync(bytes);
+    } catch {
+      throw rawDeflateError;
+    }
+  }
+}
+
 function decodePayload(encoded: string, codec: PayloadCodec): string | null {
   switch (codec) {
     case "plain":
@@ -143,7 +163,7 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
     case "lz":
       return decompressFromEncodedURIComponent(encoded);
     case "deflate":
-      return strFromU8(inflateSync(fromBase64UrlBytes(encoded)));
+      return strFromU8(inflateDeflatePayload(fromBase64UrlBytes(encoded)));
     case "arx":
     case "arx2":
     case "arx3":
@@ -531,8 +551,18 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
     if (error instanceof Error && error.name === "ArxDecodedPayloadTooLargeError") {
       return { ok: false, code: "decoded-too-large", message: error.message };
     }
-    return { ok: false, code: "invalid-json", message: "The fragment payload could not be decoded as valid JSON." };
+    const arxHint =
+      codec === "arx" || codec === "arx2" || codec === "arx3"
+        ? " It may have been encoded with a different ARX dictionary version."
+        : "";
+    return { ok: false, code: "invalid-json", message: `The fragment payload could not be decoded as valid JSON.${arxHint}` };
   }
 
-  return resolveEnvelope(parsed, header.fragmentLength);
+  const resolved = resolveEnvelope(parsed, header.fragmentLength);
+  if (!resolved.ok && resolved.code === "invalid-envelope" && (codec === "arx" || codec === "arx2" || codec === "arx3")) {
+    // An ARX payload that decoded but is not a valid envelope almost always means the active
+    // dictionary differs from the one it was encoded with (see tests/arx-dictionary-pin.test.ts).
+    return { ...resolved, message: `${resolved.message} It may have been encoded with a different ARX dictionary version.` };
+  }
+  return resolved;
 }
