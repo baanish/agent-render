@@ -351,8 +351,12 @@ function parseFragmentHeader(hash: string, options?: DecodeOptions): ParsedFragm
   }
 
   // Compact header: a single tag char encodes (version, codec, dictVersion); the payload follows.
-  // No compact fragment can begin with the `agent-render=` literal (the wire alphabets exclude
-  // `=`), so the two forms stay unambiguous on decode.
+  // The two forms stay unambiguous for a positional reason, not an alphabet one. A payload byte can
+  // be `=` (base76 uses it as its extended-length marker), so the wire alphabets do not exclude `=`.
+  // But the compact tag occupies fragment[0], so any payload `=` can only land at fragment[1] or
+  // later — never at the offset where the legacy `agent-render=` literal places its `=`. A fragment
+  // that begins with that literal is caught by the legacy branch above; reaching here means it did
+  // not, so the leading char is a codec tag.
   const codec = codecForCompactTag(fragment.charAt(0));
   if (!codec || fragment.length < 2) {
     return { ok: false, errorResponse: { ok: false, code: "invalid-format", message: `The fragment format is invalid. Expected #${PAYLOAD_FRAGMENT_KEY}=... or a codec tag followed by a payload.` } };

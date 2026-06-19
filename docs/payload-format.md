@@ -9,21 +9,23 @@ Payload contents are untrusted user content. Viewers, agents, and automations sh
 ## Fragment shape
 
 ```text
-#agent-render=v1.<codec>.<payload>    (plain | lz | deflate)
-#agent-render=v1.arx.<dictVersion>.<payload>    (arx)
-#agent-render=v1.arx2.<dictVersion>.<payload>   (arx2)
-#agent-render=v1.arx3.<dictVersion>.<payload>   (arx3)
+#p<payload>   (plain)
+#l<payload>   (lz)
+#d<payload>   (deflate)
+#a<payload>   (arx)
+#b<payload>   (arx2)
+#c<payload>   (arx3)
 ```
 
-The fragment protocol includes version and codec in the outer format so unsupported formats fail cleanly. Fragment URLs can look long because they carry the artifact payload in the browser-only fragment instead of sending it to the host during the page request.
+The compact fragment is a single codec tag char followed by the payload. The tag encodes the codec (and, for `arx`/`arx2`/`arx3`, the active dictionary version) so unsupported formats fail cleanly. The legacy `#agent-render=v1.<codec>.<dictVersion>.<payload>` form still decodes for back-compatibility but is no longer emitted. Fragment URLs can look long because they carry the artifact payload in the browser-only fragment instead of sending it to the host during the page request.
 
 Supported codecs:
 
 - `plain` - base64url-encoded JSON
 - `lz` - `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate` - deflate-compressed UTF-8 JSON bytes encoded as base64url
-- `arx` - domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding. arx fragments include dictionary version metadata in the outer format (`v1.arx.<dictVersion>.<payload>`) so links stay portable across dictionary updates. Four wire shapes are tried and the shortest **transport** size wins (see `computeTransportLength` in `fragment.ts` — non-ASCII Unicode may count longer after percent-encoding): **base76** (ASCII-only, 77 fragment-safe chars), **base64url** (standard RFC 4648 alphabet `A-Za-z0-9-_`, no padding, prefixed with `B.` for detection), **base1k** (Unicode, 1774 chars from U+00A1–U+07FF), and **baseBMP** (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). BaseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes. BaseBMP payloads are prefixed with a U+FFF0 marker for detection. The viewer’s `arxDecompress` auto-detects the wire shape (including the rare case where a base76 length prefix is also `B.` — it tries base64url first and falls back to base76 if Brotli fails). The substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the viewer tries the `.br` file first on default loads and falls back to JSON. The arx2 overlay dictionary follows the same `.br`-then-JSON default load pattern.
-- `arx2` - tuple-envelope transport + arx2 overlay substitution + the shared arx dictionary + brotli (quality 11) + the same four binary-to-text wire shapes. arx2 fragments use `v1.arx2.<dictVersion>.<payload>`, where `dictVersion` is the shared arx dictionary version. Existing `arx` links remain valid; async auto-selection keeps arx2 as the conservative transport-measured tuple codec.
+- `arx` - domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding. The compact `a` tag encodes the active dictionary version so links stay portable across dictionary updates. Four wire shapes are tried and the shortest **transport** size wins (see `computeTransportLength` in `fragment.ts` — non-ASCII Unicode may count longer after percent-encoding): **base76** (ASCII-only, 77 fragment-safe chars), **base64url** (standard RFC 4648 alphabet `A-Za-z0-9-_`, no padding, prefixed with `B.` for detection), **base1k** (Unicode, 1774 chars from U+00A1–U+07FF), and **baseBMP** (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). BaseBMP produces ~32% fewer characters than base1k and ~55% fewer than base76 for the same compressed bytes. BaseBMP payloads are prefixed with a U+FFF0 marker for detection. The viewer’s `arxDecompress` auto-detects the wire shape (including the rare case where a base76 length prefix is also `B.` — it tries base64url first and falls back to base76 if Brotli fails). The substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the viewer tries the `.br` file first on default loads and falls back to JSON. The arx2 overlay dictionary follows the same `.br`-then-JSON default load pattern.
+- `arx2` - tuple-envelope transport + arx2 overlay substitution + the shared arx dictionary + brotli (quality 11) + the same four binary-to-text wire shapes. The compact `b` tag encodes the shared arx dictionary version. Existing `arx` links remain valid; async auto-selection keeps arx2 as the conservative transport-measured tuple codec.
 - `arx3` - the same tuple envelope, overlay substitution, shared arx dictionary, and brotli bytes as arx2, with a different selection rule: baseBMP may win by decoded visible character length instead of conservative percent-encoded transport length. This is the compact visible URL mode for trusted surfaces that preserve Unicode fragments. If a platform rewrites, truncates, or previews links aggressively, prefer arx2/base64url or UUID mode instead.
 
 The encoder now also supports a packed wire representation (`p: 1`) that shortens key names before compression. Packed mode is transport-only; decoded envelopes normalize back to the standard shape.

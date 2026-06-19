@@ -138,7 +138,7 @@ export function createDraftEnvelope(draft: LinkCreatorDraft): PayloadEnvelope {
  *
  * Throws when draft content is empty, envelope normalization fails, or the generated fragment
  * exceeds `MAX_FRAGMENT_LENGTH`. The returned object always includes:
- * - `hash`: `#agent-render=v1...` fragment string
+ * - `hash`: compact `#<tag><payload>` fragment string (single codec tag char + payload)
  * - `url`: either the hash-only URL or `baseUrl` with hash attached
  * - `codec`: the selected wire codec in the generated fragment
  * - `fragmentLength`: character count excluding the leading `#`

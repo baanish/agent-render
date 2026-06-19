@@ -36,7 +36,7 @@ POST /api/artifacts
 Content-Type: application/json
 
 {
-  "payload": "agent-render=v1.plain.<base64url-encoded-json>"
+  "payload": "p<base64url-encoded-json>"
 }
 ```
 
@@ -49,7 +49,7 @@ Response (`201`):
 }
 ```
 
-The `payload` field is the same payload string used in fragment links — the fragment body after `#`. Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`) described in the `agent-render-linking` skill.
+The `payload` field is the same payload string used in fragment links — the compact fragment body after `#` (a single codec tag char followed by the payload). Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`) described in the `agent-render-linking` skill. The legacy `agent-render=v1.<codec>.<payload>` form is also accepted for back-compatibility.
 
 ### Read an artifact
 
@@ -62,7 +62,7 @@ Response (`200`):
 ```json
 {
   "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-  "payload": "agent-render=v1.plain.<payload>",
+  "payload": "p<payload>",
   "created_at": "2025-04-07T12:00:00.000Z",
   "updated_at": "2025-04-07T12:00:00.000Z",
   "last_viewed_at": "2025-04-07T14:00:00.000Z",
@@ -79,7 +79,7 @@ PUT /api/artifacts/:id
 Content-Type: application/json
 
 {
-  "payload": "agent-render=v1.plain.<new-payload>"
+  "payload": "p<new-payload>"
 }
 ```
 
@@ -242,13 +242,13 @@ Encode the envelope using the same codec pipeline as fragment links:
 
 1. Serialize envelope as compact JSON
 2. Encode with a codec (`plain` = base64url, `lz` = lz-string, `deflate` = deflate + base64url, or the async arx/arx2/arx3 pipelines)
-3. Prepend `agent-render=v1.<codec>.`
+3. Prepend the single-character codec tag (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3)
 4. POST the resulting string as the `payload` field
 
 For simple cases, `plain` codec is sufficient:
 
 ```text
-agent-render=v1.plain.<base64url(JSON.stringify(envelope))>
+p<base64url(JSON.stringify(envelope))>
 ```
 
 ## TTL behavior
@@ -357,7 +357,7 @@ PAYLOAD=$(echo -n '{"v":1,"codec":"plain","artifacts":[{"id":"demo","kind":"mark
 
 curl -s -X POST http://localhost:3000/api/artifacts \
   -H "Content-Type: application/json" \
-  -d "{\"payload\": \"agent-render=v1.plain.$PAYLOAD\"}"
+  -d "{\"payload\": \"p$PAYLOAD\"}"
 ```
 
 ## Cleanup guidance

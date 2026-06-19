@@ -22,14 +22,22 @@ Source repository:
 
 Keep the artifact content in the URL fragment, not in normal query params.
 
-Use this fragment shape:
+Use the compact fragment shape `#<tag><payload>`, where `<tag>` is a single
+character identifying the codec:
 
 ```text
-#agent-render=v1.<codec>.<payload>                (plain | lz | deflate)
-#agent-render=v1.arx.<dictVersion>.<payload>   (arx)
-#agent-render=v1.arx2.<dictVersion>.<payload>  (arx2)
-#agent-render=v1.arx3.<dictVersion>.<payload>  (arx3)
+#p<payload>   (plain)
+#l<payload>   (lz)
+#d<payload>   (deflate)
+#a<payload>   (arx)
+#b<payload>   (arx2)
+#c<payload>   (arx3)
 ```
+
+The single tag char encodes the codec (and, for `arx`/`arx2`/`arx3`, the active
+dictionary version); the payload follows immediately after it. The legacy
+`#agent-render=v1.<codec>.<dictVersion>.<payload>` form still decodes, but the
+viewer no longer emits it — always build the compact form.
 
 Supported codecs:
 - `plain`: base64url-encoded JSON envelope
@@ -166,31 +174,33 @@ Set `activeArtifactId` to the artifact that should open first.
 
 ## Link construction
 
-Construct the final URL as:
+Construct the final URL with the compact `#<tag><payload>` fragment:
 
 ```text
-https://agent-render.com/#agent-render=v1.<codec>.<payload>                (plain | lz | deflate)
-https://agent-render.com/#agent-render=v1.arx.<dictVersion>.<payload>       (arx)
-https://agent-render.com/#agent-render=v1.arx2.<dictVersion>.<payload>      (arx2)
-https://agent-render.com/#agent-render=v1.arx3.<dictVersion>.<payload>      (arx3)
+https://agent-render.com/#p<payload>   (plain)
+https://agent-render.com/#l<payload>   (lz)
+https://agent-render.com/#d<payload>   (deflate)
+https://agent-render.com/#a<payload>   (arx)
+https://agent-render.com/#b<payload>   (arx2)
+https://agent-render.com/#c<payload>   (arx3)
 ```
 
 For `plain`:
 1. Serialize the envelope as compact JSON
 2. Base64url-encode it
-3. Append it after `v1.plain.`
+3. Prepend the tag `p` (the fragment is `#p<payload>`)
 
 For `lz`:
 1. Serialize the envelope as compact JSON
 2. Compress with `lz-string` URL-safe encoding
-3. Append it after `v1.lz.`
+3. Prepend the tag `l` (the fragment is `#l<payload>`)
 
 For `deflate`:
 1. Serialize the envelope as compact JSON (or packed wire form)
 2. Encode JSON to UTF-8 bytes
 3. Deflate the bytes
 4. Base64url-encode the compressed bytes
-5. Append it after `v1.deflate.`
+5. Prepend the tag `d` (the fragment is `#d<payload>`)
 
 ## Shared arx dictionaries
 
@@ -214,7 +224,7 @@ To use the dictionary for local `arx` encoding:
     - Base1k uses 1774 Unicode code points (U+00A1–U+07FF, skipping combining diacriticals and soft hyphen). ~10.79 bits/char
     - Base64url: standard `A-Za-z0-9-_` (no padding), prefix `B.` — ASCII-only, survives Discord/Slack/Teams-style handling better than Unicode-heavy fragments
     - Base76 uses 77 ASCII fragment-safe characters. ~6.27 bits/char
-5. Prepend `v1.arx.<dictVersion>.` to form the fragment payload (use the same dictionary version used for substitution)
+5. Prepend the tag `a` to form the fragment (the compact tag encodes the active dictionary version, so use the same dictionary version for substitution)
 
 The dictionary includes JSON envelope boilerplate patterns, JSON-escaped Markdown syntax, and programming-language patterns that are already present in the shipped corpus. The viewer tries the pre-compressed dictionary first on default ARX/ARX2/ARX3 encode or decode paths, falls back to the JSON file, and falls back again to its built-in table if external fetches fail.
 
@@ -235,9 +245,9 @@ Then apply substitutions in this order:
 2. Fetch and apply `https://agent-render.com/arx-dictionary.json`
 3. Brotli-compress at quality 11
 4. Try baseBMP, base1k, base64url, and base76; choose the shortest transport representation
-5. Prepend `v1.arx2.<dictVersion>.`, using the shared arx dictionary version
+5. Prepend the tag `b` (the compact tag encodes the shared arx dictionary version)
 
-For `arx3`, use the same tuple, substitution, and brotli bytes as arx2, then choose the baseBMP wire when the visible character count is the optimization target. Prepend `v1.arx3.<dictVersion>.`, using the shared arx dictionary version. Do not invent a new dictionary entry unless it is backed by corpus evidence and improves the benchmark gate.
+For `arx3`, use the same tuple, substitution, and brotli bytes as arx2, then choose the baseBMP wire when the visible character count is the optimization target. Prepend the tag `c` (the compact tag encodes the shared arx dictionary version). Do not invent a new dictionary entry unless it is backed by corpus evidence and improves the benchmark gate.
 
 ## Practical limits
 
