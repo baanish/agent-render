@@ -638,7 +638,24 @@ function envelopeFromArxTuple(value: unknown, codec: Extract<PayloadCodec, "arx2
 // Uses BigInt arithmetic for optimal packing (~6.27 bits/char
 // vs base64url's 6 bits/char — ~4.4% denser).
 //
-// Wire format: 2-char length prefix (original byte count) + base76 digits.
+// The byte count is stored as a prefix because the BigInt packing drops leading
+// zero bytes; decode needs the exact length to restore them.
+//
+// Wire format (two shapes, distinguished by the first character):
+//   • Lengths 0..5928: legacy 2-char prefix — ALPHABET[floor(len/77)] +
+//     ALPHABET[len%77] — then base76 digits. 5928 = 76*77+76 is the largest
+//     value two base-77 digits can hold.
+//   • Lengths >= 5929: "=" marker + one count char (number of base-77 length
+//     digits) + that many base-77 length digits, then base76 digits.
+//
+// POLICY (deliberate, owned decision — not an incidental mechanism): the legacy
+// 2-char shape is preserved byte-for-byte for every length it can represent, so
+// fragments shared before the extended shape existed still decode unchanged. The
+// extended shape is gated behind "=", the one chat-safe ASCII fragment character
+// (see isChatSafeAsciiFragmentCodePoint in fragment.ts) that is NOT a base76
+// digit, so the two shapes can never be confused: a legacy prefix always begins
+// with an alphabet digit, never "=". Lengths >= 5929 previously produced a
+// corrupt "undefined" prefix, so no valid pre-existing payload used that range.
 // ---------------------------------------------------------------------------
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~!$*()',;:@/";
@@ -647,9 +664,24 @@ const BIGINT_0 = BigInt(0);
 const BIGINT_8 = BigInt(8);
 const BIGINT_0xFF = BigInt(0xFF);
 
+/** Largest byte count the legacy 2-char base-77 length prefix can represent (76*77 + 76). */
+const BASE76_LEGACY_MAX_LENGTH = ALPHABET.length * ALPHABET.length - 1;
+/** Marks the extended variable-width length prefix; never a base76 digit, so it cannot collide with the legacy prefix. */
+const BASE76_EXTENDED_LENGTH_MARKER = "=";
+
 const CHAR_TO_INDEX = new Uint8Array(128);
 for (let i = 0; i < ALPHABET.length; i++) {
   CHAR_TO_INDEX[ALPHABET.charCodeAt(i)] = i;
+}
+
+/** Encodes a non-negative integer as minimal-width big-endian base-77 digits (>= 1 digit). */
+function encodeBase76Length(length: number): string {
+  if (length === 0) return ALPHABET[0];
+  const digits: string[] = [];
+  for (let value = length; value > 0; value = Math.floor(value / ALPHABET.length)) {
+    digits.push(ALPHABET[value % ALPHABET.length]);
+  }
+  return digits.reverse().join("");
 }
 
 /** Public API for `encodeBase76`. */
@@ -668,21 +700,49 @@ export function encodeBase76(bytes: Uint8Array): string {
   }
   chars.reverse();
 
-  const lenHigh = Math.floor(bytes.length / ALPHABET.length);
-  const lenLow = bytes.length % ALPHABET.length;
-  return ALPHABET[lenHigh] + ALPHABET[lenLow] + chars.join("");
+  const lenPrefix = encodeBase76LengthPrefix(bytes.length);
+  return lenPrefix + chars.join("");
+}
+
+/** Builds the length prefix, choosing the legacy 2-char shape or the extended "=" shape by size. */
+function encodeBase76LengthPrefix(length: number): string {
+  if (length <= BASE76_LEGACY_MAX_LENGTH) {
+    return ALPHABET[Math.floor(length / ALPHABET.length)] + ALPHABET[length % ALPHABET.length];
+  }
+  const lengthDigits = encodeBase76Length(length);
+  return BASE76_EXTENDED_LENGTH_MARKER + ALPHABET[lengthDigits.length] + lengthDigits;
 }
 
 /** Public API for `decodeBase76`. */
 export function decodeBase76(str: string): Uint8Array {
   if (str.length < 2) return new Uint8Array(0);
 
-  const lenHigh = CHAR_TO_INDEX[str.charCodeAt(0)];
-  const lenLow = CHAR_TO_INDEX[str.charCodeAt(1)];
-  const byteLen = lenHigh * ALPHABET.length + lenLow;
+  let byteLen: number;
+  let digitsStart: number;
+
+  if (str[0] === BASE76_EXTENDED_LENGTH_MARKER) {
+    const digitCount = CHAR_TO_INDEX[str.charCodeAt(1)];
+    if (str.length < 2 + digitCount) {
+      // Truncated extended prefix (e.g. "=B" claims one length digit but carries none): reading
+      // the missing digit would index past the string -> NaN byteLen. Treat as malformed -> empty.
+      return new Uint8Array(0);
+    }
+    byteLen = 0;
+    for (let i = 0; i < digitCount; i++) {
+      byteLen = byteLen * ALPHABET.length + CHAR_TO_INDEX[str.charCodeAt(2 + i)];
+    }
+    digitsStart = 2 + digitCount;
+  } else {
+    const lenHigh = CHAR_TO_INDEX[str.charCodeAt(0)];
+    const lenLow = CHAR_TO_INDEX[str.charCodeAt(1)];
+    byteLen = lenHigh * ALPHABET.length + lenLow;
+    digitsStart = 2;
+  }
+
+  assertWireByteLen(byteLen);
 
   let num = BIGINT_0;
-  for (let i = 2; i < str.length; i++) {
+  for (let i = digitsStart; i < str.length; i++) {
     num = num * BASE + BigInt(CHAR_TO_INDEX[str.charCodeAt(i)]);
   }
 
@@ -748,6 +808,8 @@ export function decodeBase1k(str: string): Uint8Array {
   const lenHigh = UNICODE_CHAR_TO_INDEX.get(str[0]) ?? 0;
   const lenLow = UNICODE_CHAR_TO_INDEX.get(str[1]) ?? 0;
   const byteLen = lenHigh * UNICODE_ALPHABET.length + lenLow;
+
+  assertWireByteLen(byteLen);
 
   let num = BIGINT_0;
   for (let i = 2; i < str.length; i++) {
@@ -988,6 +1050,8 @@ export function decodeBaseBMP(str: string): Uint8Array {
   const lenLow = BMP_CHAR_TO_INDEX.get(s[1]) ?? 0;
   const byteLen = lenHigh * BMP_ALPHABET.length + lenLow;
 
+  assertWireByteLen(byteLen);
+
   let num = BIGINT_0;
   for (let i = 2; i < s.length; i++) {
     num = num * BMPBASE + BigInt(BMP_CHAR_TO_INDEX.get(s[i]) ?? 0);
@@ -1110,6 +1174,35 @@ export class ArxDecodedPayloadTooLargeError extends Error {
 
 function assertDecodedTextBudget(text: string): void {
   if (text.length > MAX_DECODED_PAYLOAD_LENGTH) {
+    throw new ArxDecodedPayloadTooLargeError();
+  }
+}
+
+/**
+ * Bounds a wire byte length decoded from an attacker-controlled base-N length prefix BEFORE any
+ * allocation or per-byte loop. The prefix is tiny but can claim a huge count (baseBMP's 2-char
+ * prefix reaches ~3.8e9), which would otherwise peg a core for ~a minute on a multi-GB allocation
+ * — the existing decoded-size budget only runs after decompression, far too late. A real
+ * compressed payload is always far below MAX_BROTLI_OUTPUT_BYTES, so anything larger is provably
+ * implausible and rejected as decoded-too-large (caught upstream in decodeFragmentAsync).
+ */
+function assertWireByteLen(byteLen: number): void {
+  // Reject non-integer lengths too: a malformed prefix can yield NaN (e.g. an out-of-range
+  // charCodeAt), and `NaN > MAX_BROTLI_OUTPUT_BYTES` is false, which would otherwise slip the
+  // guard and decode to a misleading empty array instead of a rejection.
+  if (!Number.isInteger(byteLen) || byteLen > MAX_BROTLI_OUTPUT_BYTES) {
+    throw new ArxDecodedPayloadTooLargeError();
+  }
+}
+
+/**
+ * Bounds an intermediate dict/overlay-decoded string by the brotli output budget. These strings can
+ * expand past the final payload (each control byte becomes a dictionary string), so this guards
+ * against an expansion bomb. The real decoded-payload limit is enforced on the parsed tuple, where
+ * the arx2/arx3 DEL escape collapses back to a single character.
+ */
+function assertWithinExpansionBudget(text: string): void {
+  if (text.length > MAX_BROTLI_OUTPUT_BYTES) {
     throw new ArxDecodedPayloadTooLargeError();
   }
 }
@@ -1269,7 +1362,16 @@ export async function arxCompressBase64url(json: string): Promise<string> {
  * Returns all supported binary-to-text wire shapes so callers can choose by transport size.
  */
 async function compressTupleEnvelope(envelope: PayloadEnvelope): Promise<ArxWirePayloads> {
-  const tupleJson = JSON.stringify(envelopeToArx2Tuple(envelope));
+  // The arx2/arx3 overlay repurposes 0x7F (DEL) as a single-byte substitution
+  // code (see ARX2_SINGLE_BYTE_CODES). JSON.stringify escapes every C0 control
+  // byte (< 0x20) — which covers all the other substitution code bytes — but
+  // emits a literal 0x7F because DEL is >= 0x20. A literal DEL in artifact
+  // content would then be indistinguishable from the overlay code byte and get
+  // expanded back into a dictionary pattern by overlayDecode, corrupting the
+  // tuple JSON. Escaping it to a \u007F JSON escape (which JSON.parse restores
+  // on decode) keeps DEL out of the substitution alphabet. This is a no-op for
+  // DEL-free payloads, so the wire form is byte-identical for existing content.
+  const tupleJson = JSON.stringify(envelopeToArx2Tuple(envelope)).replace(/\x7f/g, "\\u007f");
   const substituted = dictEncode(overlayEncode(tupleJson));
   const compressed = await compressSubstitutedText(substituted);
   return encodeWirePayloads(compressed);
@@ -1304,10 +1406,16 @@ export async function arxDecompress(encoded: string): Promise<string> {
  */
 export async function arx2DecompressEnvelope(encoded: string): Promise<PayloadEnvelope> {
   const v1Decoded = dictDecode(await decompressWirePayload(encoded));
-  assertDecodedTextBudget(v1Decoded);
+  assertWithinExpansionBudget(v1Decoded);
   const tupleJson = overlayDecode(v1Decoded);
-  assertDecodedTextBudget(tupleJson);
-  return envelopeFromArxTuple(JSON.parse(tupleJson), "arx2");
+  assertWithinExpansionBudget(tupleJson);
+  // Budget the real decoded payload, not the intermediate strings: the encode path escapes literal
+  // DEL bytes to the 6-char  JSON escape, which inflates the tuple ~6x for DEL-heavy content.
+  // Re-serializing the parsed tuple collapses each escape back to one character, so a valid
+  // sub-limit payload is no longer falsely rejected as decoded-too-large.
+  const tuple = JSON.parse(tupleJson);
+  assertDecodedTextBudget(JSON.stringify(tuple));
+  return envelopeFromArxTuple(tuple, "arx2");
 }
 
 /**
@@ -1315,8 +1423,12 @@ export async function arx2DecompressEnvelope(encoded: string): Promise<PayloadEn
  */
 export async function arx3DecompressEnvelope(encoded: string): Promise<PayloadEnvelope> {
   const v1Decoded = dictDecode(await decompressWirePayload(encoded));
-  assertDecodedTextBudget(v1Decoded);
+  assertWithinExpansionBudget(v1Decoded);
   const tupleJson = overlayDecode(v1Decoded);
-  assertDecodedTextBudget(tupleJson);
-  return envelopeFromArxTuple(JSON.parse(tupleJson), "arx3");
+  assertWithinExpansionBudget(tupleJson);
+  // See arx2DecompressEnvelope: budget the parsed tuple so the DEL escape does not inflate the
+  // decoded-size check.
+  const tuple = JSON.parse(tupleJson);
+  assertDecodedTextBudget(JSON.stringify(tuple));
+  return envelopeFromArxTuple(tuple, "arx3");
 }

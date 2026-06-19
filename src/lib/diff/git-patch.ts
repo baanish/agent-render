@@ -18,7 +18,11 @@ function stripDiffPrefix(filePath: string | null): string | null {
     return null;
   }
 
-  return filePath.replace(/^[ab]\//, "");
+  const stripped = filePath.replace(/^[ab]\//, "");
+  // A path that reduces to empty (e.g. a bare "a/") is not a usable path; return null so the
+  // `displayPath`/`id` fallback chain (newPath ?? oldPath ?? `file-N`) applies instead of
+  // producing an empty label and a degenerate "-N" id.
+  return stripped === "" ? null : stripped;
 }
 
 function normalizePatch(patch: string): string {
