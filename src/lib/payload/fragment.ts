@@ -1,5 +1,5 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
-import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate";
+import { deflateSync, inflateSync, strFromU8, strToU8, unzlibSync } from "fflate";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
 import {
@@ -136,6 +136,20 @@ function encodePayload(json: string, codec: PayloadCodec): string {
   }
 }
 
+/**
+ * Inflates a `deflate` payload, accepting both raw deflate (current encoder) and zlib-wrapped
+ * deflate (emitted by an older encoder version). Raw is tried first so current output is never at
+ * risk of header mis-detection; zlib is a back-compat fallback so historical shared links keep
+ * decoding instead of failing as invalid-json.
+ */
+function inflateDeflatePayload(bytes: Uint8Array): Uint8Array {
+  try {
+    return inflateSync(bytes);
+  } catch {
+    return unzlibSync(bytes);
+  }
+}
+
 function decodePayload(encoded: string, codec: PayloadCodec): string | null {
   switch (codec) {
     case "plain":
@@ -143,7 +157,7 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
     case "lz":
       return decompressFromEncodedURIComponent(encoded);
     case "deflate":
-      return strFromU8(inflateSync(fromBase64UrlBytes(encoded)));
+      return strFromU8(inflateDeflatePayload(fromBase64UrlBytes(encoded)));
     case "arx":
     case "arx2":
     case "arx3":

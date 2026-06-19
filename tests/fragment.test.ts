@@ -1,3 +1,4 @@
+import { strToU8, zlibSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { decodeFragment, decodeFragmentAsync, encodeEnvelope, encodeEnvelopeAsync } from "@/lib/payload/fragment";
 import { compactTagForCodec, type PayloadEnvelope } from "@/lib/payload/schema";
@@ -73,6 +74,33 @@ describe("fragment payload transport", () => {
     }
 
     expect(parsed.code).toBe("invalid-json");
+  });
+
+  it("decodes a legacy zlib-wrapped deflate fragment (older encoder back-compat)", () => {
+    // The current encoder emits raw deflate, but an older version emitted zlib-wrapped deflate.
+    // Real historical shared links use that form and must still decode. Build one by hand.
+    const legacy: PayloadEnvelope = {
+      v: 1,
+      codec: "deflate",
+      title: "legacy zlib link",
+      activeArtifactId: "doc",
+      artifacts: [{ id: "doc", kind: "markdown", content: "# Legacy\n\nEncoded with zlib-wrapped deflate." }],
+    };
+    const b64url = Buffer.from(zlibSync(strToU8(JSON.stringify(legacy))))
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+    const parsed = decodeFragment(`#agent-render=v1.deflate.${b64url}`);
+
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.envelope.title).toBe("legacy zlib link");
+      expect(parsed.envelope.artifacts[0]).toMatchObject({
+        content: "# Legacy\n\nEncoded with zlib-wrapped deflate.",
+      });
+    }
   });
 
   it("uses compressed transport when it is smaller", () => {
