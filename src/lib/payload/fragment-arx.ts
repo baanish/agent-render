@@ -162,9 +162,24 @@ export async function buildArx2Candidates(
 
 /**
  * Builds deferred `arx3` codec fragment candidates.
- * ARX3 uses the ARX2 tuple/overlay bytes, then lets the dense baseBMP wire compete by visible
- * URL length so large report-like artifacts can stay human-copyable when the surface preserves
- * Unicode fragments.
+ * ARX3 reuses the ARX2 tuple/overlay bytes; the only difference is how the dense baseBMP wire is
+ * budgeted.
+ *
+ * POLICY (deliberate, owned decision — not an incidental mechanism): the arx3 baseBMP candidate is
+ * budgeted by VISIBLE URL length (`value.length`), not by percent-escaped transport length, because
+ * the fragment surface preserves Unicode and the visible characters are what a human actually copies
+ * from the URL bar. Every other candidate in the shared pool — including arx2's byte-identical
+ * baseBMP payload — is measured with `computeTransportLength`, which inflates BMP characters ~9x for
+ * their UTF-8 percent-escaped size.
+ *
+ * CONSEQUENCE: because `selectCandidate` (fragment.ts) picks the global minimum transportLength,
+ * arx3 baseBMP is therefore selected ahead of arx2's escaped-byte measurement for the same payload.
+ * This is intended — it is how report-like artifacts stay human-copyable — and it means the arx3
+ * baseBMP wire essentially always wins over arx2 by the metric, not by a real byte-size difference.
+ *
+ * CHANGING THIS REQUIRES A MAINTAINER DECISION: switching the arx3 baseBMP budget back to transport
+ * length would make arx2 and arx3 measure the same payload identically and would change which wire
+ * wins auto-selection. Do not flip the metric to "fix" the divergence without owning that trade-off.
  */
 export async function buildArx3Candidates(
   envelope: PayloadEnvelope,
@@ -181,6 +196,8 @@ export async function buildArx3Candidates(
       value,
       codec: "arx3",
       packed: false,
+      // Deliberate metric choice (see POLICY above): the dense baseBMP wire is budgeted by visible
+      // URL length, while every other candidate uses percent-escaped transport length.
       transportLength: preferVisibleChars ? value.length : computeTransportLength(value),
     };
   };

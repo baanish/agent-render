@@ -43,6 +43,18 @@ index 0000000..1111111
 Binary files /dev/null and b/assets/logo.png differ
 `;
 
+// CRLF binary-only patch: no `diff --git`/`---`/`+++`/`@@` anchors, so the unified-diff gate must
+// recognize it via the `GIT binary patch` marker alone. Pins the contract that a CRLF binary patch
+// still routes to the rich/binary path rather than the raw fallback (regression guard for the
+// `\r?$`-tolerant marker regexes in looksLikeUnifiedDiff).
+const crlfBinaryPatch = [
+  "GIT binary patch",
+  "literal 4",
+  "Lc${NkF#rGn1ONa4",
+  "",
+  "",
+].join("\r\n");
+
 function createArtifact(overrides: Partial<DiffArtifact> = {}): DiffArtifact {
   return {
     id: "diff-artifact",
@@ -188,6 +200,19 @@ describe("DiffRenderer", () => {
     expect(initSpy).not.toHaveBeenCalled();
     expect(screen.getByText(/binary patch preview is not expanded/i)).toBeVisible();
     expect(screen.queryByText(/could not be rendered as a valid unified diff/i)).not.toBeInTheDocument();
+  });
+
+  it("keeps the rich/binary path for a CRLF binary patch instead of the raw fallback", async () => {
+    const initSpy = vi.spyOn(DiffFile.prototype, "init");
+
+    render(<DiffRenderer artifact={createArtifact({ patch: crlfBinaryPatch, filename: "assets/logo.png" })} />);
+
+    const renderer = await screen.findByTestId("renderer-diff");
+    expect(renderer).toHaveAttribute("data-diff-state", "rich");
+    expect(initSpy).not.toHaveBeenCalled();
+    expect(screen.getByText(/binary patch preview is not expanded/i)).toBeVisible();
+    expect(screen.queryByTestId("renderer-diff-fallback-raw")).not.toBeInTheDocument();
+    expect(screen.queryByText(/not a valid unified diff/i)).not.toBeInTheDocument();
   });
 
   it("copies the raw patch from the fallback view", async () => {

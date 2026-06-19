@@ -30,6 +30,10 @@ const sampleAnimationStyle: CSSProperties = { animationDelay: "180ms" };
 const inspectorAnimationStyle: CSSProperties = { animationDelay: "220ms" };
 const initializeAnimationStyle: CSSProperties = { animationDelay: "260ms" };
 
+// Intentionally a local copy of getVisibleFragmentLength (src/lib/payload/fragment.ts).
+// Importing that helper statically would pull the fragment/codec module (lz-string, fflate)
+// into the homepage initial chunk; the shell loads it dynamically instead, and the
+// check:build-budgets gate enforces the resulting size. Keep this local rather than deduping.
 function getVisibleHashLength(hash: string): number {
   const fragmentBody = hash.startsWith("#") ? hash.slice(1) : hash;
   try {

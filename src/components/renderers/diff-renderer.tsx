@@ -219,8 +219,8 @@ function looksLikeUnifiedDiff(patch: string) {
     /^diff --git /m.test(patch) ||
     (/^--- /m.test(patch) && /^\+\+\+ /m.test(patch)) ||
     /^@@ /m.test(patch) ||
-    /^Binary files .* differ$/m.test(patch) ||
-    /^GIT binary patch$/m.test(patch)
+    /^Binary files .* differ\r?$/m.test(patch) ||
+    /^GIT binary patch\r?$/m.test(patch)
   );
 }
 
@@ -805,6 +805,9 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
  * Prefers parsed git patches, supports old/new content diffs, and falls back to raw patch output on parse/runtime errors.
  */
 export function DiffRenderer({ artifact, onReady }: DiffRendererProps) {
+  // resetKey hashes patch/content (FNV-1a + length) as a deliberate bound to avoid embedding huge
+  // patches into a React key on every render; a hash collision could fail to clear a stuck error
+  // boundary, which is accepted as the cost of not concatenating large payloads into the key.
   const resetKey = useMemo(
     () =>
       [

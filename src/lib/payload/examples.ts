@@ -73,6 +73,11 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
     codec: "plain",
     title: "arx showcase",
     activeArtifactId: "manifest",
+    // The benchmark figures in the release-notes table and the benchmarks.csv below
+    // (5,544 / 5,410 brotli bytes, 7,585 / 7,416 / 2,931 visible chars, 2.42% / 60.48%)
+    // are the corpus totals committed in scripts/bench-baseline.json (npm run bench:codecs).
+    // tests/examples-arx3-benchmark.test.ts pins this prose to that baseline as the source
+    // of truth — update both together if the codec output changes.
     artifacts: [
       {
         id: "release-notes",

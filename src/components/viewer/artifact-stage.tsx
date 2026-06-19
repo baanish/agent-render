@@ -186,6 +186,17 @@ function getHashPreview(hash: string): string {
   return `${hash.slice(0, 160)}...${hash.slice(-44)}`;
 }
 
+/**
+ * Renders the 'Raw' view of markdown/CSV as un-highlighted plain text — by design.
+ *
+ * Deliberate decision: the raw path renders a plain <pre> instead of routing through
+ * CodeRenderer (CodeMirror). This keeps the raw view free of the CodeMirror bundle, so
+ * toggling to Raw never pulls that heavy chunk into the page. Consequence: raw output is
+ * intentionally not syntax-highlighted. Changing this back to a highlighted view would
+ * re-introduce the CodeMirror dependency on the raw path and must be an owner decision.
+ *
+ * React escapes the text child, so rendering untrusted artifact content here is XSS-safe.
+ */
 function RawArtifactSource({
   content,
   onReady,
