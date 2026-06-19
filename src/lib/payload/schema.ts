@@ -9,8 +9,9 @@ export type ArtifactKind = (typeof artifactKinds)[number];
 export type PayloadCodec = (typeof codecs)[number];
 
 // Compact fragment header: a single URL-unreserved tag char replaces the legacy
-// `agent-render=v1.<codec>.<dictVersion>.` prefix. The tag encodes (wire version 1, codec, and
-// dictVersion); arx-family tags imply dictVersion 1. The payload stays self-describing (base64url
+// `agent-render=v1.<codec>.<dictVersion>.` prefix. The tag encodes wire version 1 and codec; it
+// does not carry a dictionary version — arx-family tags imply the build's current pinned dictionary
+// (version 1). The payload stays self-describing (base64url
 // `B.` prefix, baseBMP U+FFF0 marker, base76/base1k length prefix), so the alphabet is not in the
 // header. Tags come from the RFC-3986 unreserved set so they never percent-escape, and none can
 // begin the legacy `agent-render=` literal, which keeps the two header forms unambiguous on decode.

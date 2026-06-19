@@ -1,6 +1,6 @@
 ---
 name: selfhosted-agent-render
-description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs public/share-friendly rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal for public/social sharing, corporate proxy/link-scanning environments, payloads that exceed the ~8 KB fragment budget, platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds and envelope validation as the fragment-based product. The self-hosted server stores payloads in SQLite with a 24-hour sliding TTL.
+description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs public/share-friendly rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal for public/social sharing, corporate proxy/link-scanning environments, payloads that exceed the ~8 KB fragment budget, platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds as the fragment-based product (the server stores the payload string after a length/non-empty check; full envelope validation happens client-side when the viewer renders). The self-hosted server stores payloads in SQLite with a 24-hour sliding TTL.
 ---
 
 # Self-Hosted Agent Render
@@ -49,7 +49,7 @@ Response (`201`):
 }
 ```
 
-The `payload` field is the same payload string used in fragment links — the compact fragment body after `#` (a single codec tag char followed by the payload). Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`) described in the `agent-render-linking` skill. The legacy `agent-render=v1.<codec>.<payload>` form is also accepted for back-compatibility.
+The `payload` field is the same payload string used in fragment links — the compact fragment body after `#` (a single codec tag char followed by the payload). Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`) described in the `agent-render-linking` skill. The legacy `agent-render=v1.<codec>.<payload>` form (arx-family carry an extra `<dictVersion>.` segment) is also accepted for back-compatibility.
 
 ### Read an artifact
 

@@ -1340,7 +1340,7 @@ export async function arxCompressUnicode(json: string): Promise<string> {
 
 /**
  * Compress with the arx pipeline using baseBMP high-density encoding.
- * Produces ~32% fewer characters than base1k (~55% fewer than base76)
+ * Produces ~32% fewer characters than base1k (~60% fewer than base76)
  * by using ~62k safe BMP code points (~15.92 bits/char).
  */
 export async function arxCompressBMP(json: string): Promise<string> {

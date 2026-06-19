@@ -10,7 +10,7 @@ Everything before `#` loads the static app. Everything after `#` is the artifact
 
 ## What the parts mean
 
-- The first character after `#` is a single codec tag. Here `c` means the `arx3` codec (and its active dictionary version).
+- The first character after `#` is a single codec tag. Here `c` means the `arx3` codec. (The tag does not carry a dictionary version; it implies the current dictionary.)
 - `<compressed-payload>` is the encoded artifact bundle.
 
 The tag char identifies the codec:
@@ -24,7 +24,7 @@ The tag char identifies the codec:
 #c<payload>   (arx3)
 ```
 
-For `arx`, `arx2`, and `arx3`, the tag also encodes the active dictionary version.
+For `arx`, `arx2`, and `arx3`, the compact tag does not carry a dictionary version — it implies the current dictionary (the build pins the newest supported version and rejects a newer one). Only the legacy header below carries an explicit dictionary version.
 
 Older links may use the legacy shape, which the viewer still decodes:
 

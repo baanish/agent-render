@@ -23,10 +23,10 @@ Core product traits right now:
 Treat these as core constraints unless the owner explicitly changes the product direction.
 
 - The app is a single exported client-side shell, not a backend product.
-- Artifact payloads live in the URL fragment, using the compact `#<tag><payload>` form where the single tag char identifies the codec: `p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2. Legacy `#agent-render=v1.<codec>.<dictVersion>.<payload>` links still decode but are no longer emitted.
+- Artifact payloads live in the URL fragment, using the compact `#<tag><payload>` form where the single tag char identifies the codec: `p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3. Legacy `#agent-render=v1.<codec>.<payload>` links (arx-family carry an extra `<dictVersion>.` segment) still decode but are no longer emitted.
 - The deployed host should not receive artifact contents as part of the initial page request.
 - Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.
-- Supported codecs are `plain`, `lz`, `deflate`, `arx`, and `arx2`.
+- Supported codecs are `plain`, `lz`, `deflate`, `arx`, `arx2`, and `arx3`.
 - The product is zero-retention by host design, not secret-safe in an absolute sense.
 - Links may still leak through browser history, copied URLs, screenshots, and any future client-side analytics.
 
@@ -84,9 +84,9 @@ The fragment transport is part of the product surface, not an implementation det
 
 Current rules:
 - fragment key: `agent-render` (legacy decode path only; the compact form has no key)
-- emitted format: compact `#<tag><payload>`, where the single tag char identifies the codec (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2); the tag also encodes the active dictionary version for `arx`/`arx2`
-- legacy format (still decodable, no longer emitted): `agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`, `agent-render=v1.arx.<dictVersion>.<payload>` for `arx`, and `agent-render=v1.arx2.<dictVersion>.<payload>` for `arx2`
-- codecs: `plain`, `lz`, `deflate`, `arx`, and `arx2`
+- emitted format: compact `#<tag><payload>`, where the single tag char identifies the codec (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3); the compact tag does not carry a dictionary version — arx-family tags imply the build's current dictionary (the build pins the newest supported version and refuses to decode a newer one)
+- legacy format (still decodable, no longer emitted): `agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`, `agent-render=v1.arx.<dictVersion>.<payload>` for `arx`, `agent-render=v1.arx2.<dictVersion>.<payload>` for `arx2`, and `agent-render=v1.arx3.<dictVersion>.<payload>` for `arx3`
+- codecs: `plain`, `lz`, `deflate`, `arx`, `arx2`, and `arx3`
 - fragment size budget: `8192` characters
 - decoded payload budget: `200000` characters
 - packed wire transport (`p: 1`) is allowed and must decode back to the standard envelope
@@ -120,12 +120,13 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 ### Payload and protocol
 - `src/lib/payload/schema.ts` - type surface, limits, fragment key, supported kinds/codecs
 - `src/lib/payload/fragment.ts` - encode/decode logic and transport behavior
-- `src/lib/payload/arx-codec.ts` - arx/arx2 codecs: dictionary substitution, tuple overlay, brotli, base76/base1k/baseBMP/base64url encoding
+- `src/lib/payload/arx-codec.ts` - arx/arx2/arx3 codecs: dictionary substitution, tuple overlay, brotli, base76/base1k/baseBMP/base64url encoding
 - `public/arx-dictionary.json` - shared substitution dictionary for the arx codec (served as a static endpoint)
 - `public/arx-dictionary.json.br` - pre-compressed brotli variant of the dictionary
 - `public/arx2-dictionary.json` - overlay substitution dictionary for arx2 tuple-envelope transport
+- `public/arx2-dictionary.json.br` - pre-compressed brotli variant of the arx2 overlay dictionary
 - `scripts/compress-dictionary.mjs` - minifies and brotli-compresses the dictionary file
-- `scripts/bench-codecs.mjs` - arx/arx2 benchmark gate used by `npm run bench:codecs`
+- `scripts/bench-codecs.mjs` - arx/arx2/arx3 benchmark gate used by `npm run bench:codecs`
 - `scripts/bench-baseline.json` - committed codec benchmark baseline
 - `src/lib/payload/envelope.ts` - bundle normalization and validation
 - `src/lib/payload/link-creator.ts` - draft-to-link generation helpers
