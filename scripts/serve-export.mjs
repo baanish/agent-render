@@ -149,7 +149,15 @@ function toRoutePath(urlPath) {
   let pathEnd = urlPath.length;
   if (queryIndex !== -1) pathEnd = Math.min(pathEnd, queryIndex);
   if (hashIndex !== -1) pathEnd = Math.min(pathEnd, hashIndex);
-  const cleanPath = urlPath.slice(0, pathEnd);
+  // Decode percent-escapes so requests match the decoded real filenames used as map keys
+  // (e.g. "/My%20File.png" -> "/My File.png"); malformed escapes 404. The path is only ever a
+  // map key, never joined onto disk, so decoding introduces no traversal exposure.
+  let cleanPath;
+  try {
+    cleanPath = decodeURIComponent(urlPath.slice(0, pathEnd));
+  } catch {
+    return null;
+  }
   let routePath = cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`;
 
   if (basePath) {
@@ -196,7 +204,13 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  createReadStream(staticFile.filePath).pipe(response);
+  const fileStream = createReadStream(staticFile.filePath);
+  // The 200 headers are already sent, so a mid-stream read error (file removed/unreadable after
+  // startup) can only be handled by tearing down the response instead of crashing the server.
+  fileStream.on("error", () => {
+    response.destroy();
+  });
+  fileStream.pipe(response);
 });
 
 server.listen(port, () => {

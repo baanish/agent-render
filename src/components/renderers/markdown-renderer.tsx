@@ -188,10 +188,11 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   }, [embeddedBlockCount, readyKey, reportReady]);
 
   const markBlockReady = useCallback((blockId: string) => {
+    // Drop callbacks from a previous artifact's blocks. The readyKey effect above already resets
+    // the tracking refs when content changes, so a late stale callback must be ignored here rather
+    // than adopted into the new key — adopting it would corrupt the new content's ready count.
     if (readyKeyRef.current !== readyKey) {
-      readyKeyRef.current = readyKey;
-      readyBlockIdsRef.current.clear();
-      reportedReadyKeyRef.current = null;
+      return;
     }
 
     if (readyBlockIdsRef.current.has(blockId)) {

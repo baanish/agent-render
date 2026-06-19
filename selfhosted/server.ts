@@ -46,15 +46,11 @@ function contentTypeFor(filePath: string): string {
     return API_CATALOG_CONTENT_TYPE;
   }
 
-  if (filePath.endsWith(".json.br")) {
-    return "application/json; charset=utf-8";
-  }
+  // Strip a trailing .br so any precompressed asset reports its decompressed type (matches
+  // scripts/serve-export.mjs); future *.js.br / *.wasm.br stay correct instead of octet-stream.
+  const typePath = filePath.endsWith(".br") ? filePath.slice(0, -3) : filePath;
 
-  if (filePath.endsWith(".css.br")) {
-    return "text/css; charset=utf-8";
-  }
-
-  return contentTypes.get(path.extname(filePath)) || "application/octet-stream";
+  return contentTypes.get(path.extname(typePath)) || "application/octet-stream";
 }
 
 function isNextStaticAsset(filePath: string): boolean {
@@ -68,7 +64,7 @@ function headersFor(filePath: string): Record<string, string> {
     headers.Link = API_CATALOG_LINK_HEADER;
   }
 
-  if (filePath.endsWith(".json.br") || filePath.endsWith(".css.br")) {
+  if (filePath.endsWith(".br")) {
     headers["Content-Encoding"] = "br";
     headers.Vary = "Accept-Encoding";
   }

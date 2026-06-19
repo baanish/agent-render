@@ -36,7 +36,14 @@ async function ensureArxDictionaryLoaded(): Promise<void> {
     return;
   }
 
-  arxDictionaryLoadPromise ??= loadArxDictionary().then(() => undefined);
+  // Reset the cached promise on failure so a transient dictionary load error can be retried
+  // instead of permanently poisoning every arx encode/decode for the page's lifetime.
+  arxDictionaryLoadPromise ??= loadArxDictionary()
+    .then(() => undefined)
+    .catch((error) => {
+      arxDictionaryLoadPromise = null;
+      throw error;
+    });
   await arxDictionaryLoadPromise;
 }
 
@@ -47,9 +54,12 @@ async function ensureArx2DictionariesLoaded(): Promise<void> {
     return;
   }
 
-  arx2OverlayDictionaryLoadPromise ??= loadArx2OverlayDictionary().then(
-    () => undefined,
-  );
+  arx2OverlayDictionaryLoadPromise ??= loadArx2OverlayDictionary()
+    .then(() => undefined)
+    .catch((error) => {
+      arx2OverlayDictionaryLoadPromise = null;
+      throw error;
+    });
   await arx2OverlayDictionaryLoadPromise;
 }
 
@@ -225,6 +235,10 @@ export async function decodeArxFragmentPayload(
   let lastError: Error | null = null;
   const { parsedDictVersion, versionedPayload } = splitArxFragmentRemainder(remainder);
 
+  // For a correctly versioned fragment this first attempt (decoding the full remainder, including
+  // the "<dictVersion>." prefix) is expected to fail at the decompressor — it exists only for
+  // backward compatibility with pre-versioning links whose payload could itself begin with
+  // "<digits>.". The versionedPayload attempt below is the real decode path for modern fragments.
   if (parsedDictVersion !== null) {
     try {
       return await decodeArxAttempt(codec, decodeArxEncodedPayload(remainder));
