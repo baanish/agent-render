@@ -249,3 +249,12 @@ Be conservative with product claims and precise with protocol changes.
 - readable across chat platforms
 
 Protect that simplicity.
+
+## Cursor Cloud specific instructions
+
+These notes are for cloud agents whose environment already has dependencies installed (`npm install` and Chromium for Playwright run on startup). They capture only non-obvious caveats; standard commands live under `## Development commands` and `docs/testing.md`.
+
+- `npm run dev` serves the client shell on port `3000` with no base path. The Playwright config (`playwright.config.ts`) is separate: it runs its own `NEXT_PUBLIC_BASE_PATH=/agent-render npm run build && npm run preview` on port `4401`, so you do not need a dev server running for `npm run test:e2e`.
+- Locally, `npm run test:e2e` also runs the screenshot regression suite (`tests/e2e/visual.spec.ts`), which can fail on a cloud VM due to platform font/rendering differences. Set `CI=1` (e.g. `CI=1 npm run test:e2e`) to skip visual snapshots and run only the behavioral browser flow, matching CI behavior. Do not run `npm run test:e2e:update` to "fix" these unless a visual change is genuinely intended.
+- The product is frontend-only; there is no backend to start for the core viewing path. The hello-world flow is: open `/`, fill the "Create a link" form, click "Generate link", then "Preview here" to render the artifact from the URL fragment.
+- `better-sqlite3` (a native module) is an optional dependency used only by the self-hosted UUID server variant; the main static app and its tests do not require it.
