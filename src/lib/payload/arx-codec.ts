@@ -153,6 +153,7 @@ function buildSubstitutions(
   dict: ArxDictionary,
   singleByteCodes = SINGLE_BYTE_CODES,
   extendedPrefix = EXTENDED_PREFIX,
+  extendedStart = 1,
 ): SubstitutionPair[] {
   const pairs: SubstitutionPair[] = [];
 
@@ -161,10 +162,15 @@ function buildSubstitutions(
   }
 
   for (let i = 0; i < dict.extendedSlots.length; i++) {
-    pairs.push([dict.extendedSlots[i], extendedPrefix + String.fromCharCode(i + 1)]);
+    pairs.push([dict.extendedSlots[i], extendedPrefix + String.fromCharCode(extendedStart + i)]);
   }
 
   return pairs;
+}
+
+/** The arx2 overlay's substitution pairs — `buildSubstitutions` with the overlay codes/prefix/offset. */
+function buildOverlaySubstitutionPairs(dict: ArxDictionary): SubstitutionPair[] {
+  return buildSubstitutions(dict, ARX2_SINGLE_BYTE_CODES, ARX2_EXTENDED_PREFIX, 0x20);
 }
 
 function makeTrieNode(): SubstitutionTrieNode {
@@ -237,34 +243,36 @@ function applySubstitutionTrie(text: string, trie: SubstitutionTrieNode): string
   return output.join("");
 }
 
-function buildOverlaySubstitutions(dict: ArxDictionary): SubstitutionPair[] {
-  const pairs: SubstitutionPair[] = [];
-
-  for (let i = 0; i < dict.singleByteSlots.length && i < ARX2_SINGLE_BYTE_CODES.length; i++) {
-    pairs.push([dict.singleByteSlots[i], String.fromCharCode(ARX2_SINGLE_BYTE_CODES[i])]);
-  }
-
-  for (let i = 0; i < dict.extendedSlots.length; i++) {
-    pairs.push([dict.extendedSlots[i], ARX2_EXTENDED_PREFIX + String.fromCharCode(0x20 + i)]);
-  }
-
-  return pairs;
-}
-
-// Active substitution tables — start with built-in dictionaries.
-let activeSubstitutionTable: SubstitutionTable = buildSubstitutionTable(buildSubstitutions(BUILTIN_DICTIONARY));
-let activeOverlaySubstitutionTable: SubstitutionTable = buildSubstitutionTable(
-  buildOverlaySubstitutions(BUILTIN_ARX2_OVERLAY_DICTIONARY),
-);
-let activeDictVersion = BUILTIN_DICTIONARY.version;
-let activeArx2OverlayVersion = BUILTIN_ARX2_OVERLAY_DICTIONARY.version;
-
 // ---------------------------------------------------------------------------
 // External dictionary loading
 // ---------------------------------------------------------------------------
 
-let dictionaryLoaded = false;
-let arx2OverlayDictionaryLoaded = false;
+// The base dictionary and the arx2 overlay are the same concept twice over: a substitution table, a
+// version, an external-loaded flag, plus how to build the table and where to fetch it. Model each as
+// a slot so the loaders/getters are written once. Both slots start on their built-in dictionaries.
+type DictSlot = {
+  table: SubstitutionTable;
+  version: number;
+  loaded: boolean;
+  buildPairs: (dict: ArxDictionary) => SubstitutionPair[];
+  defaultUrls: () => string[];
+};
+
+const baseDictSlot: DictSlot = {
+  table: buildSubstitutionTable(buildSubstitutions(BUILTIN_DICTIONARY)),
+  version: BUILTIN_DICTIONARY.version,
+  loaded: false,
+  buildPairs: (dict) => buildSubstitutions(dict),
+  defaultUrls: getDefaultDictionaryUrls,
+};
+
+const overlayDictSlot: DictSlot = {
+  table: buildSubstitutionTable(buildOverlaySubstitutionPairs(BUILTIN_ARX2_OVERLAY_DICTIONARY)),
+  version: BUILTIN_ARX2_OVERLAY_DICTIONARY.version,
+  loaded: false,
+  buildPairs: buildOverlaySubstitutionPairs,
+  defaultUrls: getDefaultArx2OverlayDictionaryUrls,
+};
 
 function isArxDictionary(value: unknown): value is ArxDictionary {
   if (typeof value !== "object" || value === null) return false;
@@ -314,18 +322,17 @@ async function fetchDictionary(url: string): Promise<ArxDictionary | null> {
 }
 
 /**
- * Load the shared arx dictionary from a URL or parsed object.
- * Call this before ARX encode/decode work when the external dictionary should be used.
- * Returns the dictionary version on success, or -1 on failure (falls back to built-in).
+ * Load a dictionary slot from a parsed object, an explicit URL, or its default URL list. Returns the
+ * dictionary version on success, or -1 on failure (the slot keeps its current dictionary).
  */
-export async function loadArxDictionary(source?: string | ArxDictionary): Promise<number> {
+async function loadDictSlot(slot: DictSlot, source?: string | ArxDictionary): Promise<number> {
   try {
     let dict: ArxDictionary;
 
     if (source && typeof source === "object") {
       dict = source;
     } else {
-      const urls = typeof source === "string" ? [source] : getDefaultDictionaryUrls();
+      const urls = typeof source === "string" ? [source] : slot.defaultUrls();
       let loaded: ArxDictionary | null = null;
       for (const url of urls) {
         loaded = await fetchDictionary(url);
@@ -335,14 +342,27 @@ export async function loadArxDictionary(source?: string | ArxDictionary): Promis
       dict = loaded;
     }
 
-    activeSubstitutionTable = buildSubstitutionTable(buildSubstitutions(dict));
-    activeDictVersion = dict.version;
-    dictionaryLoaded = true;
-
-    return dict.version;
+    return loadDictSlotSync(slot, dict);
   } catch {
     return -1;
   }
+}
+
+/** Load a dictionary slot from a pre-parsed object (synchronous). */
+function loadDictSlotSync(slot: DictSlot, dict: ArxDictionary): number {
+  slot.table = buildSubstitutionTable(slot.buildPairs(dict));
+  slot.version = dict.version;
+  slot.loaded = true;
+  return dict.version;
+}
+
+/**
+ * Load the shared arx dictionary from a URL or parsed object.
+ * Call this before ARX encode/decode work when the external dictionary should be used.
+ * Returns the dictionary version on success, or -1 on failure (falls back to built-in).
+ */
+export function loadArxDictionary(source?: string | ArxDictionary): Promise<number> {
+  return loadDictSlot(baseDictSlot, source);
 }
 
 /**
@@ -350,40 +370,15 @@ export async function loadArxDictionary(source?: string | ArxDictionary): Promis
  * Useful in test environments or when the dictionary JSON is already available.
  */
 export function loadArxDictionarySync(dict: ArxDictionary): number {
-  activeSubstitutionTable = buildSubstitutionTable(buildSubstitutions(dict));
-  activeDictVersion = dict.version;
-  dictionaryLoaded = true;
-  return dict.version;
+  return loadDictSlotSync(baseDictSlot, dict);
 }
 
 /**
  * Load the shared arx2 overlay dictionary from a URL or parsed object.
  * Returns the overlay dictionary version on success, or -1 on failure.
  */
-export async function loadArx2OverlayDictionary(source?: string | ArxDictionary): Promise<number> {
-  try {
-    let dict: ArxDictionary;
-
-    if (source && typeof source === "object") {
-      dict = source;
-    } else {
-      const urls = typeof source === "string" ? [source] : getDefaultArx2OverlayDictionaryUrls();
-      let loaded: ArxDictionary | null = null;
-      for (const url of urls) {
-        loaded = await fetchDictionary(url);
-        if (loaded) break;
-      }
-      if (!loaded) return -1;
-      dict = loaded;
-    }
-
-    activeOverlaySubstitutionTable = buildSubstitutionTable(buildOverlaySubstitutions(dict));
-    activeArx2OverlayVersion = dict.version;
-    arx2OverlayDictionaryLoaded = true;
-    return dict.version;
-  } catch {
-    return -1;
-  }
+export function loadArx2OverlayDictionary(source?: string | ArxDictionary): Promise<number> {
+  return loadDictSlot(overlayDictSlot, source);
 }
 
 /**
@@ -391,30 +386,27 @@ export async function loadArx2OverlayDictionary(source?: string | ArxDictionary)
  * Useful in tests and offline agents that already have the JSON dictionary.
  */
 export function loadArx2OverlayDictionarySync(dict: ArxDictionary): number {
-  activeOverlaySubstitutionTable = buildSubstitutionTable(buildOverlaySubstitutions(dict));
-  activeArx2OverlayVersion = dict.version;
-  arx2OverlayDictionaryLoaded = true;
-  return dict.version;
+  return loadDictSlotSync(overlayDictSlot, dict);
 }
 
 /** Returns true if an external dictionary has been loaded. */
 export function isExternalDictionaryLoaded(): boolean {
-  return dictionaryLoaded;
+  return baseDictSlot.loaded;
 }
 
 /** Returns true if an external arx2 overlay dictionary has been loaded. */
 export function isExternalArx2OverlayDictionaryLoaded(): boolean {
-  return arx2OverlayDictionaryLoaded;
+  return overlayDictSlot.loaded;
 }
 
 /** Returns the active dictionary version (0 = built-in fallback). */
 export function getActiveDictVersion(): number {
-  return activeDictVersion;
+  return baseDictSlot.version;
 }
 
 /** Returns the active arx2 overlay dictionary version. */
 export function getActiveArx2OverlayVersion(): number {
-  return activeArx2OverlayVersion;
+  return overlayDictSlot.version;
 }
 
 function resolveDefaultDictionaryUrl(): string {
@@ -430,19 +422,19 @@ function resolveDefaultArx2OverlayDictionaryUrl(): string {
 // ---------------------------------------------------------------------------
 
 function dictEncode(text: string): string {
-  return applySubstitutionTrie(text, activeSubstitutionTable.encodeTrie);
+  return applySubstitutionTrie(text, baseDictSlot.table.encodeTrie);
 }
 
 function dictDecode(text: string): string {
-  return applySubstitutionTrie(text, activeSubstitutionTable.decodeTrie);
+  return applySubstitutionTrie(text, baseDictSlot.table.decodeTrie);
 }
 
 function overlayEncode(text: string): string {
-  return applySubstitutionTrie(text, activeOverlaySubstitutionTable.encodeTrie);
+  return applySubstitutionTrie(text, overlayDictSlot.table.encodeTrie);
 }
 
 function overlayDecode(text: string): string {
-  return applySubstitutionTrie(text, activeOverlaySubstitutionTable.decodeTrie);
+  return applySubstitutionTrie(text, overlayDictSlot.table.decodeTrie);
 }
 
 /**
@@ -1402,9 +1394,10 @@ export async function arxDecompress(encoded: string): Promise<string> {
 }
 
 /**
- * Decompresses an arx2 tuple-envelope payload and rebuilds the standard envelope shape.
+ * Decompresses an arx2/arx3 tuple-envelope payload and rebuilds the standard envelope shape. The two
+ * codecs share the same tuple/overlay wire bytes; only the codec stamped on the rebuilt envelope differs.
  */
-export async function arx2DecompressEnvelope(encoded: string): Promise<PayloadEnvelope> {
+async function decompressArxTupleEnvelope(encoded: string, codec: "arx2" | "arx3"): Promise<PayloadEnvelope> {
   const v1Decoded = dictDecode(await decompressWirePayload(encoded));
   assertWithinExpansionBudget(v1Decoded);
   const tupleJson = overlayDecode(v1Decoded);
@@ -1415,20 +1408,15 @@ export async function arx2DecompressEnvelope(encoded: string): Promise<PayloadEn
   // sub-limit payload is no longer falsely rejected as decoded-too-large.
   const tuple = JSON.parse(tupleJson);
   assertDecodedTextBudget(JSON.stringify(tuple));
-  return envelopeFromArxTuple(tuple, "arx2");
+  return envelopeFromArxTuple(tuple, codec);
 }
 
-/**
- * Decompresses an arx3 tuple-envelope payload and rebuilds the standard envelope shape.
- */
+/** Decompresses an arx2 tuple-envelope payload and rebuilds the standard envelope shape. */
+export async function arx2DecompressEnvelope(encoded: string): Promise<PayloadEnvelope> {
+  return decompressArxTupleEnvelope(encoded, "arx2");
+}
+
+/** Decompresses an arx3 tuple-envelope payload and rebuilds the standard envelope shape. */
 export async function arx3DecompressEnvelope(encoded: string): Promise<PayloadEnvelope> {
-  const v1Decoded = dictDecode(await decompressWirePayload(encoded));
-  assertWithinExpansionBudget(v1Decoded);
-  const tupleJson = overlayDecode(v1Decoded);
-  assertWithinExpansionBudget(tupleJson);
-  // See arx2DecompressEnvelope: budget the parsed tuple so the DEL escape does not inflate the
-  // decoded-size check.
-  const tuple = JSON.parse(tupleJson);
-  assertDecodedTextBudget(JSON.stringify(tuple));
-  return envelopeFromArxTuple(tuple, "arx3");
+  return decompressArxTupleEnvelope(encoded, "arx3");
 }
