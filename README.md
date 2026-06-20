@@ -9,26 +9,6 @@
 
 Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based sharing for markdown, code, diffs, CSV, and JSON so the payload stays in the browser URL fragment instead of being sent to a server.
 
-## Visual Proof
-
-The repo includes Playwright visual snapshots for the shipped viewer surfaces:
-
-| Empty state | Markdown artifact |
-| --- | --- |
-| ![Empty state screenshot](tests/e2e/visual.spec.ts-snapshots/empty-state-light-chromium.png) | ![Markdown artifact screenshot](tests/e2e/visual.spec.ts-snapshots/markdown-light-chromium.png) |
-
-| Code artifact | Diff artifact |
-| --- | --- |
-| ![Code artifact screenshot](tests/e2e/visual.spec.ts-snapshots/code-light-chromium.png) | ![Diff artifact screenshot](tests/e2e/visual.spec.ts-snapshots/diff-light-chromium.png) |
-
-| CSV artifact | JSON artifact |
-| --- | --- |
-| ![CSV artifact screenshot](tests/e2e/visual.spec.ts-snapshots/csv-compact-light-chromium.png) | ![JSON artifact screenshot](tests/e2e/visual.spec.ts-snapshots/json-light-chromium.png) |
-
-| Markdown dark mode | Bundle switcher |
-| --- | --- |
-| ![Markdown dark mode screenshot](tests/e2e/visual.spec.ts-snapshots/markdown-dark-chromium.png) | ![Bundle switcher screenshot](tests/e2e/visual.spec.ts-snapshots/bundle-switcher-light-chromium.png) |
-
 ## OpenClaw
 
 `agent-render` was built to make OpenClaw agents better at sharing artifacts across chat surfaces that render markdown, diffs, and structured data poorly.
