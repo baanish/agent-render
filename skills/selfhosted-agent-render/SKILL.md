@@ -97,6 +97,16 @@ POST /api/cleanup
 
 Response: `{ "deleted": 5 }`
 
+The server also sweeps expired rows automatically on startup and once an hour, so this endpoint is only needed for on-demand cleanup.
+
+### Health check
+
+```http
+GET /health
+```
+
+Returns `200 { "status": "ok" }` when the server is up and the database is reachable, or `503 { "status": "error" }` otherwise. The check has no TTL side effects, so monitors can poll it without keeping artifacts alive. The Docker Compose deployment uses it as a container health check.
+
 ## Viewer links
 
 When a user visits `/{uuid}`, the server looks up the stored payload, injects it into the viewer page, and renders the same UI as the fragment-based product. All viewer features work: copy, download, print-to-PDF, diff modes, artifact switching, raw toggle.
@@ -256,8 +266,8 @@ p<base64url(JSON.stringify(envelope))>
 - Artifacts expire 24 hours after creation
 - Every successful read (API or viewer) extends the expiry by another 24 hours
 - Expired artifacts return 404 and are lazily cleaned up on access
-- Run `POST /api/cleanup` to batch-remove all expired artifacts
-- You can ask your agent to periodically clean up old records if desired
+- The server also sweeps expired rows automatically on startup and once an hour
+- Run `POST /api/cleanup` to batch-remove all expired artifacts on demand
 
 ## Deployment
 
@@ -362,11 +372,10 @@ curl -s -X POST http://localhost:3000/api/artifacts \
 
 ## Cleanup guidance
 
-Artifacts auto-expire after 24 hours of inactivity. For proactive cleanup:
+Artifacts auto-expire after 24 hours of inactivity, and the server sweeps expired rows on startup and hourly, so storage reclaims itself. For proactive cleanup:
 
-- Call `POST /api/cleanup` to remove all expired artifacts
+- Call `POST /api/cleanup` to remove all expired artifacts immediately
 - Call `DELETE /api/artifacts/:id` to remove specific artifacts
-- Ask your agent to clean up after sharing, or schedule periodic cleanup
 
 ## Good defaults
 

@@ -150,7 +150,7 @@ SQLite with a single `artifacts` table:
 
 ### TTL
 
-Artifacts use a 24-hour sliding TTL. Each successful read (API or viewer) extends `expires_at` by 24 hours. Expired entries are lazily deleted on read and can also be batch-cleaned via `POST /api/cleanup`.
+Artifacts use a 24-hour sliding TTL. Each successful read (API or viewer) extends `expires_at` by 24 hours. Expired entries are lazily deleted on read, swept automatically on startup and once an hour, and can also be batch-cleaned on demand via `POST /api/cleanup`.
 
 UUID mode should not be described as zero-retention in its current form. The server stores the encoded payload until expiry or deletion. A future encrypted short-link mode could store ciphertext in SQLite while keeping the decryption key in the URL fragment, but that design is not implemented.
 
