@@ -24,10 +24,15 @@ const INDEX_HTML =
   `<script>${INLINE_A}</script><script src="/app.js"></script>` +
   `</head><body><div id="root"></div><script>${INLINE_B}</script></body></html>`;
 
+// A second exported route with a DIFFERENT inline script — must get its own hash, not the root's.
+const SUB_INLINE = 'console.log("sub route only");';
+const SUB_HTML = `<!doctype html><html><head><title>sub</title><script>${SUB_INLINE}</script></head><body>sub</body></html>`;
+
 function sha256Source(body: string): string {
   return `'sha256-${createHash("sha256").update(body, "utf8").digest("base64")}'`;
 }
 const EXPECTED_HASHES = [sha256Source(INLINE_A), sha256Source(INLINE_B)];
+const SUB_HASH = sha256Source(SUB_INLINE);
 
 async function getFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -47,7 +52,9 @@ function createFixture(): { root: string; outDir: string } {
   const root = mkdtempSync(path.join(tmpdir(), "agent-render-csp-"));
   const outDir = path.join(root, "out");
   mkdirSync(outDir, { recursive: true });
+  mkdirSync(path.join(outDir, "sub"), { recursive: true });
   writeFileSync(path.join(outDir, "index.html"), INDEX_HTML);
+  writeFileSync(path.join(outDir, "sub", "index.html"), SUB_HTML);
   writeFileSync(path.join(outDir, "app.js"), "export const x = 1;\n");
   return { root, outDir };
 }
@@ -162,6 +169,16 @@ describe("selfhosted Content-Security-Policy", () => {
     const csp = res.headers.get("content-security-policy") ?? "";
     for (const hash of EXPECTED_HASHES) expect(csp).toContain(hash);
     expect(csp).not.toContain("'nonce-");
+  });
+
+  it("hashes each exported route from its own bytes, not the root shell's", async () => {
+    const res = await fetch(`${base}/sub/`);
+    expect(res.status).toBe(200);
+    const csp = res.headers.get("content-security-policy") ?? "";
+    // The sub-route's own inline script is allowed; the root shell's are NOT (they would be blocked
+    // by the browser if served with the wrong hashes).
+    expect(csp).toContain(SUB_HASH);
+    for (const rootHash of EXPECTED_HASHES) expect(csp).not.toContain(rootHash);
   });
 
   it("does not attach a CSP to non-HTML static assets", async () => {

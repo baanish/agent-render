@@ -89,58 +89,63 @@ function getIndexHtml(): string {
   return indexHtmlCache;
 }
 
-let scriptHashesCache: string[] | null = null;
+const scriptHashCache = new Map<string, string[]>();
 
 /**
- * Derive `'sha256-...'` source expressions for every inline (non-`src`) `<script>` in the built
- * index.html. These let a strict CSP `script-src` allow exactly Next's own static bootstrap/hydration
- * scripts and nothing else. They are computed from the same file the server serves, so they never
- * drift from the build (a rebuild changes the hashes; a restart picks them up). The injected payload
- * script is covered by a per-response nonce instead, since its content varies per artifact.
- *
- * Failure/fallback: if index.html cannot be read, returns `[]` (no caching) so error pages — which
- * carry no scripts — still render; the viewer is non-functional without index.html regardless.
+ * Derive `'sha256-...'` source expressions for every inline (non-`src`) `<script>` in an HTML string.
+ * The browser hashes the text content between `<script>` and the first `</script>`; this regex stops
+ * at the same boundary, so the digests match. Lets a strict CSP `script-src` allow exactly the build's
+ * own static bootstrap/hydration scripts and nothing else.
  */
-function getInlineScriptHashes(): string[] {
-  if (scriptHashesCache) return scriptHashesCache;
-
-  let html: string;
-  try {
-    html = getIndexHtml();
-  } catch {
-    return [];
-  }
-
+function inlineScriptHashes(html: string): string[] {
   const hashes: string[] = [];
   const inlineScript = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
   let match: RegExpExecArray | null;
   while ((match = inlineScript.exec(html)) !== null) {
     hashes.push(`'sha256-${createHash("sha256").update(match[1], "utf8").digest("base64")}'`);
   }
-
-  scriptHashesCache = hashes;
   return hashes;
 }
 
 /**
- * Build the Content-Security-Policy for HTML responses.
- *
- * `script-src` is the load-bearing directive: it allows same-origin scripts, the build's own inline
- * scripts (by hash), and — when `nonce` is supplied — the per-response injected payload bootstrap
- * (by nonce). So even if a renderer dependency regressed into an injection sink, attacker-controlled
- * inline script in a stored payload could not execute. `'wasm-unsafe-eval'` is required because the
- * arx-family codecs decompress Brotli via a WebAssembly module (brotli-wasm), which a strict
- * `script-src` would otherwise block; it permits WebAssembly compilation but NOT JavaScript `eval`,
- * so it is far narrower than `'unsafe-eval'`. `style-src` keeps `'unsafe-inline'` because the static
- * export and mermaid emit inline styles a strict style policy would break; locking down scripts is
- * where the value is. See docs/deployment.md.
+ * Inline-script hashes for a specific built HTML file, keyed by path so each exported route
+ * (`/`, `/security`, `/url-explainer`, `/404`, …) gets the hashes of the EXACT bytes it serves —
+ * the routes carry different Next flight-data scripts, so reusing the root shell's hashes would block
+ * the others. Computed once per file and cached. Returns `[]` (uncached) if the file cannot be read,
+ * so error pages — which carry no scripts — still render.
  */
-function contentSecurityPolicy(nonce?: string): string {
+function hashesForFile(filePath: string): string[] {
+  const cached = scriptHashCache.get(filePath);
+  if (cached) return cached;
+  let hashes: string[];
+  try {
+    hashes = inlineScriptHashes(readFileSync(filePath, "utf-8"));
+  } catch {
+    return [];
+  }
+  scriptHashCache.set(filePath, hashes);
+  return hashes;
+}
+
+/**
+ * Build the Content-Security-Policy for an HTML response.
+ *
+ * `script-src` is the load-bearing directive: it allows same-origin scripts, the served file's own
+ * inline scripts (by `hashes`), and — when `nonce` is supplied — the per-response injected payload
+ * bootstrap (by nonce). So even if a renderer dependency regressed into an injection sink,
+ * attacker-controlled inline script in a stored payload could not execute. `'wasm-unsafe-eval'` is
+ * required because the arx-family codecs decompress Brotli via a WebAssembly module (brotli-wasm),
+ * which a strict `script-src` would otherwise block; it permits WebAssembly compilation but NOT
+ * JavaScript `eval`, so it is far narrower than `'unsafe-eval'`. `style-src` keeps `'unsafe-inline'`
+ * because the static export and mermaid emit inline styles a strict style policy would break; locking
+ * down scripts is where the value is. See docs/deployment.md.
+ */
+function contentSecurityPolicy(hashes: string[], nonce?: string): string {
   const scriptSrc = [
     "'self'",
     "'wasm-unsafe-eval'",
     ...(nonce ? [`'nonce-${nonce}'`] : []),
-    ...getInlineScriptHashes(),
+    ...hashes,
   ];
   return [
     "default-src 'self'",
@@ -204,12 +209,22 @@ function jsonResponse(res: ServerResponse, status: number, body: unknown): void 
   res.end(json);
 }
 
-/** Send an HTML response with the given status code and a strict CSP (nonce for injected scripts). */
-function htmlResponse(res: ServerResponse, status: number, body: string, nonce?: string): void {
+/**
+ * Send an HTML response with the given status code and a strict CSP. `hashes` are the inline-script
+ * hashes for the served body (empty for scriptless error pages); `nonce` allows the injected payload
+ * bootstrap on viewer pages.
+ */
+function htmlResponse(
+  res: ServerResponse,
+  status: number,
+  body: string,
+  hashes: string[] = [],
+  nonce?: string,
+): void {
   res.writeHead(status, {
     "Content-Type": "text/html; charset=utf-8",
     "Content-Length": Buffer.byteLength(body),
-    "Content-Security-Policy": contentSecurityPolicy(nonce),
+    "Content-Security-Policy": contentSecurityPolicy(hashes, nonce),
   });
   res.end(body);
 }
@@ -251,10 +266,10 @@ async function serveStatic(res: ServerResponse, urlPath: string, method: string)
   }
 
   const headers = headersFor(filePath);
-  // The app shell (index.html) is the only static file with executable inline scripts, so it carries
-  // the same strict CSP as the injected viewer. No nonce here: static index.html injects no script.
-  if (filePath.endsWith(`${path.sep}index.html`)) {
-    headers["Content-Security-Policy"] = contentSecurityPolicy();
+  // Exported HTML pages carry a strict CSP, using the hashes of the EXACT file served (each route
+  // ships different inline scripts). No nonce: static pages inject no per-response script.
+  if (path.extname(filePath) === ".html") {
+    headers["Content-Security-Policy"] = contentSecurityPolicy(hashesForFile(filePath));
   }
 
   res.writeHead(200, headers);
@@ -455,8 +470,10 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     try {
       const nonce = randomBytes(16).toString("base64");
+      // The viewer is built from the root shell, so its inline-script hashes are the root's.
+      const hashes = hashesForFile(path.join(outputDirectory, "index.html"));
       const html = injectPayload(getIndexHtml(), row.payload, nonce);
-      htmlResponse(res, 200, html, nonce);
+      htmlResponse(res, 200, html, hashes, nonce);
     } catch {
       htmlResponse(res, 500, errorPage("Server error", "Failed to render the artifact viewer."));
     }
