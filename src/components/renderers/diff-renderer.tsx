@@ -7,7 +7,11 @@ import { copyTextToClipboard } from "@/lib/copy-text";
 import { detectCodeLanguage } from "@/lib/code/language";
 import { parseGitPatchBundle } from "@/lib/diff/git-patch";
 import type { DiffArtifact } from "@/lib/payload/schema";
-import { withBasePath } from "@/lib/site/base-path";
+import {
+  loadDiffViewStylesheet,
+  releaseDiffViewStylesheet,
+  retainDiffViewStylesheet,
+} from "@/components/renderers/diff-view-stylesheet";
 
 type DiffRendererProps = {
   artifact: DiffArtifact;
@@ -16,14 +20,6 @@ type DiffRendererProps = {
 
 const NARROW_DIFF_BREAKPOINT = 640;
 const MOBILE_DIFF_MEDIA_QUERY = `(max-width: ${NARROW_DIFF_BREAKPOINT}px)`;
-const DIFF_VIEW_STYLESHEET_ID = "agent-render-diff-view-styles";
-const diffViewStylesheetHrefs = [
-  withBasePath("/vendor/diff-view-pure.css.br"),
-  withBasePath("/vendor/diff-view-pure.css"),
-];
-
-let diffViewStylesheetPromise: Promise<void> | null = null;
-let diffViewStylesheetRefCount = 0;
 
 type DiffViewModule = typeof import("@git-diff-view/react");
 type DiffViewLibrary = Pick<DiffViewModule, "DiffFile" | "DiffModeEnum" | "DiffView">;
@@ -123,91 +119,12 @@ function diffFilesHaveRenderableFile(diffFiles: RenderableDiffFile[]): boolean {
   return false;
 }
 
-function loadStylesheetHref(href: string) {
-  return new Promise<void>((resolve, reject) => {
-    const link = document.createElement("link");
-
-    const cleanup = () => {
-      link.removeEventListener("load", handleLoad);
-      link.removeEventListener("error", handleError);
-    };
-    const handleLoad = () => {
-      link.dataset.loaded = "true";
-      cleanup();
-      resolve();
-    };
-    const handleError = () => {
-      cleanup();
-      link.remove();
-      reject(new Error(`Diff view stylesheet failed to load: ${href}`));
-    };
-
-    link.id = DIFF_VIEW_STYLESHEET_ID;
-    link.rel = "stylesheet";
-    link.href = href;
-    link.addEventListener("load", handleLoad);
-    link.addEventListener("error", handleError);
-    document.head.appendChild(link);
-  });
-}
-
-function loadDiffViewStylesheet() {
-  if (typeof document === "undefined") {
-    return Promise.resolve();
-  }
-
-  const existingLink = document.getElementById(DIFF_VIEW_STYLESHEET_ID) as HTMLLinkElement | null;
-
-  if (existingLink?.dataset.loaded === "true" || existingLink?.sheet) {
-    if (existingLink) {
-      existingLink.dataset.loaded = "true";
-    }
-    return Promise.resolve();
-  }
-
-  if (diffViewStylesheetPromise && !existingLink) {
-    diffViewStylesheetPromise = null;
-  }
-
-  if (diffViewStylesheetPromise) {
-    return diffViewStylesheetPromise;
-  }
-
-  existingLink?.remove();
-
-  diffViewStylesheetPromise = (async () => {
-    let lastError: unknown;
-
-    for (const href of diffViewStylesheetHrefs) {
-      try {
-        await loadStylesheetHref(href);
-        return;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    throw lastError instanceof Error ? lastError : new Error("Diff view stylesheet failed to load.");
-  })().catch((error) => {
-    diffViewStylesheetPromise = null;
-    throw error;
-  });
-
-  return diffViewStylesheetPromise;
-}
-
-function retainDiffViewStylesheet() {
-  diffViewStylesheetRefCount += 1;
-}
-
-function releaseDiffViewStylesheet() {
-  diffViewStylesheetRefCount = Math.max(0, diffViewStylesheetRefCount - 1);
-  if (diffViewStylesheetRefCount > 0) {
-    return;
-  }
-
-  document.getElementById(DIFF_VIEW_STYLESHEET_ID)?.remove();
-  diffViewStylesheetPromise = null;
+/** Run the four-call @git-diff-view warmup (theme + parse both view modes) a DiffFile needs before render. */
+function warmDiffFile(diffFile: DiffFileInstance, resolvedTheme: ResolvedTheme): void {
+  diffFile.initTheme(resolvedTheme === "dark" ? "dark" : "light");
+  diffFile.init();
+  diffFile.buildSplitDiffLines();
+  diffFile.buildUnifiedDiffLines();
 }
 
 function looksLikeUnifiedDiff(patch: string) {
@@ -263,10 +180,7 @@ function buildRenderablePatchFile(
     language,
   );
 
-  diffFile.initTheme(resolvedTheme === "dark" ? "dark" : "light");
-  diffFile.init();
-  diffFile.buildSplitDiffLines();
-  diffFile.buildUnifiedDiffLines();
+  warmDiffFile(diffFile, resolvedTheme);
 
   return {
     meta: patchFile,
@@ -586,10 +500,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
         const language = detectCodeLanguage(fileName, artifact.language);
         const diffFile = new diffLibrary.DiffFile(`a/${fileName}`, artifact.oldContent, `b/${fileName}`, artifact.newContent, [], language, language);
 
-        diffFile.initTheme(resolvedTheme === "dark" ? "dark" : "light");
-        diffFile.init();
-        diffFile.buildSplitDiffLines();
-        diffFile.buildUnifiedDiffLines();
+        warmDiffFile(diffFile, resolvedTheme);
 
         return {
           kind: "rich",
