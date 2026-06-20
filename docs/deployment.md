@@ -145,6 +145,8 @@ The self-hosted server does not include built-in authentication. Options for pro
 - **Reverse proxy**: Place behind nginx, Caddy, or Traefik with HTTP basic auth, OAuth2 proxy, or mTLS.
 - **Local only**: Set `HOST=127.0.0.1` to bind to localhost only.
 
+Every response carries baseline hardening headers: `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, and `X-Frame-Options: SAMEORIGIN`. There is intentionally no `Content-Security-Policy` — the viewer's markdown, code, and mermaid renderers rely on inline styles that a strict policy would break. Add a CSP at your reverse proxy if your threat model requires one.
+
 ### Future encrypted short links
 
 A future mode could encrypt the payload in the browser or agent, store only ciphertext under the UUID, and keep the decryption key in the URL fragment. That would make the short-link server unable to read plaintext while still giving users a short public URL shape. This repository does not implement that mode today.

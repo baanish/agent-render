@@ -231,6 +231,14 @@ function errorPage(title: string, message: string): string {
  * - `GET /*` — serve static files from the build output
  */
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  // Conservative security headers on every response. `nosniff` stops MIME-type confusion;
+  // `no-referrer` keeps the artifact UUID (in the path) out of the Referer sent to any third-party
+  // resource a rendered artifact loads; `SAMEORIGIN` blocks cross-origin framing of the viewer.
+  // No CSP: the markdown/code/mermaid renderers rely on inline styles a strict policy would break.
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   const pathname = url.pathname.replace(/\/+$/, "") || "/";
   const method = req.method?.toUpperCase() ?? "GET";
@@ -262,17 +270,29 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
   // POST /api/artifacts — create
   if (pathname === "/api/artifacts" && method === "POST") {
+    let parsed: unknown;
     try {
-      const body = JSON.parse(await readBody(req));
-      const validation = validatePayload(body.payload);
-      if (!validation.ok) {
-        jsonResponse(res, 400, { error: validation.message });
-        return;
-      }
-      const result = createArtifact(body.payload);
-      jsonResponse(res, 201, result);
+      parsed = JSON.parse(await readBody(req));
     } catch {
       jsonResponse(res, 400, { error: "Invalid request body." });
+      return;
+    }
+    // Tolerate any JSON value (including `null` or a primitive) without throwing; a non-object body
+    // simply has no payload and is rejected as a 400 below.
+    const payload = (parsed as { payload?: unknown } | null)?.payload;
+    const validation = validatePayload(payload);
+    if (!validation.ok) {
+      jsonResponse(res, 400, { error: validation.message });
+      return;
+    }
+    try {
+      // validatePayload has confirmed payload is a string.
+      const result = createArtifact(payload as string);
+      jsonResponse(res, 201, result);
+    } catch {
+      // The request was well-formed; persistence failed (e.g. disk full). Report a server error
+      // instead of masking it as a 400 client error.
+      jsonResponse(res, 500, { error: "Failed to store artifact." });
     }
     return;
   }
@@ -298,21 +318,32 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
 
     if (method === "PUT") {
+      let parsed: unknown;
       try {
-        const body = JSON.parse(await readBody(req));
-        const validation = validatePayload(body.payload);
-        if (!validation.ok) {
-          jsonResponse(res, 400, { error: validation.message });
-          return;
-        }
-        const row = updateArtifact(artifactId, body.payload);
+        parsed = JSON.parse(await readBody(req));
+      } catch {
+        jsonResponse(res, 400, { error: "Invalid request body." });
+        return;
+      }
+      // Tolerate any JSON value (including `null` or a primitive) without throwing; a non-object body
+      // simply has no payload and is rejected as a 400 below.
+      const payload = (parsed as { payload?: unknown } | null)?.payload;
+      const validation = validatePayload(payload);
+      if (!validation.ok) {
+        jsonResponse(res, 400, { error: validation.message });
+        return;
+      }
+      try {
+        // validatePayload has confirmed payload is a string.
+        const row = updateArtifact(artifactId, payload as string);
         if (!row) {
           jsonResponse(res, 404, { error: "Artifact not found or expired." });
           return;
         }
         jsonResponse(res, 200, row);
       } catch {
-        jsonResponse(res, 400, { error: "Invalid request body." });
+        // The request was well-formed; persistence failed. Report a server error, not a 400.
+        jsonResponse(res, 500, { error: "Failed to store artifact." });
       }
       return;
     }
