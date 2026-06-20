@@ -1,9 +1,9 @@
 /** Maximum length allowed for a stored payload string. */
 const MAX_PAYLOAD_LENGTH = 500_000;
 
-/** Result of payload validation. */
+/** Result of payload validation. On success it carries the narrowed string so callers need no cast. */
 export type ValidationResult =
-  | { ok: true }
+  | { ok: true; value: string }
   | { ok: false; message: string };
 
 /**
@@ -14,7 +14,7 @@ export type ValidationResult =
  * when the viewer renders the payload.
  *
  * @param payload - The raw payload string to validate.
- * @returns A validation result indicating success or the reason for rejection.
+ * @returns A validation result; on success `value` is the validated string.
  */
 export function validatePayload(payload: unknown): ValidationResult {
   if (typeof payload !== "string") {
@@ -32,5 +32,5 @@ export function validatePayload(payload: unknown): ValidationResult {
     };
   }
 
-  return { ok: true };
+  return { ok: true, value: payload };
 }

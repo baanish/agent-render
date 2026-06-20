@@ -3,8 +3,11 @@ import { describe, it, expect } from "vitest";
 import { validatePayload } from "../../selfhosted/validate.js";
 
 describe("validatePayload", () => {
-  it("accepts a valid payload string", () => {
-    expect(validatePayload("agent-render=v1.plain.abc123")).toEqual({ ok: true });
+  it("accepts a valid payload string and returns it narrowed", () => {
+    expect(validatePayload("agent-render=v1.plain.abc123")).toEqual({
+      ok: true,
+      value: "agent-render=v1.plain.abc123",
+    });
   });
 
   it("rejects non-string values", () => {
