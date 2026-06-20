@@ -1,7 +1,7 @@
+import { numberFormatter } from "@/lib/format";
+
 /** Discord's per-message character limit. */
 export const DISCORD_MESSAGE_MAX_LENGTH = 2000;
-
-const discordNumberFormatter = new Intl.NumberFormat("en-US");
 
 /**
  * Escape characters that would break a markdown inline link label.
@@ -52,8 +52,8 @@ export function getDiscordMarkdownLinkWarning(markdownLink: string): string | nu
     return null;
   }
 
-  const formattedLength = discordNumberFormatter.format(markdownLink.length);
-  const limit = discordNumberFormatter.format(DISCORD_MESSAGE_MAX_LENGTH);
+  const formattedLength = numberFormatter.format(markdownLink.length);
+  const limit = numberFormatter.format(DISCORD_MESSAGE_MAX_LENGTH);
 
   return `This markdown link is ${formattedLength} characters, which exceeds Discord's ${limit} character message limit. Split the bundle into smaller artifacts and send separate markdown links in multiple Discord messages.`;
 }
@@ -66,8 +66,8 @@ export function getDiscordMarkdownLinkViewerNotice(markdownLink: string): string
     return null;
   }
 
-  const formattedLength = discordNumberFormatter.format(markdownLink.length);
-  const limit = discordNumberFormatter.format(DISCORD_MESSAGE_MAX_LENGTH);
+  const formattedLength = numberFormatter.format(markdownLink.length);
+  const limit = numberFormatter.format(DISCORD_MESSAGE_MAX_LENGTH);
 
   return `This markdown link is ${formattedLength} characters, which may be too long to post directly in Discord's ${limit} character message limit.`;
 }

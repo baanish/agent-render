@@ -1,20 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { LucideIcon } from "lucide-react";
-import {
-  ArrowUpRight,
-  Check,
-  Copy,
-  ExternalLink,
-  FileCode2,
-  FileDiff,
-  FileJson2,
-  FileSpreadsheet,
-  FileText,
-  Link2,
-} from "lucide-react";
+import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
+import { kindIcons } from "@/components/artifact-kind-icons";
 import { copyTextToClipboard } from "@/lib/copy-text";
+import { numberFormatter } from "@/lib/format";
 import type {
   GeneratedArtifactLink,
   LinkCreatorDraft,
@@ -25,15 +15,6 @@ import { cn } from "@/lib/utils";
 type LinkCreatorProps = {
   onPreviewHash: (hash: string) => void;
 };
-
-const kindIcons: Record<ArtifactKind, LucideIcon> = {
-  markdown: FileText,
-  code: FileCode2,
-  diff: FileDiff,
-  csv: FileSpreadsheet,
-  json: FileJson2,
-};
-const numberFormatter = new Intl.NumberFormat("en-US");
 
 const fieldHints: Record<ArtifactKind, string> = {
   markdown: "Paste markdown notes, release docs, or a spec excerpt.",

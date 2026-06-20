@@ -10,9 +10,9 @@ import {
   type ParsedPayload,
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
+import { getHashPreview } from "@/components/viewer/hash-preview";
+import { numberFormatter } from "@/lib/format";
 import { withBasePath } from "@/lib/site/base-path";
-
-const numberFormatter = new Intl.NumberFormat("en-US");
 
 const iconPath = withBasePath("/icon.svg");
 const securityPath = withBasePath("/security/");
@@ -154,17 +154,6 @@ function getArtifactById(envelope: PayloadEnvelope, artifactId: string | null): 
   return getActiveArtifact(envelope);
 }
 
-function getHashPreview(hash: string): string {
-  if (!hash) {
-    return "#d<base64url-encoded-json>";
-  }
-
-  if (hash.length <= 220) {
-    return hash;
-  }
-
-  return `${hash.slice(0, 160)}...${hash.slice(-44)}`;
-}
 
 function getEmptyParsedPayload(): ParsedPayload {
   return {
