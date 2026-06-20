@@ -99,11 +99,15 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
     "idle" | "copied" | "failed"
   >("idle");
   const generationRequestRef = useRef(0);
+  const markdownCopyTokenRef = useRef(0);
+  const generatedLinkRef = useRef<GeneratedArtifactLink | null>(null);
   const isGeneratedLinkStale =
     Boolean(generatedLink) && draftVersion !== generatedVersion;
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
   const GeneratedKindIcon =
     kindIcons[generatedLink?.artifact.kind ?? draft.kind];
+
+  generatedLinkRef.current = generatedLink;
 
   useEffect(() => {
     setCopyState("idle");
@@ -181,14 +185,30 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   };
 
   const handleCopyMarkdownLink = async () => {
-    if (!generatedLink) {
+    const link = generatedLinkRef.current;
+    if (!link) {
       return;
     }
 
+    const requestToken = ++markdownCopyTokenRef.current;
+    const expectedHash = link.hash;
+
     try {
-      await copyTextToClipboard(generatedLink.markdownLink);
+      await copyTextToClipboard(link.markdownLink);
+      if (
+        markdownCopyTokenRef.current !== requestToken ||
+        generatedLinkRef.current?.hash !== expectedHash
+      ) {
+        return;
+      }
       setMarkdownLinkCopyState("copied");
     } catch {
+      if (
+        markdownCopyTokenRef.current !== requestToken ||
+        generatedLinkRef.current?.hash !== expectedHash
+      ) {
+        return;
+      }
       setMarkdownLinkCopyState("failed");
     }
   };
@@ -403,7 +423,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                     </p>
                   </div>
                   <div className="metric-card">
-                    <p className="metric-label">Markdown link</p>
+                    <p className="metric-label">Markdown link length</p>
                     <p className="metric-value">
                       {numberFormatter.format(generatedLink.markdownLinkLength)} chars
                     </p>

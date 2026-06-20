@@ -4,6 +4,7 @@ import {
   DISCORD_MESSAGE_MAX_LENGTH,
   formatMarkdownLink,
   getDiscordMarkdownLinkWarning,
+  getDiscordMarkdownLinkViewerNotice,
   isDiscordMarkdownLinkTooLong,
 } from "@/lib/markdown-link";
 
@@ -49,5 +50,14 @@ describe("formatMarkdownLink", () => {
     expect(shareInfo.length).toBeLessThanOrEqual(DISCORD_MESSAGE_MAX_LENGTH);
     expect(shareInfo.discordWarning).toBeNull();
     expect(shareInfo.markdownLink).toBe("[Weekly report](https://agent-render.com/#pabc)");
+  });
+
+  it("uses viewer-facing notice copy without split guidance", () => {
+    const href = `https://example.com/#${"a".repeat(DISCORD_MESSAGE_MAX_LENGTH)}`;
+    const markdownLink = formatMarkdownLink("Report", href);
+    const notice = getDiscordMarkdownLinkViewerNotice(markdownLink);
+
+    expect(notice).toMatch(/may be too long to post directly in Discord/i);
+    expect(notice).not.toMatch(/Split the bundle/i);
   });
 });

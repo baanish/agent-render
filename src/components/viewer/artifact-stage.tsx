@@ -19,7 +19,7 @@ import {
   Printer,
 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
-import { buildMarkdownLinkShareInfo } from "@/lib/markdown-link";
+import { buildMarkdownLinkShareInfo, getDiscordMarkdownLinkViewerNotice } from "@/lib/markdown-link";
 import { cn } from "@/lib/utils";
 import {
   MAX_FRAGMENT_LENGTH,
@@ -322,7 +322,12 @@ export function ArtifactStage({
       return null;
     }
 
-    return buildMarkdownLinkShareInfo(activeArtifactHeading, pageHref);
+    const shareInfo = buildMarkdownLinkShareInfo(activeArtifactHeading, pageHref);
+
+    return {
+      ...shareInfo,
+      discordViewerNotice: getDiscordMarkdownLinkViewerNotice(shareInfo.markdownLink),
+    };
   }, [activeArtifactHeading, pageHref]);
 
   const handleArtifactCopy = useCallback(async () => {
@@ -539,13 +544,13 @@ export function ArtifactStage({
         </div>
       </div>
 
-      {markdownLinkShareInfo?.discordWarning ? (
+      {markdownLinkShareInfo?.discordViewerNotice ? (
         <p
           className="artifact-share-warning fade-up print-hide-on-markdown"
           role="status"
           style={toolbarAnimationStyle}
         >
-          {markdownLinkShareInfo.discordWarning}
+          {markdownLinkShareInfo.discordViewerNotice}
         </p>
       ) : null}
 

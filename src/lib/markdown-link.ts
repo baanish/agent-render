@@ -1,6 +1,8 @@
 /** Discord's per-message character limit. */
 export const DISCORD_MESSAGE_MAX_LENGTH = 2000;
 
+const discordNumberFormatter = new Intl.NumberFormat("en-US");
+
 /**
  * Escape characters that would break a markdown inline link label.
  */
@@ -43,17 +45,31 @@ export function isDiscordMarkdownLinkTooLong(markdownLink: string): boolean {
 }
 
 /**
- * Builds a Discord warning when a markdown link is too long for a single message.
+ * Builds an agent-facing Discord warning when a markdown link is too long for a single message.
  */
 export function getDiscordMarkdownLinkWarning(markdownLink: string): string | null {
   if (!isDiscordMarkdownLinkTooLong(markdownLink)) {
     return null;
   }
 
-  const formattedLength = markdownLink.length.toLocaleString("en-US");
-  const limit = DISCORD_MESSAGE_MAX_LENGTH.toLocaleString("en-US");
+  const formattedLength = discordNumberFormatter.format(markdownLink.length);
+  const limit = discordNumberFormatter.format(DISCORD_MESSAGE_MAX_LENGTH);
 
   return `This markdown link is ${formattedLength} characters, which exceeds Discord's ${limit} character message limit. Split the bundle into smaller artifacts and send separate markdown links in multiple Discord messages.`;
+}
+
+/**
+ * Builds a viewer-facing notice when a markdown link may be too long to post in Discord.
+ */
+export function getDiscordMarkdownLinkViewerNotice(markdownLink: string): string | null {
+  if (!isDiscordMarkdownLinkTooLong(markdownLink)) {
+    return null;
+  }
+
+  const formattedLength = discordNumberFormatter.format(markdownLink.length);
+  const limit = discordNumberFormatter.format(DISCORD_MESSAGE_MAX_LENGTH);
+
+  return `This markdown link is ${formattedLength} characters, which may be too long to post directly in Discord's ${limit} character message limit.`;
 }
 
 /**
