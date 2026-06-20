@@ -3,27 +3,13 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import type { LucideIcon } from "lucide-react";
-import {
-  Check,
-  Code,
-  Copy,
-  Download,
-  Eye,
-  FileCode2,
-  FileDiff,
-  FileJson2,
-  FileSpreadsheet,
-  FileText,
-  Link2,
-  Printer,
-} from "lucide-react";
+import { Check, Code, Copy, Download, Eye, Link2, Printer } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
+import { numberFormatter } from "@/lib/format";
 import { buildMarkdownLinkShareInfo, getDiscordMarkdownLinkViewerNotice } from "@/lib/markdown-link";
 import { cn } from "@/lib/utils";
 import {
   MAX_FRAGMENT_LENGTH,
-  type ArtifactKind,
   type ArtifactPayload,
   type CodeArtifact,
   type CsvArtifact,
@@ -32,8 +18,10 @@ import {
   type MarkdownArtifact,
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
+import { kindIcons } from "@/components/artifact-kind-icons";
 import { ArtifactSelector } from "@/components/viewer/artifact-selector";
 import { FragmentDetailsDisclosure } from "@/components/viewer/fragment-details-disclosure";
+import { getHashPreview } from "@/components/viewer/hash-preview";
 
 type ArtifactStageProps = {
   activeArtifact: ArtifactPayload;
@@ -50,15 +38,6 @@ type ArtifactStageProps = {
   };
 };
 
-const numberFormatter = new Intl.NumberFormat("en-US");
-
-const kindIcons: Record<ArtifactKind, LucideIcon> = {
-  markdown: FileText,
-  code: FileCode2,
-  diff: FileDiff,
-  csv: FileSpreadsheet,
-  json: FileJson2,
-};
 const toolbarAnimationStyle: CSSProperties = { animationDelay: "80ms" };
 const selectorAnimationStyle: CSSProperties = { animationDelay: "100ms" };
 const contentAnimationStyle: CSSProperties = { animationDelay: "140ms" };
@@ -175,17 +154,6 @@ function getDownloadFilename(artifact: ArtifactPayload): string {
   return `${artifact.id}.txt`;
 }
 
-function getHashPreview(hash: string): string {
-  if (!hash) {
-    return "#d<base64url-encoded-json>";
-  }
-
-  if (hash.length <= 220) {
-    return hash;
-  }
-
-  return `${hash.slice(0, 160)}...${hash.slice(-44)}`;
-}
 
 /**
  * Renders the 'Raw' view of markdown/CSV as un-highlighted plain text — by design.

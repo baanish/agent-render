@@ -1,32 +1,15 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import {
-  ArrowUpRight,
-  FileCode2,
-  FileDiff,
-  FileJson2,
-  FileSpreadsheet,
-  FileText,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import { kindIcons } from "@/components/artifact-kind-icons";
 import { sampleLinkCards } from "@/components/home/sample-link-data";
-import type { ArtifactKind } from "@/lib/payload/schema";
+import { numberFormatter } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type SampleLinksProps = {
   activeHash: string;
   animationStyle: CSSProperties;
-};
-
-const numberFormatter = new Intl.NumberFormat("en-US");
-
-const kindIcons: Record<ArtifactKind, LucideIcon> = {
-  markdown: FileText,
-  code: FileCode2,
-  diff: FileDiff,
-  csv: FileSpreadsheet,
-  json: FileJson2,
 };
 
 /**
