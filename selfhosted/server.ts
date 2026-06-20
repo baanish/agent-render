@@ -9,6 +9,7 @@ import {
   deleteArtifact,
   cleanupExpired,
   getDb,
+  closeDb,
 } from "./db.js";
 import { validatePayload } from "./validate.js";
 
@@ -234,6 +235,18 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   const pathname = url.pathname.replace(/\/+$/, "") || "/";
   const method = req.method?.toUpperCase() ?? "GET";
 
+  // GET /health — liveness + database-readiness probe. Pings the DB so an unreachable database
+  // reports unhealthy. No TTL side effects, so monitors can poll it without keeping artifacts alive.
+  if (pathname === "/health" && method === "GET") {
+    try {
+      getDb().prepare("SELECT 1").get();
+      jsonResponse(res, 200, { status: "ok" });
+    } catch {
+      jsonResponse(res, 503, { status: "error" });
+    }
+    return;
+  }
+
   // CORS headers for API routes
   if (pathname.startsWith("/api/")) {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -340,8 +353,16 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   await serveStatic(res, pathname, method);
 }
 
-// Initialize database on startup
+// Initialize the database on startup and clear rows that expired while the server was down.
 getDb();
+cleanupExpired();
+
+// Sweep expired artifacts hourly. Lazy deletion on read only reclaims rows that are read again, so a
+// created-but-never-viewed artifact would otherwise outlive its TTL forever and grow the database
+// without bound. `unref()` keeps the timer from holding the process open on its own.
+const CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+const cleanupTimer = setInterval(cleanupExpired, CLEANUP_INTERVAL_MS);
+cleanupTimer.unref();
 
 const server = createServer((req, res) => {
   handleRequest(req, res).catch(() => {
@@ -355,5 +376,28 @@ const server = createServer((req, res) => {
 server.listen(port, host, () => {
   console.log(`agent-render self-hosted server running at http://${host}:${port}`);
 });
+
+// Graceful shutdown: stop the sweep timer, stop accepting connections, then close the database so
+// SQLite checkpoints its WAL before exit. Docker and systemd send SIGTERM on stop; Ctrl-C sends
+// SIGINT. The timeout forces exit if open connections do not drain promptly.
+let shuttingDown = false;
+function shutdown(signal: string): void {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`Received ${signal}, shutting down agent-render self-hosted server.`);
+  clearInterval(cleanupTimer);
+  server.close(() => {
+    closeDb();
+    process.exit(0);
+  });
+  server.closeIdleConnections?.();
+  setTimeout(() => {
+    closeDb();
+    process.exit(0);
+  }, 5000).unref();
+}
+
+process.once("SIGTERM", () => shutdown("SIGTERM"));
+process.once("SIGINT", () => shutdown("SIGINT"));
 
 export { handleRequest, injectPayload };

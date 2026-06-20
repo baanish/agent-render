@@ -88,7 +88,7 @@ cd selfhosted
 docker compose up -d
 ```
 
-This builds the frontend, compiles the server, and starts it with a persistent SQLite volume.
+This builds the frontend, compiles the server, and starts it with a persistent SQLite volume. The Compose service defines a health check that polls `GET /health`, so `docker ps` and orchestrators report container health.
 
 To rebuild after code changes:
 
@@ -134,7 +134,7 @@ pm2 start selfhosted/dist/server.js --name agent-render
 
 The server uses SQLite with WAL mode. The database file is created automatically at the path specified by `DB_PATH`. The parent directory is created if it does not exist.
 
-Artifacts have a 24-hour sliding TTL. Each successful view extends the expiry. Expired entries are lazily cleaned on read and can be batch-removed via `POST /api/cleanup`.
+Artifacts have a 24-hour sliding TTL. Each successful view extends the expiry. Expired entries are lazily cleaned on read, swept automatically on startup and once an hour, and can be batch-removed on demand via `POST /api/cleanup`.
 
 ### Auth and access control
 
