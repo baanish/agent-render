@@ -160,37 +160,7 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
     throw new Error(normalized.message);
   }
 
-  const fragmentBody = encodeEnvelope(normalized.envelope);
-  const hash = `#${fragmentBody}`;
-  const fragmentLength = getVisibleFragmentLength(fragmentBody);
-
-  if (fragmentLength > MAX_FRAGMENT_LENGTH) {
-    throw new Error(
-      `This link needs ${fragmentLength.toLocaleString()} fragment characters, which is over the ${MAX_FRAGMENT_LENGTH.toLocaleString()} character limit.`,
-    );
-  }
-
-  let url = hash;
-
-  if (baseUrl) {
-    const nextUrl = new URL(baseUrl);
-    nextUrl.hash = fragmentBody;
-    url = nextUrl.toString();
-  }
-
-  const shareInfo = buildGeneratedLinkShareInfo(normalized.envelope, url);
-
-  return {
-    envelope: normalized.envelope,
-    artifact: normalized.envelope.artifacts[0],
-    codec: getFragmentCodec(fragmentBody),
-    hash,
-    url,
-    fragmentLength,
-    markdownLink: shareInfo.markdownLink,
-    markdownLinkLength: shareInfo.length,
-    discordMarkdownLinkWarning: shareInfo.discordWarning,
-  };
+  return assembleGeneratedLink(normalized.envelope, encodeEnvelope(normalized.envelope), baseUrl);
 }
 
 /**
@@ -208,7 +178,23 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
   }
 
   const encodeOptions = draft.codec && draft.codec !== "auto" ? { codec: draft.codec } : {};
-  const fragmentBody = await encodeEnvelopeAsync(normalized.envelope, encodeOptions);
+  return assembleGeneratedLink(
+    normalized.envelope,
+    await encodeEnvelopeAsync(normalized.envelope, encodeOptions),
+    baseUrl,
+  );
+}
+
+/**
+ * Assemble a {@link GeneratedArtifactLink} from an already-encoded fragment body. The sync and async
+ * creators differ only in how `fragmentBody` is produced; everything downstream (budget check, URL,
+ * share info, result shape) lives here once.
+ */
+function assembleGeneratedLink(
+  envelope: PayloadEnvelope,
+  fragmentBody: string,
+  baseUrl?: string,
+): GeneratedArtifactLink {
   const hash = `#${fragmentBody}`;
   const fragmentLength = getVisibleFragmentLength(fragmentBody);
 
@@ -226,11 +212,11 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
     url = nextUrl.toString();
   }
 
-  const shareInfo = buildGeneratedLinkShareInfo(normalized.envelope, url);
+  const shareInfo = buildGeneratedLinkShareInfo(envelope, url);
 
   return {
-    envelope: normalized.envelope,
-    artifact: normalized.envelope.artifacts[0],
+    envelope,
+    artifact: envelope.artifacts[0],
     codec: getFragmentCodec(fragmentBody),
     hash,
     url,
