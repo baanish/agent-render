@@ -8,6 +8,14 @@ export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3"] as const
 export type ArtifactKind = (typeof artifactKinds)[number];
 export type PayloadCodec = (typeof codecs)[number];
 
+/** The dictionary + Brotli + binary-to-text codecs, as opposed to plain/lz/deflate. */
+export type ArxCodec = "arx" | "arx2" | "arx3";
+
+/** True when `codec` is one of the arx-family codecs. */
+export function isArxCodec(codec: PayloadCodec): codec is ArxCodec {
+  return codec === "arx" || codec === "arx2" || codec === "arx3";
+}
+
 // Compact fragment header: a single URL-unreserved tag char replaces the legacy
 // `agent-render=v1.<codec>.<dictVersion>.` prefix. The tag encodes wire version 1 and codec; it
 // does not carry a dictionary version — arx-family tags imply the build's current pinned dictionary
