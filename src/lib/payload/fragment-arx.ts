@@ -12,15 +12,17 @@ import {
   isExternalDictionaryLoaded,
   loadArxDictionary,
   loadArx2OverlayDictionary,
+  type ArxWirePayloads,
 } from "@/lib/payload/arx-codec";
 import { packEnvelope } from "@/lib/payload/wire-format";
 import {
   compactTagForCodec,
+  type ArxCodec,
   type PayloadCodec,
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
 
-type CandidateFragment = {
+export type CandidateFragment = {
   value: string;
   codec: PayloadCodec;
   packed: boolean;
@@ -28,6 +30,36 @@ type CandidateFragment = {
 };
 
 type TransportLengthCalculator = (value: string) => number;
+
+/** The four wire encodings every arx builder produces, in candidate order. */
+const WIRE_ORDER = ["base76", "base1k", "baseBMP", "base64url"] as const satisfies readonly (keyof ArxWirePayloads)[];
+
+/**
+ * Turn an arx codec's four wire payloads into tagged candidates. Shared by all three arx builders,
+ * which previously each re-spelled the tag prefix + transport-length + four-candidate list.
+ *
+ * `bmpUsesVisibleLength` budgets the dense baseBMP wire by visible URL length instead of percent-
+ * escaped transport length — see the POLICY note on buildArx3Candidates for why arx3 does this.
+ */
+function wirePayloadsToCandidates(
+  codec: ArxCodec,
+  packed: boolean,
+  payloads: ArxWirePayloads,
+  computeTransportLength: TransportLengthCalculator,
+  bmpUsesVisibleLength = false,
+): CandidateFragment[] {
+  const tag = compactTagForCodec(codec);
+  return WIRE_ORDER.map((wire) => {
+    const value = `${tag}${payloads[wire]}`;
+    return {
+      value,
+      codec,
+      packed,
+      transportLength:
+        bmpUsesVisibleLength && wire === "baseBMP" ? value.length : computeTransportLength(value),
+    };
+  });
+}
 
 let arxDictionaryLoadPromise: Promise<void> | null = null;
 let arx2OverlayDictionaryLoadPromise: Promise<void> | null = null;
@@ -132,7 +164,7 @@ function splitArxFragmentRemainder(remainder: string): {
 }
 
 async function decodeArxAttempt(
-  codec: Extract<PayloadCodec, "arx" | "arx2" | "arx3">,
+  codec: ArxCodec,
   encodedPayload: string,
 ): Promise<string | PayloadEnvelope> {
   if (codec === "arx") {
@@ -167,21 +199,7 @@ export async function buildArxCandidates(
     packed ? packEnvelope(payloadEnvelope) : payloadEnvelope,
   );
   const payloads = await arxCompressPayloads(json);
-  const makeCandidate = (payload: string): CandidateFragment => {
-    const value = `${compactTagForCodec("arx")}${payload}`;
-    return {
-      value,
-      codec: "arx",
-      packed,
-      transportLength: computeTransportLength(value),
-    };
-  };
-  return [
-    makeCandidate(payloads.base76),
-    makeCandidate(payloads.base1k),
-    makeCandidate(payloads.baseBMP),
-    makeCandidate(payloads.base64url),
-  ];
+  return wirePayloadsToCandidates("arx", packed, payloads, computeTransportLength);
 }
 
 /**
@@ -195,21 +213,7 @@ export async function buildArx2Candidates(
 
   const payloadEnvelope = { ...envelope, codec: "arx2" as PayloadCodec };
   const payloads = await arx2CompressEnvelope(payloadEnvelope);
-  const makeCandidate = (payload: string): CandidateFragment => {
-    const value = `${compactTagForCodec("arx2")}${payload}`;
-    return {
-      value,
-      codec: "arx2",
-      packed: false,
-      transportLength: computeTransportLength(value),
-    };
-  };
-  return [
-    makeCandidate(payloads.base76),
-    makeCandidate(payloads.base1k),
-    makeCandidate(payloads.baseBMP),
-    makeCandidate(payloads.base64url),
-  ];
+  return wirePayloadsToCandidates("arx2", false, payloads, computeTransportLength);
 }
 
 /**
@@ -241,30 +245,15 @@ export async function buildArx3Candidates(
 
   const payloadEnvelope = { ...envelope, codec: "arx3" as PayloadCodec };
   const payloads = await arx3CompressEnvelope(payloadEnvelope);
-  const makeCandidate = (payload: string, preferVisibleChars = false): CandidateFragment => {
-    const value = `${compactTagForCodec("arx3")}${payload}`;
-    return {
-      value,
-      codec: "arx3",
-      packed: false,
-      // Deliberate metric choice (see POLICY above): the dense baseBMP wire is budgeted by visible
-      // URL length, while every other candidate uses percent-escaped transport length.
-      transportLength: preferVisibleChars ? value.length : computeTransportLength(value),
-    };
-  };
-  return [
-    makeCandidate(payloads.base76),
-    makeCandidate(payloads.base1k),
-    makeCandidate(payloads.baseBMP, true),
-    makeCandidate(payloads.base64url),
-  ];
+  // The `true` budgets the dense baseBMP wire by visible URL length — see the POLICY note above.
+  return wirePayloadsToCandidates("arx3", false, payloads, computeTransportLength, true);
 }
 
 /**
  * Decodes an ARX fragment remainder with the same versioned-payload fallback behavior as the main decoder.
  */
 export async function decodeArxFragmentPayload(
-  codec: Extract<PayloadCodec, "arx" | "arx2" | "arx3">,
+  codec: ArxCodec,
   remainder: string,
 ): Promise<string | PayloadEnvelope> {
   if (codec === "arx3" || codec === "arx2") {

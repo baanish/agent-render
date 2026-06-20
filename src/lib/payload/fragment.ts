@@ -6,6 +6,7 @@ import {
   codecs,
   codecForCompactTag,
   compactTagForCodec,
+  isArxCodec,
   MAX_DECODED_PAYLOAD_LENGTH,
   MAX_FRAGMENT_LENGTH,
   PAYLOAD_FRAGMENT_KEY,
@@ -14,6 +15,7 @@ import {
   type PayloadEnvelope,
   isPayloadEnvelope,
 } from "@/lib/payload/schema";
+import type { CandidateFragment } from "@/lib/payload/fragment-arx";
 
 type EncodeOptions = {
   codec?: PayloadCodec;
@@ -21,13 +23,6 @@ type EncodeOptions = {
   preferPacked?: boolean;
   targetMaxFragmentLength?: number;
   codecPriority?: PayloadCodec[];
-};
-
-type CandidateFragment = {
-  value: string;
-  codec: PayloadCodec;
-  packed: boolean;
-  transportLength: number;
 };
 
 const BINARY_STRING_CHUNK_SIZE = 0x8000;
@@ -212,7 +207,7 @@ function getSyncCandidateCodecs(options: EncodeOptions): readonly PayloadCodec[]
   const syncCandidates: PayloadCodec[] = [];
 
   for (const codec of candidates) {
-    if (codec !== "arx" && codec !== "arx2" && codec !== "arx3") {
+    if (!isArxCodec(codec)) {
       syncCandidates.push(codec);
     }
   }
@@ -433,7 +428,7 @@ export function decodeFragment(hash: string): ParsedPayload {
 
   const { codec, encoded } = header;
 
-  if (codec === "arx" || codec === "arx2" || codec === "arx3") {
+  if (isArxCodec(codec)) {
     return {
       ok: false,
       code: "invalid-format",
@@ -522,7 +517,7 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
   try {
     let decodedJson: string | null;
 
-    if (codec === "arx" || codec === "arx2" || codec === "arx3") {
+    if (isArxCodec(codec)) {
       const { decodeArxFragmentPayload } = await import("@/lib/payload/fragment-arx");
       const decodedFromAttempt = await decodeArxFragmentPayload(codec, remainder);
 
@@ -551,15 +546,14 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
     if (error instanceof Error && error.name === "ArxDecodedPayloadTooLargeError") {
       return { ok: false, code: "decoded-too-large", message: error.message };
     }
-    const arxHint =
-      codec === "arx" || codec === "arx2" || codec === "arx3"
-        ? " It may have been encoded with a different ARX dictionary version."
-        : "";
+    const arxHint = isArxCodec(codec)
+      ? " It may have been encoded with a different ARX dictionary version."
+      : "";
     return { ok: false, code: "invalid-json", message: `The fragment payload could not be decoded as valid JSON.${arxHint}` };
   }
 
   const resolved = resolveEnvelope(parsed, header.fragmentLength);
-  if (!resolved.ok && resolved.code === "invalid-envelope" && (codec === "arx" || codec === "arx2" || codec === "arx3")) {
+  if (!resolved.ok && resolved.code === "invalid-envelope" && isArxCodec(codec)) {
     // An ARX payload that decoded but is not a valid envelope almost always means the active
     // dictionary differs from the one it was encoded with (see tests/arx-dictionary-pin.test.ts).
     return { ...resolved, message: `${resolved.message} It may have been encoded with a different ARX dictionary version.` };
