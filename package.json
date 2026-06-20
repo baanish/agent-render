@@ -42,7 +42,8 @@
     "check:public-export-docs": "node scripts/check-public-export-docs.mjs",
     "selfhosted:dev": "node --import tsx selfhosted/server.ts",
     "selfhosted:build": "tsc -p selfhosted/tsconfig.json",
-    "selfhosted:start": "node selfhosted/dist/server.js"
+    "selfhosted:start": "node selfhosted/dist/server.js",
+    "selfhosted:csp-smoke": "node scripts/csp-smoke.mjs"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
