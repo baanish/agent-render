@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { spawn, type ChildProcess } from "node:child_process";
 import net from "node:net";
 import path from "node:path";
+import Database from "better-sqlite3";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 // Pins the self-hosted server's response contract: conservative security headers on every response,
@@ -65,6 +66,28 @@ async function waitForReady(url: string, child: ChildProcess): Promise<void> {
     : new Error(`Self-hosted server did not respond at ${url}.`);
 }
 
+function dbPathFor(fixture: { root: string }): string {
+  return path.join(fixture.root, "agent-render.db");
+}
+
+function spawnServer(port: number, fixture: { root: string; outDir: string }): ChildProcess {
+  return spawn(
+    process.execPath,
+    ["--import", "tsx", path.join(repoRoot, "selfhosted", "server.ts")],
+    {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        PORT: String(port),
+        HOST: "127.0.0.1",
+        OUT_DIR: fixture.outDir,
+        DB_PATH: dbPathFor(fixture),
+      },
+      stdio: "ignore",
+    },
+  );
+}
+
 describe("selfhosted response contract", () => {
   let fixture: { root: string; outDir: string };
   let child: ChildProcess;
@@ -75,21 +98,7 @@ describe("selfhosted response contract", () => {
     fixture = createFixture();
     port = await getFreePort();
     base = `http://127.0.0.1:${port}`;
-    child = spawn(
-      process.execPath,
-      ["--import", "tsx", path.join(repoRoot, "selfhosted", "server.ts")],
-      {
-        cwd: repoRoot,
-        env: {
-          ...process.env,
-          PORT: String(port),
-          HOST: "127.0.0.1",
-          OUT_DIR: fixture.outDir,
-          DB_PATH: path.join(fixture.root, "agent-render.db"),
-        },
-        stdio: "ignore",
-      },
-    );
+    child = spawnServer(port, fixture);
     await waitForReady(`${base}/index.html`, child);
   });
 
@@ -155,12 +164,87 @@ describe("selfhosted response contract", () => {
   });
 
   it("rejects a non-object JSON body (null) with 400, not 500", async () => {
-    // `JSON.parse("null")` succeeds, so payload extraction must not throw on a non-object body.
+    // `JSON.parse("null")` succeeds, so payload extraction must not throw on a non-object body. A
+    // null body has no payload, so it lands on the validation 400 ("Payload must be a string."),
+    // distinct from the parse 400 ("Invalid request body.").
     const response = await fetch(`${base}/api/artifacts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: "null",
     });
     expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Payload must be a string." });
+  });
+
+  it("sets security headers on error responses too", async () => {
+    // Headers are applied via setHeader() before routing, so they must persist through a writeHead
+    // with its own header object — not just on the 200/201 happy paths.
+    const response = await fetch(`${base}/api/artifacts/not-a-real-id`);
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(response.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(response.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+  });
+});
+
+// PR2's headline change splits a well-formed-but-unstorable request away from the parse-error 400 and
+// into a 500. This exercises that path deterministically: after the server has opened its connection,
+// a second connection drops the `artifacts` table, so the next INSERT/SELECT throws a SqliteError —
+// the same failure class (e.g. SQLITE_FULL on disk-full) the 500 branch exists to handle. If this
+// regresses to 400, the masking bug PR2 fixed is back.
+describe("selfhosted persistence failure", () => {
+  let fixture: { root: string; outDir: string };
+  let child: ChildProcess;
+  let port: number;
+  let base: string;
+
+  beforeAll(async () => {
+    fixture = createFixture();
+    port = await getFreePort();
+    base = `http://127.0.0.1:${port}`;
+    child = spawnServer(port, fixture);
+    await waitForReady(`${base}/index.html`, child);
+
+    // Confirm a write works first, then drop the table out from under the running server.
+    const ok = await fetch(`${base}/api/artifacts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload: "pbefore-drop" }),
+    });
+    expect(ok.status).toBe(201);
+
+    const db = new Database(dbPathFor(fixture));
+    db.exec("DROP TABLE artifacts");
+    db.close();
+  });
+
+  afterAll(async () => {
+    if (child.exitCode === null) {
+      await new Promise<void>((resolve) => {
+        child.once("close", () => resolve());
+        child.kill();
+      });
+    }
+    rmSync(fixture.root, { recursive: true, force: true });
+  });
+
+  it("returns 500 when a create cannot be persisted", async () => {
+    const response = await fetch(`${base}/api/artifacts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload: "pafter-drop" }),
+    });
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: "Failed to store artifact." });
+  });
+
+  it("returns 500 when an update cannot be persisted", async () => {
+    const response = await fetch(`${base}/api/artifacts/00000000-0000-4000-8000-000000000000`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload: "pafter-drop" }),
+    });
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: "Failed to store artifact." });
   });
 });

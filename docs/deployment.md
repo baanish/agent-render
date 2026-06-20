@@ -145,7 +145,7 @@ The self-hosted server does not include built-in authentication. Options for pro
 - **Reverse proxy**: Place behind nginx, Caddy, or Traefik with HTTP basic auth, OAuth2 proxy, or mTLS.
 - **Local only**: Set `HOST=127.0.0.1` to bind to localhost only.
 
-Every response carries baseline hardening headers: `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, and `X-Frame-Options: SAMEORIGIN`. There is intentionally no `Content-Security-Policy` — the viewer's markdown, code, and mermaid renderers rely on inline styles that a strict policy would break. Add a CSP at your reverse proxy if your threat model requires one.
+Every response carries baseline hardening headers: `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, and `X-Frame-Options: SAMEORIGIN`. There is intentionally **no `Content-Security-Policy`**, and this is a deliberate, owned tradeoff rather than an oversight: the viewer is a prebuilt static Next.js export whose inline bootstrap/hydration scripts and styles would each need a per-response nonce or hash that the server cannot inject into already-built HTML. The residual risk is real — payload `</script>` escaping plus markdown sanitization are the primary XSS defenses, but a renderer-dependency regression would not be *contained* by CSP the way `script-src` with a nonce would. If your threat model needs that defense-in-depth, terminate a CSP (and any other strict headers) at a reverse proxy in front of the server.
 
 ### Future encrypted short links
 

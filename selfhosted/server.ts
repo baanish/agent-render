@@ -234,7 +234,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   // Conservative security headers on every response. `nosniff` stops MIME-type confusion;
   // `no-referrer` keeps the artifact UUID (in the path) out of the Referer sent to any third-party
   // resource a rendered artifact loads; `SAMEORIGIN` blocks cross-origin framing of the viewer.
-  // No CSP: the markdown/code/mermaid renderers rely on inline styles a strict policy would break.
+  // No CSP here — a deliberate, owned tradeoff: the viewer is a prebuilt static Next.js export whose
+  // inline bootstrap/hydration scripts and styles would each need a per-response nonce/hash this
+  // server cannot inject into already-built HTML. The residual risk is real: payload escaping in
+  // injectPayload plus markdown sanitization are the XSS defenses, but a renderer-dependency
+  // regression would NOT be contained by CSP. Add a CSP (script-src with a nonce) at a reverse proxy
+  // if you need defense-in-depth. See docs/deployment.md.
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
