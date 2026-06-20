@@ -92,12 +92,18 @@ try {
   const viewer = await newPage();
   const resp = await viewer.goto(`${base}/${id}`, { waitUntil: "networkidle" });
   const cspPresent = !!resp.headers()["content-security-policy"];
-  await viewer.waitForTimeout(2500);
+  // Poll for the mermaid render (dynamic import + draw) rather than a fixed wait — robust on slow CI.
+  // If the inline scripts were CSP-blocked, hydration never runs and no <svg> ever appears.
+  let mermaid = false;
+  try {
+    await viewer.waitForSelector("svg", { timeout: 15000 });
+    mermaid = true;
+  } catch {}
   for (const title of ["Notes", "Snippet", "Changes", "Data", "Config"]) {
     try {
       await viewer.locator('button, a, [role="button"], [role="tab"], [role="listitem"]').filter({ hasText: title }).first().click({ timeout: 3000 });
+      await viewer.waitForTimeout(500);
     } catch {}
-    await viewer.waitForTimeout(700);
   }
   const wasm = await viewer.evaluate(async () => {
     try {
@@ -107,7 +113,6 @@ try {
       return false;
     }
   });
-  const mermaid = await viewer.evaluate(() => !!document.querySelector("svg"));
 
   // 2) Every exported static route loads under its own per-file CSP.
   const routes = ["/", "/security", "/url-explainer"];

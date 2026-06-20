@@ -30,6 +30,14 @@ jobs:
           CI: true
         run: npm run test:ci
 
+      # Render the real self-hosted viewer under its real strict CSP in a browser, so a future build
+      # that the header-only unit tests cannot see (eval, runtime-injected inline scripts) fails CI
+      # instead of shipping a white screen. Needs a root build (test:ci's e2e build is subpath).
+      - name: Self-hosted CSP browser smoke
+        env:
+          CI: true
+        run: npm run build && (npm run selfhosted:csp-smoke || npm run selfhosted:csp-smoke)
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v7
