@@ -74,12 +74,13 @@ The server starts on port 3000. Create artifacts via `POST /api/artifacts` and v
 
 ### Environment variables
 
-| Variable  | Default                     | Description                    |
-| --------- | --------------------------- | ------------------------------ |
-| `PORT`    | `3000`                      | Server listen port             |
-| `HOST`    | `0.0.0.0`                   | Server bind address            |
-| `DB_PATH` | `./data/agent-render.db`    | SQLite database file path      |
-| `OUT_DIR` | `out`                       | Path to the static build output|
+| Variable             | Default                  | Description                                            |
+| -------------------- | ------------------------ | ------------------------------------------------------ |
+| `PORT`               | `3000`                   | Server listen port                                     |
+| `HOST`               | `0.0.0.0`                | Server bind address                                    |
+| `DB_PATH`            | `./data/agent-render.db` | SQLite database file path                              |
+| `OUT_DIR`            | `out`                    | Path to the static build output                        |
+| `SHUTDOWN_GRACE_MS`  | `5000`                   | Drain window on SIGTERM/SIGINT before a forced (non-zero) exit |
 
 ### Docker Compose
 

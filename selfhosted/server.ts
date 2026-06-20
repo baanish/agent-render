@@ -397,7 +397,16 @@ cleanupExpired();
 // created-but-never-viewed artifact would otherwise outlive its TTL forever and grow the database
 // without bound. `unref()` keeps the timer from holding the process open on its own.
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
-const cleanupTimer = setInterval(cleanupExpired, CLEANUP_INTERVAL_MS);
+const cleanupTimer = setInterval(() => {
+  try {
+    cleanupExpired();
+  } catch (error) {
+    // A transient DB error (disk full, a WAL I/O error, or a write lock held by another process)
+    // must not take down an otherwise-healthy serving process the way an uncaught throw from a timer
+    // callback would. Log and retry on the next interval — the request paths report their own 5xx.
+    console.error("agent-render: scheduled cleanup sweep failed; retrying next interval.", error);
+  }
+}, CLEANUP_INTERVAL_MS);
 cleanupTimer.unref();
 
 const server = createServer((req, res) => {
@@ -415,22 +424,39 @@ server.listen(port, host, () => {
 
 // Graceful shutdown: stop the sweep timer, stop accepting connections, then close the database so
 // SQLite checkpoints its WAL before exit. Docker and systemd send SIGTERM on stop; Ctrl-C sends
-// SIGINT. The timeout forces exit if open connections do not drain promptly.
+// SIGINT. If connections do not drain within the grace window, the shutdown is treated as FAILED
+// (not a clean stop): stragglers are destroyed and the process exits non-zero so abandoned in-flight
+// work is visible to the supervisor instead of masked as a clean exit. Configurable for tests.
+const SHUTDOWN_GRACE_MS = Number(process.env.SHUTDOWN_GRACE_MS || 5000);
 let shuttingDown = false;
+let exited = false;
+function finish(code: number): void {
+  if (exited) return;
+  exited = true;
+  closeDb();
+  process.exit(code);
+}
 function shutdown(signal: string): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log(`Received ${signal}, shutting down agent-render self-hosted server.`);
   clearInterval(cleanupTimer);
-  server.close(() => {
-    closeDb();
-    process.exit(0);
-  });
+  // Resolves only once every connection has drained — a clean graceful stop.
+  server.close(() => finish(0));
+  // Close idle keep-alive sockets so an otherwise-quiet server drains immediately.
   server.closeIdleConnections?.();
   setTimeout(() => {
+    if (exited) return;
+    console.error(
+      `Forced shutdown after ${SHUTDOWN_GRACE_MS}ms: connections did not drain; in-flight requests were dropped.`,
+    );
+    // Decide the non-zero exit before destroying sockets, so closeAllConnections() firing the
+    // server.close() callback cannot win the race and report a clean exit(0).
+    exited = true;
+    server.closeAllConnections?.();
     closeDb();
-    process.exit(0);
-  }, 5000).unref();
+    process.exit(1);
+  }, SHUTDOWN_GRACE_MS).unref();
 }
 
 process.once("SIGTERM", () => shutdown("SIGTERM"));
