@@ -138,7 +138,10 @@ function hashesForFile(filePath: string): string[] {
  * which a strict `script-src` would otherwise block; it permits WebAssembly compilation but NOT
  * JavaScript `eval`, so it is far narrower than `'unsafe-eval'`. `style-src` keeps `'unsafe-inline'`
  * because the static export and mermaid emit inline styles a strict style policy would break; locking
- * down scripts is where the value is. See docs/deployment.md.
+ * down scripts is where the value is. `img-src`/`connect-src` are same-origin (plus `data:`/`blob:`),
+ * which deliberately blocks external images and fetches a stored artifact might reference — a stored
+ * payload cannot beacon out or load a tracking pixel. The tradeoff is that legitimately cross-origin
+ * images in an artifact will not load on the self-hosted viewer. See docs/deployment.md.
  */
 function contentSecurityPolicy(hashes: string[], nonce?: string): string {
   const scriptSrc = [

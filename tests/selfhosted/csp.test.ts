@@ -66,7 +66,7 @@ async function waitForReady(url: string, child: ChildProcess): Promise<void> {
     if (child.exitCode !== null) break;
     try {
       const response = await fetch(url, { method: "HEAD" });
-      if (response.status !== 404) return;
+      if (response.ok) return;
     } catch (error) {
       lastError = error;
     }
@@ -106,11 +106,11 @@ describe("selfhosted Content-Security-Policy", () => {
     rmSync(fixture.root, { recursive: true, force: true });
   });
 
-  async function createArtifact(): Promise<string> {
+  async function createArtifact(payload = "phello"): Promise<string> {
     const res = await fetch(`${base}/api/artifacts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payload: "phello" }),
+      body: JSON.stringify({ payload }),
     });
     expect(res.status).toBe(201);
     return ((await res.json()) as { id: string }).id;
@@ -185,5 +185,14 @@ describe("selfhosted Content-Security-Policy", () => {
     const res = await fetch(`${base}/app.js`);
     expect(res.status).toBe(200);
     expect(res.headers.get("content-security-policy")).toBeNull();
+  });
+
+  it("escapes a script-breaking payload inside the nonce'd bootstrap", async () => {
+    // The nonce lets the injected bootstrap run, so its </script> breakout escaping must hold for
+    // untrusted payload text — otherwise a stored payload could open its own <script>.
+    const id = await createArtifact("</script><script>alert(1)</script>");
+    const body = await (await fetch(`${base}/${id}`)).text();
+    expect(body).toContain("\\u003c/script>\\u003cscript>alert(1)\\u003c/script>");
+    expect(body).not.toContain("</script><script>alert(1)</script>");
   });
 });
