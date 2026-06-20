@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { existsSync, readFileSync, createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
+import { createHash, randomBytes } from "node:crypto";
 import path from "node:path";
 import {
   createArtifact,
@@ -88,15 +89,84 @@ function getIndexHtml(): string {
   return indexHtmlCache;
 }
 
+let scriptHashesCache: string[] | null = null;
+
+/**
+ * Derive `'sha256-...'` source expressions for every inline (non-`src`) `<script>` in the built
+ * index.html. These let a strict CSP `script-src` allow exactly Next's own static bootstrap/hydration
+ * scripts and nothing else. They are computed from the same file the server serves, so they never
+ * drift from the build (a rebuild changes the hashes; a restart picks them up). The injected payload
+ * script is covered by a per-response nonce instead, since its content varies per artifact.
+ *
+ * Failure/fallback: if index.html cannot be read, returns `[]` (no caching) so error pages — which
+ * carry no scripts — still render; the viewer is non-functional without index.html regardless.
+ */
+function getInlineScriptHashes(): string[] {
+  if (scriptHashesCache) return scriptHashesCache;
+
+  let html: string;
+  try {
+    html = getIndexHtml();
+  } catch {
+    return [];
+  }
+
+  const hashes: string[] = [];
+  const inlineScript = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
+  let match: RegExpExecArray | null;
+  while ((match = inlineScript.exec(html)) !== null) {
+    hashes.push(`'sha256-${createHash("sha256").update(match[1], "utf8").digest("base64")}'`);
+  }
+
+  scriptHashesCache = hashes;
+  return hashes;
+}
+
+/**
+ * Build the Content-Security-Policy for HTML responses.
+ *
+ * `script-src` is the load-bearing directive: it allows same-origin scripts, the build's own inline
+ * scripts (by hash), and — when `nonce` is supplied — the per-response injected payload bootstrap
+ * (by nonce). So even if a renderer dependency regressed into an injection sink, attacker-controlled
+ * inline script in a stored payload could not execute. `'wasm-unsafe-eval'` is required because the
+ * arx-family codecs decompress Brotli via a WebAssembly module (brotli-wasm), which a strict
+ * `script-src` would otherwise block; it permits WebAssembly compilation but NOT JavaScript `eval`,
+ * so it is far narrower than `'unsafe-eval'`. `style-src` keeps `'unsafe-inline'` because the static
+ * export and mermaid emit inline styles a strict style policy would break; locking down scripts is
+ * where the value is. See docs/deployment.md.
+ */
+function contentSecurityPolicy(nonce?: string): string {
+  const scriptSrc = [
+    "'self'",
+    "'wasm-unsafe-eval'",
+    ...(nonce ? [`'nonce-${nonce}'`] : []),
+    ...getInlineScriptHashes(),
+  ];
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'self'",
+    "form-action 'self'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "style-src 'self' 'unsafe-inline'",
+    "connect-src 'self'",
+    "worker-src 'self' blob:",
+    `script-src ${scriptSrc.join(" ")}`,
+  ].join("; ");
+}
+
 /**
  * Inject a payload string into the index.html so the viewer shell picks it up
- * via `window.__AGENT_RENDER_PAYLOAD__` on load.
+ * via `window.__AGENT_RENDER_PAYLOAD__` on load. The `nonce` ties the injected script to the
+ * response's CSP so it is allowed to execute under a strict `script-src`.
  */
-function injectPayload(html: string, payload: string): string {
+function injectPayload(html: string, payload: string, nonce: string): string {
   // Escape </script> sequences to prevent XSS via crafted payloads breaking
   // out of the script tag. JSON.stringify alone does not escape </
   const safeJson = JSON.stringify(payload).replace(/</g, "\\u003c");
-  const script = `<script>window.__AGENT_RENDER_PAYLOAD__=${safeJson};</script>`;
+  const script = `<script nonce="${nonce}">window.__AGENT_RENDER_PAYLOAD__=${safeJson};</script>`;
   return html.replace("</head>", `${script}</head>`);
 }
 
@@ -134,11 +204,12 @@ function jsonResponse(res: ServerResponse, status: number, body: unknown): void 
   res.end(json);
 }
 
-/** Send an HTML response with the given status code. */
-function htmlResponse(res: ServerResponse, status: number, body: string): void {
+/** Send an HTML response with the given status code and a strict CSP (nonce for injected scripts). */
+function htmlResponse(res: ServerResponse, status: number, body: string, nonce?: string): void {
   res.writeHead(status, {
     "Content-Type": "text/html; charset=utf-8",
     "Content-Length": Buffer.byteLength(body),
+    "Content-Security-Policy": contentSecurityPolicy(nonce),
   });
   res.end(body);
 }
@@ -179,7 +250,14 @@ async function serveStatic(res: ServerResponse, urlPath: string, method: string)
     return;
   }
 
-  res.writeHead(200, headersFor(filePath));
+  const headers = headersFor(filePath);
+  // The app shell (index.html) is the only static file with executable inline scripts, so it carries
+  // the same strict CSP as the injected viewer. No nonce here: static index.html injects no script.
+  if (filePath.endsWith(`${path.sep}index.html`)) {
+    headers["Content-Security-Policy"] = contentSecurityPolicy();
+  }
+
+  res.writeHead(200, headers);
   if (method === "HEAD") {
     res.end();
     return;
@@ -234,12 +312,11 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   // Conservative security headers on every response. `nosniff` stops MIME-type confusion;
   // `no-referrer` keeps the artifact UUID (in the path) out of the Referer sent to any third-party
   // resource a rendered artifact loads; `SAMEORIGIN` blocks cross-origin framing of the viewer.
-  // No CSP here — a deliberate, owned tradeoff: the viewer is a prebuilt static Next.js export whose
-  // inline bootstrap/hydration scripts and styles would each need a per-response nonce/hash this
-  // server cannot inject into already-built HTML. The residual risk is real: payload escaping in
-  // injectPayload plus markdown sanitization are the XSS defenses, but a renderer-dependency
-  // regression would NOT be contained by CSP. Add a CSP (script-src with a nonce) at a reverse proxy
-  // if you need defense-in-depth. See docs/deployment.md.
+  // HTML responses additionally carry a strict Content-Security-Policy (see contentSecurityPolicy):
+  // `script-src` is locked to 'self' + the build's own inline-script hashes + a per-response nonce for
+  // the injected payload, so a renderer-dependency regression cannot execute attacker-controlled
+  // inline script from a stored payload. `style-src` keeps 'unsafe-inline' (the export and mermaid
+  // need it). See docs/deployment.md.
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
@@ -377,8 +454,9 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
 
     try {
-      const html = injectPayload(getIndexHtml(), row.payload);
-      htmlResponse(res, 200, html);
+      const nonce = randomBytes(16).toString("base64");
+      const html = injectPayload(getIndexHtml(), row.payload, nonce);
+      htmlResponse(res, 200, html, nonce);
     } catch {
       htmlResponse(res, 500, errorPage("Server error", "Failed to render the artifact viewer."));
     }
