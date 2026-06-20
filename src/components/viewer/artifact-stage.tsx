@@ -19,7 +19,7 @@ import {
   Printer,
 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
-import { formatMarkdownLink } from "@/lib/markdown-link";
+import { buildMarkdownLinkShareInfo } from "@/lib/markdown-link";
 import { cn } from "@/lib/utils";
 import {
   MAX_FRAGMENT_LENGTH,
@@ -240,6 +240,7 @@ export function ArtifactStage({
   const [markdownLinkCopyState, setMarkdownLinkCopyState] = useState<
     "idle" | "copied" | "failed"
   >("idle");
+  const [pageHref, setPageHref] = useState("");
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
   const activeArtifactRef = useRef<ArtifactPayload | null>(activeArtifact);
   const activeArtifactBody = useMemo(() => getArtifactBody(activeArtifact), [activeArtifact]);
@@ -312,6 +313,18 @@ export function ArtifactStage({
     };
   }, [markdownLinkCopyState]);
 
+  useEffect(() => {
+    setPageHref(window.location.href);
+  }, [hash]);
+
+  const markdownLinkShareInfo = useMemo(() => {
+    if (!pageHref) {
+      return null;
+    }
+
+    return buildMarkdownLinkShareInfo(activeArtifactHeading, pageHref);
+  }, [activeArtifactHeading, pageHref]);
+
   const handleArtifactCopy = useCallback(async () => {
     const artifact = activeArtifactRef.current;
     if (!artifact) {
@@ -352,7 +365,9 @@ export function ArtifactStage({
     const requestToken = ++markdownLinkCopyTokenRef.current;
     const label = getArtifactHeading(artifact);
     const href = window.location.href;
-    const markdownLink = formatMarkdownLink(label, href);
+    const markdownLink =
+      markdownLinkShareInfo?.markdownLink ??
+      buildMarkdownLinkShareInfo(label, href).markdownLink;
 
     try {
       await copyTextToClipboard(markdownLink);
@@ -372,7 +387,7 @@ export function ArtifactStage({
       }
       setMarkdownLinkCopyState("failed");
     }
-  }, []);
+  }, [markdownLinkShareInfo]);
 
   const handleArtifactDownload = useCallback(() => {
     const mimeType =
@@ -523,6 +538,16 @@ export function ArtifactStage({
           </button>
         </div>
       </div>
+
+      {markdownLinkShareInfo?.discordWarning ? (
+        <p
+          className="artifact-share-warning fade-up print-hide-on-markdown"
+          role="status"
+          style={toolbarAnimationStyle}
+        >
+          {markdownLinkShareInfo.discordWarning}
+        </p>
+      ) : null}
 
       {envelope.artifacts.length > 1 ? (
         <section

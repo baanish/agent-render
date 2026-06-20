@@ -372,7 +372,19 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                       {numberFormatter.format(generatedLink.fragmentLength)} chars
                     </p>
                   </div>
+                  <div className="metric-card">
+                    <p className="metric-label">Markdown link</p>
+                    <p className="metric-value">
+                      {numberFormatter.format(generatedLink.markdownLinkLength)} chars
+                    </p>
+                  </div>
                 </div>
+
+                {generatedLink.discordMarkdownLinkWarning ? (
+                  <div className="creator-warning-state" role="status">
+                    {generatedLink.discordMarkdownLinkWarning}
+                  </div>
+                ) : null}
 
                 <div className="creator-result-actions">
                   <button

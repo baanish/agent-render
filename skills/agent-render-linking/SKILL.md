@@ -255,7 +255,11 @@ For `arx3`, use the same tuple, substitution, and brotli bytes as arx2, then try
 Respect these limits:
 - target fragment budget: about 8,192 decoded visible characters
 - target decoded payload budget: about 200,000 characters
-- strict Discord practical budget for linked text workflows: about 1,500 characters
+- Discord message limit for a single markdown link: 2,000 characters total for the formatted `[label](url)` string
+
+Before sharing on Discord, format the link with `formatMarkdownLink(label, url)` (or the equivalent in your language) and check the total character count. If it exceeds 2,000 characters, the message will probably break on Discord. Split the bundle into smaller artifacts and send separate markdown links in multiple Discord messages instead of one oversized link.
+
+When generating links programmatically via `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync`, inspect `discordMarkdownLinkWarning` on the result. When it is non-null, surface that warning to the caller and split the payload before sharing on Discord.
 
 If a link is getting too large:
 1. try `arx3` first for trusted Unicode-preserving surfaces; otherwise try `arx2`, then `arx`, then `deflate`, then `lz`, then `plain`
@@ -285,6 +289,8 @@ Prefer standard Markdown links:
 ```md
 [Short summary](https://agent-render.com/#<tag><payload>)
 ```
+
+Check the total formatted markdown link length before sending. Discord rejects messages longer than 2,000 characters, so a single `[label](url)` string that exceeds that limit will probably fail. When it does, split the artifact into smaller bundles and send multiple markdown links across separate Discord messages.
 
 Examples:
 - `[Weekly report](https://agent-render.com/#<tag><payload>)`
@@ -331,6 +337,7 @@ When sharing a link:
 - Prefer `patch` for diffs
 - Prefer readable titles
 - Prefer Markdown link text when supported
+- Check `discordMarkdownLinkWarning` before sharing markdown links on Discord
 - Prefer shortest-by-measurement instead of human guesses
 - Use budget-aware encoding for Discord-like constraints
 

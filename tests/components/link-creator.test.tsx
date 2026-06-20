@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LinkCreator } from "@/components/home/link-creator";
+import { buildMarkdownLinkShareInfo } from "@/lib/markdown-link";
 import type { GeneratedArtifactLink, LinkCreatorDraft } from "@/lib/payload/link-creator";
 
 type PendingGeneration = {
@@ -23,6 +24,9 @@ vi.mock("@/lib/payload/link-creator", () => ({
 }));
 
 function createGeneratedLink(title: string): GeneratedArtifactLink {
+  const url = `https://agent-render.test/#agent-render=v1.plain.${title}`;
+  const shareInfo = buildMarkdownLinkShareInfo(title, url);
+
   return {
     artifact: {
       id: title.toLowerCase().replace(/\s+/g, "-"),
@@ -41,7 +45,10 @@ function createGeneratedLink(title: string): GeneratedArtifactLink {
     },
     fragmentLength: 64,
     hash: `#agent-render=v1.plain.${title}`,
-    url: `https://agent-render.test/#agent-render=v1.plain.${title}`,
+    url,
+    markdownLink: shareInfo.markdownLink,
+    markdownLinkLength: shareInfo.length,
+    discordMarkdownLinkWarning: shareInfo.discordWarning,
   };
 }
 

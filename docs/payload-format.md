@@ -102,11 +102,13 @@ Tuple fields:
 
 - Supported fragment budget: 8,192 decoded visible fragment characters
 - Supported decoded payload budget: 200,000 characters
+- Discord markdown link limit: 2,000 characters for the full formatted `[label](url)` string
 - Larger payloads should fail with a clear error before rendering
 - Compression is selected automatically across packed/non-packed candidates; arx and arx2 optimize conservative transport length, while arx3 optimizes compact visible length for its dense Unicode wire
 - Default sync codec priority is `deflate -> lz -> plain`
 - Default async codec priority is `arx3 -> arx2 -> arx -> deflate -> lz -> plain`
-- Optional budget-aware encoding can target strict limits like 1,500 chars and returns the shortest fragment when none fit
+- Optional budget-aware encoding can target strict limits and returns the shortest fragment when none fit
+- `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync` return `markdownLink`, `markdownLinkLength`, and `discordMarkdownLinkWarning` so agents can detect Discord-unsafe markdown links before sharing
 
 When a payload does not fit the fragment budget or the target surface is hostile to long URLs, use UUID mode instead of weakening the fragment protocol. Current UUID mode stores the encoded payload server-side and is not zero-retention.
 
