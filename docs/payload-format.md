@@ -108,7 +108,7 @@ Tuple fields:
 - Default sync codec priority is `deflate -> lz -> plain`
 - Default async codec priority is `arx3 -> arx2 -> arx -> deflate -> lz -> plain`
 - Optional budget-aware encoding can target strict limits and returns the shortest fragment when none fit
-- `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync` return `markdownLink`, `markdownLinkLength`, and `discordMarkdownLinkWarning` so agents can detect Discord-unsafe markdown links before sharing
+- `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync` return `url`, `markdownLink` (ready to paste verbatim in chat), `markdownLinkLength`, and `discordMarkdownLinkWarning` so agents do not need to reconstruct `[label](url)` themselves
 
 When a payload does not fit the fragment budget or the target surface is hostile to long URLs, use UUID mode instead of weakening the fragment protocol. Current UUID mode stores the encoded payload server-side and is not zero-retention.
 

@@ -173,6 +173,20 @@ Example cases:
 
 Set `activeArtifactId` to the artifact that should open first.
 
+## Ready-to-send markdown link
+
+Do not hand-assemble `[label](url)` when the product already formatted it for you.
+
+When using the link helpers (`createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync`), use the returned `markdownLink` string verbatim in chat. It is the exact Discord/Slack-style markdown link the viewer would copy, including label escaping and URL wrapping for special characters.
+
+The result also includes:
+- `markdownLinkLength` — total character count of `markdownLink`
+- `discordMarkdownLinkWarning` — non-null when `markdownLink` exceeds Discord's 2,000 character message limit
+
+If you built the URL yourself and only need the formatted link, call `buildMarkdownLinkShareInfo(label, url)` and send `markdownLink` verbatim. Check `discordWarning` before posting to Discord.
+
+Only fall back to manual `formatMarkdownLink(label, url)` when you cannot use the helpers above.
+
 ## Link construction
 
 Construct the final URL with the compact `#<tag><payload>` fragment:
@@ -257,9 +271,9 @@ Respect these limits:
 - target decoded payload budget: about 200,000 characters
 - Discord message limit for a single markdown link: 2,000 characters total for the formatted `[label](url)` string
 
-Before sharing on Discord, format the link with `formatMarkdownLink(label, url)` (or the equivalent in your language) and check the total character count. If it exceeds 2,000 characters, the message will probably break on Discord. Split the bundle into smaller artifacts and send separate markdown links in multiple Discord messages instead of one oversized link.
+Before sharing on Discord, check `markdownLinkLength` or `discordMarkdownLinkWarning` from the link helpers. If you formatted the link yourself, use `buildMarkdownLinkShareInfo(label, url)` and inspect `discordWarning`. When the warning is non-null, split the bundle into smaller artifacts and send separate markdown links in multiple Discord messages instead of one oversized link.
 
-When generating links programmatically via `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync`, inspect `discordMarkdownLinkWarning` on the result. When it is non-null, surface that warning to the caller and split the payload before sharing on Discord.
+When generating links programmatically via `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync`, send `markdownLink` verbatim and inspect `discordMarkdownLinkWarning`. When it is non-null, surface that warning to the caller and split the payload before sharing on Discord.
 
 If a link is getting too large:
 1. try `arx3` first for trusted Unicode-preserving surfaces; otherwise try `arx2`, then `arx`, then `deflate`, then `lz`, then `plain`
@@ -284,13 +298,13 @@ Use platform-specific link text only on surfaces that support it cleanly.
 
 ### Discord
 
-Prefer standard Markdown links:
+Prefer standard Markdown links. When you have `markdownLink` from the link helpers, paste that string verbatim:
 
 ```md
 [Short summary](https://agent-render.com/#<tag><payload>)
 ```
 
-Check the total formatted markdown link length before sending. Discord rejects messages longer than 2,000 characters, so a single `[label](url)` string that exceeds that limit will probably fail. When it does, split the artifact into smaller bundles and send multiple markdown links across separate Discord messages.
+Check `markdownLinkLength` or `discordMarkdownLinkWarning` before sending. Discord rejects messages longer than 2,000 characters, so a single `[label](url)` string that exceeds that limit will probably fail. When it does, split the artifact into smaller bundles and send multiple markdown links across separate Discord messages.
 
 Examples:
 - `[Weekly report](https://agent-render.com/#<tag><payload>)`
@@ -337,6 +351,7 @@ When sharing a link:
 - Prefer `patch` for diffs
 - Prefer readable titles
 - Prefer Markdown link text when supported
+- Send `markdownLink` verbatim instead of reconstructing `[label](url)` yourself
 - Check `discordMarkdownLinkWarning` before sharing markdown links on Discord
 - Prefer shortest-by-measurement instead of human guesses
 - Use budget-aware encoding for Discord-like constraints

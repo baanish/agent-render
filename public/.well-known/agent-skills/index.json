@@ -6,7 +6,7 @@
       "type": "skill-md",
       "description": "Create zero-retention agent-render.com links for markdown, code, diffs, CSV, or JSON artifacts. Markdown artifacts support inline mermaid diagram rendering via fenced code blocks. Use when an agent needs to share a nicely rendered artifact in the browser instead of pasting raw content into chat. Trigger for requests like \"share this as a link\", \"make a diff link\", \"render this markdown/code/csv/json\", \"show this diagram\", or when chat rendering is weak. Agent Render is open source, hosted on Cloudflare Pages, and self-hostable. Use platform-specific linked-text syntax only on surfaces that support it cleanly, such as Discord Markdown links, Telegram HTML links, or Slack mrkdwn links; otherwise send a short summary plus the raw URL.",
       "url": "https://raw.githubusercontent.com/baanish/agent-render/main/skills/agent-render-linking/SKILL.md",
-      "digest": "sha256:1472351a9393725a922c453952f2ddffc227e1f1c1273d0b582ee1f2c484e978"
+      "digest": "sha256:93826ebd4143754c284e5e6445de33bc2978e01921fd9ef8ce13c5fef028ad29"
     },
     {
       "name": "selfhosted-agent-render",
