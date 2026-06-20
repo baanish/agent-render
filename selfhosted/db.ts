@@ -82,15 +82,10 @@ export function createArtifact(payload: string): { id: string; expires_at: strin
 }
 
 /**
- * Look up an artifact by ID and refresh its sliding TTL on success.
- *
- * Returns `null` when the artifact does not exist or has expired.
- * Expired rows are lazily deleted on read.
- *
- * @param id - UUID of the artifact to retrieve.
- * @returns The full artifact row with a refreshed `expires_at`, or `null`.
+ * Fetch an artifact row by ID, returning `null` when it does not exist or has expired. Expired rows
+ * are lazily deleted on access. The shared select-and-expire preamble for the read and update paths.
  */
-export function getArtifact(id: string): ArtifactRow | null {
+function findLiveArtifact(id: string): ArtifactRow | null {
   const row = getDb()
     .prepare("SELECT * FROM artifacts WHERE id = ?")
     .get(id) as ArtifactRow | undefined;
@@ -101,6 +96,22 @@ export function getArtifact(id: string): ArtifactRow | null {
     getDb().prepare("DELETE FROM artifacts WHERE id = ?").run(id);
     return null;
   }
+
+  return row;
+}
+
+/**
+ * Look up an artifact by ID and refresh its sliding TTL on success.
+ *
+ * Returns `null` when the artifact does not exist or has expired.
+ * Expired rows are lazily deleted on read.
+ *
+ * @param id - UUID of the artifact to retrieve.
+ * @returns The full artifact row with a refreshed `expires_at`, or `null`.
+ */
+export function getArtifact(id: string): ArtifactRow | null {
+  const row = findLiveArtifact(id);
+  if (!row) return null;
 
   const now = new Date().toISOString();
   const newExpiresAt = computeExpiresAt();
@@ -124,16 +135,8 @@ export function getArtifact(id: string): ArtifactRow | null {
  * @param payload - New payload string to store.
  */
 export function updateArtifact(id: string, payload: string): ArtifactRow | null {
-  const row = getDb()
-    .prepare("SELECT * FROM artifacts WHERE id = ?")
-    .get(id) as ArtifactRow | undefined;
-
+  const row = findLiveArtifact(id);
   if (!row) return null;
-
-  if (isExpired(row.expires_at)) {
-    getDb().prepare("DELETE FROM artifacts WHERE id = ?").run(id);
-    return null;
-  }
 
   const now = new Date().toISOString();
   const newExpiresAt = computeExpiresAt();

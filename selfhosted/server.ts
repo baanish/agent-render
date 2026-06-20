@@ -202,6 +202,31 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
+/** Outcome of reading and validating the `payload` field of a create/update request body. */
+type PayloadResult =
+  | { ok: true; payload: string }
+  | { ok: false; status: number; error: string };
+
+/**
+ * Read, JSON-parse, extract the `payload` field, and validate it. Shared by POST and PUT, which only
+ * differ in what they do with the validated payload.
+ */
+async function readValidatedPayload(req: IncomingMessage): Promise<PayloadResult> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readBody(req));
+  } catch {
+    return { ok: false, status: 400, error: "Invalid request body." };
+  }
+  // Tolerate any JSON value (including `null` or a primitive) without throwing; a non-object body
+  // simply has no payload and is rejected as a 400 below.
+  const validation = validatePayload((parsed as { payload?: unknown } | null)?.payload);
+  if (!validation.ok) {
+    return { ok: false, status: 400, error: validation.message };
+  }
+  return { ok: true, payload: validation.value };
+}
+
 /** Send a JSON response with the given status code. */
 function jsonResponse(res: ServerResponse, status: number, body: unknown): void {
   const json = JSON.stringify(body);
@@ -329,12 +354,9 @@ function errorPage(title: string, message: string): string {
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Conservative security headers on every response. `nosniff` stops MIME-type confusion;
   // `no-referrer` keeps the artifact UUID (in the path) out of the Referer sent to any third-party
-  // resource a rendered artifact loads; `SAMEORIGIN` blocks cross-origin framing of the viewer.
-  // HTML responses additionally carry a strict Content-Security-Policy (see contentSecurityPolicy):
-  // `script-src` is locked to 'self' + the build's own inline-script hashes + a per-response nonce for
-  // the injected payload, so a renderer-dependency regression cannot execute attacker-controlled
-  // inline script from a stored payload. `style-src` keeps 'unsafe-inline' (the export and mermaid
-  // need it). See docs/deployment.md.
+  // resource a rendered artifact loads; `SAMEORIGIN` blocks cross-origin framing of the viewer. HTML
+  // responses additionally carry a strict Content-Security-Policy — see contentSecurityPolicy for the
+  // script-src/style-src/img-src rationale.
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
@@ -370,24 +392,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
   // POST /api/artifacts — create
   if (pathname === "/api/artifacts" && method === "POST") {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(await readBody(req));
-    } catch {
-      jsonResponse(res, 400, { error: "Invalid request body." });
-      return;
-    }
-    // Tolerate any JSON value (including `null` or a primitive) without throwing; a non-object body
-    // simply has no payload and is rejected as a 400 below.
-    const payload = (parsed as { payload?: unknown } | null)?.payload;
-    const validation = validatePayload(payload);
-    if (!validation.ok) {
-      jsonResponse(res, 400, { error: validation.message });
+    const body = await readValidatedPayload(req);
+    if (!body.ok) {
+      jsonResponse(res, body.status, { error: body.error });
       return;
     }
     try {
-      // validatePayload has confirmed payload is a string.
-      const result = createArtifact(payload as string);
+      const result = createArtifact(body.payload);
       jsonResponse(res, 201, result);
     } catch {
       // The request was well-formed; persistence failed (e.g. disk full). Report a server error
@@ -418,24 +429,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
 
     if (method === "PUT") {
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(await readBody(req));
-      } catch {
-        jsonResponse(res, 400, { error: "Invalid request body." });
-        return;
-      }
-      // Tolerate any JSON value (including `null` or a primitive) without throwing; a non-object body
-      // simply has no payload and is rejected as a 400 below.
-      const payload = (parsed as { payload?: unknown } | null)?.payload;
-      const validation = validatePayload(payload);
-      if (!validation.ok) {
-        jsonResponse(res, 400, { error: validation.message });
+      const body = await readValidatedPayload(req);
+      if (!body.ok) {
+        jsonResponse(res, body.status, { error: body.error });
         return;
       }
       try {
-        // validatePayload has confirmed payload is a string.
-        const row = updateArtifact(artifactId, payload as string);
+        const row = updateArtifact(artifactId, body.payload);
         if (!row) {
           jsonResponse(res, 404, { error: "Artifact not found or expired." });
           return;
