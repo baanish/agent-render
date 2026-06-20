@@ -707,7 +707,8 @@ select {
 .creator-link-frame,
 .creator-result-note,
 .creator-empty-state,
-.creator-error-state {
+.creator-error-state,
+.creator-warning-state {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
@@ -739,10 +740,29 @@ select {
   line-height: 1.55;
 }
 
+.artifact-share-warning {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--border));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--warning) 8%, var(--surface-strong));
+  color: var(--warning);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
 .creator-error-state {
   color: var(--danger);
   font-size: 0.9rem;
   line-height: 1.55;
+}
+
+.creator-warning-state {
+  color: var(--warning);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  border-color: color-mix(in srgb, var(--warning) 35%, var(--border));
+  background: color-mix(in srgb, var(--warning) 8%, var(--surface-strong));
 }
 
 .artifact-first-layout {

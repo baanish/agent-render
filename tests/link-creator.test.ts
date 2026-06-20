@@ -5,6 +5,7 @@ import arxDictionaryJson from "../public/arx-dictionary.json";
 import { loadArx2OverlayDictionarySync, loadArxDictionarySync } from "@/lib/payload/arx-codec";
 import { decodeFragment, decodeFragmentAsync } from "@/lib/payload/fragment";
 import { createDraftEnvelope, createGeneratedArtifactLink, createGeneratedArtifactLinkAsync, type LinkCreatorDraft } from "@/lib/payload/link-creator";
+import { DISCORD_MESSAGE_MAX_LENGTH } from "@/lib/markdown-link";
 import { compactTagForCodec } from "@/lib/payload/schema";
 
 describe("link creator payloads", () => {
@@ -63,6 +64,9 @@ describe("link creator payloads", () => {
       language: "tsx",
       content: "export function ViewerShell() {\n  return <main />;\n}",
     });
+    expect(generatedLink.markdownLink).toContain("[Viewer shell]");
+    expect(generatedLink.markdownLinkLength).toBe(generatedLink.markdownLink.length);
+    expect(generatedLink.discordMarkdownLinkWarning).toBeNull();
   });
 
   it("keeps diff view settings in generated links", () => {
@@ -147,5 +151,27 @@ describe("link creator payloads", () => {
         diffView: "unified",
       }),
     ).toThrow(/paste some content/i);
+  });
+
+  it("surfaces a Discord markdown link warning when the formatted link is too long", async () => {
+    const longContent = Array.from({ length: 2800 }, (_, index) =>
+      String.fromCharCode(33 + (index % 94)),
+    ).join("");
+    const generatedLink = await createGeneratedArtifactLinkAsync(
+      {
+        kind: "markdown",
+        title: "Long report",
+        filename: "long-report.md",
+        content: `# Report\n\n${longContent}`,
+        language: "",
+        diffView: "unified",
+        codec: "plain",
+      },
+      "https://agent-render.com/",
+    );
+
+    expect(generatedLink.markdownLinkLength).toBeGreaterThan(DISCORD_MESSAGE_MAX_LENGTH);
+    expect(generatedLink.discordMarkdownLinkWarning).toMatch(/Discord's 2,000 character message limit/i);
+    expect(generatedLink.discordMarkdownLinkWarning).toMatch(/multiple Discord messages/i);
   });
 });

@@ -89,6 +89,7 @@ Current rules:
 - codecs: `plain`, `lz`, `deflate`, `arx`, `arx2`, and `arx3`
 - fragment size budget: `8192` characters
 - decoded payload budget: `200000` characters
+- Discord markdown link limit: `2000` characters for the full formatted `[label](url)` string; `createGeneratedArtifactLink*` returns `discordMarkdownLinkWarning` when exceeded
 - packed wire transport (`p: 1`) is allowed and must decode back to the standard envelope
 - bundles must contain at least one artifact
 - artifact ids must be unique within a bundle
@@ -118,6 +119,7 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 - `src/components/renderers/json-renderer.tsx`
 
 ### Payload and protocol
+- `src/lib/markdown-link.ts` - markdown link formatting and Discord length warnings
 - `src/lib/payload/schema.ts` - type surface, limits, fragment key, supported kinds/codecs
 - `src/lib/payload/fragment.ts` - encode/decode logic and transport behavior
 - `src/lib/payload/arx-codec.ts` - arx/arx2/arx3 codecs: dictionary substitution, tuple overlay, brotli, base76/base1k/baseBMP/base64url encoding

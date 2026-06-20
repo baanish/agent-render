@@ -1,5 +1,6 @@
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { encodeEnvelope, encodeEnvelopeAsync, getVisibleFragmentLength } from "@/lib/payload/fragment";
+import { buildMarkdownLinkShareInfo } from "@/lib/markdown-link";
 import {
   codecForCompactTag,
   codecs,
@@ -29,6 +30,9 @@ export type GeneratedArtifactLink = {
   hash: string;
   url: string;
   fragmentLength: number;
+  markdownLink: string;
+  markdownLinkLength: number;
+  discordMarkdownLinkWarning: string | null;
 };
 
 const NON_WHITESPACE_PATTERN = /\S/;
@@ -114,6 +118,11 @@ function getFragmentCodec(fragmentBody: string): PayloadCodec {
   return codecForCompactTag(fragmentBody.charAt(0)) ?? "plain";
 }
 
+function buildGeneratedLinkShareInfo(envelope: PayloadEnvelope, url: string) {
+  const label = envelope.title ?? envelope.artifacts[0]?.title ?? envelope.artifacts[0]?.id ?? url;
+  return buildMarkdownLinkShareInfo(label, url);
+}
+
 /**
  * Builds a single-artifact payload envelope from link-creator draft input.
  *
@@ -169,6 +178,8 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
     url = nextUrl.toString();
   }
 
+  const shareInfo = buildGeneratedLinkShareInfo(normalized.envelope, url);
+
   return {
     envelope: normalized.envelope,
     artifact: normalized.envelope.artifacts[0],
@@ -176,6 +187,9 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
     hash,
     url,
     fragmentLength,
+    markdownLink: shareInfo.markdownLink,
+    markdownLinkLength: shareInfo.length,
+    discordMarkdownLinkWarning: shareInfo.discordWarning,
   };
 }
 
@@ -212,6 +226,8 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
     url = nextUrl.toString();
   }
 
+  const shareInfo = buildGeneratedLinkShareInfo(normalized.envelope, url);
+
   return {
     envelope: normalized.envelope,
     artifact: normalized.envelope.artifacts[0],
@@ -219,5 +235,8 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
     hash,
     url,
     fragmentLength,
+    markdownLink: shareInfo.markdownLink,
+    markdownLinkLength: shareInfo.length,
+    discordMarkdownLinkWarning: shareInfo.discordWarning,
   };
 }

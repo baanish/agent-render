@@ -95,15 +95,23 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
   );
+  const [markdownLinkCopyState, setMarkdownLinkCopyState] = useState<
+    "idle" | "copied" | "failed"
+  >("idle");
   const generationRequestRef = useRef(0);
+  const markdownCopyTokenRef = useRef(0);
+  const generatedLinkRef = useRef<GeneratedArtifactLink | null>(null);
   const isGeneratedLinkStale =
     Boolean(generatedLink) && draftVersion !== generatedVersion;
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
   const GeneratedKindIcon =
     kindIcons[generatedLink?.artifact.kind ?? draft.kind];
 
+  generatedLinkRef.current = generatedLink;
+
   useEffect(() => {
     setCopyState("idle");
+    setMarkdownLinkCopyState("idle");
     setError(null);
   }, [draftVersion]);
 
@@ -145,6 +153,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
       setGeneratedVersion(draftVersion);
       setError(null);
       setCopyState("idle");
+      setMarkdownLinkCopyState("idle");
     } catch (generationError) {
       if (generationRequestRef.current !== requestId) {
         return;
@@ -153,6 +162,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
       setGeneratedLink(null);
       setGeneratedVersion(-1);
       setCopyState("idle");
+      setMarkdownLinkCopyState("idle");
       setError(
         generationError instanceof Error
           ? generationError.message
@@ -171,6 +181,35 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
       setCopyState("copied");
     } catch {
       setCopyState("failed");
+    }
+  };
+
+  const handleCopyMarkdownLink = async () => {
+    const link = generatedLinkRef.current;
+    if (!link) {
+      return;
+    }
+
+    const requestToken = ++markdownCopyTokenRef.current;
+    const expectedHash = link.hash;
+
+    try {
+      await copyTextToClipboard(link.markdownLink);
+      if (
+        markdownCopyTokenRef.current !== requestToken ||
+        generatedLinkRef.current?.hash !== expectedHash
+      ) {
+        return;
+      }
+      setMarkdownLinkCopyState("copied");
+    } catch {
+      if (
+        markdownCopyTokenRef.current !== requestToken ||
+        generatedLinkRef.current?.hash !== expectedHash
+      ) {
+        return;
+      }
+      setMarkdownLinkCopyState("failed");
     }
   };
 
@@ -361,6 +400,17 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                   />
                 </div>
 
+                <div className="creator-link-frame">
+                  <p className="metric-label">Markdown link</p>
+                  <textarea
+                    className="creator-link-output"
+                    value={generatedLink.markdownLink}
+                    readOnly
+                    aria-label="Generated markdown link"
+                    rows={3}
+                  />
+                </div>
+
                 <div className="creator-result-metrics">
                   <div className="metric-card">
                     <p className="metric-label">Codec</p>
@@ -372,7 +422,19 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                       {numberFormatter.format(generatedLink.fragmentLength)} chars
                     </p>
                   </div>
+                  <div className="metric-card">
+                    <p className="metric-label">Markdown link length</p>
+                    <p className="metric-value">
+                      {numberFormatter.format(generatedLink.markdownLinkLength)} chars
+                    </p>
+                  </div>
                 </div>
+
+                {generatedLink.discordMarkdownLinkWarning ? (
+                  <div className="creator-warning-state" role="status">
+                    {generatedLink.discordMarkdownLinkWarning}
+                  </div>
+                ) : null}
 
                 <div className="creator-result-actions">
                   <button
@@ -393,6 +455,25 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                       : copyState === "failed"
                         ? "Copy failed"
                         : "Copy link"}
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      "artifact-action",
+                      markdownLinkCopyState === "copied" && "is-primary",
+                    )}
+                    onClick={handleCopyMarkdownLink}
+                  >
+                    {markdownLinkCopyState === "copied" ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <Link2 className="h-3.5 w-3.5" />
+                    )}
+                    {markdownLinkCopyState === "copied"
+                      ? "Copied"
+                      : markdownLinkCopyState === "failed"
+                        ? "Copy failed"
+                        : "Copy markdown link"}
                   </button>
                   <button
                     type="button"
