@@ -60,7 +60,7 @@
     "@replit/codemirror-indentation-markers": "^6.5.3",
     "brotli-wasm": "^3.0.1",
     "fflate": "^0.8.2",
-    "lucide-react": "^0.577.0",
+    "lucide-react": "^1.21.0",
     "lz-string": "^1.5.0",
     "mermaid": "^11.15.0",
     "next": "15.5.18",
