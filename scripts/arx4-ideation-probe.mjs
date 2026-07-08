@@ -107,10 +107,12 @@ function brotli(input) {
 /**
  * Approximate a Brotli *shared static dictionary* win.
  *
- * Node's zlib brotli bindings ignore custom dictionaries, so we use two proxies:
+ * Node 22's zlib brotli bindings silently ignore `{ dictionary }`, and product
+ * `brotli-wasm` has no dict API. This probe therefore reports:
  *   1. deflateRaw + dictionary (real shared-dict API) as a lower-bound signal
  *   2. residual trick: len(brotli(dict||data)) - len(brotli(dict)) as an optimistic
- *      estimate of what a true Brotli custom dictionary might achieve
+ *      estimate (systematically overstates — see `npm run bench:arx4-bet2` for real
+ *      `brotli -D` numbers)
  *
  * Product ARX4 would need brotli-wasm (or equivalent) with dictionary support.
  */

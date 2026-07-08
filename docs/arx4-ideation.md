@@ -142,25 +142,21 @@ bytes via shared dictionaries / better envelopes — not denser Unicode wire or 
 
 ### Ranked bets for ARX4
 
-1. **Content-first binary envelope + CBOR/binary tuple (worth exploring)**
-   - Alone: small (~0–5%) on already-substituted ARX3 text.
-   - Combined with a shared-dict estimate: best corpus BMP win here (~2–28% depending on fixture).
-   - Removes JSON escaping of newlines/quotes; natural fit for Discord's single-artifact share path.
+1. **Content-first / CBOR + real Brotli shared dict — explored (see `docs/arx4-bet2-bench.md`)**
+   - Implemented: `src/lib/payload/arx4-content-first.ts` + `npm run bench:arx4-bet2`.
+   - Residual dict estimates overstated wins (~6–8% corpus); **real `brotli -D` is ~0–1%**.
+   - Binary envelopes alone are not a Discord unlock; keep as plumbing, not the next capacity bet.
+   - Browser shared-dict still blocked (`brotli-wasm` has no dict API; Node zlib ignores it).
 
-2. **Real Brotli shared static dictionary (worth exploring)**
-   - Node cannot set a Brotli custom dictionary; residual / deflate+dict are proxies only.
-   - Next step: check whether `brotli-wasm` (or another browser-safe Brotli) accepts a custom dict.
-   - Do **not** switch the pipeline to deflate+dict — that proxy often *regressed* vs plain Brotli (~+17%).
-
-3. **Curated overlay growth (cautious)**
+2. **Curated overlay growth (cautious)**
    - Alone, mined n-grams *regressed* this corpus (+3–4%).
    - Prefer a carefully curated ARX4 overlay over online mining; measure before shipping.
 
-4. **baseAstral — deprioritized for Discord**
+3. **baseAstral — deprioritized for Discord**
    - Web evidence favors UTF-16 client counting → astral loses to baseBMP (~10 vs ~15.92 bits/unit).
    - Optional one-shot paste test only; not a primary ARX4 bet.
 
-5. **Discord framing — already practiced, not an ARX4 lever**
+4. **Discord framing — already practiced, not an ARX4 lever**
    - Skill/agents already use short labels (`[Short summary](…)`); product warns on full `markdownLink.length`.
    - Host shortening (`arx.page`) is deployment/DNS, not a codec change — drop from ARX4 scope.
 
@@ -170,13 +166,16 @@ bytes via shared dictionaries / better envelopes — not denser Unicode wire or 
 artifact bytes
   → content-first binary envelope (kind|id|content|meta)  // or CBOR tuple for bundles
   → optional curated ARX4 overlay (domain n-grams, measured)
-  → Brotli q11 (+ shared static dictionary if wasm allows)
+  → Brotli q11 (+ real shared dict only if browser wasm gains dict support)
   → baseBMP (Discord-safe; skip astral unless paste tests overturn UTF-16 finding)
   → compact tag `d` / `e`
 ```
 
 Selection policy: optimize `markdownLink.length` (JS/UTF-16 units, matching Discord client
 folk counting) for a declared surface (`discord` | `visible` | `transport`).
+
+Bet #2 takeaway: chase **dict-capable wasm** or a better post-substitution dictionary before
+expecting Discord capacity gains from binary envelopes.
 
 ## Non-goals / traps
 
@@ -192,6 +191,10 @@ folk counting) for a declared surface (`discord` | `visible` | `transport`).
 ```bash
 npm run bench:arx4-ideation
 # or: node scripts/arx4-ideation-probe.mjs
+
+# Bet #2 follow-up (content-first/CBOR + real brotli -D):
+npm run bench:arx4-bet2
 ```
 
 _Generated in 9.6ms._
+See also `docs/arx4-bet2-bench.md` for the real shared-dictionary follow-up.
