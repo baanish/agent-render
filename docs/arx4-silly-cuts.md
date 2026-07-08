@@ -173,15 +173,17 @@ this is the hard case, not the highly-repetitive search-cap case.
 
 ### Ranked silly bets (after this probe)
 
-1. **Mosaic assembler** — explicit multi-message `1/3` protocol; multiplies capacity for real.
+1. **Mosaic assembler** — **deprioritized** (prefer agent semantic splits via skill).
 2. **Versioned shared prior** — only if LOO / held-out benches still win on *your* domain
    corpus (agent-render chat is repetitive; arbitrary user prose is not). Pair with a
    pinned mother post or build-shipped prior — never trust warm numbers.
-3. **Hybrid fence profile** — optional surface for agents that already paste code blocks;
+3. **Kind-specific dicts** — free tags preferred over +1 selector; needs larger LOO corpus
+   (current probe did not beat ARX3 — see `docs/arx4-kind-dicts.md`).
+4. **Hybrid fence profile** — optional surface for agents that already paste code blocks;
    protocol bend, not a density win.
-4. **Implied + kind IR** — cheap plumbing alongside (1) or (2).
-5. **Lossy mode** — opt-in “readable enough” chat previews.
-6. Avoid more residual-Brotli-dict optimism, alphabet retunes, and contaminated prior benches.
+5. **Implied + kind IR** — cheap plumbing alongside a real prior story.
+6. **Lossy mode** — opt-in “readable enough” chat previews.
+7. Avoid more residual-Brotli-dict optimism, alphabet retunes, and contaminated prior benches.
 
 ## Non-goals reinforced
 

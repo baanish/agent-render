@@ -271,7 +271,7 @@ Respect these limits:
 - target decoded payload budget: about 200,000 characters
 - Discord message limit for a single markdown link: 2,000 characters total for the formatted `[label](url)` string
 
-Before sharing on Discord, check `markdownLinkLength` or `discordMarkdownLinkWarning` from the link helpers. If you formatted the link yourself, use `buildMarkdownLinkShareInfo(label, url)` and inspect `discordWarning`. When the warning is non-null, split the bundle into smaller artifacts and send separate markdown links in multiple Discord messages instead of one oversized link.
+Before sharing on Discord, check `markdownLinkLength` or `discordMarkdownLinkWarning` from the link helpers. If you formatted the link yourself, use `buildMarkdownLinkShareInfo(label, url)` and inspect `discordWarning`. When the warning is non-null, **semantically split the work into smaller artifacts** and send separate markdown links in multiple Discord messages — do not invent a multi-part “mosaic” reassembly protocol for one logical artifact.
 
 When generating links programmatically via `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync`, send `markdownLink` verbatim and inspect `discordMarkdownLinkWarning`. When it is non-null, surface that warning to the caller and split the payload before sharing on Discord.
 
@@ -280,7 +280,20 @@ If a link is getting too large:
 2. allow packed wire mode
 3. trim unnecessary prose or metadata
 4. prefer a focused artifact over a bloated one
-5. return a structured failure when the payload cannot fit the requested budget
+5. **split by meaning** (see below) and send multiple independent links
+6. return a structured failure when the payload cannot fit the requested budget
+
+### How to split oversized artifacts (agent-side)
+
+Prefer human-useful cuts over byte-slicing one blob into `1/N` fragments:
+
+- **Markdown:** one link per major section (`##`), appendix, or table — e.g. Executive Summary, Leaderboard, Model Scorecards
+- **Code:** one link per file or coherent module; do not glue unrelated files into one envelope
+- **Diff:** one link per file hunk set, or keep a focused patch instead of a mega-diff
+- **CSV / JSON:** one link per logical table/document; truncate rows only when the caller accepts a preview
+- **Bundles:** use multiple single-artifact links with clear labels (`[Report — summary](…)`, `[Report — tables](…)`) rather than one over-budget bundle
+
+Each link must decode on its own. Do not require the viewer to stitch partial payloads.
 
 ## Agent budget mode
 
@@ -304,7 +317,7 @@ Prefer standard Markdown links. When you have `markdownLink` from the link helpe
 [Short summary](https://agent-render.com/#<tag><payload>)
 ```
 
-Check `markdownLinkLength` or `discordMarkdownLinkWarning` before sending. Discord rejects messages longer than 2,000 characters, so a single `[label](url)` string that exceeds that limit will probably fail. When it does, split the artifact into smaller bundles and send multiple markdown links across separate Discord messages.
+Check `markdownLinkLength` or `discordMarkdownLinkWarning` before sending. Discord rejects messages longer than 2,000 characters, so a single `[label](url)` string that exceeds that limit will probably fail. When it does, split by meaning into smaller artifacts (sections/files) and send multiple independent markdown links across separate Discord messages — not a mosaic/`1/N` reassembly scheme.
 
 Examples:
 - `[Weekly report](https://agent-render.com/#<tag><payload>)`

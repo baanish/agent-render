@@ -142,37 +142,36 @@ bytes via shared dictionaries / better envelopes — not denser Unicode wire or 
 
 ### Ranked bets for ARX4
 
-1. **Mosaic / multi-message assembler — top “break the box” bet (see `docs/arx4-silly-cuts.md`)**
-   - Only lever that *multiplies* Discord’s 2000 budget (N messages ≈ N× capacity).
-   - N links in *one* message do not help — they share the same 2000 chars.
-   - Protocol + UX cost (click/`1/3` assembly); not a denser alphabet.
+1. **Agent-side semantic splits (skill) — preferred over mosaic**
+   - When Discord budget blows, agents should cut by meaning (sections/files) into
+     independent links — see `skills/agent-render-linking/SKILL.md`.
+   - **Mosaic/`1/N` reassembly is out** — not worth the protocol/UX cost.
 
-2. **Content-first / CBOR + real Brotli shared dict — explored (see `docs/arx4-bet2-bench.md`)**
-   - Implemented: `src/lib/payload/arx4-content-first.ts` + `npm run bench:arx4-bet2`.
+2. **Kind-specific dictionaries — measured, not yet (see `docs/arx4-kind-dicts.md`)**
+   - Free kind tags (`m`/`k`/`j`/…) cost **0** extra chars vs today’s `c`; a +1 selector is optional.
+   - On this LOO corpus, kind overlays **do not beat** shared ARX3 (Σ BMP **+0.4%** free-tag,
+     **+0.8%** with +1 selector). Wins were tiny/rare (2/7 fixtures free-tag).
+   - **Do not spend a char hoping to “save thousands”** — Discord wins look like tens of BMP
+     chars when they exist; agents should split oversized source instead.
+   - Revisit only with a larger per-kind held-out corpus.
+
+3. **Content-first / CBOR + real Brotli shared dict — explored (see `docs/arx4-bet2-bench.md`)**
    - Residual dict estimates overstated wins (~6–8% corpus); **real `brotli -D` is ~0–1%**.
-   - Binary envelopes alone are not a Discord unlock; keep as plumbing, not the next capacity bet.
-   - Browser shared-dict still blocked (`brotli-wasm` has no dict API; Node zlib ignores it).
+   - Binary envelopes alone are not a Discord unlock; keep as plumbing.
 
-3. **Versioned shared prior (chunk / word) — only with LOO gate**
-   - Warm/contaminated priors look magical (−70%+) and are fake (content-addressed cache).
-   - Leave-one-out chunk priors **regressed** this corpus (~+20% BMP) — literals + ID framing lose to ARX3+Brotli.
-   - Revisit only for a *domain* prior that LOO-beats ARX3 on held-out agent chat; never trust warm numbers.
+4. **Versioned shared prior (chunk / word) — only with LOO gate**
+   - Warm priors are fake (−70%+); LOO chunk priors **regressed** (~+20% BMP). See silly-cuts.
 
-4. **Implied envelope + kind IR + lossy — small honest cuts**
+5. **Implied envelope + kind IR + lossy — small honest cuts**
    - Implied / kind IR ~3–4% corpus; lossy ~8% when stripping emphasis/comments.
-   - Plumbing / opt-in preview — not a Discord unlock alone.
 
-5. **Hybrid fence / label bitstream — wash**
-   - Fence stub steals budget; label-as-title costs framing. Skip as density bets; fence may still be a paste UX.
+6. **Hybrid fence / label bitstream — wash**
 
-6. **Curated overlay growth (cautious)**
-   - Alone, mined n-grams *regressed* this corpus (+3–4%).
+7. **Curated overlay growth (cautious)** — mined n-grams alone regressed (+3–4%).
 
-7. **baseAstral — deprioritized for Discord**
-   - UTF-16 client counting → astral loses to baseBMP (~10 vs ~15.92 bits/unit).
+8. **baseAstral — deprioritized for Discord** (UTF-16 counting).
 
-8. **Discord framing — already practiced, not an ARX4 lever**
-   - Short labels are skill default; host shortening is DNS, not codec.
+9. **Discord framing — already practiced, not an ARX4 lever**
 
 ### Suggested ARX4 shape (if pursued)
 
@@ -180,19 +179,19 @@ bytes via shared dictionaries / better envelopes — not denser Unicode wire or 
 # Single-link path (marginal):
 artifact bytes
   → implied / content-first envelope + optional kind IR
+  → optional kind-tagged dict ONLY if held-out gate clears (prefer free tags m/k/j/…)
   → Brotli q11 (+ real shared dict only if browser wasm gains dict support)
   → baseBMP → compact tag
 
-# Break-the-box path (capacity):
-artifact bytes → ARX3/ARX4 pack → split into N Discord messages (mosaic 1/N)
-  OR stub link + ```arx fence (paste UX, not denser wire)
+# Over-budget path (product, not codec):
+agent semantically splits → N independent ARX3 links (skill guidance)
 ```
 
 Selection policy: optimize `markdownLink.length` (JS/UTF-16 units) for a declared surface
-(`discord` | `discord-mosaic` | `discord-fence` | `visible` | `transport`).
+(`discord` | `visible` | `transport`).
 
-Silly-cuts takeaway: **stop chasing alphabet / residual-dict / contaminated priors.**
-The real unlock is either a proven LOO prior or accepting multi-message / fence UX.
+Takeaway: **stop mosaic; stop paying selector chars without a LOO win; prefer skill splits
+and only revisit kind dicts with a bigger corpus.**
 
 ## Non-goals / traps
 
@@ -212,9 +211,12 @@ npm run bench:arx4-ideation
 # Bet #2 follow-up (content-first/CBOR + real brotli -D):
 npm run bench:arx4-bet2
 
-# Silly / deep cuts (priors, IR, mosaic, fence):
+# Silly / deep cuts (priors, IR, mosaic math — mosaic deprioritized):
 npm run bench:arx4-silly
+
+# Kind-specific dictionaries (+ free tag vs +1 selector):
+npm run bench:arx4-kind-dicts
 ```
 
 _Generated in 9.6ms._
-See also `docs/arx4-bet2-bench.md` and `docs/arx4-silly-cuts.md`.
+See also `docs/arx4-bet2-bench.md`, `docs/arx4-silly-cuts.md`, and `docs/arx4-kind-dicts.md`.

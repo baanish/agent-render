@@ -46,7 +46,8 @@
     "selfhosted:dev": "node --import tsx selfhosted/server.ts",
     "selfhosted:build": "tsc -p selfhosted/tsconfig.json",
     "selfhosted:start": "node selfhosted/dist/server.js",
-    "selfhosted:csp-smoke": "node scripts/csp-smoke.mjs"
+    "selfhosted:csp-smoke": "node scripts/csp-smoke.mjs",
+    "bench:arx4-kind-dicts": "node scripts/bench-arx4-kind-dicts.mjs"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
