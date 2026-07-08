@@ -21,9 +21,9 @@ So ARX4 should optimize **Discord markdown-link length**, not just fragment leng
 | shortHost (`[a](https://arx.page#d…)`) | 23 | 1977 | 3928 | 4934 |
 | bareHost (`[x](https://r.page#d…)`) | 21 | 1979 | 3932 | 4939 |
 
-Takeaway: host + label overhead is only ~20–50 chars. The real ceiling is ~3.8–3.9 KB of
-compressed bytes under baseBMP, or ~4.9 KB if a denser Unicode wire survives Discord's
-character counting as one unit per code point.
+Takeaway: host + label overhead is only ~20–50 chars (and short labels are already the
+agent skill default). The real ceiling is ~3.8–3.9 KB of compressed bytes under baseBMP.
+Astral density (~4.9 KB) is not a Discord win under UTF-16 counting — see research note.
 
 ## Wire density ceiling
 
@@ -33,24 +33,36 @@ character counting as one unit per code point.
 | base76 | 6.27 | ASCII fragment-safe |
 | base1k | 10.79 | BMP subset |
 | baseBMP (ARX3) | 15.92 | Current best visible density |
-| baseAstral (code points) | 20.00 | ~26% denser **if** Discord counts code points |
-| baseAstral (UTF-16 units) | 10.00 | **Worse** than baseBMP if length is UTF-16 |
+| baseAstral (code points) | 20.00 | ~26% denser **only if** Discord counts code points |
+| baseAstral (UTF-16 units) | 10.00 | **Worse** than baseBMP (~10 vs ~15.92 bits/unit) |
 
-**Critical unknown:** Discord's message length appears to count Unicode code points for
-most text, but markdown link destinations and client paste paths need an empirical check
-before shipping an astral wire. If any hop counts UTF-16, astral loses to baseBMP.
+### Research note — Discord length counting (2026-07 web pass)
+
+Public sources disagree; the **client-facing** signal matters most for paste-to-send:
+
+| Source | Claim | Weight |
+| --- | --- | --- |
+| TypeCount / Discord character-counter guides | Standard emoji count as **2** toward the 2000 limit ("Unicode encoding") | High for UX — matches JS/Electron `.length` |
+| Discord desktop stack | Electron → JS strings → UTF-16 code units | High — composer counter almost certainly uses this |
+| Our product (`markdown-link.ts`) | Already gates on `markdownLink.length` (UTF-16 units) | Aligns with client-side folk wisdom |
+| twilight-interactions #41 | Slash-command option `min/max_length` uses Unicode **code points** (Python `len()`), not UTF-8 bytes | Medium — different API surface than message `content` |
+| Secondary blogs (go-tools, discord-webhook) | "Code points, emoji = 1" | Low — contradicted by emoji=2 guides; some validators still use JS `.length` |
+
+**Working conclusion:** treat Discord message limits as **UTF-16-unit** (JS `.length`) until a live paste test proves otherwise.
+That **kills baseAstral as a Discord win** — astral scalars cost 2 units each, so density drops below baseBMP.
+Keep a one-shot paste test on the backlog (1999 BMP chars vs 1000 astral + framing) only to close the API-vs-client gap; do not prototype baseAstral for Discord first.
 
 ## Ideas probed
 
-1. **baseAstral wire** — pack into supplementary-plane scalars (~20 bits/code point).
-2. **CBOR-ish binary tuple** — drop JSON quotes/escapes around the ARX2/3 tuple.
+1. **baseAstral wire** — pack into supplementary-plane scalars (~20 bits/code point). **Deprioritized for Discord** after UTF-16 research.
+2. **CBOR-ish binary tuple** — drop JSON quotes/escapes around the ARX2/3 tuple. **Worth exploring.**
 3. **Brotli shared static dictionary** — seed Brotli with domain patterns already in `/arx-dictionary.json`.
    Node zlib cannot set a Brotli custom dictionary today, so the probe reports (a) a residual
-   `brotli(dict‖data)−brotli(dict)` estimate and (b) a real `deflateRaw+dictionary` proxy.
-4. **Content-first binary envelope** — compress raw artifact bytes + tiny binary header, skip JSON entirely.
+   `brotli(dict‖data)−brotli(dict)` estimate and (b) a real `deflateRaw+dictionary` proxy. **Worth exploring** via wasm.
+4. **Content-first binary envelope** — compress raw artifact bytes + tiny binary header, skip JSON entirely. **Worth exploring.**
 5. **Mined overlay growth** — corpus-mined n-grams as an extra substitution layer.
 6. **Combined ARX4 stack** — content-first + mined + shared-dict estimate.
-7. **Discord framing** — short host + 1-char label + compact tag (cheap, orthogonal).
+7. **Discord framing** — short host + 1-char label + compact tag. **Already practiced** (skill uses short labels; host shortening is DNS, not codec).
 
 ## Corpus results
 
@@ -105,18 +117,18 @@ Percentages are vs ARX3 baseBMP visible chars (negative = larger / worse).
 ## Discord capacity (how much raw text fits)
 
 Binary-searching the largest source string whose encoded markdown link stays ≤ 2000 chars
-(current-host framing, payload budget 1962):
+(current-host framing, payload budget 1962) shows the practical ceiling:
 
 | Content shape | ARX3 @ baseBMP | ARX3 @ baseAstral | Content-first @ BMP | Notes |
 | --- | ---: | ---: | ---: | --- |
-| Tiled real report + unique section headers | ≥120k (search cap) | ≥150k (+25%) | ≥120k | Highly compressible; Discord is not the bottleneck |
-| Generated TS helpers | ≥120k (search cap) | ≥150k (+25%) | ≥120k | Same |
-| Quote/newline-heavy prose | ~88k | ~112k (+27%) | ~87k | JSON escaping barely matters once Brotli runs |
-| Current `code-bench-report.md` (8.3k) | 1117 BMP chars | ~891 astral | 1117 | Uses ~57% of Discord budget today |
+| Tiled real report + unique headers | ≥120k (search cap) | ≥150k (~+25%) | ≥120k | Highly compressible; Discord is not the bottleneck |
+| Generated TS helpers | ≥120k (search cap) | ≥150k (~+25%) | ≥120k | Same |
+| Quote/newline-heavy prose | ~88k | ~112k (~+27%) | ~87k | JSON escaping barely matters once Brotli runs |
+| Current `code-bench-report.md` (8.3k) | ~1117 BMP chars | ~891 astral | ~1117 | Uses ~57% of Discord budget today |
 
-**Reading:** for Discord, ARX3 already leaves a lot of headroom on typical artifacts. The
-ways to *raise the ceiling* are almost entirely (1) denser Unicode wire and (2) fewer
-compressed bytes via shared dictionaries / better envelopes — not more text substitutions.
+**Reading:** for Discord, ARX3 already leaves a lot of headroom on typical artifacts. With
+baseAstral deprioritized (UTF-16), the ways to *raise the ceiling* are fewer compressed
+bytes via shared dictionaries / better envelopes — not denser Unicode wire or more text substitutions.
 
 ## Interpretation
 
@@ -126,65 +138,60 @@ compressed bytes via shared dictionaries / better envelopes — not more text su
   with room to spare (see `small-markdown`, `json-package`, `code-fragment`, and the
   8.3k code-bench report at ~57% of budget).
 - The painful case is large unique prose/reports where dictionary substitution helps less
-  and Brotli carries most of the work — and even then, baseAstral is the cleanest capacity
-  unlock if Discord counting cooperates.
+  and Brotli carries most of the work — chase bytes there, not astral wire.
 
-### Highest-leverage ARX4 directions
+### Ranked bets for ARX4
 
-1. **Validate Discord length semantics, then consider baseAstral**
-   - Pure wire change on top of identical ARX3 bytes.
-   - ~20–26% fewer visible units *and* ~25% more raw capacity *if* Discord counts code points.
-   - Zero win (or a loss) if any hop counts UTF-16 code units.
-   - Empirically test: paste a `#d` + astral payload link into Discord desktop/mobile/web.
+1. **Content-first binary envelope + CBOR/binary tuple (worth exploring)**
+   - Alone: small (~0–5%) on already-substituted ARX3 text.
+   - Combined with a shared-dict estimate: best corpus BMP win here (~2–28% depending on fixture).
+   - Removes JSON escaping of newlines/quotes; natural fit for Discord's single-artifact share path.
 
-2. **Content-first binary envelope (skip JSON)**
-   - Removes JSON escaping of newlines/quotes inside artifact bodies.
-   - Largest win on code and markdown with many `"` / `\n` sequences.
-   - Natural fit for Discord's single-artifact share path; multi-artifact can keep tuples.
+2. **Real Brotli shared static dictionary (worth exploring)**
+   - Node cannot set a Brotli custom dictionary; residual / deflate+dict are proxies only.
+   - Next step: check whether `brotli-wasm` (or another browser-safe Brotli) accepts a custom dict.
+   - Do **not** switch the pipeline to deflate+dict — that proxy often *regressed* vs plain Brotli (~+17%).
 
-3. **Brotli shared static dictionary**
-   - Node cannot set a Brotli custom dictionary; numbers are estimates / deflate proxies.
-   - Still worth pursuing if `brotli-wasm` gains dictionary APIs — small/medium payloads benefit most.
-   - Deflate+dict is a real shared-dict signal and often beats plain Brotli on repetitive agent text,
-     but losing Brotli's stronger model is a tradeoff; prefer true Brotli dict over switching codecs.
+3. **Curated overlay growth (cautious)**
+   - Alone, mined n-grams *regressed* this corpus (+3–4%).
+   - Prefer a carefully curated ARX4 overlay over online mining; measure before shipping.
 
-4. **CBOR / binary tuple**
-   - Modest win once Brotli has already seen the JSON structure.
-   - More valuable when combined with content-first (binary header + raw body).
+4. **baseAstral — deprioritized for Discord**
+   - Web evidence favors UTF-16 client counting → astral loses to baseBMP (~10 vs ~15.92 bits/unit).
+   - Optional one-shot paste test only; not a primary ARX4 bet.
 
-5. **Mined / larger overlay dictionaries**
-   - Helps repeated fixture-like corpora; risky for open-ended agent output.
-   - Prefer shipping a carefully curated ARX4 overlay over online mining.
-
-6. **Discord framing (orthogonal, ship anytime)**
-   - Short branded host + 1-char label recovers ~30 chars — small but free.
-   - Agents should emit `[x](https://short/#…)` when targeting Discord.
+5. **Discord framing — already practiced, not an ARX4 lever**
+   - Skill/agents already use short labels (`[Short summary](…)`); product warns on full `markdownLink.length`.
+   - Host shortening (`arx.page`) is deployment/DNS, not a codec change — drop from ARX4 scope.
 
 ### Suggested ARX4 shape (if pursued)
 
 ```text
 artifact bytes
-  → content-first binary envelope (kind|id|content|meta)
-  → optional curated ARX4 overlay (domain n-grams)
+  → content-first binary envelope (kind|id|content|meta)  // or CBOR tuple for bundles
+  → optional curated ARX4 overlay (domain n-grams, measured)
   → Brotli q11 (+ shared static dictionary if wasm allows)
-  → baseBMP (safe) or baseAstral (Discord-validated)
+  → baseBMP (Discord-safe; skip astral unless paste tests overturn UTF-16 finding)
   → compact tag `d` / `e`
 ```
 
-Selection policy: optimize `markdownLink.length` for a declared surface
-(`discord` | `visible` | `transport`) instead of only fragment length.
+Selection policy: optimize `markdownLink.length` (JS/UTF-16 units, matching Discord client
+folk counting) for a declared surface (`discord` | `visible` | `transport`).
 
 ## Non-goals / traps
 
 - Do not weaken the 8192 fragment budget or 200k decoded budget for Discord wins.
 - Do not put artifact bodies in query params.
-- Do not assume astral density without client paste tests.
+- Do not chase baseAstral for Discord until a live paste test overturns UTF-16 counting.
+- Do not treat short-host framing as an ARX4 deliverable.
 - Do not replace UUID mode: hostile link scanners still want short opaque URLs.
+- Do not grow substitution dictionaries without a corpus gate — mining can regress.
 
 ## How to re-run
 
 ```bash
-node scripts/arx4-ideation-probe.mjs
+npm run bench:arx4-ideation
+# or: node scripts/arx4-ideation-probe.mjs
 ```
 
-_Generated in 10.5ms._
+_Generated in 9.6ms._
