@@ -37,6 +37,7 @@
     "bench:codecs:update": "node scripts/bench-codecs.mjs --write-baseline",
     "bench:arx4-ideation": "node scripts/arx4-ideation-probe.mjs",
     "bench:arx4-bet2": "node scripts/bench-arx4-bet2.mjs",
+    "bench:arx4-silly": "node scripts/bench-arx4-silly.mjs",
     "assets:compress": "node scripts/compress-dictionary.mjs",
     "typecheck": "node scripts/ensure-next-types.mjs && tsc --noEmit",
     "check": "npm run lint && npm run test && npm run bench:codecs && npm run typecheck && npm run build && npm run check:build-budgets",

@@ -142,40 +142,57 @@ bytes via shared dictionaries / better envelopes — not denser Unicode wire or 
 
 ### Ranked bets for ARX4
 
-1. **Content-first / CBOR + real Brotli shared dict — explored (see `docs/arx4-bet2-bench.md`)**
+1. **Mosaic / multi-message assembler — top “break the box” bet (see `docs/arx4-silly-cuts.md`)**
+   - Only lever that *multiplies* Discord’s 2000 budget (N messages ≈ N× capacity).
+   - N links in *one* message do not help — they share the same 2000 chars.
+   - Protocol + UX cost (click/`1/3` assembly); not a denser alphabet.
+
+2. **Content-first / CBOR + real Brotli shared dict — explored (see `docs/arx4-bet2-bench.md`)**
    - Implemented: `src/lib/payload/arx4-content-first.ts` + `npm run bench:arx4-bet2`.
    - Residual dict estimates overstated wins (~6–8% corpus); **real `brotli -D` is ~0–1%**.
    - Binary envelopes alone are not a Discord unlock; keep as plumbing, not the next capacity bet.
    - Browser shared-dict still blocked (`brotli-wasm` has no dict API; Node zlib ignores it).
 
-2. **Curated overlay growth (cautious)**
+3. **Versioned shared prior (chunk / word) — only with LOO gate**
+   - Warm/contaminated priors look magical (−70%+) and are fake (content-addressed cache).
+   - Leave-one-out chunk priors **regressed** this corpus (~+20% BMP) — literals + ID framing lose to ARX3+Brotli.
+   - Revisit only for a *domain* prior that LOO-beats ARX3 on held-out agent chat; never trust warm numbers.
+
+4. **Implied envelope + kind IR + lossy — small honest cuts**
+   - Implied / kind IR ~3–4% corpus; lossy ~8% when stripping emphasis/comments.
+   - Plumbing / opt-in preview — not a Discord unlock alone.
+
+5. **Hybrid fence / label bitstream — wash**
+   - Fence stub steals budget; label-as-title costs framing. Skip as density bets; fence may still be a paste UX.
+
+6. **Curated overlay growth (cautious)**
    - Alone, mined n-grams *regressed* this corpus (+3–4%).
-   - Prefer a carefully curated ARX4 overlay over online mining; measure before shipping.
 
-3. **baseAstral — deprioritized for Discord**
-   - Web evidence favors UTF-16 client counting → astral loses to baseBMP (~10 vs ~15.92 bits/unit).
-   - Optional one-shot paste test only; not a primary ARX4 bet.
+7. **baseAstral — deprioritized for Discord**
+   - UTF-16 client counting → astral loses to baseBMP (~10 vs ~15.92 bits/unit).
 
-4. **Discord framing — already practiced, not an ARX4 lever**
-   - Skill/agents already use short labels (`[Short summary](…)`); product warns on full `markdownLink.length`.
-   - Host shortening (`arx.page`) is deployment/DNS, not a codec change — drop from ARX4 scope.
+8. **Discord framing — already practiced, not an ARX4 lever**
+   - Short labels are skill default; host shortening is DNS, not codec.
 
 ### Suggested ARX4 shape (if pursued)
 
 ```text
+# Single-link path (marginal):
 artifact bytes
-  → content-first binary envelope (kind|id|content|meta)  // or CBOR tuple for bundles
-  → optional curated ARX4 overlay (domain n-grams, measured)
+  → implied / content-first envelope + optional kind IR
   → Brotli q11 (+ real shared dict only if browser wasm gains dict support)
-  → baseBMP (Discord-safe; skip astral unless paste tests overturn UTF-16 finding)
-  → compact tag `d` / `e`
+  → baseBMP → compact tag
+
+# Break-the-box path (capacity):
+artifact bytes → ARX3/ARX4 pack → split into N Discord messages (mosaic 1/N)
+  OR stub link + ```arx fence (paste UX, not denser wire)
 ```
 
-Selection policy: optimize `markdownLink.length` (JS/UTF-16 units, matching Discord client
-folk counting) for a declared surface (`discord` | `visible` | `transport`).
+Selection policy: optimize `markdownLink.length` (JS/UTF-16 units) for a declared surface
+(`discord` | `discord-mosaic` | `discord-fence` | `visible` | `transport`).
 
-Bet #2 takeaway: chase **dict-capable wasm** or a better post-substitution dictionary before
-expecting Discord capacity gains from binary envelopes.
+Silly-cuts takeaway: **stop chasing alphabet / residual-dict / contaminated priors.**
+The real unlock is either a proven LOO prior or accepting multi-message / fence UX.
 
 ## Non-goals / traps
 
@@ -194,7 +211,10 @@ npm run bench:arx4-ideation
 
 # Bet #2 follow-up (content-first/CBOR + real brotli -D):
 npm run bench:arx4-bet2
+
+# Silly / deep cuts (priors, IR, mosaic, fence):
+npm run bench:arx4-silly
 ```
 
 _Generated in 9.6ms._
-See also `docs/arx4-bet2-bench.md` for the real shared-dictionary follow-up.
+See also `docs/arx4-bet2-bench.md` and `docs/arx4-silly-cuts.md`.
