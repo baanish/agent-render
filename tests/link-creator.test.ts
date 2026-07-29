@@ -116,7 +116,7 @@ describe("link creator payloads", () => {
     expect(parsed.ok).toBe(true);
   });
 
-  it("lets the async auto encoder pick ARX3 when it wins the visible URL budget", async () => {
+  it("lets the async auto encoder pick ARX4 when it wins the visible URL budget", async () => {
     loadArxDictionarySync(arxDictionaryJson);
     loadArx2OverlayDictionarySync(arx2DictionaryJson);
 
@@ -133,9 +133,9 @@ describe("link creator payloads", () => {
     const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
     const parsed = await decodeFragmentAsync(generatedLink.hash);
 
-    expect(generatedLink.codec).toBe("arx3");
-    expect(generatedLink.hash.startsWith(`#${compactTagForCodec("arx3")}`)).toBe(true);
-    expect(generatedLink.url).toContain(`#${compactTagForCodec("arx3")}`);
+    expect(generatedLink.codec).toBe("arx4");
+    expect(generatedLink.hash.startsWith(`#${compactTagForCodec("arx4")}`)).toBe(true);
+    expect(generatedLink.url).toContain(`#${compactTagForCodec("arx4")}`);
     expect(generatedLink.fragmentLength).toBeLessThan(1900);
     expect(parsed.ok).toBe(true);
   });

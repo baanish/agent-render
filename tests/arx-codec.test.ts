@@ -374,7 +374,12 @@ describe("arx fragment round-trip", () => {
     };
 
     const autoHash = await encodeEnvelopeAsync(bigEnvelope);
-    const arxTags = [compactTagForCodec("arx"), compactTagForCodec("arx2"), compactTagForCodec("arx3")];
+    const arxTags = [
+      compactTagForCodec("arx"),
+      compactTagForCodec("arx2"),
+      compactTagForCodec("arx3"),
+      compactTagForCodec("arx4"),
+    ];
     expect(arxTags).toContain(autoHash.charAt(0));
   });
 

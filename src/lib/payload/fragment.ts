@@ -32,7 +32,7 @@ type EncodeOptions = {
 
 const BINARY_STRING_CHUNK_SIZE = 0x8000;
 const DEFAULT_SYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["deflate", "lz", "plain"];
-const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx3", "arx2", "arx", "deflate", "lz", "plain"];
+const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx4", "arx3", "arx2", "arx", "deflate", "lz", "plain"];
 const PACKED_WIRE_MODES: readonly boolean[] = [true, false];
 const UNPACKED_ONLY_WIRE_MODES: readonly boolean[] = [false];
 const supportedCodecSet = new Set<string>(codecs);
@@ -79,11 +79,6 @@ function computeTransportLength(value: string): number {
 }
 
 /**
- * Returns the decoded visible length of a fragment body or hash.
- * Browsers may expose Unicode fragments as percent-escaped text, while ARX3 budgets by the
- * visible characters a user copies from the URL bar.
- */
-/**
  * Public wrapper over {@link computeTransportLength} so link builders can compare
  * how fragment candidates survive URL serialization and chat-surface escaping.
  */
@@ -91,6 +86,11 @@ export function getFragmentTransportLength(fragmentBody: string): number {
   return computeTransportLength(fragmentBody);
 }
 
+/**
+ * Returns the decoded visible length of a fragment body or hash.
+ * Browsers may expose Unicode fragments as percent-escaped text, while arx3/arx4 budget by the
+ * visible characters a user copies from the URL bar.
+ */
 export function getVisibleFragmentLength(fragment: string): number {
   const fragmentBody = fragment.startsWith("#") ? fragment.slice(1) : fragment;
   try {
@@ -140,6 +140,7 @@ function encodePayload(json: string, codec: PayloadCodec): string {
     case "arx":
     case "arx2":
     case "arx3":
+    case "arx4":
       throw new Error("arx codec requires async encoding — use encodeEnvelopeAsync instead.");
   }
 }
@@ -175,6 +176,7 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
     case "arx":
     case "arx2":
     case "arx3":
+    case "arx4":
       throw new Error("arx codec requires async decoding — use decodeFragmentAsync instead.");
   }
 }
@@ -264,12 +266,25 @@ async function buildArx3Candidates(
   return buildDeferredArx3Candidates(envelope, computeTransportLength, budgetByTransport);
 }
 
+async function buildArx4Candidates(
+  envelope: PayloadEnvelope,
+  budgetByTransport: boolean,
+): Promise<CandidateFragment[]> {
+  const { buildArx4Candidates: buildDeferredArx4Candidates } = await import("@/lib/payload/fragment-arx");
+  return buildDeferredArx4Candidates(envelope, computeTransportLength, budgetByTransport);
+}
+
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {
   const codecsToTry = getAsyncCandidateCodecs(options);
   const wireModes = options.preferPacked === false ? UNPACKED_ONLY_WIRE_MODES : PACKED_WIRE_MODES;
   const candidates: CandidateFragment[] = [];
 
   for (const codec of codecsToTry) {
+    if (codec === "arx4") {
+      candidates.push(...await buildArx4Candidates(envelope, options.budgetByTransport === true));
+      continue;
+    }
+
     if (codec === "arx3") {
       candidates.push(...await buildArx3Candidates(envelope, options.budgetByTransport === true));
       continue;
@@ -537,11 +552,12 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
       const { decodeArxFragmentPayload } = await import("@/lib/payload/fragment-arx");
       const decodedFromAttempt = await decodeArxFragmentPayload(codec, remainder);
 
-      if (codec === "arx2" || codec === "arx3") {
+      if (codec === "arx") {
+        decodedJson = decodedFromAttempt as string;
+      } else {
+        // The tuple codecs rebuild the envelope themselves; only `arx` returns envelope JSON.
         parsed = decodedFromAttempt;
         decodedJson = null;
-      } else {
-        decodedJson = decodedFromAttempt as string;
       }
     } else {
       decodedJson = decodePayload(remainder, codec);

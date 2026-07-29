@@ -100,7 +100,7 @@ The fragment protocol keeps the JSON envelope stable and treats compression stri
 - `arx2` keeps the arx compression stack but replaces the JSON envelope with a compact tuple envelope and applies `/arx2-dictionary.json` as an overlay before the shared arx dictionary. The viewer tries `/arx2-dictionary.json.br` first for default overlay loads and falls back to JSON. It is emitted with the compact `b` tag (which identifies the codec but does not carry a dictionary version — it implies the current pinned dictionary) and decodes back to the standard envelope before validation/rendering.
 - `arx3` uses the same tuple envelope, overlay dictionary, shared arx dictionary, and brotli bytes as arx2, then allows the dense baseBMP wire to win by decoded visible character length. This deliberately optimizes copyable visible URL length for trusted Unicode-preserving surfaces; it is not a stronger compressed-byte format than arx2.
 - packed wire mode (`p: 1`) shortens transport keys before compression, then unpacks back to the standard envelope during decode
-- automatic async codec selection tries `arx3 -> arx2 -> arx -> deflate -> lz -> plain`; arx compares packed + non-packed candidates, while arx2/arx3 use tuple envelopes
+- automatic async codec selection tries `arx4 -> arx3 -> arx2 -> arx -> deflate -> lz -> plain`; arx compares packed + non-packed candidates, while arx2/arx3/arx4 use tuple envelopes
 - sync codec selection (used by examples and legacy paths) tries `deflate -> lz -> plain`
 - decode enforces both visible fragment length and decoded payload size ceilings before UI rendering; arx/arx2/arx3 Brotli decompression uses a streaming output cap before final JSON or tuple parsing
 - invalid bundle state is normalized or rejected before renderers mount

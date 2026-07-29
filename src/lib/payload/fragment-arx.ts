@@ -14,6 +14,7 @@ import {
   loadArx2OverlayDictionary,
   type ArxWirePayloads,
 } from "@/lib/payload/arx-codec";
+import { arx4CompressEnvelope, arx4DecompressEnvelope } from "@/lib/payload/arx4-codec";
 import { packEnvelope } from "@/lib/payload/wire-format";
 import {
   compactTagForCodec,
@@ -64,15 +65,16 @@ function wirePayloadsToCandidates(
 let arxDictionaryLoadPromise: Promise<void> | null = null;
 let arx2OverlayDictionaryLoadPromise: Promise<void> | null = null;
 
-// Compact ARX fragments (tags `a`/`b`/`c`) do NOT carry a dictionary version — the tag implies the
-// CURRENT dictionary, which keeps links short. The safety cost is that a build must not decode with
-// a dictionary NEWER than it was built for (a CDN/asset split serving a future dictionary, or a
+// Compact ARX fragments (tags `a`/`b`/`c`/`e`) do NOT carry a dictionary version — the tag implies
+// the CURRENT dictionary, which keeps links short. The safety cost is that a build must not decode
+// with a dictionary NEWER than it was built for (a CDN/asset split serving a future dictionary, or a
 // version bump), because it would lack the new slots and could produce a structurally-valid-but-
 // wrong envelope. We pin the newest supported version and reject anything newer so decode hard-fails
 // instead of mis-decoding. The built-in fallback dictionary (version 0) and the current external
 // dictionary (version 1) are both <= this and remain usable. Bumping a dictionary version is
 // therefore a wire change that also requires new compact tags and updating
-// tests/arx-dictionary-pin.test.ts.
+// tests/arx-dictionary-pin.test.ts. arx4 depends on the same pin twice over, since its context-mixer
+// prior is derived from the dictionary slot text as well as its substitution stage.
 const EXPECTED_ARX_DICTIONARY_VERSION = 1;
 const EXPECTED_ARX2_OVERLAY_VERSION = 1;
 
@@ -167,13 +169,16 @@ async function decodeArxAttempt(
   codec: ArxCodec,
   encodedPayload: string,
 ): Promise<string | PayloadEnvelope> {
-  if (codec === "arx") {
-    return await arxDecompress(encodedPayload);
+  switch (codec) {
+    case "arx":
+      return await arxDecompress(encodedPayload);
+    case "arx2":
+      return await arx2DecompressEnvelope(encodedPayload);
+    case "arx3":
+      return await arx3DecompressEnvelope(encodedPayload);
+    case "arx4":
+      return arx4DecompressEnvelope(encodedPayload);
   }
-
-  return codec === "arx2"
-    ? await arx2DecompressEnvelope(encodedPayload)
-    : await arx3DecompressEnvelope(encodedPayload);
 }
 
 function normalizeArxDecodeError(error: unknown): Error {
@@ -256,16 +261,34 @@ export async function buildArx3Candidates(
 }
 
 /**
+ * Builds deferred `arx4` codec fragment candidates.
+ * ARX4 reuses the ARX3 tuple/overlay stages and its baseBMP budgeting policy (including the
+ * `budgetBmpByTransport` opt-in); it swaps Brotli for the context mixer in arx4-codec.ts and puts a
+ * prior id char in front of the wire payload, so a candidate reads `<tag><priorId><wirePayload>`.
+ */
+export async function buildArx4Candidates(
+  envelope: PayloadEnvelope,
+  computeTransportLength: TransportLengthCalculator,
+  budgetBmpByTransport = false,
+): Promise<CandidateFragment[]> {
+  await ensureArx2DictionariesLoaded();
+
+  const payloadEnvelope = { ...envelope, codec: "arx4" as PayloadCodec };
+  const payloads = arx4CompressEnvelope(payloadEnvelope);
+  return wirePayloadsToCandidates("arx4", false, payloads, computeTransportLength, !budgetBmpByTransport);
+}
+
+/**
  * Decodes an ARX fragment remainder with the same versioned-payload fallback behavior as the main decoder.
  */
 export async function decodeArxFragmentPayload(
   codec: ArxCodec,
   remainder: string,
 ): Promise<string | PayloadEnvelope> {
-  if (codec === "arx3" || codec === "arx2") {
-    await ensureArx2DictionariesLoaded();
-  } else {
+  if (codec === "arx") {
     await ensureArxDictionaryLoaded();
+  } else {
+    await ensureArx2DictionariesLoaded();
   }
 
   let lastError: Error | null = null;
