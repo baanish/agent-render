@@ -23,6 +23,11 @@ type EncodeOptions = {
   preferPacked?: boolean;
   targetMaxFragmentLength?: number;
   codecPriority?: PayloadCodec[];
+  /**
+   * Budget every candidate (including arx3 baseBMP) by percent-escaped transport length.
+   * For surfaces that URL-serialize the fragment, e.g. markdown link destinations.
+   */
+  budgetByTransport?: boolean;
 };
 
 const BINARY_STRING_CHUNK_SIZE = 0x8000;
@@ -78,6 +83,14 @@ function computeTransportLength(value: string): number {
  * Browsers may expose Unicode fragments as percent-escaped text, while ARX3 budgets by the
  * visible characters a user copies from the URL bar.
  */
+/**
+ * Public wrapper over {@link computeTransportLength} so link builders can compare
+ * how fragment candidates survive URL serialization and chat-surface escaping.
+ */
+export function getFragmentTransportLength(fragmentBody: string): number {
+  return computeTransportLength(fragmentBody);
+}
+
 export function getVisibleFragmentLength(fragment: string): number {
   const fragmentBody = fragment.startsWith("#") ? fragment.slice(1) : fragment;
   try {
@@ -243,9 +256,12 @@ async function buildArx2Candidates(envelope: PayloadEnvelope): Promise<Candidate
   return buildDeferredArx2Candidates(envelope, computeTransportLength);
 }
 
-async function buildArx3Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
+async function buildArx3Candidates(
+  envelope: PayloadEnvelope,
+  budgetByTransport: boolean,
+): Promise<CandidateFragment[]> {
   const { buildArx3Candidates: buildDeferredArx3Candidates } = await import("@/lib/payload/fragment-arx");
-  return buildDeferredArx3Candidates(envelope, computeTransportLength);
+  return buildDeferredArx3Candidates(envelope, computeTransportLength, budgetByTransport);
 }
 
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {
@@ -255,7 +271,7 @@ async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOp
 
   for (const codec of codecsToTry) {
     if (codec === "arx3") {
-      candidates.push(...await buildArx3Candidates(envelope));
+      candidates.push(...await buildArx3Candidates(envelope, options.budgetByTransport === true));
       continue;
     }
 

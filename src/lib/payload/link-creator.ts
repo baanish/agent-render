@@ -1,5 +1,10 @@
 import { normalizeEnvelope } from "@/lib/payload/envelope";
-import { encodeEnvelope, encodeEnvelopeAsync, getVisibleFragmentLength } from "@/lib/payload/fragment";
+import {
+  encodeEnvelope,
+  encodeEnvelopeAsync,
+  getFragmentTransportLength,
+  getVisibleFragmentLength,
+} from "@/lib/payload/fragment";
 import { buildMarkdownLinkShareInfo } from "@/lib/markdown-link";
 import {
   codecForCompactTag,
@@ -30,6 +35,12 @@ export type GeneratedArtifactLink = {
   hash: string;
   url: string;
   fragmentLength: number;
+  /**
+   * URL used inside `markdownLink`. Markdown links pass through URL serializers that
+   * percent-encode non-ASCII fragments (3 UTF-8 bytes become 9 chars), so this may use an
+   * unpacked ASCII wire encoding of the same payload when that survives transport smaller.
+   */
+  markdownUrl: string;
   markdownLink: string;
   markdownLinkLength: number;
   discordMarkdownLinkWarning: string | null;
@@ -160,7 +171,9 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
     throw new Error(normalized.message);
   }
 
-  return assembleGeneratedLink(normalized.envelope, encodeEnvelope(normalized.envelope), baseUrl);
+  const fragmentBody = encodeEnvelope(normalized.envelope);
+  // Sync codecs already emit ASCII wire shapes, so the same fragment serves both surfaces.
+  return assembleGeneratedLink(normalized.envelope, fragmentBody, fragmentBody, baseUrl);
 }
 
 /**
@@ -181,6 +194,7 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
   return assembleGeneratedLink(
     normalized.envelope,
     await encodeEnvelopeAsync(normalized.envelope, encodeOptions),
+    await encodeEnvelopeAsync(normalized.envelope, { ...encodeOptions, budgetByTransport: true }),
     baseUrl,
   );
 }
@@ -190,9 +204,36 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
  * creators differ only in how `fragmentBody` is produced; everything downstream (budget check, URL,
  * share info, result shape) lives here once.
  */
+function toFragmentUrl(fragmentBody: string, baseUrl?: string): string {
+  if (!baseUrl) {
+    return `#${fragmentBody}`;
+  }
+
+  const nextUrl = new URL(baseUrl);
+  nextUrl.hash = fragmentBody;
+  return nextUrl.toString();
+}
+
+/**
+ * Picks the fragment used inside markdown links. Markdown destinations get URL-serialized,
+ * which percent-encodes packed (non-ASCII) fragments to triple size, so the unpacked
+ * candidate usually survives transport smaller even though it is longer raw. Falls back to
+ * the primary fragment when the unpacked one loses on transport length or blows the budget.
+ */
+function selectMarkdownFragment(fragmentBody: string, transportFragmentBody: string): string {
+  if (getVisibleFragmentLength(transportFragmentBody) > MAX_FRAGMENT_LENGTH) {
+    return fragmentBody;
+  }
+
+  return getFragmentTransportLength(transportFragmentBody) < getFragmentTransportLength(fragmentBody)
+    ? transportFragmentBody
+    : fragmentBody;
+}
+
 function assembleGeneratedLink(
   envelope: PayloadEnvelope,
   fragmentBody: string,
+  transportFragmentBody: string,
   baseUrl?: string,
 ): GeneratedArtifactLink {
   const hash = `#${fragmentBody}`;
@@ -204,15 +245,9 @@ function assembleGeneratedLink(
     );
   }
 
-  let url = hash;
-
-  if (baseUrl) {
-    const nextUrl = new URL(baseUrl);
-    nextUrl.hash = fragmentBody;
-    url = nextUrl.toString();
-  }
-
-  const shareInfo = buildGeneratedLinkShareInfo(envelope, url);
+  const url = toFragmentUrl(fragmentBody, baseUrl);
+  const markdownUrl = toFragmentUrl(selectMarkdownFragment(fragmentBody, transportFragmentBody), baseUrl);
+  const shareInfo = buildGeneratedLinkShareInfo(envelope, markdownUrl);
 
   return {
     envelope,
@@ -221,6 +256,7 @@ function assembleGeneratedLink(
     hash,
     url,
     fragmentLength,
+    markdownUrl,
     markdownLink: shareInfo.markdownLink,
     markdownLinkLength: shareInfo.length,
     discordMarkdownLinkWarning: shareInfo.discordWarning,

@@ -46,6 +46,7 @@ function createGeneratedLink(title: string): GeneratedArtifactLink {
     fragmentLength: 64,
     hash: `#agent-render=v1.plain.${title}`,
     url,
+    markdownUrl: url,
     markdownLink: shareInfo.markdownLink,
     markdownLinkLength: shareInfo.length,
     discordMarkdownLinkWarning: shareInfo.discordWarning,

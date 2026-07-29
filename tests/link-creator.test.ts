@@ -140,6 +140,47 @@ describe("link creator payloads", () => {
     expect(parsed.ok).toBe(true);
   });
 
+  it("builds markdown links from an ASCII wire fragment so URL serialization cannot balloon them", async () => {
+    loadArxDictionarySync(arxDictionaryJson);
+    loadArx2OverlayDictionarySync(arx2DictionaryJson);
+
+    const draft: LinkCreatorDraft = {
+      kind: "markdown",
+      title: "Launch note",
+      filename: "brief.md",
+      content: [
+        "# Launch note",
+        "",
+        "Share one artifact at a time without uploading it anywhere.",
+        "",
+        "- Markdown stays readable",
+        "- Code keeps its language hint",
+        "- The link works from a static export",
+      ].join("\n"),
+      language: "",
+      diffView: "unified",
+      codec: "arx3",
+    };
+
+    const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
+
+    // The paste URL keeps the packed non-ASCII fragment; the markdown URL must carry a
+    // percent-escape-free ASCII fragment whose payload decodes identically.
+    const markdownFragment = generatedLink.markdownUrl.slice(generatedLink.markdownUrl.indexOf("#") + 1);
+    // eslint-disable-next-line no-control-regex
+    expect(markdownFragment).toMatch(/^[\x21-\x7e]+$/);
+    expect(markdownFragment).not.toContain("%");
+    expect(generatedLink.markdownLinkLength).toBeLessThan(generatedLink.url.length);
+
+    const parsedMarkdown = await decodeFragmentAsync(`#${markdownFragment}`);
+    const parsedPacked = await decodeFragmentAsync(generatedLink.hash);
+    expect(parsedMarkdown.ok).toBe(true);
+    expect(parsedPacked.ok).toBe(true);
+    if (parsedMarkdown.ok && parsedPacked.ok) {
+      expect(parsedMarkdown.envelope).toEqual(parsedPacked.envelope);
+    }
+  });
+
   it("rejects empty pasted content", () => {
     expect(() =>
       createGeneratedArtifactLink({

@@ -236,17 +236,23 @@ export async function buildArx2Candidates(
  * CHANGING THIS REQUIRES A MAINTAINER DECISION: switching the arx3 baseBMP budget back to transport
  * length would make arx2 and arx3 measure the same payload identically and would change which wire
  * wins auto-selection. Do not flip the metric to "fix" the divergence without owning that trade-off.
+ *
+ * PER-SURFACE EXCEPTION: `budgetBmpByTransport` opts one encode call into transport budgeting for
+ * surfaces that URL-serialize the fragment (markdown links percent-encode baseBMP to ~9x). This is
+ * an additional surface-specific selection, not a reversal of the default policy above: the primary
+ * copy-paste URL keeps the visible-length budget.
  */
 export async function buildArx3Candidates(
   envelope: PayloadEnvelope,
   computeTransportLength: TransportLengthCalculator,
+  budgetBmpByTransport = false,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
 
   const payloadEnvelope = { ...envelope, codec: "arx3" as PayloadCodec };
   const payloads = await arx3CompressEnvelope(payloadEnvelope);
-  // The `true` budgets the dense baseBMP wire by visible URL length — see the POLICY note above.
-  return wirePayloadsToCandidates("arx3", false, payloads, computeTransportLength, true);
+  // Visible-length budgeting for the dense baseBMP wire — see the POLICY note above.
+  return wirePayloadsToCandidates("arx3", false, payloads, computeTransportLength, !budgetBmpByTransport);
 }
 
 /**
