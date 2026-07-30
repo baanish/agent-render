@@ -25,9 +25,9 @@ import {
  *
  * The asset carries only the kind-specific tail of each curated prior; the codec rebuilds the
  * 2203-char common prefix from the pinned dictionaries. These hashes are the 16384-char priors
- * docs/arx4-cm-bench.md measured, as the frozen scripts/arx4-cm-determinism.mjs builds them. A diff
+ * the ARX4 research benchmarks measured, as the maintainer-local frozen source builds them. A diff
  * here means the asset, the dictionaries or the split changed, and every arx4 link on an `m`, `c` or
- * `j` prior has stopped decoding. Regenerate with `node scripts/build-arx4-priors.mjs`, which fails
+ * `j` prior has stopped decoding. Regenerate with `node scripts/build-arx4-priors.mjs <frozen source>`, which fails
  * the same way when it cannot reproduce these from the frozen source.
  */
 const PINNED_PRIOR_SHA256 = {

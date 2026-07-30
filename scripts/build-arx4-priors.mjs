@@ -29,7 +29,18 @@ const brotli = require("brotli-wasm");
 
 const PRIORS_VERSION = 1;
 const PRIOR_BYTES = 16 * 1024;
-const FROZEN_SOURCE = new URL("./arx4-cm-determinism.mjs", import.meta.url);
+// The frozen benchmark script holding the curated corpus is maintainer-local research
+// material and is not tracked in this repo; pass its path to regenerate the asset.
+// Integrity does not depend on having it: tests/arx4-priors.test.ts pins the sha256 of
+// every prior reassembled from the shipped asset.
+const frozenSourcePath = process.argv[2];
+if (!frozenSourcePath) {
+  console.error(
+    "usage: node scripts/build-arx4-priors.mjs <path-to-frozen-arx4-cm-determinism.mjs>",
+  );
+  process.exit(1);
+}
+const FROZEN_SOURCE = new URL(frozenSourcePath, `file://${process.cwd()}/`);
 const SECTIONS_START = "const curatedMarkdownSections = [";
 const SECTIONS_END = "\nconst curatedSections =";
 
