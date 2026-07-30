@@ -335,12 +335,14 @@ export async function decodeArxFragmentPayload(
     await ensureArx2DictionariesLoaded();
   }
 
-  if (codec === "arx4") {
-    await ensureArx4PriorsLoaded();
-  }
-
   let lastError: Error | null = null;
   const { parsedDictVersion, versionedPayload } = splitArxFragmentRemainder(remainder);
+
+  // Only fragments naming a curated prior (m/c/j, the first payload char) need the priors
+  // asset; s and n fragments decode without it, so they must not trigger the fetch.
+  if (codec === "arx4" && ["m", "c", "j"].includes(versionedPayload.charAt(0))) {
+    await ensureArx4PriorsLoaded();
+  }
 
   // For a correctly versioned fragment this first attempt (decoding the full remainder, including
   // the "<dictVersion>." prefix) is expected to fail at the decompressor — it exists only for

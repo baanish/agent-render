@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import arx2DictionaryJson from "../public/arx2-dictionary.json";
 import arx4PriorsJson from "../public/arx4-priors.json";
 import arxDictionaryJson from "../public/arx-dictionary.json";
@@ -70,6 +70,26 @@ describe("arx4 priors asset", () => {
     it("refuses a curated fragment instead of decoding it against the shared prior", () => {
       expect(isArx4PriorsLoaded()).toBe(false);
       expect(() => arx4DecompressEnvelope(curatedVectorPayload)).toThrow(Arx4PriorsUnavailableError);
+    });
+
+    it("decodes s and n fragments without attempting the priors fetch", async () => {
+      expect(isArx4PriorsLoaded()).toBe(false);
+      const fetchSpy = vi.fn(() => {
+        throw new Error("priors fetch must not happen for s/n fragments");
+      });
+      vi.stubGlobal("fetch", fetchSpy);
+      try {
+        const { decodeArxFragmentPayload } = await import("@/lib/payload/fragment-arx");
+        for (const [priorId, content, payload] of arx4DeterminismVectors) {
+          if (priorId !== "s" && priorId !== "n") continue;
+          const decoded = await decodeArxFragmentPayload("arx4", payload);
+          const envelope = typeof decoded === "string" ? JSON.parse(decoded) : decoded;
+          expect(envelope.artifacts[0].content).toBe(content);
+        }
+        expect(fetchSpy).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
     });
   });
 
