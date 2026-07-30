@@ -6,7 +6,8 @@
  * stage; the tuple and substitution stages are the same functions arx2/arx3 call.
  *
  * Fragment shape: `<tag><priorId><wirePayload>`. The prior id names the priming corpus the coder ran
- * before the payload, because a decoder has to reproduce the encoder's model state exactly.
+ * before the payload, because a decoder has to reproduce the encoder's model state exactly. The
+ * curated part of those corpora ships as the lazily fetched `/arx4-priors.json` asset.
  *
  * The model is the frozen ARX4 experiment codec (`CM_SOURCE` in scripts/arx4-cm-determinism.mjs,
  * sha256 1f94ebb1fec5207df00e1ecdced7805c0c1d71dbc1c13c4c0baf11bc7b995f01, benchmarked in
@@ -32,6 +33,7 @@ import {
   type ArxWirePayloads,
 } from "@/lib/payload/arx-codec";
 import type { ArtifactKind, PayloadEnvelope } from "@/lib/payload/schema";
+import { withBasePath } from "@/lib/site/base-path";
 
 // ---------------------------------------------------------------------------
 // Model geometry (frozen: these numbers are part of the wire format)
@@ -716,21 +718,150 @@ export function arx4PriorIdForEnvelope(envelope: PayloadEnvelope): Arx4PriorId {
   return kind === undefined ? "s" : PRIOR_ID_BY_ARTIFACT_KIND[kind];
 }
 
+/** Curated corpora the priors asset carries, keyed the way the asset keys them. */
+const ARX4_PRIOR_KINDS = ["markdown", "code", "json"] as const;
+
+type Arx4PriorKind = (typeof ARX4_PRIOR_KINDS)[number];
+
+/**
+ * The `/arx4-priors.json` asset: the kind-specific tail of each curated prior. The 2203-char common
+ * prefix is left out because {@link getArxDictionaryPriorText} already rebuilds it from the pinned
+ * dictionaries, which the `e` tag pins anyway.
+ */
+export type Arx4Priors = {
+  version: number;
+  kinds: Record<Arx4PriorKind, string>;
+};
+
+/** Prior ids that need a curated corpus; `s` primes on the dictionaries alone and `n` on nothing. */
+const PRIOR_KIND_BY_ID: Record<Arx4PriorId, Arx4PriorKind | null> = {
+  m: "markdown",
+  c: "code",
+  j: "json",
+  s: null,
+  n: null,
+};
+
+/**
+ * Thrown when a fragment names a curated prior this build has not loaded. Decoding it against the
+ * shared prior instead would return plausible garbage, so the failure surfaces and the caller can
+ * retry once the asset endpoint recovers.
+ */
+export class Arx4PriorsUnavailableError extends Error {
+  constructor(priorId: Arx4PriorId) {
+    super(`The arx4 priors asset is unavailable, so the "${priorId}" prior cannot be rebuilt.`);
+    this.name = "Arx4PriorsUnavailableError";
+  }
+}
+
+// Mirrors the dictionary slots in arx-codec.ts, minus the built-in fallback: there is no compiled-in
+// curated corpus, so version 0 means "no asset loaded" and the encoder degrades to the `s` prior
+// rather than blocking on a fetch it cannot complete.
+const priorsSlot: { priors: Arx4Priors | null; version: number } = { priors: null, version: 0 };
+
+function isArx4Priors(value: unknown): value is Arx4Priors {
+  if (typeof value !== "object" || value === null) return false;
+  const asset = value as Record<string, unknown>;
+  if (typeof asset.version !== "number") return false;
+  if (typeof asset.kinds !== "object" || asset.kinds === null) return false;
+
+  const kinds = asset.kinds as Record<string, unknown>;
+  return ARX4_PRIOR_KINDS.every((kind) => typeof kinds[kind] === "string" && kinds[kind] !== "");
+}
+
+function getDefaultArx4PriorsUrls(): string[] {
+  const url = withBasePath("/arx4-priors.json");
+  return [`${url}.br`, url];
+}
+
+async function fetchArx4Priors(url: string): Promise<unknown> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    return (await response.json()) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+/** The one install point, so a half-shaped asset can never reach the coder. -1 means unusable. */
+function installArx4Priors(value: unknown): number {
+  if (!isArx4Priors(value)) return -1;
+
+  priorsSlot.priors = value;
+  priorsSlot.version = value.version;
+  return value.version;
+}
+
+/**
+ * Loads the curated priors from a URL or parsed object, trying the pre-compressed asset first on a
+ * default load. Returns the asset version on success, or -1 on failure (the slot keeps whatever it
+ * already had), so a transient failure can be retried rather than cached.
+ */
+export async function loadArx4Priors(source?: string | Arx4Priors): Promise<number> {
+  try {
+    if (source && typeof source === "object") return installArx4Priors(source);
+
+    const urls = typeof source === "string" ? [source] : getDefaultArx4PriorsUrls();
+    for (const url of urls) {
+      const version = installArx4Priors(await fetchArx4Priors(url));
+      if (version >= 0) return version;
+    }
+    return -1;
+  } catch {
+    return -1;
+  }
+}
+
+/**
+ * Loads the curated priors from a pre-parsed object (synchronous), for tests and offline agents that
+ * already hold the asset JSON. Returns the version, or -1 when the object is not a usable asset.
+ */
+export function loadArx4PriorsSync(priors: Arx4Priors): number {
+  return installArx4Priors(priors);
+}
+
+/** Returns true when the curated priors asset has been loaded. */
+export function isArx4PriorsLoaded(): boolean {
+  return priorsSlot.priors !== null;
+}
+
+/** Returns the active curated priors version (0 = no asset loaded). */
+export function getActiveArx4PriorsVersion(): number {
+  return priorsSlot.version;
+}
+
 /**
  * Priming bytes for a prior id, or null for "n" (cold model).
  *
- * The corpus is the pinned arx dictionary slot text in its RAW form, not the substituted form: the
- * slots are themselves the substitution patterns, so substituting the prior collapses it to control
- * bytes and measured ~5% worse than priming on the raw text.
+ * Every prior starts from the pinned arx dictionary slot text in its RAW form, not the substituted
+ * form: the slots are themselves the substitution patterns, so substituting the prior collapses it to
+ * control bytes and measured ~5% worse than priming on the raw text.
  *
- * The kind ids all resolve to that same text today. The dictionaries are the only prior corpus that
- * ships (no new assets), and every kind-flavored derivation from them measured within 0.2% of the
- * shared text, which is noise. The id is still on the wire per kind so a curated per-kind corpus can
- * land here later as a prior change rather than a wire change.
+ * `s` is that text alone. `m`, `c` and `j` append the matching curated corpus from the priors asset,
+ * which is what the 16 KiB per-kind priors in docs/arx4-cm-bench.md measured, and throw when the
+ * asset is missing rather than quietly coding against a different prior than the id names.
  */
 function priorBytesFor(priorId: Arx4PriorId): Uint8Array | null {
   if (priorId === "n") return null;
-  return new TextEncoder().encode(getArxDictionaryPriorText());
+
+  const commonText = getArxDictionaryPriorText();
+  const kind = PRIOR_KIND_BY_ID[priorId];
+  if (kind === null) return new TextEncoder().encode(commonText);
+
+  const kindText = priorsSlot.priors?.kinds[kind];
+  if (kindText === undefined) throw new Arx4PriorsUnavailableError(priorId);
+  return new TextEncoder().encode(`${commonText}\n${kindText}`);
+}
+
+/**
+ * The prior id an encode can actually honor. A curated id degrades to `s` when the asset is missing,
+ * so a failed asset fetch costs compression instead of blocking link creation; the emitted id always
+ * names the prior the payload was really coded against.
+ */
+function encodablePriorId(priorId: Arx4PriorId): Arx4PriorId {
+  if (PRIOR_KIND_BY_ID[priorId] === null) return priorId;
+  return isArx4PriorsLoaded() ? priorId : "s";
 }
 
 // ---------------------------------------------------------------------------
@@ -742,10 +873,11 @@ function priorBytesFor(priorId: Arx4PriorId): Uint8Array | null {
  * the prior id char, so a candidate is `<tag>` + the string returned here.
  *
  * `priorId` defaults to {@link arx4PriorIdForEnvelope}; pass it explicitly only to exercise a prior
- * the kind map does not select.
+ * the kind map does not select. A curated id downgrades to `s` when the priors asset is not loaded,
+ * so the returned payloads always carry the id they were really coded against.
  */
 export function arx4CompressEnvelope(envelope: PayloadEnvelope, priorId?: Arx4PriorId): ArxWirePayloads {
-  const selectedPriorId = priorId ?? arx4PriorIdForEnvelope(envelope);
+  const selectedPriorId = encodablePriorId(priorId ?? arx4PriorIdForEnvelope(envelope));
   const substituted = substituteArxTupleText(envelope);
   const coded = encodeCm(new TextEncoder().encode(substituted), priorBytesFor(selectedPriorId));
   const payloads = encodeArxWirePayloads(coded);

@@ -35,5 +35,12 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      // Second engine for the arx4 wire-format gate: the codec has to code bit-identically here.
+      // Visual baselines are chromium-only, so the screenshot spec stays on its single engine.
+      name: "webkit",
+      testIgnore: ["**/visual.spec.ts"],
+      use: { ...devices["Desktop Safari"] },
+    },
   ],
 });

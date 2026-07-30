@@ -14,7 +14,13 @@ import {
   loadArx2OverlayDictionary,
   type ArxWirePayloads,
 } from "@/lib/payload/arx-codec";
-import { arx4CompressEnvelope, arx4DecompressEnvelope } from "@/lib/payload/arx4-codec";
+import {
+  arx4CompressEnvelope,
+  arx4DecompressEnvelope,
+  getActiveArx4PriorsVersion,
+  isArx4PriorsLoaded,
+  loadArx4Priors,
+} from "@/lib/payload/arx4-codec";
 import { packEnvelope } from "@/lib/payload/wire-format";
 import {
   compactTagForCodec,
@@ -64,6 +70,7 @@ function wirePayloadsToCandidates(
 
 let arxDictionaryLoadPromise: Promise<void> | null = null;
 let arx2OverlayDictionaryLoadPromise: Promise<void> | null = null;
+let arx4PriorsLoadPromise: Promise<void> | null = null;
 
 // Compact ARX fragments (tags `a`/`b`/`c`/`e`) do NOT carry a dictionary version — the tag implies
 // the CURRENT dictionary, which keeps links short. The safety cost is that a build must not decode
@@ -77,6 +84,10 @@ let arx2OverlayDictionaryLoadPromise: Promise<void> | null = null;
 // prior is derived from the dictionary slot text as well as its substitution stage.
 const EXPECTED_ARX_DICTIONARY_VERSION = 1;
 const EXPECTED_ARX2_OVERLAY_VERSION = 1;
+// The arx4 priors asset is pinned the same way and for the same reason: the `e` tag does not carry a
+// priors version either, so a newer asset would prime the mixer with a corpus this build's fragments
+// were never coded against.
+const EXPECTED_ARX4_PRIORS_VERSION = 1;
 
 function assertArxDictionaryNotNewerThanExpected(): void {
   const version = getActiveDictVersion();
@@ -139,6 +150,38 @@ async function ensureArx2DictionariesLoaded(): Promise<void> {
   }
 
   assertArx2OverlayNotNewerThanExpected();
+}
+
+function assertArx4PriorsNotNewerThanExpected(): void {
+  const version = getActiveArx4PriorsVersion();
+  if (version > EXPECTED_ARX4_PRIORS_VERSION) {
+    throw new Error(
+      `Active arx4 priors version ${version} is newer than this build supports (${EXPECTED_ARX4_PRIORS_VERSION}); refusing to code with a forward-incompatible prior.`,
+    );
+  }
+}
+
+/**
+ * Same retry-on-failure contract as the dictionaries. Unlike them, a failure is not fatal here:
+ * encode falls back to the `s` prior and only a fragment that names a curated prior fails, which is
+ * why this resolves instead of throwing when the asset cannot be fetched.
+ */
+async function ensureArx4PriorsLoaded(): Promise<void> {
+  if (!isArx4PriorsLoaded()) {
+    arx4PriorsLoadPromise ??= loadArx4Priors()
+      .then((version) => {
+        if (version < 0) {
+          arx4PriorsLoadPromise = null;
+        }
+      })
+      .catch((error) => {
+        arx4PriorsLoadPromise = null;
+        throw error;
+      });
+    await arx4PriorsLoadPromise;
+  }
+
+  assertArx4PriorsNotNewerThanExpected();
 }
 
 function decodeArxEncodedPayload(encoded: string): string {
@@ -272,6 +315,7 @@ export async function buildArx4Candidates(
   budgetBmpByTransport = false,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
+  await ensureArx4PriorsLoaded();
 
   const payloadEnvelope = { ...envelope, codec: "arx4" as PayloadCodec };
   const payloads = arx4CompressEnvelope(payloadEnvelope);
@@ -289,6 +333,10 @@ export async function decodeArxFragmentPayload(
     await ensureArxDictionaryLoaded();
   } else {
     await ensureArx2DictionariesLoaded();
+  }
+
+  if (codec === "arx4") {
+    await ensureArx4PriorsLoaded();
   }
 
   let lastError: Error | null = null;

@@ -578,6 +578,11 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
     if (error instanceof Error && error.name === "ArxDecodedPayloadTooLargeError") {
       return { ok: false, code: "decoded-too-large", message: error.message };
     }
+    // A missing arx4 priors asset is a transport failure, not a malformed fragment: say so, because
+    // the same link decodes once the asset loads and the dictionary hint below would misdirect.
+    if (error instanceof Error && error.name === "Arx4PriorsUnavailableError") {
+      return { ok: false, code: "invalid-json", message: `${error.message} Reload to try again.` };
+    }
     const arxHint = isArxCodec(codec)
       ? " It may have been encoded with a different ARX dictionary version."
       : "";

@@ -30,7 +30,7 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 
 - Markdown, code, diff, CSV, and JSON all render in the static shell
 - Fragment transport supports `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, and `arx4`, with automatic shortest-fragment selection across available wire formats
-- The `arx` substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json` with a pre-compressed `/arx2-dictionary.json.br` variant; `arx3` reuses those proven bytes and optimizes for compact visible Unicode fragments
+- The `arx` substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json` with a pre-compressed `/arx2-dictionary.json.br` variant; `arx3` reuses those proven bytes and optimizes for compact visible Unicode fragments; `arx4` adds the curated context-mixer priors at `/arx4-priors.json` with a pre-compressed `/arx4-priors.json.br` variant
 - The viewer toolbar copies artifact bodies to the clipboard, downloads them as files, and (for markdown) supports browser print-to-PDF
 - Deployment target: static hosting, including Cloudflare Pages
 

@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import arx2DictionaryJson from "../public/arx2-dictionary.json";
+import arx4PriorsJson from "../public/arx4-priors.json";
 import arxDictionaryJson from "../public/arx-dictionary.json";
+import { arx4DeterminismVectors, arx4VectorEnvelope } from "./fixtures/arx4-vectors";
 import {
   isBase1kEncoded,
   isBase64urlEncoded,
@@ -13,6 +15,7 @@ import {
   arx4CompressEnvelope,
   arx4DecompressEnvelope,
   arx4PriorIdForEnvelope,
+  loadArx4PriorsSync,
   type Arx4PriorId,
 } from "@/lib/payload/arx4-codec";
 import { decodeFragment, decodeFragmentAsync, encodeEnvelopeAsync } from "@/lib/payload/fragment";
@@ -105,6 +108,9 @@ describe("arx4 codec", () => {
   beforeAll(() => {
     loadArxDictionarySync(arxDictionaryJson);
     loadArx2OverlayDictionarySync(arx2DictionaryJson);
+    // Without the curated priors the encoder degrades every kind id to `s` (see
+    // tests/arx4-priors.test.ts), so the kind-prior expectations below need the asset loaded.
+    loadArx4PriorsSync(arx4PriorsJson);
   });
 
   describe("round trip", () => {
@@ -163,17 +169,19 @@ describe("arx4 codec", () => {
       }
     });
 
-    // Characterization of a deliberate limit: the kind ids are on the wire, but they all resolve to
-    // the dictionary-derived corpus today, so only the id char differs. Landing a curated per-kind
-    // corpus should flip this test, not the wire format.
-    it("codes every kind id against the same prior corpus today", () => {
+    // The kind ids each name their own curated corpus, so the id char is load-bearing: no two ids
+    // produce the same coded bytes, and none of them matches the shared prior.
+    it("codes every kind id against its own prior corpus", () => {
       const shared = arx4CompressEnvelope(envelope, "s").base64url;
+      const coded = new Set([shared.slice(1)]);
 
       for (const priorId of ["m", "c", "j"] as Arx4PriorId[]) {
         const payload = arx4CompressEnvelope(envelope, priorId).base64url;
         expect(payload.charAt(0)).toBe(priorId);
-        expect(payload.slice(1)).toBe(shared.slice(1));
+        coded.add(payload.slice(1));
       }
+
+      expect(coded.size).toBe(4);
     });
 
     it("rejects an unknown prior id instead of guessing a prior", async () => {
@@ -219,22 +227,8 @@ describe("arx4 codec", () => {
    * base64url is the asserted wire because it is ASCII and diffs readably.
    */
   describe("determinism vectors", () => {
-    const vectors: [Arx4PriorId, string, string][] = [
-      ["m", "# Vector\n\nOne markdown line.\n", "mB.O9TxZjMc80GBVogi6uMlu8vlUsVmqSYmgjyO16JGpIEN53aopWCuc8OKoLE"],
-      ["c", "export const vector = 1;\n", "cB.M9TxZjMc80GBVow9zCVM3ShDxvOygK9zmYHZxbrwosfuOyJDcQ"],
-      ["j", "{\"vector\":true}\n", "jB.NdTxZjMc80GBVm_4ZJmD74ois5w9DNBQS-tIeaeVcMXaKTvnmA44mw"],
-      ["s", "Shared prior vector.\n", "sB.OtTxZjMc80GBVn5NhNnpa9vx1QyfTbf5ubtWtHbfbnGtGrvqMOj6UQ"],
-      ["n", "Cold model vector.\n", "nB.OOCzvJS_jHbUL4OKSHLkRONp-rl4LRIO11CBl-AaUnR4ajSBpLwkF-smuGWu"],
-    ];
-
-    it.each(vectors)("pins the %s prior payload", (priorId, content, expected) => {
-      const envelope: PayloadEnvelope = {
-        v: 1,
-        codec: "arx4",
-        title: "Vector",
-        activeArtifactId: "vector",
-        artifacts: [{ id: "vector", kind: "markdown", filename: "vector.md", content }],
-      };
+    it.each(arx4DeterminismVectors)("pins the %s prior payload", (priorId, content, expected) => {
+      const envelope = arx4VectorEnvelope(content);
 
       expect(arx4PriorIdForEnvelope(envelope)).toBe("m");
       expect(arx4CompressEnvelope(envelope, priorId).base64url).toBe(expected);
