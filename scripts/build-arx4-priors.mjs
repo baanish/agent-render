@@ -25,6 +25,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { resolve } from "node:path";
 
 const require = createRequire(import.meta.url);
 const brotli = require("brotli-wasm");
@@ -42,7 +43,7 @@ if (!frozenSourcePath) {
   );
   process.exit(1);
 }
-const FROZEN_SOURCE = new URL(frozenSourcePath, `file://${process.cwd()}/`);
+const FROZEN_SOURCE = resolve(frozenSourcePath);
 const SECTIONS_START = "const curatedMarkdownSections = [";
 const SECTIONS_END = "\nconst curatedSections =";
 
@@ -61,7 +62,7 @@ function extractCuratedSections() {
   const start = source.indexOf(SECTIONS_START);
   const end = source.indexOf(SECTIONS_END, start);
   if (start < 0 || end < 0) {
-    fail(`could not locate the curated sections in ${FROZEN_SOURCE.pathname}`);
+    fail(`could not locate the curated sections in ${FROZEN_SOURCE}`);
   }
 
   const slab = source.slice(start, end);
