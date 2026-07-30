@@ -140,6 +140,28 @@ describe("link creator payloads", () => {
     expect(parsed.ok).toBe(true);
   });
 
+  it("copies the raw unicode fragment in the paste URL instead of a percent-encoded serialization", async () => {
+    loadArxDictionarySync(arxDictionaryJson);
+    loadArx2OverlayDictionarySync(arx2DictionaryJson);
+
+    const draft: LinkCreatorDraft = {
+      kind: "markdown",
+      title: "Launch note",
+      filename: "brief.md",
+      content: "# Launch note\n\nA short brief with enough text for a packed wire to win.\n",
+      language: "",
+      diffView: "unified",
+      codec: "arx3",
+    };
+
+    const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
+    const fragment = generatedLink.url.slice(generatedLink.url.indexOf("#") + 1);
+
+    expect(generatedLink.url).not.toMatch(/%[0-9A-F]{2}/);
+    expect(fragment).toBe(generatedLink.hash.slice(1));
+    expect(fragment.length).toBe(generatedLink.fragmentLength);
+  });
+
   it("builds markdown links from an ASCII wire fragment so URL serialization cannot balloon them", async () => {
     loadArxDictionarySync(arxDictionaryJson);
     loadArx2OverlayDictionarySync(arx2DictionaryJson);
@@ -170,7 +192,9 @@ describe("link creator payloads", () => {
     // eslint-disable-next-line no-control-regex
     expect(markdownFragment).toMatch(/^[\x21-\x7e]+$/);
     expect(markdownFragment).not.toContain("%");
-    expect(generatedLink.markdownLinkLength).toBeLessThan(generatedLink.url.length);
+    // The markdown link must beat the percent-encoded serialization of the packed URL,
+    // which is what a URL serializer would have produced for that surface.
+    expect(generatedLink.markdownLinkLength).toBeLessThan(new URL(generatedLink.url).toString().length);
 
     const parsedMarkdown = await decodeFragmentAsync(`#${markdownFragment}`);
     const parsedPacked = await decodeFragmentAsync(generatedLink.hash);

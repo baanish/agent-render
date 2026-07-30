@@ -211,9 +211,12 @@ function toFragmentUrl(fragmentBody: string, baseUrl?: string): string {
     return `#${fragmentBody}`;
   }
 
+  // Concatenate instead of assigning nextUrl.hash: the URL serializer percent-encodes
+  // non-ASCII fragments, which would hand Copy link a 3x longer string than the visible
+  // form the fragment budget counts (and that Discord receives on paste).
   const nextUrl = new URL(baseUrl);
-  nextUrl.hash = fragmentBody;
-  return nextUrl.toString();
+  nextUrl.hash = "";
+  return `${nextUrl.toString()}#${fragmentBody}`;
 }
 
 /**
