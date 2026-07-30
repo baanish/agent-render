@@ -24,11 +24,14 @@ type EncodeOptions = {
   targetMaxFragmentLength?: number;
   codecPriority?: PayloadCodec[];
   /**
-   * Budget every candidate (including arx3 baseBMP) by percent-escaped transport length.
+   * Budget every candidate (including arx3/arx4 baseBMP) by percent-escaped transport length.
    * For surfaces that URL-serialize the fragment, e.g. markdown link destinations.
    */
   budgetByTransport?: boolean;
 };
+
+/** Which of a candidate's two measurements {@link selectCandidate} compares. */
+type BudgetPolicy = "default" | "urlSerialized";
 
 const BINARY_STRING_CHUNK_SIZE = 0x8000;
 const DEFAULT_SYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["deflate", "lz", "plain"];
@@ -185,8 +188,9 @@ function buildFragment(envelope: PayloadEnvelope, codec: PayloadCodec, packed: b
   const payloadEnvelope = { ...envelope, codec };
   const json = JSON.stringify(packed ? packEnvelope(payloadEnvelope) : payloadEnvelope);
   const value = `${compactTagForCodec(codec)}${encodePayload(json, codec)}`;
-  // Non-ARX codecs produce ASCII-only output, so transport length equals string length.
-  return { value, codec, packed, transportLength: value.length };
+  // Non-ARX codecs produce ASCII-only output, so transport length equals string length and neither
+  // surface's budget can separate them.
+  return { value, codec, packed, transportLength: value.length, urlSerializedLength: value.length };
 }
 
 function dedupeCodecs(requested: readonly PayloadCodec[]): PayloadCodec[] {
@@ -258,20 +262,14 @@ async function buildArx2Candidates(envelope: PayloadEnvelope): Promise<Candidate
   return buildDeferredArx2Candidates(envelope, computeTransportLength);
 }
 
-async function buildArx3Candidates(
-  envelope: PayloadEnvelope,
-  budgetByTransport: boolean,
-): Promise<CandidateFragment[]> {
+async function buildArx3Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
   const { buildArx3Candidates: buildDeferredArx3Candidates } = await import("@/lib/payload/fragment-arx");
-  return buildDeferredArx3Candidates(envelope, computeTransportLength, budgetByTransport);
+  return buildDeferredArx3Candidates(envelope, computeTransportLength);
 }
 
-async function buildArx4Candidates(
-  envelope: PayloadEnvelope,
-  budgetByTransport: boolean,
-): Promise<CandidateFragment[]> {
+async function buildArx4Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
   const { buildArx4Candidates: buildDeferredArx4Candidates } = await import("@/lib/payload/fragment-arx");
-  return buildDeferredArx4Candidates(envelope, computeTransportLength, budgetByTransport);
+  return buildDeferredArx4Candidates(envelope, computeTransportLength);
 }
 
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {
@@ -281,12 +279,12 @@ async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOp
 
   for (const codec of codecsToTry) {
     if (codec === "arx4") {
-      candidates.push(...await buildArx4Candidates(envelope, options.budgetByTransport === true));
+      candidates.push(...await buildArx4Candidates(envelope));
       continue;
     }
 
     if (codec === "arx3") {
-      candidates.push(...await buildArx3Candidates(envelope, options.budgetByTransport === true));
+      candidates.push(...await buildArx3Candidates(envelope));
       continue;
     }
 
@@ -307,7 +305,15 @@ async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOp
   return candidates;
 }
 
-function selectCandidate(candidates: CandidateFragment[], budget?: number): CandidateFragment {
+function budgetLengthFor(candidate: CandidateFragment, policy: BudgetPolicy): number {
+  return policy === "urlSerialized" ? candidate.urlSerializedLength : candidate.transportLength;
+}
+
+function selectCandidate(
+  candidates: CandidateFragment[],
+  budget?: number,
+  policy: BudgetPolicy = "default",
+): CandidateFragment {
   if (candidates.length === 0) {
     throw new Error("No payload codec candidates are available.");
   }
@@ -316,14 +322,16 @@ function selectCandidate(candidates: CandidateFragment[], budget?: number): Cand
   let shortestInBudget: CandidateFragment | null = null;
 
   for (const candidate of candidates) {
-    if (candidate.transportLength < shortest.transportLength) {
+    const length = budgetLengthFor(candidate, policy);
+
+    if (length < budgetLengthFor(shortest, policy)) {
       shortest = candidate;
     }
 
     if (
       typeof budget === "number" &&
-      candidate.transportLength <= budget &&
-      (!shortestInBudget || candidate.transportLength < shortestInBudget.transportLength)
+      length <= budget &&
+      (!shortestInBudget || length < budgetLengthFor(shortestInBudget, policy))
     ) {
       shortestInBudget = candidate;
     }
@@ -365,8 +373,35 @@ export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions
  */
 export async function encodeEnvelopeAsync(envelope: PayloadEnvelope, options: EncodeOptions = {}): Promise<string> {
   const candidates = await buildCandidatesAsync(envelope, options);
-  const selected = selectCandidate(candidates, options.targetMaxFragmentLength);
-  return selected.value;
+  const policy: BudgetPolicy = options.budgetByTransport === true ? "urlSerialized" : "default";
+  return selectCandidate(candidates, options.targetMaxFragmentLength, policy).value;
+}
+
+/** The two fragments a shareable link needs, both selected from one candidate pool. */
+export type EncodedEnvelopeSurfaces = {
+  /** Default-policy winner, for the copy-paste URL. */
+  fragmentBody: string;
+  /** URL-serialized-budget winner, for destinations a URL serializer percent-encodes. */
+  transportFragmentBody: string;
+};
+
+/**
+ * Encodes an envelope once and returns both surface winners.
+ *
+ * A link needs two selections over the same candidates: the copy-paste URL keeps the arx3/arx4
+ * visible-length budget, while a markdown destination is measured percent-escaped. Running
+ * {@link encodeEnvelopeAsync} twice would recompress the payload, which for arx4 means running the
+ * context mixer a second time (~770 ms per 60 KB artifact) for two selections over identical bytes.
+ */
+export async function encodeEnvelopeSurfacesAsync(
+  envelope: PayloadEnvelope,
+  options: Omit<EncodeOptions, "budgetByTransport"> = {},
+): Promise<EncodedEnvelopeSurfaces> {
+  const candidates = await buildCandidatesAsync(envelope, options);
+  return {
+    fragmentBody: selectCandidate(candidates, options.targetMaxFragmentLength, "default").value,
+    transportFragmentBody: selectCandidate(candidates, options.targetMaxFragmentLength, "urlSerialized").value,
+  };
 }
 
 type ParsedFragmentHeader =

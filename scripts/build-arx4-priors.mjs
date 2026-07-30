@@ -9,9 +9,11 @@
  * common prefix, which the codec already rebuilds at runtime, so the asset ships only the 14181-byte
  * kind-specific remainder.
  *
- * The curated text is extracted from the frozen source rather than copied, and every reassembled
- * prior is sha256-compared against that source's own construction: a drift in either the frozen
- * script or the shipped dictionaries fails here instead of silently changing the arx4 wire.
+ * The curated text is extracted from the frozen source rather than copied. This script checks what it
+ * can see locally (the prefix the codec rebuilds still heads the prior, and the prior re-encodes to
+ * exactly PRIOR_BYTES) and prints each prior's sha256; tests/arx4-priors.test.ts pins those digests,
+ * so a drift in the frozen script or the shipped dictionaries fails the suite instead of silently
+ * changing the arx4 wire.
  *
  * Outputs:
  *   public/arx4-priors.json    : minified asset the viewer fetches
@@ -106,19 +108,19 @@ const kinds = {};
 
 for (const [kind, texts] of Object.entries(curatedSections)) {
   const frozenPrior = buildExactPrior(commonPrefix, texts.join("\n\n"), kind);
-  if (!frozenPrior.startsWith(commonPrefix)) {
-    fail(`${kind} prior does not start with the dictionary-derived prefix`);
+  // The prior is cut to PRIOR_BYTES, so dictionaries that outgrow that budget would ship a prior
+  // whose head no longer matches the prefix the codec rebuilds from them at runtime.
+  if (frozenPrior.slice(0, commonPrefix.length) !== commonPrefix) {
+    fail(
+      `${kind} prior head does not match the ${commonPrefix.length}-char dictionary-derived prefix; the shipped dictionaries no longer fit the ${PRIOR_BYTES}-byte prior`,
+    );
   }
 
   const kindSpecific = frozenPrior.slice(commonPrefix.length);
-  const reassembled = `${commonPrefix}${kindSpecific}`;
-  if (sha256(reassembled) !== sha256(frozenPrior)) {
-    fail(`${kind} prior does not survive the common/kind split`);
-  }
   // A cut through a multibyte character would leave a replacement char that no longer re-encodes to
   // the priming bytes the bench measured, so the byte count is checked, not just the char count.
-  if (Buffer.byteLength(reassembled, "utf8") !== PRIOR_BYTES) {
-    fail(`${kind} prior re-encodes to ${Buffer.byteLength(reassembled, "utf8")} bytes, expected ${PRIOR_BYTES}`);
+  if (Buffer.byteLength(frozenPrior, "utf8") !== PRIOR_BYTES) {
+    fail(`${kind} prior re-encodes to ${Buffer.byteLength(frozenPrior, "utf8")} bytes, expected ${PRIOR_BYTES}`);
   }
 
   kinds[kind] = kindSpecific;

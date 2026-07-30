@@ -32,10 +32,11 @@ character identifying the codec:
 #a<payload>   (arx)
 #b<payload>   (arx2)
 #c<payload>   (arx3)
+#e<payload>   (arx4)
 ```
 
-The single tag char identifies the codec; for `arx`/`arx2`/`arx3` it implies the
-current dictionary but does not carry a dictionary version. The payload follows
+The single tag char identifies the codec; for `arx`/`arx2`/`arx3`/`arx4` it implies
+the current dictionary but does not carry a dictionary version. The payload follows
 immediately after it. The legacy `#agent-render=v1.<codec>.<payload>` form
 (arx-family carry an extra `<dictVersion>.` segment) still decodes, but the
 viewer no longer emits it — always build the compact form.
@@ -47,11 +48,12 @@ Supported codecs:
 - `arx`: domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding (~70% smaller than deflate with baseBMP). Fetch the shared dictionary from `https://agent-render.com/arx-dictionary.json` to apply substitutions locally before brotli compression. Four wire shapes: baseBMP (~62k safe BMP code points, ~15.92 bits/char, best raw density), base1k (1774 Unicode code points U+00A1–U+07FF), base64url (ASCII `A-Za-z0-9-_`, `B.` prefix — good when Unicode would be percent-encoded), and base76 (77-char ASCII). The product encoder tries all four and picks the shortest **transport** length.
 - `arx2`: tuple-envelope transport + `https://agent-render.com/arx2-dictionary.json` overlay (or pre-compressed `https://agent-render.com/arx2-dictionary.json.br`) + the shared arx dictionary + brotli (quality 11) + the same four wire shapes. Existing arx links remain valid; prefer arx2 when it is the shortest transport.
 - `arx3`: same tuple envelope, arx2 overlay, shared arx dictionary, and brotli bytes as arx2, but the dense baseBMP wire may win by decoded visible character length. Use it for trusted surfaces that preserve Unicode fragments and strict visible URL budgets. Prefer arx2/base64url or UUID mode when the target platform rewrites, truncates, or previews long links aggressively.
+- `arx4`: the same tuple envelope, arx2 overlay, shared arx dictionary and baseBMP selection rule as arx3, with brotli replaced by a deterministic integer context mixer and one extra leading payload char, the prior id (`m`, `c`, `j`, `s`, or `n`). Recognize and open `#e` links; do not hand-roll them. Reproducing the wire needs the exact frozen mixer plus `https://agent-render.com/arx4-priors.json`, so an agent encoding on its own should stop at `arx3` and let the app or library emit arx4.
 - packed wire mode (`p: 1`) may be used automatically to shorten transport keys
 
 Prefer:
 1. shortest valid fragment for the target surface
-2. codec priority `arx3 -> arx2 -> arx -> deflate -> lz -> plain` unless explicitly overridden
+2. codec priority `arx3 -> arx2 -> arx -> deflate -> lz -> plain` for links you encode yourself; the app itself tries `arx4` first
 3. packed wire mode when available
 
 ## Envelope shape
@@ -198,6 +200,7 @@ https://agent-render.com/#d<payload>   (deflate)
 https://agent-render.com/#a<payload>   (arx)
 https://agent-render.com/#b<payload>   (arx2)
 https://agent-render.com/#c<payload>   (arx3)
+https://agent-render.com/#e<payload>   (arx4)
 ```
 
 For `plain`:
@@ -241,7 +244,7 @@ To use the dictionary for local `arx` encoding:
     - Base76 uses 77 ASCII fragment-safe characters. ~6.27 bits/char
 5. Prepend the tag `a` to form the fragment (the compact tag does not carry a dictionary version — it implies the current dictionary, so always substitute using the build's current dictionary)
 
-The dictionary includes JSON envelope boilerplate patterns, JSON-escaped Markdown syntax, and programming-language patterns that are already present in the shipped corpus. The viewer tries the pre-compressed dictionary first on default ARX/ARX2/ARX3 encode or decode paths, falls back to the JSON file, and falls back again to its built-in table if external fetches fail.
+The dictionary includes JSON envelope boilerplate patterns, JSON-escaped Markdown syntax, and programming-language patterns that are already present in the shipped corpus. The viewer tries the pre-compressed dictionary first on default ARX/ARX2/ARX3/ARX4 encode or decode paths, falls back to the JSON file, and falls back again to its built-in table if external fetches fail.
 
 If the dictionary fetch fails, fall back to `deflate` codec.
 
@@ -263,6 +266,8 @@ Then apply substitutions in this order:
 5. Prepend the tag `b` (the compact tag does not carry a dictionary version — it implies the current shared arx dictionary and arx2 overlay)
 
 For `arx3`, use the same tuple, substitution, and brotli bytes as arx2, then try the same four wire shapes, but measure the baseBMP wire by decoded visible character length (rather than conservative transport length) and pick the shortest candidate — so the dense baseBMP wire can win on Unicode-preserving surfaces. Prepend the tag `c` (the compact tag does not carry a dictionary version — it implies the current shared arx dictionary and arx2 overlay). Do not invent a new dictionary entry unless it is backed by corpus evidence and improves the benchmark gate.
+
+For `arx4`, there is no hand-rollable recipe: the payload is arithmetic-coded against a context-mixing model primed on a corpus that must match the encoder bit for bit, so encode arx4 only through the app or `encodeEnvelopeAsync`. Read the tag `e` and the prior id that follows it when parsing a link someone else produced.
 
 ## Practical limits
 

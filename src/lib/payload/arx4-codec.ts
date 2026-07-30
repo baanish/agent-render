@@ -762,7 +762,10 @@ const priorsSlot: { priors: Arx4Priors | null; version: number } = { priors: nul
 function isArx4Priors(value: unknown): value is Arx4Priors {
   if (typeof value !== "object" || value === null) return false;
   const asset = value as Record<string, unknown>;
-  if (typeof asset.version !== "number") return false;
+  // A non-integer or negative version would install while every caller read it as the -1 failure
+  // sentinel, leaving the priors live but reported unloaded, so the shape check owns it here.
+  const version = asset.version;
+  if (typeof version !== "number" || !Number.isInteger(version) || version < 0) return false;
   if (typeof asset.kinds !== "object" || asset.kinds === null) return false;
 
   const kinds = asset.kinds as Record<string, unknown>;
@@ -774,9 +777,16 @@ function getDefaultArx4PriorsUrls(): string[] {
   return [`${url}.br`, url];
 }
 
+/**
+ * This fetch sits on the link-creation path, and a connection that never responds would leave the
+ * awaited promise pending forever instead of degrading to the `s` prior. The dictionary fetches can
+ * afford no bound because they have a built-in fallback table; the priors slot has none.
+ */
+const PRIORS_FETCH_TIMEOUT_MS = 10_000;
+
 async function fetchArx4Priors(url: string): Promise<unknown> {
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(PRIORS_FETCH_TIMEOUT_MS) });
     if (!response.ok) return null;
     return (await response.json()) as unknown;
   } catch {

@@ -29,11 +29,18 @@ import {
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
 
+/**
+ * One wire encoding, measured under both selection budgets so a single pool can serve both surfaces
+ * without re-running the codec (arx4's context mixer costs ~770 ms for a 60 KB artifact).
+ */
 export type CandidateFragment = {
   value: string;
   codec: PayloadCodec;
   packed: boolean;
+  /** Default budget: percent-escaped transport length, except the arx3/arx4 baseBMP wire. */
   transportLength: number;
+  /** Budget for surfaces that URL-serialize the fragment: every wire percent-escaped. */
+  urlSerializedLength: number;
 };
 
 type TransportLengthCalculator = (value: string) => number;
@@ -45,8 +52,10 @@ const WIRE_ORDER = ["base76", "base1k", "baseBMP", "base64url"] as const satisfi
  * Turn an arx codec's four wire payloads into tagged candidates. Shared by all three arx builders,
  * which previously each re-spelled the tag prefix + transport-length + four-candidate list.
  *
- * `bmpUsesVisibleLength` budgets the dense baseBMP wire by visible URL length instead of percent-
- * escaped transport length — see the POLICY note on buildArx3Candidates for why arx3 does this.
+ * `bmpUsesVisibleLength` gives the dense baseBMP wire its DEFAULT budget in visible URL characters
+ * instead of percent-escaped transport length — see the POLICY note on buildArx3Candidates for why
+ * arx3 and arx4 do this. `urlSerializedLength` is unaffected, so the caller can still budget that
+ * same candidate by transport length for a URL-serializing surface.
  */
 function wirePayloadsToCandidates(
   codec: ArxCodec,
@@ -58,12 +67,14 @@ function wirePayloadsToCandidates(
   const tag = compactTagForCodec(codec);
   return WIRE_ORDER.map((wire) => {
     const value = `${tag}${payloads[wire]}`;
+    const urlSerializedLength = computeTransportLength(value);
     return {
       value,
       codec,
       packed,
       transportLength:
-        bmpUsesVisibleLength && wire === "baseBMP" ? value.length : computeTransportLength(value),
+        bmpUsesVisibleLength && wire === "baseBMP" ? value.length : urlSerializedLength,
+      urlSerializedLength,
     };
   });
 }
@@ -166,22 +177,37 @@ function assertArx4PriorsNotNewerThanExpected(): void {
  * encode falls back to the `s` prior and only a fragment that names a curated prior fails, which is
  * why this resolves instead of throwing when the asset cannot be fetched.
  */
-async function ensureArx4PriorsLoaded(): Promise<void> {
-  if (!isArx4PriorsLoaded()) {
-    arx4PriorsLoadPromise ??= loadArx4Priors()
-      .then((version) => {
-        if (version < 0) {
-          arx4PriorsLoadPromise = null;
-        }
-      })
-      .catch((error) => {
-        arx4PriorsLoadPromise = null;
-        throw error;
-      });
-    await arx4PriorsLoadPromise;
-  }
+async function loadArx4PriorsOnce(): Promise<void> {
+  if (isArx4PriorsLoaded()) return;
 
+  arx4PriorsLoadPromise ??= loadArx4Priors()
+    .then((version) => {
+      if (version < 0) {
+        arx4PriorsLoadPromise = null;
+      }
+    })
+    .catch((error) => {
+      arx4PriorsLoadPromise = null;
+      throw error;
+    });
+  await arx4PriorsLoadPromise;
+}
+
+/** Decode side: a fragment naming a curated prior must not be coded against a corpus it never saw. */
+async function ensureArx4PriorsLoadedForDecode(): Promise<void> {
+  await loadArx4PriorsOnce();
   assertArx4PriorsNotNewerThanExpected();
+}
+
+/**
+ * Encode side: a forward-version asset is a degrade, not a failure. Returns whether the curated
+ * priors are usable, because throwing here would reject the whole shared candidate pool
+ * (`buildCandidatesAsync` builds arx3/arx2/arx/deflate through the same loop) over a codec the
+ * encoder is free to skip.
+ */
+async function canEncodeWithCuratedArx4Priors(): Promise<boolean> {
+  await loadArx4PriorsOnce();
+  return getActiveArx4PriorsVersion() <= EXPECTED_ARX4_PRIORS_VERSION;
 }
 
 function decodeArxEncodedPayload(encoded: string): string {
@@ -285,41 +311,42 @@ export async function buildArx2Candidates(
  * length would make arx2 and arx3 measure the same payload identically and would change which wire
  * wins auto-selection. Do not flip the metric to "fix" the divergence without owning that trade-off.
  *
- * PER-SURFACE EXCEPTION: `budgetBmpByTransport` opts one encode call into transport budgeting for
- * surfaces that URL-serialize the fragment (markdown links percent-encode baseBMP to ~9x). This is
- * an additional surface-specific selection, not a reversal of the default policy above: the primary
- * copy-paste URL keeps the visible-length budget.
+ * PER-SURFACE EXCEPTION: every candidate also carries `urlSerializedLength`, which measures the same
+ * baseBMP wire by transport length, for surfaces that URL-serialize the fragment (markdown links
+ * percent-encode baseBMP to ~9x). Selecting on that field is an additional surface-specific
+ * selection, not a reversal of the default policy above: the primary copy-paste URL keeps the
+ * visible-length budget.
  */
 export async function buildArx3Candidates(
   envelope: PayloadEnvelope,
   computeTransportLength: TransportLengthCalculator,
-  budgetBmpByTransport = false,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
 
   const payloadEnvelope = { ...envelope, codec: "arx3" as PayloadCodec };
   const payloads = await arx3CompressEnvelope(payloadEnvelope);
   // Visible-length budgeting for the dense baseBMP wire — see the POLICY note above.
-  return wirePayloadsToCandidates("arx3", false, payloads, computeTransportLength, !budgetBmpByTransport);
+  return wirePayloadsToCandidates("arx3", false, payloads, computeTransportLength, true);
 }
 
 /**
  * Builds deferred `arx4` codec fragment candidates.
- * ARX4 reuses the ARX3 tuple/overlay stages and its baseBMP budgeting policy (including the
- * `budgetBmpByTransport` opt-in); it swaps Brotli for the context mixer in arx4-codec.ts and puts a
- * prior id char in front of the wire payload, so a candidate reads `<tag><priorId><wirePayload>`.
+ * ARX4 reuses the ARX3 tuple/overlay stages and its baseBMP budgeting policy; it swaps Brotli for the
+ * context mixer in arx4-codec.ts and puts a prior id char in front of the wire payload, so a
+ * candidate reads `<tag><priorId><wirePayload>`.
  */
 export async function buildArx4Candidates(
   envelope: PayloadEnvelope,
   computeTransportLength: TransportLengthCalculator,
-  budgetBmpByTransport = false,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
-  await ensureArx4PriorsLoaded();
+  const curatedPriorsUsable = await canEncodeWithCuratedArx4Priors();
 
   const payloadEnvelope = { ...envelope, codec: "arx4" as PayloadCodec };
-  const payloads = arx4CompressEnvelope(payloadEnvelope);
-  return wirePayloadsToCandidates("arx4", false, payloads, computeTransportLength, !budgetBmpByTransport);
+  // A forward-version asset degrades exactly like a missing one: code against `s`, whose corpus is
+  // the pinned dictionary text this build does support, and emit the `s` id it was really coded with.
+  const payloads = arx4CompressEnvelope(payloadEnvelope, curatedPriorsUsable ? undefined : "s");
+  return wirePayloadsToCandidates("arx4", false, payloads, computeTransportLength, true);
 }
 
 /**
@@ -341,7 +368,7 @@ export async function decodeArxFragmentPayload(
   // Only fragments naming a curated prior (m/c/j, the first payload char) need the priors
   // asset; s and n fragments decode without it, so they must not trigger the fetch.
   if (codec === "arx4" && ["m", "c", "j"].includes(versionedPayload.charAt(0))) {
-    await ensureArx4PriorsLoaded();
+    await ensureArx4PriorsLoadedForDecode();
   }
 
   // For a correctly versioned fragment this first attempt (decoding the full remainder, including

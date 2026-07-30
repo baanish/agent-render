@@ -1,7 +1,7 @@
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import {
   encodeEnvelope,
-  encodeEnvelopeAsync,
+  encodeEnvelopeSurfacesAsync,
   getFragmentTransportLength,
   getVisibleFragmentLength,
 } from "@/lib/payload/fragment";
@@ -178,7 +178,8 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
 
 /**
  * Async variant of {@link createGeneratedArtifactLink} that can leverage the ARX family of async
- * codecs via {@link encodeEnvelopeAsync}.
+ * codecs via {@link encodeEnvelopeSurfacesAsync}, which encodes once and returns both the
+ * copy-paste and markdown-destination winners.
  *
  * Error and return semantics match the sync variant: throws on invalid draft/normalized payload
  * or over-budget fragments, and returns `{ hash, url, codec, fragmentLength, envelope, artifact }`.
@@ -191,10 +192,11 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
   }
 
   const encodeOptions = draft.codec && draft.codec !== "auto" ? { codec: draft.codec } : {};
+  const surfaces = await encodeEnvelopeSurfacesAsync(normalized.envelope, encodeOptions);
   return assembleGeneratedLink(
     normalized.envelope,
-    await encodeEnvelopeAsync(normalized.envelope, encodeOptions),
-    await encodeEnvelopeAsync(normalized.envelope, { ...encodeOptions, budgetByTransport: true }),
+    surfaces.fragmentBody,
+    surfaces.transportFragmentBody,
     baseUrl,
   );
 }

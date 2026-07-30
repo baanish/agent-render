@@ -104,6 +104,15 @@ describe("arx4 priors asset", () => {
       expect(isArx4PriorsLoaded()).toBe(false);
     });
 
+    // A version that is not a non-negative integer would install while every caller read it as the
+    // -1 failure sentinel, so the asset would be live and reported unloaded at the same time.
+    it("rejects an asset whose version is not a non-negative integer", async () => {
+      for (const version of [-1, 1.5, Number.NaN]) {
+        expect(await loadArx4Priors({ ...priors, version })).toBe(-1);
+        expect(isArx4PriorsLoaded()).toBe(false);
+      }
+    });
+
     it("loads the shipped asset at the version this build pins", () => {
       expect(loadArx4PriorsSync(priors)).toBe(1);
       expect(isArx4PriorsLoaded()).toBe(true);
