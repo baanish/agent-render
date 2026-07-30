@@ -743,9 +743,29 @@ const PRIOR_KIND_BY_ID: Record<Arx4PriorId, Arx4PriorKind | null> = {
 };
 
 /**
- * Thrown when a fragment names a curated prior this build has not loaded. Decoding it against the
- * shared prior instead would return plausible garbage, so the failure surfaces and the caller can
- * retry once the asset endpoint recovers.
+ * The prior ids that need the curated asset, derived from the kind map so no caller re-spells them.
+ * Exported because callers route on a fragment's leading char to decide whether the asset is needed
+ * at all: `s` and `n` fragments must not trigger the fetch.
+ */
+export const CURATED_PRIOR_IDS: readonly Arx4PriorId[] = arx4PriorIds.filter(
+  (priorId) => PRIOR_KIND_BY_ID[priorId] !== null,
+);
+
+/**
+ * The one priors version this build codes curated fragments against. The compact `e` tag carries no
+ * priors version, so a fragment names only "the curated prior for kind X" and both sides have to
+ * already agree on which corpus that is. An asset at any other version is unusable, a stale or
+ * rolled-back copy exactly as much as a forward-deployed one, because priming with corpus bytes the
+ * fragment was never coded against yields plausible garbage rather than an error. Bumping this is a
+ * wire change that also needs a new compact tag, like the dictionary pins in fragment-arx.ts.
+ */
+export const EXPECTED_ARX4_PRIORS_VERSION = 1;
+
+/**
+ * Thrown when a fragment names a curated prior this build cannot rebuild, because the asset is not
+ * loaded or is not at {@link EXPECTED_ARX4_PRIORS_VERSION}. Decoding it against the shared prior, or
+ * against a skewed corpus, would return plausible garbage instead, so the failure surfaces and the
+ * caller can retry once the asset endpoint serves the expected version.
  */
 export class Arx4PriorsUnavailableError extends Error {
   constructor(priorId: Arx4PriorId) {
@@ -831,7 +851,11 @@ export function loadArx4PriorsSync(priors: Arx4Priors): number {
   return installArx4Priors(priors);
 }
 
-/** Returns true when the curated priors asset has been loaded. */
+/**
+ * Returns true when the curated priors asset has been loaded, whatever version it is. Deliberately
+ * NOT a usability check: an asset off {@link EXPECTED_ARX4_PRIORS_VERSION} loads and reports true
+ * while no curated coding may use it, so the coding paths ask `versionMatchedPriors` instead.
+ */
 export function isArx4PriorsLoaded(): boolean {
   return priorsSlot.priors !== null;
 }
@@ -842,6 +866,14 @@ export function getActiveArx4PriorsVersion(): number {
 }
 
 /**
+ * The loaded priors, but only at {@link EXPECTED_ARX4_PRIORS_VERSION}: the single gate both coding
+ * paths ask, so a version-skewed asset can never reach the mixer from either side.
+ */
+function versionMatchedPriors(): Arx4Priors | null {
+  return priorsSlot.version === EXPECTED_ARX4_PRIORS_VERSION ? priorsSlot.priors : null;
+}
+
+/**
  * Priming bytes for a prior id, or null for "n" (cold model).
  *
  * Every prior starts from the pinned arx dictionary slot text in its RAW form, not the substituted
@@ -849,8 +881,9 @@ export function getActiveArx4PriorsVersion(): number {
  * control bytes and measured ~5% worse than priming on the raw text.
  *
  * `s` is that text alone. `m`, `c` and `j` append the matching curated corpus from the priors asset,
- * which is what the 16 KiB per-kind priors in docs/arx4-cm-bench.md measured, and throw when the
- * asset is missing rather than quietly coding against a different prior than the id names.
+ * which is what the 16 KiB per-kind priors in docs/arx4-cm-bench.md measured, and throw when that
+ * corpus is missing or version-skewed rather than quietly coding against a different prior than the
+ * id names.
  */
 function priorBytesFor(priorId: Arx4PriorId): Uint8Array | null {
   if (priorId === "n") return null;
@@ -859,19 +892,19 @@ function priorBytesFor(priorId: Arx4PriorId): Uint8Array | null {
   const kind = PRIOR_KIND_BY_ID[priorId];
   if (kind === null) return new TextEncoder().encode(commonText);
 
-  const kindText = priorsSlot.priors?.kinds[kind];
-  if (kindText === undefined) throw new Arx4PriorsUnavailableError(priorId);
-  return new TextEncoder().encode(`${commonText}\n${kindText}`);
+  const priors = versionMatchedPriors();
+  if (priors === null) throw new Arx4PriorsUnavailableError(priorId);
+  return new TextEncoder().encode(`${commonText}\n${priors.kinds[kind]}`);
 }
 
 /**
- * The prior id an encode can actually honor. A curated id degrades to `s` when the asset is missing,
- * so a failed asset fetch costs compression instead of blocking link creation; the emitted id always
- * names the prior the payload was really coded against.
+ * The prior id an encode can actually honor. A curated id degrades to `s` when the asset is missing or
+ * version-skewed, so a failed or stale asset fetch costs compression instead of blocking link
+ * creation; the emitted id always names the prior the payload was really coded against.
  */
 function encodablePriorId(priorId: Arx4PriorId): Arx4PriorId {
   if (PRIOR_KIND_BY_ID[priorId] === null) return priorId;
-  return isArx4PriorsLoaded() ? priorId : "s";
+  return versionMatchedPriors() === null ? "s" : priorId;
 }
 
 // ---------------------------------------------------------------------------
@@ -883,8 +916,9 @@ function encodablePriorId(priorId: Arx4PriorId): Arx4PriorId {
  * the prior id char, so a candidate is `<tag>` + the string returned here.
  *
  * `priorId` defaults to {@link arx4PriorIdForEnvelope}; pass it explicitly only to exercise a prior
- * the kind map does not select. A curated id downgrades to `s` when the priors asset is not loaded,
- * so the returned payloads always carry the id they were really coded against.
+ * the kind map does not select. A curated id downgrades to `s` unless the priors asset is loaded at
+ * {@link EXPECTED_ARX4_PRIORS_VERSION}, so the returned payloads always carry the id they were really
+ * coded against.
  */
 export function arx4CompressEnvelope(envelope: PayloadEnvelope, priorId?: Arx4PriorId): ArxWirePayloads {
   const selectedPriorId = encodablePriorId(priorId ?? arx4PriorIdForEnvelope(envelope));

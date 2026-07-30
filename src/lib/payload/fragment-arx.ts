@@ -17,8 +17,9 @@ import {
 import {
   arx4CompressEnvelope,
   arx4DecompressEnvelope,
+  CURATED_PRIOR_IDS,
+  EXPECTED_ARX4_PRIORS_VERSION,
   getActiveArx4PriorsVersion,
-  isArx4PriorsLoaded,
   loadArx4Priors,
 } from "@/lib/payload/arx4-codec";
 import { packEnvelope } from "@/lib/payload/wire-format";
@@ -95,10 +96,10 @@ let arx4PriorsLoadPromise: Promise<void> | null = null;
 // prior is derived from the dictionary slot text as well as its substitution stage.
 const EXPECTED_ARX_DICTIONARY_VERSION = 1;
 const EXPECTED_ARX2_OVERLAY_VERSION = 1;
-// The arx4 priors asset is pinned the same way and for the same reason: the `e` tag does not carry a
-// priors version either, so a newer asset would prime the mixer with a corpus this build's fragments
-// were never coded against.
-const EXPECTED_ARX4_PRIORS_VERSION = 1;
+// The arx4 priors asset is pinned the same way and for the same reason, except that it tolerates no
+// older version either: it has no built-in fallback table, so every version but the expected one is a
+// corpus this build's fragments were never coded against. That pin lives on the codec that codes with
+// it (EXPECTED_ARX4_PRIORS_VERSION in arx4-codec.ts); this module only drives the loader toward it.
 
 function assertArxDictionaryNotNewerThanExpected(): void {
   const version = getActiveDictVersion();
@@ -163,26 +164,21 @@ async function ensureArx2DictionariesLoaded(): Promise<void> {
   assertArx2OverlayNotNewerThanExpected();
 }
 
-function assertArx4PriorsNotNewerThanExpected(): void {
-  const version = getActiveArx4PriorsVersion();
-  if (version > EXPECTED_ARX4_PRIORS_VERSION) {
-    throw new Error(
-      `Active arx4 priors version ${version} is newer than this build supports (${EXPECTED_ARX4_PRIORS_VERSION}); refusing to code with a forward-incompatible prior.`,
-    );
-  }
-}
-
 /**
- * Same retry-on-failure contract as the dictionaries. Unlike them, a failure is not fatal here:
- * encode falls back to the `s` prior and only a fragment that names a curated prior fails, which is
- * why this resolves instead of throwing when the asset cannot be fetched.
+ * Same retry-on-failure contract as the dictionaries, and never fatal: the codec degrades encoding to
+ * the `s` prior when the expected-version asset is not there, so only a fragment that names a curated
+ * prior fails, which is why this resolves instead of throwing.
+ *
+ * A version-skewed asset counts as not loaded, for both the early return and the caching: a CDN
+ * mid-deploy can serve one and then the other, so neither side may pin the wrong corpus for the life
+ * of the page when a refetch could still install the right one.
  */
 async function loadArx4PriorsOnce(): Promise<void> {
-  if (isArx4PriorsLoaded()) return;
+  if (getActiveArx4PriorsVersion() === EXPECTED_ARX4_PRIORS_VERSION) return;
 
   arx4PriorsLoadPromise ??= loadArx4Priors()
     .then((version) => {
-      if (version < 0) {
+      if (version !== EXPECTED_ARX4_PRIORS_VERSION) {
         arx4PriorsLoadPromise = null;
       }
     })
@@ -191,23 +187,6 @@ async function loadArx4PriorsOnce(): Promise<void> {
       throw error;
     });
   await arx4PriorsLoadPromise;
-}
-
-/** Decode side: a fragment naming a curated prior must not be coded against a corpus it never saw. */
-async function ensureArx4PriorsLoadedForDecode(): Promise<void> {
-  await loadArx4PriorsOnce();
-  assertArx4PriorsNotNewerThanExpected();
-}
-
-/**
- * Encode side: a forward-version asset is a degrade, not a failure. Returns whether the curated
- * priors are usable, because throwing here would reject the whole shared candidate pool
- * (`buildCandidatesAsync` builds arx3/arx2/arx/deflate through the same loop) over a codec the
- * encoder is free to skip.
- */
-async function canEncodeWithCuratedArx4Priors(): Promise<boolean> {
-  await loadArx4PriorsOnce();
-  return getActiveArx4PriorsVersion() <= EXPECTED_ARX4_PRIORS_VERSION;
 }
 
 function decodeArxEncodedPayload(encoded: string): string {
@@ -340,12 +319,14 @@ export async function buildArx4Candidates(
   computeTransportLength: TransportLengthCalculator,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
-  const curatedPriorsUsable = await canEncodeWithCuratedArx4Priors();
+  // Resolving rather than throwing on a failed or skewed priors load matters here: these candidates
+  // share one pool with arx3/arx2/arx/deflate (`buildCandidatesAsync` builds them through the same
+  // loop), so a throw would take link creation down over a codec the encoder is free to degrade.
+  // arx4CompressEnvelope owns that degrade, and emits the `s` id it really coded with.
+  await loadArx4PriorsOnce();
 
   const payloadEnvelope = { ...envelope, codec: "arx4" as PayloadCodec };
-  // A forward-version asset degrades exactly like a missing one: code against `s`, whose corpus is
-  // the pinned dictionary text this build does support, and emit the `s` id it was really coded with.
-  const payloads = arx4CompressEnvelope(payloadEnvelope, curatedPriorsUsable ? undefined : "s");
+  const payloads = arx4CompressEnvelope(payloadEnvelope);
   return wirePayloadsToCandidates("arx4", false, payloads, computeTransportLength, true);
 }
 
@@ -365,10 +346,13 @@ export async function decodeArxFragmentPayload(
   let lastError: Error | null = null;
   const { parsedDictVersion, versionedPayload } = splitArxFragmentRemainder(remainder);
 
-  // Only fragments naming a curated prior (m/c/j, the first payload char) need the priors
-  // asset; s and n fragments decode without it, so they must not trigger the fetch.
-  if (codec === "arx4" && ["m", "c", "j"].includes(versionedPayload.charAt(0))) {
-    await ensureArx4PriorsLoadedForDecode();
+  // Only fragments naming a curated prior (the first payload char) need the priors asset; s and n
+  // fragments decode without it, so they must not trigger the fetch. A curated fragment that the
+  // fetch cannot serve at the expected version fails in the codec, which is the retryable outcome:
+  // decoding it against a skewed corpus would return plausible garbage instead.
+  const priorIdChar = versionedPayload.charAt(0);
+  if (codec === "arx4" && CURATED_PRIOR_IDS.some((priorId) => priorId === priorIdChar)) {
+    await loadArx4PriorsOnce();
   }
 
   // For a correctly versioned fragment this first attempt (decoding the full remainder, including
