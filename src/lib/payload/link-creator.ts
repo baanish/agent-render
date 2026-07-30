@@ -223,13 +223,14 @@ function toFragmentUrl(fragmentBody: string, baseUrl?: string): string {
  * Picks the fragment used inside markdown links. Markdown destinations get URL-serialized,
  * which percent-encodes packed (non-ASCII) fragments to triple size, so the unpacked
  * candidate usually survives transport smaller even though it is longer raw. Falls back to
- * the primary fragment when the unpacked one loses on transport length or blows the budget.
+ * the primary fragment only when it wins on transport length.
+ *
+ * Deliberately NOT gated on the visible fragment budget: an over-budget ASCII candidate is exactly
+ * where handing back the Unicode fragment hurt most, because URL-serializing it inflates the
+ * destination roughly ninefold. An over-long markdown link is already reported to the caller through
+ * `discordMarkdownLinkWarning`, so the surface keeps its smaller-transport contract instead.
  */
 function selectMarkdownFragment(fragmentBody: string, transportFragmentBody: string): string {
-  if (getVisibleFragmentLength(transportFragmentBody) > MAX_FRAGMENT_LENGTH) {
-    return fragmentBody;
-  }
-
   return getFragmentTransportLength(transportFragmentBody) < getFragmentTransportLength(fragmentBody)
     ? transportFragmentBody
     : fragmentBody;

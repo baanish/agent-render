@@ -33,6 +33,7 @@ import {
   type ArxWirePayloads,
 } from "@/lib/payload/arx-codec";
 import type { ArtifactKind, PayloadEnvelope } from "@/lib/payload/schema";
+import { sha256Hex } from "@/lib/sha256";
 import { withBasePath } from "@/lib/site/base-path";
 
 // ---------------------------------------------------------------------------
@@ -761,6 +762,22 @@ export const CURATED_PRIOR_IDS: readonly Arx4PriorId[] = arx4PriorIds.filter(
  */
 export const EXPECTED_ARX4_PRIORS_VERSION = 1;
 
+/** Byte length of every curated prior, the size the ARX4 research benchmarks measured. */
+export const ARX4_PRIOR_BYTES = 16 * 1024;
+
+/**
+ * sha256 of each curated prior as {@link reassembleCuratedPrior} rebuilds it: the pinned dictionary
+ * slot text, a newline, then the asset's kind block. The version field alone cannot say whether an
+ * asset holds the corpora this build's fragments were coded against, so the install point checks
+ * identity, not just the label. tests/arx4-priors.test.ts asserts the shipped asset against these with
+ * node:crypto, and scripts/build-arx4-priors.mjs prints them when it regenerates the asset.
+ */
+export const PINNED_ARX4_PRIOR_SHA256 = {
+  markdown: "90da74cfa7a7394099aefd7d8f3ba9ed2acc40237b23d58048f4b8b4dd596c9c",
+  code: "3596c70d73b7d3f95e5f978a0c3bcb4ae1d4aa8711d563f4a22f39d0123aa6af",
+  json: "37e1cfa8f8885afda7e560d63616b4e84e891a1c3a63d2ac3a139ebe6558fb18",
+} as const satisfies Record<Arx4PriorKind, string>;
+
 /**
  * Thrown when a fragment names a curated prior this build cannot rebuild, because the asset is not
  * loaded or is not at {@link EXPECTED_ARX4_PRIORS_VERSION}. Decoding it against the shared prior, or
@@ -779,6 +796,15 @@ export class Arx4PriorsUnavailableError extends Error {
 // rather than blocking on a fetch it cannot complete.
 const priorsSlot: { priors: Arx4Priors | null; version: number } = { priors: null, version: 0 };
 
+/**
+ * The full curated prior for one kind block: the pinned dictionary slot text, a newline, the block.
+ * Both the install-time identity check and the coder go through here, so what was validated is exactly
+ * what primes the mixer.
+ */
+function reassembleCuratedPrior(kindBlock: string): string {
+  return `${getArxDictionaryPriorText()}\n${kindBlock}`;
+}
+
 function isArx4Priors(value: unknown): value is Arx4Priors {
   if (typeof value !== "object" || value === null) return false;
   const asset = value as Record<string, unknown>;
@@ -789,7 +815,26 @@ function isArx4Priors(value: unknown): value is Arx4Priors {
   if (typeof asset.kinds !== "object" || asset.kinds === null) return false;
 
   const kinds = asset.kinds as Record<string, unknown>;
-  return ARX4_PRIOR_KINDS.every((kind) => typeof kinds[kind] === "string" && kinds[kind] !== "");
+  // The size bound is part of the shape: a kind block can never exceed the prior it is a tail of, and
+  // rejecting an oversize one here keeps a corrupt or hostile asset out of the hashing below and out of
+  // the mixer's byte-by-byte priming walk.
+  return ARX4_PRIOR_KINDS.every((kind) => {
+    const block = kinds[kind];
+    return typeof block === "string" && block !== "" && block.length <= ARX4_PRIOR_BYTES;
+  });
+}
+
+/**
+ * True when every kind block reassembles to the prior this build codes against, checked by byte length
+ * and pinned digest. A truncated, padded or swapped block is otherwise indistinguishable from the real
+ * asset at the version field, and installing it caches it as authoritative: later loads return early on
+ * the matching version, so the recovered endpoint is never refetched and curated links stay broken.
+ */
+function priorsMatchPinnedDigests(priors: Arx4Priors): boolean {
+  return ARX4_PRIOR_KINDS.every((kind) => {
+    const bytes = new TextEncoder().encode(reassembleCuratedPrior(priors.kinds[kind]));
+    return bytes.length === ARX4_PRIOR_BYTES && sha256Hex(bytes) === PINNED_ARX4_PRIOR_SHA256[kind];
+  });
 }
 
 function getDefaultArx4PriorsUrls(): string[] {
@@ -814,9 +859,12 @@ async function fetchArx4Priors(url: string): Promise<unknown> {
   }
 }
 
-/** The one install point, so a half-shaped asset can never reach the coder. -1 means unusable. */
+/**
+ * The one install point, so a half-shaped or unpinned asset can never reach the coder. -1 means
+ * unusable and leaves the slot alone, which is what makes such a load retryable.
+ */
 function installArx4Priors(value: unknown): number {
-  if (!isArx4Priors(value)) return -1;
+  if (!isArx4Priors(value) || !priorsMatchPinnedDigests(value)) return -1;
 
   priorsSlot.priors = value;
   priorsSlot.version = value.version;
@@ -827,6 +875,12 @@ function installArx4Priors(value: unknown): number {
  * Loads the curated priors from a URL or parsed object, trying the pre-compressed asset first on a
  * default load. Returns the asset version on success, or -1 on failure (the slot keeps whatever it
  * already had), so a transient failure can be retried rather than cached.
+ *
+ * A fetched asset is installed only at {@link EXPECTED_ARX4_PRIORS_VERSION}: `.br` and `.json` are two
+ * files that a mid-deploy CDN can serve at different versions, and installing whatever the first URL
+ * answers with would both skip the URL that still had the right one and wedge every later retry, which
+ * hits the same skewed URL again. An off-version asset handed in as an object still installs, because
+ * that is the injection path tests and offline agents use to put the slot in a known state.
  */
 export async function loadArx4Priors(source?: string | Arx4Priors): Promise<number> {
   try {
@@ -834,8 +888,10 @@ export async function loadArx4Priors(source?: string | Arx4Priors): Promise<numb
 
     const urls = typeof source === "string" ? [source] : getDefaultArx4PriorsUrls();
     for (const url of urls) {
-      const version = installArx4Priors(await fetchArx4Priors(url));
-      if (version >= 0) return version;
+      const fetched = await fetchArx4Priors(url);
+      if (isArx4Priors(fetched) && fetched.version === EXPECTED_ARX4_PRIORS_VERSION) {
+        return installArx4Priors(fetched);
+      }
     }
     return -1;
   } catch {
@@ -888,13 +944,12 @@ function versionMatchedPriors(): Arx4Priors | null {
 function priorBytesFor(priorId: Arx4PriorId): Uint8Array | null {
   if (priorId === "n") return null;
 
-  const commonText = getArxDictionaryPriorText();
   const kind = PRIOR_KIND_BY_ID[priorId];
-  if (kind === null) return new TextEncoder().encode(commonText);
+  if (kind === null) return new TextEncoder().encode(getArxDictionaryPriorText());
 
   const priors = versionMatchedPriors();
   if (priors === null) throw new Arx4PriorsUnavailableError(priorId);
-  return new TextEncoder().encode(`${commonText}\n${priors.kinds[kind]}`);
+  return new TextEncoder().encode(reassembleCuratedPrior(priors.kinds[kind]));
 }
 
 /**

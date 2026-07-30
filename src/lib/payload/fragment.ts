@@ -39,6 +39,8 @@ const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx4", "arx3", "
 const PACKED_WIRE_MODES: readonly boolean[] = [true, false];
 const UNPACKED_ONLY_WIRE_MODES: readonly boolean[] = [false];
 const supportedCodecSet = new Set<string>(codecs);
+/** arx4 asset failures (see arx4-codec.ts and fragment-arx.ts), which decode reports as retryable. */
+const ARX4_ASSET_ERROR_NAMES = new Set(["Arx4PriorsUnavailableError", "Arx4DictionarySkewError"]);
 
 function isChatSafeAsciiFragmentCodePoint(cp: number): boolean {
   return (
@@ -569,7 +571,8 @@ function resolveEnvelope(parsed: unknown, rawLength: number): ParsedPayload {
  * for example when decoding server-injected payloads that are not constrained by URL length.
  *
  * Returns structured `ParsedPayload` error responses for malformed fragments or invalid
- * envelopes, rather than throwing decode errors.
+ * envelopes, rather than throwing decode errors. A well-formed fragment whose codec asset is missing or
+ * version-skewed comes back as `asset-unavailable`, the one code a retry can clear.
  */
 export async function decodeFragmentAsync(hash: string, options?: DecodeOptions): Promise<ParsedPayload> {
   const header = parseFragmentHeader(hash, options);
@@ -613,10 +616,12 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
     if (error instanceof Error && error.name === "ArxDecodedPayloadTooLargeError") {
       return { ok: false, code: "decoded-too-large", message: error.message };
     }
-    // A missing arx4 priors asset is a transport failure, not a malformed fragment: say so, because
-    // the same link decodes once the asset loads and the dictionary hint below would misdirect.
-    if (error instanceof Error && error.name === "Arx4PriorsUnavailableError") {
-      return { ok: false, code: "invalid-json", message: `${error.message} Reload to try again.` };
+    // A codec asset that is missing or version-skewed is a transport failure, not a malformed fragment:
+    // say so, because the same link decodes once the asset loads and the dictionary hint below would
+    // misdirect. Matched by name rather than instanceof so this module stays out of the lazily imported
+    // arx chunks on a non-arx page load.
+    if (error instanceof Error && ARX4_ASSET_ERROR_NAMES.has(error.name)) {
+      return { ok: false, code: "asset-unavailable", message: `${error.message} Reload to try again.` };
     }
     const arxHint = isArxCodec(codec)
       ? " It may have been encoded with a different ARX dictionary version."

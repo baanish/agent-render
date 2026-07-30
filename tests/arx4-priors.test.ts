@@ -10,6 +10,7 @@ import {
   loadArxDictionarySync,
 } from "@/lib/payload/arx-codec";
 import {
+  ARX4_PRIOR_BYTES,
   arx4CompressEnvelope,
   arx4DecompressEnvelope,
   Arx4PriorsUnavailableError,
@@ -17,6 +18,7 @@ import {
   isArx4PriorsLoaded,
   loadArx4Priors,
   loadArx4PriorsSync,
+  PINNED_ARX4_PRIOR_SHA256,
   type Arx4Priors,
 } from "@/lib/payload/arx4-codec";
 
@@ -24,20 +26,14 @@ import {
  * Byte-identity gate for public/arx4-priors.json, plus the behavior on either side of loading it.
  *
  * The asset carries only the kind-specific tail of each curated prior; the codec rebuilds the
- * 2203-char common prefix from the pinned dictionaries. These hashes are the 16384-char priors
- * the ARX4 research benchmarks measured, as the maintainer-local frozen source builds them. A diff
- * here means the asset, the dictionaries or the split changed, and every arx4 link on an `m`, `c` or
- * `j` prior has stopped decoding. Regenerate with `node scripts/build-arx4-priors.mjs <frozen source>`, which fails
+ * 2203-char common prefix from the pinned dictionaries. The digests are the codec's own install-time
+ * pins, recomputed here with node:crypto: they are the 16384-char priors the ARX4 research benchmarks
+ * measured, as the maintainer-local frozen source builds them. A diff here means the asset, the
+ * dictionaries or the split changed, and every arx4 link on an `m`, `c` or `j` prior has stopped
+ * decoding. Regenerate with `node scripts/build-arx4-priors.mjs <frozen source>`, which fails
  * the same way when it cannot reproduce these from the frozen source.
  */
-const PINNED_PRIOR_SHA256 = {
-  markdown: "90da74cfa7a7394099aefd7d8f3ba9ed2acc40237b23d58048f4b8b4dd596c9c",
-  code: "3596c70d73b7d3f95e5f978a0c3bcb4ae1d4aa8711d563f4a22f39d0123aa6af",
-  json: "37e1cfa8f8885afda7e560d63616b4e84e891a1c3a63d2ac3a139ebe6558fb18",
-} as const;
-
 const COMMON_PREFIX_CHARS = 2203;
-const PRIOR_CHARS = 16 * 1024;
 
 const priors: Arx4Priors = arx4PriorsJson;
 const [, curatedVectorContent, curatedVectorPayload] = arx4DeterminismVectors[0];
@@ -113,6 +109,27 @@ describe("arx4 priors asset", () => {
       }
     });
 
+    // A shape-valid asset at the expected version is still unusable when its kind blocks are not the
+    // corpora this build's fragments were coded against: a truncated or swapped block reads as
+    // "installed and authoritative", so every later load short-circuits and curated links stay broken.
+    it("rejects an expected-version asset whose kind blocks are not the pinned corpora", async () => {
+      expect(await loadArx4Priors({ version: 1, kinds: { markdown: "x", code: "x", json: "x" } })).toBe(-1);
+      expect(isArx4PriorsLoaded()).toBe(false);
+
+      const swapped = { version: 1, kinds: { ...priors.kinds, markdown: priors.kinds.code } };
+      expect(await loadArx4Priors(swapped)).toBe(-1);
+      expect(isArx4PriorsLoaded()).toBe(false);
+    });
+
+    // The asset is trusted input, so an oversize kind block would otherwise be primed byte by byte
+    // through the mixer (a ~5 MB block measured seconds per encode).
+    it("rejects an oversize kind block before it can reach the mixer", async () => {
+      const oversize = { version: 1, kinds: { ...priors.kinds, markdown: "X".repeat(5_000_000) } };
+
+      expect(await loadArx4Priors(oversize)).toBe(-1);
+      expect(isArx4PriorsLoaded()).toBe(false);
+    });
+
     it("loads the shipped asset at the version this build pins", () => {
       expect(loadArx4PriorsSync(priors)).toBe(1);
       expect(isArx4PriorsLoaded()).toBe(true);
@@ -129,11 +146,11 @@ describe("arx4 priors asset", () => {
       const commonPrefix = `${getArxDictionaryPriorText()}\n`;
       expect(commonPrefix).toHaveLength(COMMON_PREFIX_CHARS);
 
-      for (const [kind, expectedSha256] of Object.entries(PINNED_PRIOR_SHA256)) {
-        const prior = `${commonPrefix}${priors.kinds[kind as keyof typeof PINNED_PRIOR_SHA256]}`;
+      for (const [kind, expectedSha256] of Object.entries(PINNED_ARX4_PRIOR_SHA256)) {
+        const prior = `${commonPrefix}${priors.kinds[kind as keyof typeof PINNED_ARX4_PRIOR_SHA256]}`;
 
-        expect(prior).toHaveLength(PRIOR_CHARS);
-        expect(Buffer.byteLength(prior, "utf8")).toBe(PRIOR_CHARS);
+        expect(prior).toHaveLength(ARX4_PRIOR_BYTES);
+        expect(Buffer.byteLength(prior, "utf8")).toBe(ARX4_PRIOR_BYTES);
         expect(createHash("sha256").update(prior, "utf8").digest("hex")).toBe(expectedSha256);
       }
     });

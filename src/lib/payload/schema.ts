@@ -131,7 +131,10 @@ export type ParsedPayload =
   | { ok: true; envelope: PayloadEnvelope; rawLength: number }
   | {
       ok: false;
-      code: "empty" | "missing-key" | "too-large" | "decoded-too-large" | "invalid-format" | "invalid-json" | "invalid-envelope";
+      // `asset-unavailable` is the only retryable code: the fragment is well-formed but a codec asset
+      // this session needs (an arx4 prior corpus or dictionary) is missing or version-skewed, so the
+      // same link decodes once the asset endpoint serves the expected version.
+      code: "empty" | "missing-key" | "too-large" | "decoded-too-large" | "invalid-format" | "invalid-json" | "invalid-envelope" | "asset-unavailable";
       message: string;
     };
 

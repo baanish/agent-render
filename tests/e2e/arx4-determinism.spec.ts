@@ -40,17 +40,23 @@ declare global {
  * Entry point for the in-page harness. It pulls the same modules the app imports, and loads the
  * dictionaries and the curated priors from the served assets so the coder is primed from the shipped
  * corpus rather than a copy handed in from Node.
+ *
+ * The priors load runs after the dictionaries, as it does in the app: installing the asset checks each
+ * kind block against the pinned prior, which can only be reassembled once the pinned dictionaries are
+ * the active ones.
  */
 const HARNESS_ENTRY = `
 import { loadArx2OverlayDictionary, loadArxDictionary } from "@/lib/payload/arx-codec";
 import { arx4CompressEnvelope, loadArx4Priors } from "@/lib/payload/arx4-codec";
 
 window.__arx4Determinism = {
-  loadPriorAssets: () => Promise.all([
-    loadArxDictionary(new URL("arx-dictionary.json", window.location.href).toString()),
-    loadArx2OverlayDictionary(new URL("arx2-dictionary.json", window.location.href).toString()),
-    loadArx4Priors(new URL("arx4-priors.json", window.location.href).toString()),
-  ]),
+  loadPriorAssets: async () => {
+    const dictionaries = await Promise.all([
+      loadArxDictionary(new URL("arx-dictionary.json", window.location.href).toString()),
+      loadArx2OverlayDictionary(new URL("arx2-dictionary.json", window.location.href).toString()),
+    ]);
+    return [...dictionaries, await loadArx4Priors(new URL("arx4-priors.json", window.location.href).toString())];
+  },
   encodeBase64url: (envelope, priorId) => arx4CompressEnvelope(envelope, priorId).base64url,
 };
 `;

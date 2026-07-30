@@ -100,6 +100,35 @@ const EXPECTED_ARX2_OVERLAY_VERSION = 1;
 // older version either: it has no built-in fallback table, so every version but the expected one is a
 // corpus this build's fragments were never coded against. That pin lives on the codec that codes with
 // it (EXPECTED_ARX4_PRIORS_VERSION in arx4-codec.ts); this module only drives the loader toward it.
+//
+// arx4 holds its DICTIONARIES to that same exact standard, which is where it parts ways with
+// arx/arx2/arx3. They tolerate the built-in fallback (version 0) because substitution alone degrades
+// predictably; arx4 also primes its context mixer on the dictionary slot text, so a fragment coded
+// against any other dictionary is one that healthy viewers cannot decode at all. Both sides therefore
+// hold out for the pinned pair: encode leaves the candidate pool, decode refuses.
+
+/**
+ * Thrown when an arx4 fragment reaches the decoder while the active dictionaries are not the exact
+ * pinned pair, which a failed dictionary fetch (built-in fallback) or an asset-version skew both cause.
+ * Fail closed and retryable: the same fragment decodes once the pinned dictionaries are active, whereas
+ * coding it against the dictionary text at hand would return plausible garbage.
+ */
+export class Arx4DictionarySkewError extends Error {
+  constructor(dictVersion: number, overlayVersion: number) {
+    super(
+      `The active arx dictionaries (base ${dictVersion}, overlay ${overlayVersion}) are not the pair arx4 is pinned to (base ${EXPECTED_ARX_DICTIONARY_VERSION}, overlay ${EXPECTED_ARX2_OVERLAY_VERSION}), so arx4 fragments cannot be coded.`,
+    );
+    this.name = "Arx4DictionarySkewError";
+  }
+}
+
+/** True when both active dictionaries are exactly the versions arx4 codes against. */
+function arx4DictionariesMatchPins(): boolean {
+  return (
+    getActiveDictVersion() === EXPECTED_ARX_DICTIONARY_VERSION &&
+    getActiveArx2OverlayVersion() === EXPECTED_ARX2_OVERLAY_VERSION
+  );
+}
 
 function assertArxDictionaryNotNewerThanExpected(): void {
   const version = getActiveDictVersion();
@@ -319,6 +348,12 @@ export async function buildArx4Candidates(
   computeTransportLength: TransportLengthCalculator,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
+  // Off the pinned dictionaries, arx4 contributes nothing rather than minting a link no healthy viewer
+  // can decode. Dropping out of the pool (instead of throwing) keeps the other codecs' candidates, the
+  // same reason the priors load below resolves; an explicitly requested arx4 then has no candidate,
+  // which is the honest fail-closed answer.
+  if (!arx4DictionariesMatchPins()) return [];
+
   // Resolving rather than throwing on a failed or skewed priors load matters here: these candidates
   // share one pool with arx3/arx2/arx/deflate (`buildCandidatesAsync` builds them through the same
   // loop), so a throw would take link creation down over a codec the encoder is free to degrade.
@@ -343,14 +378,23 @@ export async function decodeArxFragmentPayload(
     await ensureArx2DictionariesLoaded();
   }
 
+  if (codec === "arx4" && !arx4DictionariesMatchPins()) {
+    throw new Arx4DictionarySkewError(getActiveDictVersion(), getActiveArx2OverlayVersion());
+  }
+
   let lastError: Error | null = null;
   const { parsedDictVersion, versionedPayload } = splitArxFragmentRemainder(remainder);
+  const decodedPayload = decodeArxEncodedPayload(versionedPayload);
 
   // Only fragments naming a curated prior (the first payload char) need the priors asset; s and n
   // fragments decode without it, so they must not trigger the fetch. A curated fragment that the
   // fetch cannot serve at the expected version fails in the codec, which is the retryable outcome:
   // decoding it against a skewed corpus would return plausible garbage instead.
-  const priorIdChar = versionedPayload.charAt(0);
+  //
+  // The char is read AFTER percent-decoding, so this routes on what the decoder will really see: a
+  // re-encoding proxy or a handcrafted fragment can deliver `%6d` where the app writes `m`, and routing
+  // on the raw char would leave that fragment asking for an asset nothing ever fetches.
+  const priorIdChar = decodedPayload.charAt(0);
   if (codec === "arx4" && CURATED_PRIOR_IDS.some((priorId) => priorId === priorIdChar)) {
     await loadArx4PriorsOnce();
   }
@@ -368,7 +412,7 @@ export async function decodeArxFragmentPayload(
   }
 
   try {
-    return await decodeArxAttempt(codec, decodeArxEncodedPayload(versionedPayload));
+    return await decodeArxAttempt(codec, decodedPayload);
   } catch (error) {
     lastError = normalizeArxDecodeError(error);
   }

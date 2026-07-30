@@ -62,6 +62,9 @@ describe("arx4 priors version guard", () => {
     loadArx4PriorsSync(forwardPriors);
     const skewed = await decodeFragmentAsync(`#${curated}`, { skipFragmentBudget: true });
     expect(skewed.ok).toBe(false); // hard-fail, not a silent mis-decode
+    // And it says which kind of failure it is: the fragment is fine, the asset is not, so a caller
+    // branching on the code must not treat this like a corrupt payload.
+    if (!skewed.ok) expect(skewed.code).toBe("asset-unavailable");
 
     // Retryable: the same link decodes again once the expected-version asset is active.
     loadArx4PriorsSync(priors);
