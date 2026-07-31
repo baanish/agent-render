@@ -100,7 +100,11 @@ async function runCreate(args: string[]): Promise<void> {
   const inputs = await readInputs(options);
   const envelope = buildPayloadEnvelope(inputs, options.kind, options.title);
   assertEnvelopeWithinBudget(envelope);
-  const config = await resolveConfig({ instanceUrl: options.instanceUrl, token: options.token });
+  // Explicit fragment mode needs no instance settings, so a malformed config file must not fail a
+  // purely local encode.
+  const config = options.mode === "fragment"
+    ? { instanceUrl: undefined, token: undefined }
+    : await resolveConfig({ instanceUrl: options.instanceUrl, token: options.token });
   const mode: Exclude<Mode, "auto"> = options.mode === "auto"
     ? (config.instanceUrl ? "instance" : "fragment")
     : options.mode;
@@ -116,14 +120,15 @@ async function runCreate(args: string[]): Promise<void> {
     const encoded = await encodePayloadEnvelope(envelope);
     assertFragmentBudget(encoded.fragmentBody);
     url = createFragmentUrl(DEFAULT_VIEWER_URL, encoded.fragmentBody);
-    // The markdown surface is a different candidate (selected by percent-escaped length), so it
-    // carries its own visible length and needs its own budget check: the viewer enforces the visible
-    // budget on whatever fragment it opens, so an unchecked link here could render "too-large" for a
-    // payload whose --format url link works.
+    // The markdown surface is a different candidate (selected by percent-escaped length) with its
+    // own visible length, so it needs its own budget check — but only when the chosen format
+    // actually emits it, or an oversized markdown candidate would fail a --format url run whose own
+    // link is well within budget.
+    const usesMarkdownSurface = options.format === "markdown" || options.format === "discord";
     if (encoded.transportFragmentBody === encoded.fragmentBody) {
       markdownUrl = url;
     } else {
-      assertFragmentBudget(encoded.transportFragmentBody);
+      if (usesMarkdownSurface) assertFragmentBudget(encoded.transportFragmentBody);
       markdownUrl = createFragmentUrl(DEFAULT_VIEWER_URL, encoded.transportFragmentBody);
     }
   }

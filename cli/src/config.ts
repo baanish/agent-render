@@ -60,15 +60,39 @@ export async function readStoredConfig(env: EnvLookup = process.env): Promise<St
   };
 }
 
-/** Resolves CLI configuration with flags taking precedence over environment and file values. */
+/**
+ * Resolves CLI configuration with flags taking precedence over environment and file values.
+ *
+ * The endpoint and its credential resolve as a pair, not independently: a token is only carried
+ * forward from a layer at or below the one that supplied the URL. Resolving them separately means
+ * `--instance-url https://other-host` (with no `--token`) sends the token stored for a *different*
+ * instance to that host.
+ */
 export async function resolveConfig(
   flags: StoredConfig = {},
   env: EnvLookup = process.env,
 ): Promise<ResolvedConfig> {
   const stored = await readStoredConfig(env);
+
+  const layers: { instanceUrl?: string; token?: string }[] = [
+    { instanceUrl: flags.instanceUrl, token: flags.token },
+    { instanceUrl: env.AGENT_RENDER_INSTANCE_URL, token: env.AGENT_RENDER_TOKEN },
+    { instanceUrl: stored.instanceUrl, token: stored.token },
+  ];
+
+  const urlLayer = layers.findIndex((layer) => layer.instanceUrl !== undefined);
+  const instanceUrl = urlLayer === -1 ? undefined : layers[urlLayer]!.instanceUrl;
+  // An explicit --token always wins; otherwise only layers no more specific than the URL's own may
+  // supply the credential.
+  const token =
+    flags.token
+    ?? (urlLayer === -1
+      ? (env.AGENT_RENDER_TOKEN ?? stored.token)
+      : layers.slice(urlLayer).find((layer) => layer.token !== undefined)?.token);
+
   return {
-    instanceUrl: flags.instanceUrl ?? env.AGENT_RENDER_INSTANCE_URL ?? stored.instanceUrl,
-    token: flags.token ?? env.AGENT_RENDER_TOKEN ?? stored.token,
+    instanceUrl,
+    token,
     configPath: getConfigPath(env),
   };
 }

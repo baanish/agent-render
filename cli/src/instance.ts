@@ -14,11 +14,17 @@ function instanceUrl(baseUrl: string, suffix: string): string {
   return base.toString();
 }
 
+/** The server's own id contract; anything else is not something we will paste into a URL. */
+const ARTIFACT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function parseArtifactCreated(value: unknown): ArtifactCreated {
-  if (typeof value !== "object" || value === null || typeof (value as { id?: unknown }).id !== "string") {
+  const id = typeof value === "object" && value !== null ? (value as { id?: unknown }).id : undefined;
+  // Validated, not just typed: an id like "../login" would survive URL normalization as a path
+  // segment and the CLI would report a confident link to somewhere the artifact is not.
+  if (typeof id !== "string" || !ARTIFACT_ID_PATTERN.test(id)) {
     throw new Error("The agent-render instance returned an invalid create response.");
   }
-  return { id: (value as { id: string }).id };
+  return { id };
 }
 
 /** Creates an artifact on a configured self-hosted instance and returns its UUID viewer URL. */
