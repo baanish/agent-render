@@ -43,7 +43,7 @@ the viewer, so options are presentation. Put the options inline with whatever co
 and tell them how to answer, since the reply happens in chat.
 
 ```html
-<p>Five follow-ups. Reply with the ids you want, e.g. <code>do a, c, e</code>.</p>
+<p>Two follow-ups. Reply with the ids you want, e.g. <code>do a, b</code>.</p>
 <ol class="ar-choices">
   <li data-ar-id="a">Fix the TTL off-by-one<small>Sweeper deletes an hour early.</small></li>
   <li data-ar-id="b">Document the auth header</li>
