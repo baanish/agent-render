@@ -158,3 +158,6 @@ final-light*.png
 # brotli-wasm specifier still resolves through node_modules; cleaned up on exit, ignored in case
 # the run is killed. See scripts/bench-tokens.mjs.
 /.token-bench-*/
+
+# Local planning docs; not part of the published repo
+/docs/design/
