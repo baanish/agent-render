@@ -2,6 +2,9 @@
   "name": "agent-render",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "cli"
+  ],
   "description": "A static, zero-retention artifact viewer for markdown, code, diffs, CSV, and JSON.",
   "license": "MIT",
   "homepage": "https://agent-render.com",
