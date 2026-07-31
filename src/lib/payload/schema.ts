@@ -2,7 +2,7 @@ export const MAX_FRAGMENT_LENGTH = 8192;
 export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 
-export const artifactKinds = ["markdown", "code", "diff", "csv", "json"] as const;
+export const artifactKinds = ["markdown", "code", "diff", "csv", "json", "html", "choices"] as const;
 export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3", "arx4"] as const;
 
 export type ArtifactKind = (typeof artifactKinds)[number];
@@ -88,12 +88,36 @@ export type DiffArtifact = BaseArtifact & {
   view?: "unified" | "split";
 };
 
+// Kit HTML: structure-and-content markup using the shipped design kit. Untrusted (fragment)
+// payloads render sanitized; server-injected payloads render verbatim. See sanitize-kit-html.ts.
+export type HtmlArtifact = BaseArtifact & {
+  kind: "html";
+  content: string;
+};
+
+export type ChoiceOption = {
+  id: string;
+  label: string;
+  detail?: string;
+};
+
+// Presentational multiple-choice bundle: the viewer renders stable option ids the reader answers
+// with in chat ("do a, c, e"). Deliberately no response channel — the viewer stays static.
+export type ChoicesArtifact = BaseArtifact & {
+  kind: "choices";
+  prompt?: string;
+  multi?: boolean;
+  options: ChoiceOption[];
+};
+
 export type ArtifactPayload =
   | MarkdownArtifact
   | CodeArtifact
   | CsvArtifact
   | JsonArtifact
-  | DiffArtifact;
+  | DiffArtifact
+  | HtmlArtifact
+  | ChoicesArtifact;
 
 export type PayloadEnvelope = {
   v: 1;
@@ -162,6 +186,23 @@ function isBaseArtifact(value: unknown): value is BaseArtifact {
   return hasString(value.id) && isArtifactKind(value.kind);
 }
 
+function isChoiceOptionArray(value: unknown): value is ChoiceOption[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    return false;
+  }
+
+  for (const option of value) {
+    if (!isRecord(option) || !hasString(option.id) || !hasString(option.label)) {
+      return false;
+    }
+    if (option.detail !== undefined && !hasString(option.detail)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /**
  * Runtime shape guard for payload envelopes decoded from untyped input.
  *
@@ -202,6 +243,20 @@ export function isPayloadEnvelope(value: unknown): value is PayloadEnvelope {
       }
       // Reject unknown diff view modes so only renderer-supported values reach the diff renderer.
       if (diffArtifact.view !== undefined && diffArtifact.view !== "unified" && diffArtifact.view !== "split") {
+        return false;
+      }
+      continue;
+    }
+
+    if (artifact.kind === "choices") {
+      const choicesArtifact = artifact as { options?: unknown; multi?: unknown; prompt?: unknown };
+      if (!isChoiceOptionArray(choicesArtifact.options)) {
+        return false;
+      }
+      if (choicesArtifact.multi !== undefined && typeof choicesArtifact.multi !== "boolean") {
+        return false;
+      }
+      if (choicesArtifact.prompt !== undefined && !hasString(choicesArtifact.prompt)) {
         return false;
       }
       continue;

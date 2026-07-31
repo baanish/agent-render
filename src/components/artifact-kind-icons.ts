@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { FileCode2, FileDiff, FileJson2, FileSpreadsheet, FileText } from "lucide-react";
+import { FileCode2, FileDiff, FileJson2, FileSpreadsheet, FileText, LayoutTemplate, ListChecks } from "lucide-react";
 
 import type { ArtifactKind } from "@/lib/payload/schema";
 
@@ -10,4 +10,6 @@ export const kindIcons: Record<ArtifactKind, LucideIcon> = {
   diff: FileDiff,
   csv: FileSpreadsheet,
   json: FileJson2,
+  html: LayoutTemplate,
+  choices: ListChecks,
 };

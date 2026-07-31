@@ -8,28 +8,37 @@ import { numberFormatter } from "@/lib/format";
 import type {
   GeneratedArtifactLink,
   LinkCreatorDraft,
+  LinkCreatorKind,
 } from "@/lib/payload/link-creator";
-import { artifactKinds, codecs, type ArtifactKind } from "@/lib/payload/schema";
+import { artifactKinds, codecs } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
 
 type LinkCreatorProps = {
   onPreviewHash: (hash: string) => void;
 };
 
-const fieldHints: Record<ArtifactKind, string> = {
+// The creator form authors one content string per artifact, so `choices` stays out of the picker;
+// see LinkCreatorKind.
+const creatorKinds = artifactKinds.filter(
+  (kind): kind is LinkCreatorKind => kind !== "choices",
+);
+
+const fieldHints: Record<LinkCreatorKind, string> = {
   markdown: "Paste markdown notes, release docs, or a spec excerpt.",
   code: "Paste a code snippet and add a language hint when it helps.",
   diff: "Paste a unified git patch to open the review-style diff renderer.",
   csv: "Paste raw CSV and the table renderer will take it from there.",
   json: "Paste formatted or compact JSON for a tree and raw source preview.",
+  html: "Paste kit HTML: structure and content with ar-* classes, no scripts or styles.",
 };
 
-const fieldPlaceholders: Record<ArtifactKind, string> = {
+const fieldPlaceholders: Record<LinkCreatorKind, string> = {
   markdown: "# Notes\n\nPaste markdown here.",
   code: 'export function hello() {\n  return "world";\n}',
   diff: 'diff --git a/src/example.ts b/src/example.ts\nindex 1111111..2222222 100644\n--- a/src/example.ts\n+++ b/src/example.ts\n@@ -1 +1 @@\n-export const value = "old";\n+export const value = "new";\n',
   csv: "name,status\nviewer,ready\ncreator,draft",
   json: '{\n  "status": "ready",\n  "artifacts": 1\n}',
+  html: '<div class="ar-grid">\n  <div class="ar-stat">\n    <p class="ar-stat-label">Status</p>\n    <p class="ar-stat-value">Ready</p>\n  </div>\n</div>',
 };
 
 const codecOptions = ["auto", ...codecs] as const;
@@ -55,7 +64,7 @@ function getBaseUrl() {
   return url.toString();
 }
 
-function getBodyFieldLabel(kind: ArtifactKind) {
+function getBodyFieldLabel(kind: LinkCreatorKind) {
   return kind === "diff" ? "Patch" : "Content";
 }
 
@@ -219,7 +228,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             role="group"
             aria-label="Artifact kind"
           >
-            {artifactKinds.map((kind) => {
+            {creatorKinds.map((kind) => {
               const Icon = kindIcons[kind];
               const isActive = draft.kind === kind;
 

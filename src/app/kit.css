@@ -1,0 +1,353 @@
+/*
+ * Design kit for `html` artifacts. Agents supply structure and content with these classes; the
+ * design ships here, once, so models never invent styling. Interactive behavior (tabs) is
+ * viewer-owned JS in html-renderer.tsx — the kit deliberately defines no behavior of its own.
+ * The vocabulary is documented in docs/design-kit.md and the agent skill; keep the three in sync.
+ */
+
+/* ── Scope base ── */
+
+.kit-html {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.kit-html > * + * {
+  margin-top: 1rem;
+}
+
+.kit-html h1,
+.kit-html h2,
+.kit-html h3,
+.kit-html h4,
+.kit-html h5,
+.kit-html h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-top: 1.75rem;
+}
+
+.kit-html h1 { font-size: 1.75rem; }
+.kit-html h2 { font-size: 1.4rem; }
+.kit-html h3 { font-size: 1.15rem; }
+.kit-html h4,
+.kit-html h5,
+.kit-html h6 { font-size: 1rem; }
+
+.kit-html h1:first-child,
+.kit-html h2:first-child,
+.kit-html h3:first-child {
+  margin-top: 0;
+}
+
+.kit-html a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.kit-html code,
+.kit-html kbd,
+.kit-html samp {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.85em;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.35em;
+}
+
+.kit-html pre {
+  background: var(--surface-code);
+  color: var(--surface-code-text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1.1rem;
+  overflow-x: auto;
+}
+
+.kit-html pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.kit-html blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--text-muted);
+}
+
+.kit-html hr {
+  border: none;
+  border-top: 1px solid var(--border-strong);
+  margin: 1.5rem 0;
+}
+
+.kit-html ul,
+.kit-html ol {
+  padding-left: 1.4rem;
+}
+
+.kit-html ul { list-style: disc; }
+.kit-html ol { list-style: decimal; }
+
+.kit-html img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
+/* ── Tables ── */
+
+.kit-html table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.kit-html th,
+.kit-html td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.kit-html th {
+  background: var(--surface-muted);
+  font-weight: 600;
+}
+
+.kit-html caption {
+  caption-side: bottom;
+  padding-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+/* ── Layout components ── */
+
+.kit-html .ar-card {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.1rem 1.25rem;
+}
+
+.kit-html .ar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.9rem;
+}
+
+.kit-html .ar-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.kit-html .ar-stack > * + *,
+.kit-html .ar-grid > * + *,
+.kit-html .ar-card > :first-child {
+  margin-top: 0;
+}
+
+.kit-html .ar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ── Stat tiles ── */
+
+.kit-html .ar-stat {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+}
+
+.kit-html .ar-stat-label {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.kit-html .ar-stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0.25rem 0 0;
+}
+
+/* ── Badges ── */
+
+.kit-html .ar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 0.15em 0.7em;
+  color: var(--text-muted);
+  background: var(--surface-strong);
+}
+
+.kit-html .ar-badge-success { color: var(--success); border-color: var(--success); }
+.kit-html .ar-badge-warning { color: var(--warning); border-color: var(--warning); }
+.kit-html .ar-badge-danger { color: var(--danger); border-color: var(--danger); }
+.kit-html .ar-badge-accent { color: var(--accent); border-color: var(--accent); }
+
+/* ── Callouts ── */
+
+.kit-html .ar-callout {
+  border: 1px solid var(--border-strong);
+  border-left-width: 3px;
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  padding: 0.8rem 1.1rem;
+}
+
+.kit-html .ar-callout-success { border-left-color: var(--success); }
+.kit-html .ar-callout-warning { border-left-color: var(--warning); }
+.kit-html .ar-callout-danger { border-left-color: var(--danger); }
+.kit-html .ar-callout-info { border-left-color: var(--accent-secondary); }
+
+/* ── Tabs (behavior wired by html-renderer.tsx) ── */
+
+.kit-html .ar-tabs {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  overflow: hidden;
+}
+
+.kit-html .ar-tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+  padding: 0.4rem 0.6rem;
+}
+
+.kit-html .ar-tab-button {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.25rem 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+}
+
+.kit-html .ar-tab-button[aria-selected="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--surface-strong);
+}
+
+.kit-html .ar-tab {
+  padding: 1rem 1.25rem;
+}
+
+/* ── Accordion (native details/summary) ── */
+
+.kit-html details {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-strong);
+  padding: 0.6rem 1rem;
+}
+
+.kit-html summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ── Trusted verbatim frame (self-hosted mode) ── */
+
+.kit-html-frame {
+  width: 100%;
+  min-height: 70vh;
+  border: none;
+  display: block;
+  background: var(--surface-strong);
+}
+
+/* ── Choices renderer ── */
+
+.ar-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ar-choices-prompt {
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.ar-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ar-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  padding: 0.9rem 1.1rem;
+}
+
+.ar-choice-id {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  min-width: 2rem;
+  text-align: center;
+  padding: 0.15rem 0.45rem;
+  flex-shrink: 0;
+}
+
+.ar-choice-label {
+  font-weight: 600;
+  margin: 0;
+}
+
+.ar-choice-detail {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0.2rem 0 0;
+}
+
+.ar-choices-hint {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}

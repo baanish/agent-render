@@ -55,4 +55,18 @@ export const sampleLinkCards = [
     kind: "json",
     artifactCount: 1,
   },
+  {
+    title: "Kit HTML dashboard",
+    hash: "#drVNNj9MwEP0rI583iVpx6oYcKoSQAIHYvVEOjj1NrLp2sJ2WarX_nbGbzYaoRSvtHuL4zZsve54fWMdWixt2SKtgKyZxq3lAdsMCoc8qwKf7r19Act_WljtJBE9unbanzGFnXSCbY6ufD0xdYHZka8NeDxk_JBpGejsPyQfn2Ewp1QGE5t6_3zDussYpuWHVxgDMKR94GCgiuzmVaV6jJod1r7Qsi-6654HrHsnzO5mVaZ58y4Iqvqr0PfrgX1R6uVhCAbS-XfF1b6TGF1XP3uUL2K3ntcf_rAPBtbZ9gOdtduTO0NU9jcoHZ01TfTMIJK5dnH5wp7IY7KAMhBYBlwi-VwFvwSMmk0dhjYTA6_x6A8T6K6ogasNIvIFnZ0Tmu36_5-40ubRqEGXpO26m4TWXDcaDpU3meyHQx1oOuYwHIP8KOjSSTpsaFi2KnVY-AF27PeaTC6fqGgcQYUs5qjI4-trqrndbLmg-tE-YBtKTWCIsog_tov9zeG3laYTREBPJFKgE4J_4ligqlpDVj3O_EcVsF8JQb7PW-oAS1J43sZP_hhKYdEBoPN11rV6axsckiEBPYzqQUliJ1UHhEV0mSQQSc9-hyOMDShx0lJaateasJljcgrEQORoCNzQ3h7975VCOQ_hXyezx1-Nf",
+    fragmentLength: 661,
+    kind: "html",
+    artifactCount: 1,
+  },
+  {
+    title: "Review checklist",
+    hash: "#dbZFNi9wwDIb_ivB5slAoPaSH0m5pKfRQtgM9lB4UW1mLOPbUlif7wf73lb1h57IEkviV9FjS-2hOZnx3MOf-tmY0juaAQuZgRE83dGbawHqyS-AiKqPKucuD9YktFRWzGf8-Gn4rtKh4OTXor1RkeMkDtMIptsh_jRw9wR6YU40OZj6T_oaQtqGeyhX88Ww9FJ9qcBBQUyaaUyaQXhoIC4Gt8kmJ1YySKx1Meu0OVQ76_cZ3veJ4_AlpnofpfkixDe00-HsjOlEGpzihApiFZ220gOaAXp2BMIf7K_N0eMFOO_azc4BVPHhC1wjJttEatI02aZmqM4YwoV2AC-iQydaVopC78OzOO_KtF4pQMLLwg9Zqadp2Jxr2a06nPolDwRF4xVuCon6tdMG5HXdDEVeChQVswFK6I41yncpKwvYjWIywoSboUjs30p3AyjHlC68tqvG-UFQzJC3aolW_dEMc4frHTv1eMbvSKZPa8uF9zQGKLrV7DhtHRf7T5xk",
+    fragmentLength: 512,
+    kind: "choices",
+    artifactCount: 1,
+  },
 ] satisfies readonly SampleLinkCard[];

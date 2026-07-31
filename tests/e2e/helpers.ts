@@ -28,7 +28,7 @@ export async function waitForViewerState(page: Page, state: string, options?: { 
   });
 }
 
-export async function waitForRendererReady(page: Page, kind: "markdown" | "code" | "diff" | "csv" | "json") {
+export async function waitForRendererReady(page: Page, kind: "markdown" | "code" | "diff" | "csv" | "json" | "html" | "choices") {
   await expect(page.locator(`[data-testid="viewer-shell"][data-viewer-state="artifact"][data-active-kind="${kind}"][data-renderer-ready="true"]`)).toBeVisible();
 
   const readinessSelectorByKind: Record<typeof kind, string> = {
@@ -37,6 +37,8 @@ export async function waitForRendererReady(page: Page, kind: "markdown" | "code"
     diff: "[data-testid='renderer-diff'][data-renderer-ready='true'] .patch-file-section",
     csv: "[data-testid='renderer-csv'][data-renderer-ready='true'] table.csv-table tbody tr",
     json: "[data-testid='renderer-json'][data-renderer-ready='true'] .json-tree-shell",
+    html: "[data-testid='renderer-html'][data-renderer-ready='true']",
+    choices: "[data-testid='renderer-choices'][data-renderer-ready='true'] .ar-choice",
   };
 
   await expect(page.locator(readinessSelectorByKind[kind]).first()).toBeVisible();

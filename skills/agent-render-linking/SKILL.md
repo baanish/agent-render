@@ -1,6 +1,6 @@
 ---
 name: agent-render-linking
-description: Create zero-retention agent-render.com links for markdown, code, diffs, CSV, or JSON artifacts. Markdown artifacts support inline mermaid diagram rendering via fenced code blocks. Use when an agent needs to share a nicely rendered artifact in the browser instead of pasting raw content into chat. Trigger for requests like "share this as a link", "make a diff link", "render this markdown/code/csv/json", "show this diagram", or when chat rendering is weak. Agent Render is open source, hosted on Cloudflare Pages, and self-hostable. Use platform-specific linked-text syntax only on surfaces that support it cleanly, such as Discord Markdown links, Telegram HTML links, or Slack mrkdwn links; otherwise send a short summary plus the raw URL.
+description: Create zero-retention agent-render.com links for markdown, code, diffs, CSV, JSON, kit HTML, or choices artifacts. Markdown artifacts support inline mermaid diagram rendering via fenced code blocks. Kit HTML renders rich layouts from the viewer's design system; choices render a decision list the user answers in chat. Use when an agent needs to share a nicely rendered artifact in the browser instead of pasting raw content into chat. Trigger for requests like "share this as a link", "make a diff link", "render this markdown/code/csv/json", "show this diagram", or when chat rendering is weak. Agent Render is open source, hosted on Cloudflare Pages, and self-hostable. Use platform-specific linked-text syntax only on surfaces that support it cleanly, such as Discord Markdown links, Telegram HTML links, or Slack mrkdwn links; otherwise send a short summary plus the raw URL.
 ---
 
 # Agent Render Linking
@@ -161,6 +161,49 @@ A single `patch` string may contain multiple `diff --git` sections.
   "title": "Manifest",
   "filename": "manifest.json",
   "content": "{\n  \"ready\": true\n}"
+}
+```
+
+### Kit HTML
+
+Rich layout using the viewer's design kit. Write structure and content only: the design ships in
+the viewer, and fragment payloads are sanitized (scripts, event handlers, inline styles, `<style>`,
+and form controls are stripped). Use the `ar-*` components and the pinned utility subset from
+`docs/design-kit.md`; classes outside that list do nothing.
+
+```json
+{
+  "id": "report",
+  "kind": "html",
+  "title": "Deploy report",
+  "content": "<div class=\"ar-grid\"><div class=\"ar-stat\"><p class=\"ar-stat-label\">Build</p><p class=\"ar-stat-value\">Passing</p></div></div><div class=\"ar-tabs\"><div class=\"ar-tab\" data-ar-tab=\"Summary\"><p>All green.</p></div><div class=\"ar-tab\" data-ar-tab=\"Details\"><p>One e2e retry.</p></div></div>"
+}
+```
+
+Tabs need no scripts: give each `ar-tab` panel a `data-ar-tab` label and the viewer builds the bar.
+On self-hosted instances, server-injected (UUID) payloads render verbatim instead of sanitized;
+that mode is governed by the self-hosted skill.
+
+Note: `html` and `choices` artifacts are carried by the `arx`, `deflate`, `lz`, and `plain` codecs
+only. Do not hand-roll arx2/arx3 fragments for them; automatic codec selection handles this.
+
+### Choices
+
+A decision list the user answers in chat. Keep ids short and stable ("a", "b", "c"); the viewer
+renders them prominently so the user can reply "do a, c". There is no response channel: read the
+user's answer from the conversation. Set `multi: true` when several options can be picked.
+
+```json
+{
+  "id": "next-steps",
+  "kind": "choices",
+  "title": "Post-review actions",
+  "prompt": "Which follow-ups should land before the release?",
+  "multi": true,
+  "options": [
+    { "id": "a", "label": "Fix the TTL off-by-one", "detail": "Sweeper deletes an hour early." },
+    { "id": "b", "label": "Document the auth header" }
+  ]
 }
 ```
 

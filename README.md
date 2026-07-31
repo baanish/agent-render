@@ -7,7 +7,7 @@
 
 `agent-render` is a fully static, zero-retention artifact viewer for AI-generated outputs.
 
-Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based sharing for markdown, code, diffs, CSV, and JSON so the payload stays in the browser URL fragment instead of being sent to a server.
+Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based sharing for markdown, code, diffs, CSV, JSON, kit HTML dashboards, and choice lists so the payload stays in the browser URL fragment instead of being sent to a server.
 
 ## OpenClaw
 

@@ -27,7 +27,7 @@ The static export also emits `sitemap.xml` at the site root (and under `NEXT_PUB
 - `csv` - table-focused data grid built from parsed rows and dynamic columns
 - `json` - lightweight read-only tree view plus a native raw source view
 
-The viewer shell now routes all five artifact kinds through dynamically imported client-only renderers so the landing shell stays light and static-host friendly.
+The viewer shell now routes all seven artifact kinds (markdown, code, diff, csv, json, html, choices) through dynamically imported client-only renderers so the landing shell stays light and static-host friendly. Kit `html` artifacts render sanitized on fragment links and verbatim only for server-injected self-hosted payloads; see `docs/design-kit.md`.
 
 When a valid fragment is present, the shell switches into a viewer-first layout with bundle navigation beside the active artifact. The active artifact header includes copy, download, and markdown print actions. The landing/samples experience is only the empty state.
 

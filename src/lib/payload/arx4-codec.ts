@@ -711,6 +711,10 @@ const PRIOR_ID_BY_ARTIFACT_KIND: Record<ArtifactKind, Arx4PriorId> = {
   json: "j",
   csv: "j",
   diff: "c",
+  // Unreachable while the tuple codecs skip these kinds (tupleCodecsSupportEnvelope in
+  // fragment-arx.ts); mapped anyway so the record stays total.
+  html: "m",
+  choices: "n",
 };
 
 /** The prior id an encoder picks for an envelope, from its first artifact's kind. */

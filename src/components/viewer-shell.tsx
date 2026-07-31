@@ -197,6 +197,10 @@ function getStatusTone(parsed: ParsedPayload) {
  */
 export function ViewerShell() {
   const [hash, setHash] = useState("");
+  // True only for the exact server-injected payload (self-hosted UUID mode). Any hash mutation —
+  // navigation, samples, even re-encoding the same bundle for artifact selection — drops back to
+  // untrusted, so verbatim HTML rendering never survives past the payload the server vouched for.
+  const [trustedPayload, setTrustedPayload] = useState(false);
   const [activeArtifactId, setActiveArtifactId] = useState<string | null>(null);
   const [rendererReady, setRendererReady] = useState(true);
   const rendererReadyKeyRef = useRef("");
@@ -214,11 +218,13 @@ export function ViewerShell() {
       delete (window as unknown as Record<string, unknown>)
         .__AGENT_RENDER_PAYLOAD__;
       injectedPayloadRef.current = true;
+      setTrustedPayload(true);
       setHash(`#${injected}`);
     }
 
     const syncHash = () => {
       injectedPayloadRef.current = false;
+      setTrustedPayload(false);
       setHash(window.location.hash);
     };
 
@@ -319,6 +325,7 @@ export function ViewerShell() {
 
   const setFragmentHash = useCallback((nextHash: string) => {
     injectedPayloadRef.current = false;
+    setTrustedPayload(false);
 
     if (window.location.hash === nextHash) {
       return;
@@ -331,6 +338,7 @@ export function ViewerShell() {
   const handleGoHome = useCallback(() => {
     const url = window.location.pathname + (window.location.search || "");
     injectedPayloadRef.current = false;
+    setTrustedPayload(false);
     window.history.replaceState(null, "", url);
     setHash("");
   }, []);
@@ -418,6 +426,7 @@ export function ViewerShell() {
             onRendererReady={markRendererReady}
             rendererReadyKey={rendererReadyKey}
             statusTone={statusTone}
+            trustedPayload={trustedPayload}
           />
         ) : (
           <section className="empty-state-layout">
@@ -442,7 +451,7 @@ export function ViewerShell() {
               </p>
               <div className="mt-6 flex flex-wrap gap-2 sm:mt-10 sm:gap-3">
                 <span className="mono-pill">static export</span>
-                <span className="mono-pill">5 renderers</span>
+                <span className="mono-pill">7 renderers</span>
                 <span className="mono-pill">zero retention</span>
               </div>
             </section>
@@ -467,8 +476,9 @@ export function ViewerShell() {
               <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
                 <p className="section-kicker">Static boundary</p>
                 <p className="mt-4 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-                  The browser decodes markdown, code, diffs, CSV, and JSON
-                  locally from the fragment after the shell loads.
+                  The browser decodes markdown, code, diffs, CSV, JSON, kit
+                  HTML, and choice lists locally from the fragment after the
+                  shell loads.
                 </p>
               </div>
               {ecosystemLinks.map((link) => (

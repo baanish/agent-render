@@ -14,6 +14,20 @@ function validateArtifact(artifact: ArtifactPayload): string | null {
     }
   }
 
+  if (artifact.kind === "choices") {
+    if (artifact.options.length === 0) {
+      return `Choices artifact "${artifact.id}" must include at least one option.`;
+    }
+
+    const seenOptionIds = new Set<string>();
+    for (const option of artifact.options) {
+      if (seenOptionIds.has(option.id)) {
+        return `Choices artifact "${artifact.id}" has duplicate option id "${option.id}".`;
+      }
+      seenOptionIds.add(option.id);
+    }
+  }
+
   return null;
 }
 
