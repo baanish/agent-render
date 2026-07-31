@@ -33,6 +33,36 @@ describe("CLI config", () => {
     expect(stored).toEqual({ instanceUrl: "https://stored.example/base" });
   });
 
+  it("never sends a stored token to an --instance-url override for another host", async () => {
+    const home = await temporaryHome();
+    const fileEnv = { HOME: home };
+    await setConfigValue("INSTANCE_URL", "https://private-a", fileEnv);
+    await setConfigValue("TOKEN", "secret-a", fileEnv);
+
+    // The config file's token belongs to the config file's instance; pointing the CLI somewhere else
+    // must not carry that credential along.
+    const overridden = await resolveConfig({ instanceUrl: "https://other-b" }, { HOME: home });
+    expect(overridden.instanceUrl).toBe("https://other-b");
+    expect(overridden.token).toBeUndefined();
+
+    // An explicit --token is a deliberate choice and still applies.
+    const explicit = await resolveConfig(
+      { instanceUrl: "https://other-b", token: "for-b" },
+      { HOME: home },
+    );
+    expect(explicit.token).toBe("for-b");
+  });
+
+  it("still pairs a config-file URL with a token supplied only by the environment", async () => {
+    const home = await temporaryHome();
+    await setConfigValue("INSTANCE_URL", "https://private-a", { HOME: home });
+
+    // The env token names no host of its own, so it is not tied to a different endpoint.
+    const resolved = await resolveConfig({}, { HOME: home, AGENT_RENDER_TOKEN: "ci-secret" });
+    expect(resolved.instanceUrl).toBe("https://private-a");
+    expect(resolved.token).toBe("ci-secret");
+  });
+
   it("resolves flags over environment over stored values", async () => {
     const home = await temporaryHome();
     const fileEnv = { HOME: home };

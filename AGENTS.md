@@ -25,7 +25,7 @@ Treat these as core constraints unless the owner explicitly changes the product 
 - The app is a single exported client-side shell, not a backend product.
 - Artifact payloads live in the URL fragment, using the compact `#<tag><payload>` form where the single tag char identifies the codec: `p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4. Legacy `#agent-render=v1.<codec>.<payload>` links (arx-family carry an extra `<dictVersion>.` segment) still decode but are no longer emitted.
 - The deployed host should not receive artifact contents as part of the initial page request.
-- Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.
+- Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, `json`, and `html`.
 - Supported codecs are `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, and `arx4`.
 - The product is zero-retention by host design, not secret-safe in an absolute sense.
 - Links may still leak through browser history, copied URLs, screenshots, and any future client-side analytics.
@@ -60,6 +60,7 @@ Describe and preserve what is already true in the repo today.
 - `diff` uses a review-style git patch viewer with unified and split modes.
 - `csv` renders as a readable table/grid.
 - `json` renders as a lightweight structured tree plus raw fallback behavior.
+- `html` renders agent markup against the design kit shipped in the viewer (`docs/design-kit.md`). Fragment payloads are sanitized to the kit vocabulary and adopted inline; server-injected self-hosted payloads render verbatim in the origin-isolated `/artifact-frame.html`, which carries its own CSP.
 
 ### Performance and bundling
 

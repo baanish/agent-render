@@ -80,15 +80,16 @@ export async function resolveConfig(
     { instanceUrl: stored.instanceUrl, token: stored.token },
   ];
 
-  const urlLayer = layers.findIndex((layer) => layer.instanceUrl !== undefined);
-  const instanceUrl = urlLayer === -1 ? undefined : layers[urlLayer]!.instanceUrl;
-  // An explicit --token always wins; otherwise only layers no more specific than the URL's own may
-  // supply the credential.
-  const token =
-    flags.token
-    ?? (urlLayer === -1
-      ? (env.AGENT_RENDER_TOKEN ?? stored.token)
-      : layers.slice(urlLayer).find((layer) => layer.token !== undefined)?.token);
+  const instanceUrl = layers.find((layer) => layer.instanceUrl !== undefined)?.instanceUrl;
+  // A token is usable only if its own layer does not name a DIFFERENT host: a layer that names no
+  // URL (a bare --token, or AGENT_RENDER_TOKEN beside a config-file URL) is not tied to an endpoint,
+  // but the config file's token belongs to the config file's instance and must not follow an
+  // --instance-url override to somewhere else.
+  const token = layers.find(
+    (layer) =>
+      layer.token !== undefined
+      && (layer.instanceUrl === undefined || layer.instanceUrl === instanceUrl),
+  )?.token;
 
   return {
     instanceUrl,

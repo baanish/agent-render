@@ -28,11 +28,22 @@
 
   // The parent hands over the artifact HTML once. Nothing is read from the URL, so a link to this
   // page on its own renders empty rather than becoming an open HTML-rendering endpoint.
+  //
+  // event.source is checked rather than event.origin: this document is sandboxed into an opaque
+  // origin, so every inbound message reports origin "null" and comparing it proves nothing. The
+  // source check is what matters — without it any window holding a reference to this frame (an
+  // ancestor walking window.frames, for instance) could race its own markup in ahead of the viewer.
   window.addEventListener("message", function (event) {
-    if (delivered) return;
+    if (delivered || event.source !== parent) return;
     var data = event.data;
     if (!data || data.type !== "agent-render:artifact-html" || typeof data.html !== "string") return;
     delivered = true;
+    // codeql[js/xss] Deliberate, and the reason this document exists. Rendering a trusted artifact
+    // verbatim means an HTML sink; there is no sink-free way to do it. What makes it safe is the
+    // container, not the assignment: this document is sandboxed with allow-scripts and no
+    // allow-same-origin, so it runs in an opaque origin with no access to the viewer DOM, the auth
+    // cookie, or the artifact API, and its CSP carries no connect-src or form-action, so nothing
+    // here can exfiltrate or phish. The markup arrives only from the direct parent, checked above.
     root.innerHTML = data.html;
     // Scripts inserted via innerHTML never execute; re-create them so a trusted artifact's own
     // behavior runs, which is the entire point of this frame.

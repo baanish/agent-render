@@ -20,12 +20,12 @@ const SKILL_PATHS = {
   "selfhosted-agent-render": fileURLToPath(new URL("../skills/selfhosted-agent-render/SKILL.md", import.meta.url)),
 };
 
-/** Reads the YAML frontmatter description so the index cannot drift from the skill's own summary. */
-function frontmatterDescription(source) {
+/** Reads one YAML frontmatter field so the index cannot drift from the skill's own header. */
+function frontmatterField(source, field) {
   const match = /^---\n([\s\S]*?)\n---/.exec(source);
   if (!match) return null;
-  const description = /^description:[ \t]*(.*)$/m.exec(match[1]);
-  return description ? description[1].trim() : null;
+  const value = new RegExp(`^${field}:[ \\t]*(.*)$`, "m").exec(match[1]);
+  return value ? value[1].trim() : null;
 }
 
 const write = process.argv.includes("--write");
@@ -47,7 +47,17 @@ for (const skill of index.skills ?? []) {
 
   const source = readFileSync(skillPath, "utf8");
   const digest = `sha256:${createHash("sha256").update(source).digest("hex")}`;
-  const description = frontmatterDescription(source);
+  const description = frontmatterField(source, "description");
+  const declaredName = frontmatterField(source, "name");
+
+  // A renamed skill is not something regenerating the digest can fix: the index entry, this
+  // script's path mapping, and the published URL all key on the old name and must be changed
+  // together, deliberately.
+  if (declaredName !== null && declaredName !== skill.name) {
+    const problem = `${skill.name}: SKILL.md declares name "${declaredName}"; update the index entry, URL, and mapping together`;
+    problems.push(problem);
+    unfixable.push(problem);
+  }
 
   if (skill.digest !== digest) {
     problems.push(`${skill.name}: digest is ${skill.digest}, file hashes to ${digest}`);
