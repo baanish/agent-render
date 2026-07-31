@@ -29,9 +29,13 @@ const outputDirectoryWithSeparator = `${outputDirectory}${path.sep}`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const API_CATALOG_CONTENT_TYPE = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
 const API_CATALOG_LINK_HEADER = '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"';
-// An empty string is treated as unset, not as an empty shared secret: an empty AGENT_RENDER_PASSWORD
-// in a compose file should leave the gate disabled, never enable it with a blank password.
-const authPassword = process.env.AGENT_RENDER_PASSWORD ? process.env.AGENT_RENDER_PASSWORD : undefined;
+// Present-but-empty is a configuration error, not "auth off". `AGENT_RENDER_PASSWORD=${SECRET}` in a
+// compose file where SECRET is missing expands to an empty string, and silently starting wide open
+// is the worst possible reading of an operator who explicitly set the variable. Unset stays unset.
+if (process.env.AGENT_RENDER_PASSWORD !== undefined && process.env.AGENT_RENDER_PASSWORD.length === 0) {
+  throw new Error("AGENT_RENDER_PASSWORD is set but empty. Unset it to run without auth, or give it a value.");
+}
+const authPassword = process.env.AGENT_RENDER_PASSWORD;
 const authCookieName = "agent_render_auth";
 const authSalt = randomBytes(32);
 
@@ -267,6 +271,11 @@ function jsonResponse(res: ServerResponse, status: number, body: unknown): void 
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Content-Length": Buffer.byteLength(json),
+    // Artifact responses are per-credential. Without this a caching reverse proxy in front of the
+    // instance can store one authenticated response and replay it to a client that never passed the
+    // gate. Vary keeps any cache that ignores no-store keyed on the credential at least.
+    "Cache-Control": "no-store, private",
+    Vary: "Cookie, Authorization",
   });
   res.end(json);
 }
@@ -287,6 +296,9 @@ function htmlResponse(
     "Content-Type": "text/html; charset=utf-8",
     "Content-Length": Buffer.byteLength(body),
     "Content-Security-Policy": contentSecurityPolicy(hashes, nonce),
+    // Stored artifact pages and the sign-in page are per-credential; see jsonResponse.
+    "Cache-Control": "no-store, private",
+    Vary: "Cookie, Authorization",
   });
   res.end(body);
 }

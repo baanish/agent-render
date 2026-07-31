@@ -298,20 +298,18 @@ describe("self-hosted server without a password", () => {
 });
 
 describe("self-hosted server with an empty password", () => {
-  it("treats AGENT_RENDER_PASSWORD='' as unset (gate disabled, not a blank secret)", async () => {
+  it("refuses to start when AGENT_RENDER_PASSWORD is set but empty", async () => {
+    // `AGENT_RENDER_PASSWORD=${SECRET}` with SECRET missing expands to empty. Starting wide open
+    // there would leave an operator who explicitly configured auth with none, so it must fail loudly
+    // rather than be read as "auth off" (which is what an unset variable means).
     const files = fixture();
     const port = await freePort();
-    const base = `http://127.0.0.1:${port}`;
     const child = startServer(port, files, "");
     try {
-      await waitForHealth(base, child);
-      // Gate disabled: a write with no credentials succeeds rather than a blank Bearer authenticating.
-      const created = await fetch(`${base}/api/artifacts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload: "pempty" }),
+      const exitCode = await new Promise<number | null>((resolve) => {
+        child.once("close", (code) => resolve(code));
       });
-      expect(created.status).toBe(201);
+      expect(exitCode).not.toBe(0);
     } finally {
       await stopServer(child);
       rmSync(files.root, { recursive: true, force: true });
