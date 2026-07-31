@@ -384,7 +384,23 @@ const failedAuthAttempts = new Map<string, { count: number; resetAt: number }>()
 const AUTH_ATTEMPT_WINDOW_MS = 60_000;
 const MAX_AUTH_ATTEMPTS_PER_WINDOW = 10;
 
+/**
+ * Identifies the client for rate-limiting purposes.
+ *
+ * Behind a reverse proxy — the documented primary deployment — every request arrives from the
+ * proxy's address, so keying on the socket alone would collapse all clients into one bucket and let
+ * a single attacker lock everyone else out with ten bad guesses a minute. When the operator has
+ * declared the proxy trusted, key on the RIGHTMOST X-Forwarded-For entry instead: that hop is the
+ * one the trusted proxy appended, whereas the leftmost is client-supplied and would let an attacker
+ * rotate keys to evade the limit entirely.
+ */
 function clientKey(req: IncomingMessage): string {
+  if (trustProxyHeaders) {
+    const forwardedFor = String(req.headers["x-forwarded-for"] ?? "");
+    const hops = forwardedFor.split(",").map((hop) => hop.trim()).filter((hop) => hop.length > 0);
+    const nearestHop = hops[hops.length - 1];
+    if (nearestHop !== undefined) return nearestHop;
+  }
   return req.socket.remoteAddress ?? "unknown";
 }
 

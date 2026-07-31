@@ -32,10 +32,16 @@ const write = process.argv.includes("--write");
 const index = JSON.parse(readFileSync(INDEX_PATH, "utf8"));
 const problems = [];
 
+// Problems a rewrite cannot resolve: regenerating the file leaves these entries just as broken, so
+// --write must not report success for them.
+const unfixable = [];
+
 for (const skill of index.skills ?? []) {
   const skillPath = SKILL_PATHS[skill.name];
   if (!skillPath) {
-    problems.push(`${skill.name}: no local SKILL.md is mapped in ${import.meta.url}`);
+    const problem = `${skill.name}: no local SKILL.md is mapped in scripts/check-skill-digests.mjs`;
+    problems.push(problem);
+    unfixable.push(problem);
     continue;
   }
 
@@ -62,6 +68,10 @@ if (problems.length === 0) {
 if (write) {
   writeFileSync(INDEX_PATH, `${JSON.stringify(index, null, 2)}\n`);
   console.log(`Updated skill discovery index:\n  ${problems.join("\n  ")}`);
+  if (unfixable.length > 0) {
+    console.error(`\nStill broken after regenerating:\n  ${unfixable.join("\n  ")}`);
+    process.exit(1);
+  }
   process.exit(0);
 }
 
