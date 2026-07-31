@@ -7,7 +7,7 @@ import { build } from "esbuild";
 import { encode } from "gpt-tokenizer/encoding/o200k_base";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const REPORT_PATH = fileURLToPath(new URL("../TOKEN_BENCH_REPORT.md", import.meta.url));
+const REPORT_PATH = fileURLToPath(new URL("../docs/token-bench-report.md", import.meta.url));
 
 process.chdir(ROOT);
 
