@@ -91,8 +91,10 @@ describe("arx3-vs-arx2 selection policy", () => {
     expect(arx2BaseBMP).toBeDefined();
     expect(arx2BaseBMP!.transportLength).toBeGreaterThan(chosen.transportLength);
 
-    // End-to-end: the public auto encoder commits to the same arx3 baseBMP wire.
-    const fragment = await encodeEnvelopeAsync(reportEnvelope);
+    // End-to-end: the public encoder commits to the same arx3 baseBMP wire. The priority is pinned
+    // to this pair because arx4 shares the policy and outcompresses arx3, so it would otherwise win
+    // the global auto pool and stop exercising the arx3-vs-arx2 comparison this test is about.
+    const fragment = await encodeEnvelopeAsync(reportEnvelope, { codecPriority: ["arx3", "arx2"] });
     expect(fragment.startsWith(compactTagForCodec("arx3"))).toBe(true);
     expect(isBaseBMPEncoded(getArx3PayloadBody(fragment))).toBe(true);
   });

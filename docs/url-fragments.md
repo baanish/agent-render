@@ -22,9 +22,10 @@ The tag char identifies the codec:
 #a<payload>   (arx)
 #b<payload>   (arx2)
 #c<payload>   (arx3)
+#e<payload>   (arx4)
 ```
 
-For `arx`, `arx2`, and `arx3`, the compact tag does not carry a dictionary version — it implies the current dictionary (the build pins the newest supported version and rejects a newer one). Only the legacy header below carries an explicit dictionary version.
+For `arx`, `arx2`, `arx3`, and `arx4`, the compact tag does not carry a dictionary version — it implies the current dictionary (the build pins the newest supported version and rejects a newer one). Only the legacy header below carries an explicit dictionary version.
 
 Older links may use the legacy shape, which the viewer still decodes:
 

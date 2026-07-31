@@ -3,17 +3,20 @@ export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 
 export const artifactKinds = ["markdown", "code", "diff", "csv", "json"] as const;
-export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3"] as const;
+export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3", "arx4"] as const;
 
 export type ArtifactKind = (typeof artifactKinds)[number];
 export type PayloadCodec = (typeof codecs)[number];
 
-/** The dictionary + Brotli + binary-to-text codecs, as opposed to plain/lz/deflate. */
-export type ArxCodec = "arx" | "arx2" | "arx3";
+/**
+ * The dictionary + entropy-coder + binary-to-text codecs, as opposed to plain/lz/deflate.
+ * arx/arx2/arx3 entropy-code with Brotli; arx4 uses the context mixer in arx4-codec.ts.
+ */
+export type ArxCodec = "arx" | "arx2" | "arx3" | "arx4";
 
 /** True when `codec` is one of the arx-family codecs. */
 export function isArxCodec(codec: PayloadCodec): codec is ArxCodec {
-  return codec === "arx" || codec === "arx2" || codec === "arx3";
+  return codec === "arx" || codec === "arx2" || codec === "arx3" || codec === "arx4";
 }
 
 // Compact fragment header: a single URL-unreserved tag char replaces the legacy
@@ -23,6 +26,7 @@ export function isArxCodec(codec: PayloadCodec): codec is ArxCodec {
 // `B.` prefix, baseBMP U+FFF0 marker, base76/base1k length prefix), so the alphabet is not in the
 // header. Tags come from the RFC-3986 unreserved set so they never percent-escape, and none can
 // begin the legacy `agent-render=` literal, which keeps the two header forms unambiguous on decode.
+// The arx family runs a, b, c, then e because d is taken by deflate.
 export const compactCodecTags = {
   plain: "p",
   lz: "l",
@@ -30,6 +34,7 @@ export const compactCodecTags = {
   arx: "a",
   arx2: "b",
   arx3: "c",
+  arx4: "e",
 } as const satisfies Record<PayloadCodec, string>;
 
 const compactTagToCodec = new Map<string, PayloadCodec>(
@@ -126,7 +131,10 @@ export type ParsedPayload =
   | { ok: true; envelope: PayloadEnvelope; rawLength: number }
   | {
       ok: false;
-      code: "empty" | "missing-key" | "too-large" | "decoded-too-large" | "invalid-format" | "invalid-json" | "invalid-envelope";
+      // `asset-unavailable` is the only retryable code: the fragment is well-formed but a codec asset
+      // this session needs (an arx4 prior corpus or dictionary) is missing or version-skewed, so the
+      // same link decodes once the asset endpoint serves the expected version.
+      code: "empty" | "missing-key" | "too-large" | "decoded-too-large" | "invalid-format" | "invalid-json" | "invalid-envelope" | "asset-unavailable";
       message: string;
     };
 

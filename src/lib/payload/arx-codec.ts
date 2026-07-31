@@ -252,6 +252,7 @@ function applySubstitutionTrie(text: string, trie: SubstitutionTrieNode): string
 // a slot so the loaders/getters are written once. Both slots start on their built-in dictionaries.
 type DictSlot = {
   table: SubstitutionTable;
+  dictionary: ArxDictionary;
   version: number;
   loaded: boolean;
   buildPairs: (dict: ArxDictionary) => SubstitutionPair[];
@@ -260,6 +261,7 @@ type DictSlot = {
 
 const baseDictSlot: DictSlot = {
   table: buildSubstitutionTable(buildSubstitutions(BUILTIN_DICTIONARY)),
+  dictionary: BUILTIN_DICTIONARY,
   version: BUILTIN_DICTIONARY.version,
   loaded: false,
   buildPairs: (dict) => buildSubstitutions(dict),
@@ -268,6 +270,7 @@ const baseDictSlot: DictSlot = {
 
 const overlayDictSlot: DictSlot = {
   table: buildSubstitutionTable(buildOverlaySubstitutionPairs(BUILTIN_ARX2_OVERLAY_DICTIONARY)),
+  dictionary: BUILTIN_ARX2_OVERLAY_DICTIONARY,
   version: BUILTIN_ARX2_OVERLAY_DICTIONARY.version,
   loaded: false,
   buildPairs: buildOverlaySubstitutionPairs,
@@ -351,6 +354,7 @@ async function loadDictSlot(slot: DictSlot, source?: string | ArxDictionary): Pr
 /** Load a dictionary slot from a pre-parsed object (synchronous). */
 function loadDictSlotSync(slot: DictSlot, dict: ArxDictionary): number {
   slot.table = buildSubstitutionTable(slot.buildPairs(dict));
+  slot.dictionary = dict;
   slot.version = dict.version;
   slot.loaded = true;
   return dict.version;
@@ -407,6 +411,21 @@ export function getActiveDictVersion(): number {
 /** Returns the active arx2 overlay dictionary version. */
 export function getActiveArx2OverlayVersion(): number {
   return overlayDictSlot.version;
+}
+
+/**
+ * Newline-joined slot text of the active base + overlay dictionaries, in canonical slot order.
+ * This is the arx4 context mixer's priming corpus (see arx4-codec.ts): it is the only text both
+ * encoder and decoder are guaranteed to agree on byte-for-byte, because the compact arx tags
+ * already pin the dictionary version for the substitution stage.
+ */
+export function getArxDictionaryPriorText(): string {
+  return [
+    ...baseDictSlot.dictionary.singleByteSlots,
+    ...baseDictSlot.dictionary.extendedSlots,
+    ...overlayDictSlot.dictionary.singleByteSlots,
+    ...overlayDictSlot.dictionary.extendedSlots,
+  ].join("\n");
 }
 
 function resolveDefaultDictionaryUrl(): string {
@@ -585,7 +604,7 @@ function decodeArx2ArtifactTuple(value: unknown): ArtifactPayload {
   }
 }
 
-function envelopeFromArxTuple(value: unknown, codec: Extract<PayloadCodec, "arx2" | "arx3">): PayloadEnvelope {
+function envelopeFromArxTuple(value: unknown, codec: Extract<PayloadCodec, "arx2" | "arx3" | "arx4">): PayloadEnvelope {
   if (!Array.isArray(value)) {
     throw new Error("Invalid arx2 envelope tuple.");
   }
@@ -731,7 +750,7 @@ export function decodeBase76(str: string): Uint8Array {
     digitsStart = 2;
   }
 
-  assertWireByteLen(byteLen);
+  assertArxWireByteLength(byteLen);
 
   let num = BIGINT_0;
   for (let i = digitsStart; i < str.length; i++) {
@@ -801,7 +820,7 @@ export function decodeBase1k(str: string): Uint8Array {
   const lenLow = UNICODE_CHAR_TO_INDEX.get(str[1]) ?? 0;
   const byteLen = lenHigh * UNICODE_ALPHABET.length + lenLow;
 
-  assertWireByteLen(byteLen);
+  assertArxWireByteLength(byteLen);
 
   let num = BIGINT_0;
   for (let i = 2; i < str.length; i++) {
@@ -1042,7 +1061,7 @@ export function decodeBaseBMP(str: string): Uint8Array {
   const lenLow = BMP_CHAR_TO_INDEX.get(s[1]) ?? 0;
   const byteLen = lenHigh * BMP_ALPHABET.length + lenLow;
 
-  assertWireByteLen(byteLen);
+  assertArxWireByteLength(byteLen);
 
   let num = BIGINT_0;
   for (let i = 2; i < s.length; i++) {
@@ -1171,14 +1190,15 @@ function assertDecodedTextBudget(text: string): void {
 }
 
 /**
- * Bounds a wire byte length decoded from an attacker-controlled base-N length prefix BEFORE any
- * allocation or per-byte loop. The prefix is tiny but can claim a huge count (baseBMP's 2-char
- * prefix reaches ~3.8e9), which would otherwise peg a core for ~a minute on a multi-GB allocation
- * — the existing decoded-size budget only runs after decompression, far too late. A real
- * compressed payload is always far below MAX_BROTLI_OUTPUT_BYTES, so anything larger is provably
- * implausible and rejected as decoded-too-large (caught upstream in decodeFragmentAsync).
+ * Bounds a byte length decoded from an attacker-controlled length prefix BEFORE any allocation or
+ * per-byte loop. The prefix is tiny but can claim a huge count (baseBMP's 2-char prefix reaches
+ * ~3.8e9), which would otherwise peg a core for ~a minute on a multi-GB allocation — the existing
+ * decoded-size budget only runs after decompression, far too late. A real compressed payload is
+ * always far below MAX_BROTLI_OUTPUT_BYTES, so anything larger is provably implausible and rejected
+ * as decoded-too-large (caught upstream in decodeFragmentAsync). Exported for arx4, whose coded
+ * payload carries its own decoded-length varint.
  */
-function assertWireByteLen(byteLen: number): void {
+export function assertArxWireByteLength(byteLen: number): void {
   // Reject non-integer lengths too: a malformed prefix can yield NaN (e.g. an out-of-range
   // charCodeAt), and `NaN > MAX_BROTLI_OUTPUT_BYTES` is false, which would otherwise slip the
   // guard and decode to a misleading empty array instead of a rejection.
@@ -1261,7 +1281,8 @@ async function compressArxJson(json: string): Promise<Uint8Array> {
   return compressSubstitutedText(dictEncode(json));
 }
 
-function encodeWirePayloads(compressed: Uint8Array): ArxWirePayloads {
+/** Every supported binary-to-text wire shape for one compressed payload. */
+export function encodeArxWirePayloads(compressed: Uint8Array): ArxWirePayloads {
   return {
     base76: encodeBase76(compressed),
     base1k: encodeBase1k(compressed),
@@ -1270,34 +1291,42 @@ function encodeWirePayloads(compressed: Uint8Array): ArxWirePayloads {
   };
 }
 
-async function decompressWirePayload(encoded: string): Promise<string> {
-  const brotli = await getBrotli();
-
-  const decompressFromBytes = (bytes: Uint8Array): string => {
-    const out = brotliDecompressWithLimit(brotli, bytes);
-    return new TextDecoder().decode(out);
-  };
-
+/**
+ * Detects which wire alphabet `encoded` uses and hands the decoded bytes to `decodePayloadBytes`.
+ * Shared by the Brotli codecs and arx4's context mixer so the alphabet dispatch is written once.
+ *
+ * The base76 length prefix can itself be `B.` (e.g. 140-byte payloads), so a base64url read whose
+ * payload stage rejects the bytes is retried as base76. A decoded-too-large rejection is a real
+ * answer, not a mis-detection, so it propagates instead of triggering the retry.
+ */
+export function decodeArxWirePayload<T>(encoded: string, decodePayloadBytes: (bytes: Uint8Array) => T): T {
   if (isBaseBMPEncoded(encoded)) {
-    return decompressFromBytes(decodeBaseBMP(encoded));
+    return decodePayloadBytes(decodeBaseBMP(encoded));
   }
 
   if (isBase64urlEncoded(encoded)) {
     try {
-      return decompressFromBytes(decodeBase64url(encoded));
+      return decodePayloadBytes(decodeBase64url(encoded));
     } catch (error) {
       if (error instanceof ArxDecodedPayloadTooLargeError) {
         throw error;
       }
-      // base76 length prefix can also be `B.` (e.g. 140-byte payloads); retry as base76.
     }
   }
 
   if (isBase1kEncoded(encoded)) {
-    return decompressFromBytes(decodeBase1k(encoded));
+    return decodePayloadBytes(decodeBase1k(encoded));
   }
 
-  return decompressFromBytes(decodeBase76(encoded));
+  return decodePayloadBytes(decodeBase76(encoded));
+}
+
+async function decompressWirePayload(encoded: string): Promise<string> {
+  const brotli = await getBrotli();
+
+  return decodeArxWirePayload(encoded, (bytes) => (
+    new TextDecoder().decode(brotliDecompressWithLimit(brotli, bytes))
+  ));
 }
 
 // ---------------------------------------------------------------------------
@@ -1317,7 +1346,7 @@ export async function arxCompress(json: string): Promise<string> {
  */
 export async function arxCompressPayloads(json: string): Promise<ArxWirePayloads> {
   const compressed = await compressArxJson(json);
-  return encodeWirePayloads(compressed);
+  return encodeArxWirePayloads(compressed);
 }
 
 /**
@@ -1350,10 +1379,11 @@ export async function arxCompressBase64url(json: string): Promise<string> {
 }
 
 /**
- * Compresses a payload envelope with the arx2 tuple-envelope pipeline.
- * Returns all supported binary-to-text wire shapes so callers can choose by transport size.
+ * The tuple-envelope pipeline's pre-entropy stage: envelope → compact tuple JSON → arx2 overlay
+ * substitution → shared dictionary substitution. Every tuple codec entropy-codes exactly these
+ * bytes (Brotli for arx2/arx3, the context mixer for arx4), so they all share this one derivation.
  */
-async function compressTupleEnvelope(envelope: PayloadEnvelope): Promise<ArxWirePayloads> {
+export function substituteArxTupleText(envelope: PayloadEnvelope): string {
   // The arx2/arx3 overlay repurposes 0x7F (DEL) as a single-byte substitution
   // code (see ARX2_SINGLE_BYTE_CODES). JSON.stringify escapes every C0 control
   // byte (< 0x20) — which covers all the other substitution code bytes — but
@@ -1364,9 +1394,12 @@ async function compressTupleEnvelope(envelope: PayloadEnvelope): Promise<ArxWire
   // on decode) keeps DEL out of the substitution alphabet. This is a no-op for
   // DEL-free payloads, so the wire form is byte-identical for existing content.
   const tupleJson = JSON.stringify(envelopeToArx2Tuple(envelope)).replace(/\x7f/g, "\\u007f");
-  const substituted = dictEncode(overlayEncode(tupleJson));
-  const compressed = await compressSubstitutedText(substituted);
-  return encodeWirePayloads(compressed);
+  return dictEncode(overlayEncode(tupleJson));
+}
+
+async function compressTupleEnvelope(envelope: PayloadEnvelope): Promise<ArxWirePayloads> {
+  const compressed = await compressSubstitutedText(substituteArxTupleText(envelope));
+  return encodeArxWirePayloads(compressed);
 }
 
 /**
@@ -1394,11 +1427,14 @@ export async function arxDecompress(encoded: string): Promise<string> {
 }
 
 /**
- * Decompresses an arx2/arx3 tuple-envelope payload and rebuilds the standard envelope shape. The two
- * codecs share the same tuple/overlay wire bytes; only the codec stamped on the rebuilt envelope differs.
+ * Inverse of {@link substituteArxTupleText}, ending at a rebuilt envelope. Shared by every tuple
+ * codec; only the codec stamped on the rebuilt envelope differs.
  */
-async function decompressArxTupleEnvelope(encoded: string, codec: "arx2" | "arx3"): Promise<PayloadEnvelope> {
-  const v1Decoded = dictDecode(await decompressWirePayload(encoded));
+export function envelopeFromSubstitutedArxTupleText(
+  substituted: string,
+  codec: "arx2" | "arx3" | "arx4",
+): PayloadEnvelope {
+  const v1Decoded = dictDecode(substituted);
   assertWithinExpansionBudget(v1Decoded);
   const tupleJson = overlayDecode(v1Decoded);
   assertWithinExpansionBudget(tupleJson);
@@ -1409,6 +1445,10 @@ async function decompressArxTupleEnvelope(encoded: string, codec: "arx2" | "arx3
   const tuple = JSON.parse(tupleJson);
   assertDecodedTextBudget(JSON.stringify(tuple));
   return envelopeFromArxTuple(tuple, codec);
+}
+
+async function decompressArxTupleEnvelope(encoded: string, codec: "arx2" | "arx3"): Promise<PayloadEnvelope> {
+  return envelopeFromSubstitutedArxTupleText(await decompressWirePayload(encoded), codec);
 }
 
 /** Decompresses an arx2 tuple-envelope payload and rebuilds the standard envelope shape. */

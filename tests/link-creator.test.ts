@@ -1,12 +1,15 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import arx2DictionaryJson from "../public/arx2-dictionary.json";
+import arx4PriorsJson from "../public/arx4-priors.json";
 import arxDictionaryJson from "../public/arx-dictionary.json";
 import { loadArx2OverlayDictionarySync, loadArxDictionarySync } from "@/lib/payload/arx-codec";
-import { decodeFragment, decodeFragmentAsync } from "@/lib/payload/fragment";
+import { loadArx4PriorsSync } from "@/lib/payload/arx4-codec";
+import { decodeFragment, decodeFragmentAsync, getFragmentTransportLength, getVisibleFragmentLength } from "@/lib/payload/fragment";
 import { createDraftEnvelope, createGeneratedArtifactLink, createGeneratedArtifactLinkAsync, type LinkCreatorDraft } from "@/lib/payload/link-creator";
 import { DISCORD_MESSAGE_MAX_LENGTH } from "@/lib/markdown-link";
-import { compactTagForCodec } from "@/lib/payload/schema";
+import { compactTagForCodec, MAX_FRAGMENT_LENGTH } from "@/lib/payload/schema";
 
 describe("link creator payloads", () => {
   it("builds a single-artifact envelope for pasted markdown", () => {
@@ -116,7 +119,7 @@ describe("link creator payloads", () => {
     expect(parsed.ok).toBe(true);
   });
 
-  it("lets the async auto encoder pick ARX3 when it wins the visible URL budget", async () => {
+  it("lets the async auto encoder pick ARX4 when it wins the visible URL budget", async () => {
     loadArxDictionarySync(arxDictionaryJson);
     loadArx2OverlayDictionarySync(arx2DictionaryJson);
 
@@ -133,11 +136,118 @@ describe("link creator payloads", () => {
     const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
     const parsed = await decodeFragmentAsync(generatedLink.hash);
 
-    expect(generatedLink.codec).toBe("arx3");
-    expect(generatedLink.hash.startsWith(`#${compactTagForCodec("arx3")}`)).toBe(true);
-    expect(generatedLink.url).toContain(`#${compactTagForCodec("arx3")}`);
+    expect(generatedLink.codec).toBe("arx4");
+    expect(generatedLink.hash.startsWith(`#${compactTagForCodec("arx4")}`)).toBe(true);
+    expect(generatedLink.url).toContain(`#${compactTagForCodec("arx4")}`);
     expect(generatedLink.fragmentLength).toBeLessThan(1900);
     expect(parsed.ok).toBe(true);
+  });
+
+  it("copies the raw unicode fragment in the paste URL instead of a percent-encoded serialization", async () => {
+    loadArxDictionarySync(arxDictionaryJson);
+    loadArx2OverlayDictionarySync(arx2DictionaryJson);
+
+    const draft: LinkCreatorDraft = {
+      kind: "markdown",
+      title: "Launch note",
+      filename: "brief.md",
+      content: "# Launch note\n\nA short brief with enough text for a packed wire to win.\n",
+      language: "",
+      diffView: "unified",
+      codec: "arx3",
+    };
+
+    const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
+    const fragment = generatedLink.url.slice(generatedLink.url.indexOf("#") + 1);
+
+    expect(generatedLink.url).not.toMatch(/%[0-9A-F]{2}/);
+    expect(fragment).toBe(generatedLink.hash.slice(1));
+    expect(fragment.length).toBe(generatedLink.fragmentLength);
+  });
+
+  it("builds markdown links from an ASCII wire fragment so URL serialization cannot balloon them", async () => {
+    loadArxDictionarySync(arxDictionaryJson);
+    loadArx2OverlayDictionarySync(arx2DictionaryJson);
+
+    const draft: LinkCreatorDraft = {
+      kind: "markdown",
+      title: "Launch note",
+      filename: "brief.md",
+      content: [
+        "# Launch note",
+        "",
+        "Share one artifact at a time without uploading it anywhere.",
+        "",
+        "- Markdown stays readable",
+        "- Code keeps its language hint",
+        "- The link works from a static export",
+      ].join("\n"),
+      language: "",
+      diffView: "unified",
+      codec: "arx3",
+    };
+
+    const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
+
+    // The paste URL keeps the packed non-ASCII fragment; the markdown URL must carry a
+    // percent-escape-free ASCII fragment whose payload decodes identically.
+    const markdownFragment = generatedLink.markdownUrl.slice(generatedLink.markdownUrl.indexOf("#") + 1);
+    // eslint-disable-next-line no-control-regex
+    expect(markdownFragment).toMatch(/^[\x21-\x7e]+$/);
+    expect(markdownFragment).not.toContain("%");
+    // The markdown link must beat the percent-encoded serialization of the packed URL,
+    // which is what a URL serializer would have produced for that surface.
+    expect(generatedLink.markdownLinkLength).toBeLessThan(new URL(generatedLink.url).toString().length);
+
+    const parsedMarkdown = await decodeFragmentAsync(`#${markdownFragment}`);
+    const parsedPacked = await decodeFragmentAsync(generatedLink.hash);
+    expect(parsedMarkdown.ok).toBe(true);
+    expect(parsedPacked.ok).toBe(true);
+    if (parsedMarkdown.ok && parsedPacked.ok) {
+      expect(parsedMarkdown.envelope).toEqual(parsedPacked.envelope);
+    }
+  });
+
+  // Regression: the markdown surface used to fall back to the primary Unicode fragment when its own
+  // ASCII candidate went over the visible fragment budget, which is exactly when the fallback hurts
+  // most: the Unicode fragment serializes ~9x larger inside a markdown destination. An over-budget
+  // link already tells the agent so through the Discord warning; the surface contract still holds.
+  it("keeps the markdown surface on the ASCII wire even when that candidate is over the fragment budget", async () => {
+    loadArxDictionarySync(arxDictionaryJson);
+    loadArx2OverlayDictionarySync(arx2DictionaryJson);
+    loadArx4PriorsSync(arx4PriorsJson);
+
+    // Incompressible content sized so the dense paste fragment stays inside the budget while the ASCII
+    // candidate for the same bytes does not.
+    let digests = "";
+    for (let index = 0; digests.length < 20_000; index += 1) {
+      digests += createHash("sha256").update(String(index)).digest("hex");
+    }
+
+    const draft: LinkCreatorDraft = {
+      kind: "markdown",
+      title: "Digest wall",
+      filename: "digests.md",
+      content: digests.slice(0, 20_000),
+      language: "",
+      diffView: "unified",
+      codec: "arx4",
+    };
+
+    const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
+    const pasteFragment = generatedLink.hash.slice(1);
+    const markdownFragment = generatedLink.markdownUrl.slice(generatedLink.markdownUrl.indexOf("#") + 1);
+
+    expect(markdownFragment).toMatch(/^[\x21-\x7e]+$/);
+    // The case only bites while the ASCII candidate is over budget, so assert that it is.
+    expect(getVisibleFragmentLength(markdownFragment)).toBeGreaterThan(MAX_FRAGMENT_LENGTH);
+    expect(getFragmentTransportLength(markdownFragment)).toBeLessThan(getFragmentTransportLength(pasteFragment));
+    expect(generatedLink.discordMarkdownLinkWarning).not.toBeNull();
+
+    const parsed = await decodeFragmentAsync(`#${markdownFragment}`, { skipFragmentBudget: true });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.envelope.artifacts[0]).toMatchObject({ content: draft.content });
   });
 
   it("rejects empty pasted content", () => {

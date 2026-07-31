@@ -23,14 +23,24 @@ type EncodeOptions = {
   preferPacked?: boolean;
   targetMaxFragmentLength?: number;
   codecPriority?: PayloadCodec[];
+  /**
+   * Budget every candidate (including arx3/arx4 baseBMP) by percent-escaped transport length.
+   * For surfaces that URL-serialize the fragment, e.g. markdown link destinations.
+   */
+  budgetByTransport?: boolean;
 };
+
+/** Which of a candidate's two measurements {@link selectCandidate} compares. */
+type BudgetPolicy = "default" | "urlSerialized";
 
 const BINARY_STRING_CHUNK_SIZE = 0x8000;
 const DEFAULT_SYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["deflate", "lz", "plain"];
-const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx3", "arx2", "arx", "deflate", "lz", "plain"];
+const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx4", "arx3", "arx2", "arx", "deflate", "lz", "plain"];
 const PACKED_WIRE_MODES: readonly boolean[] = [true, false];
 const UNPACKED_ONLY_WIRE_MODES: readonly boolean[] = [false];
 const supportedCodecSet = new Set<string>(codecs);
+/** arx4 asset failures (see arx4-codec.ts and fragment-arx.ts), which decode reports as retryable. */
+const ARX4_ASSET_ERROR_NAMES = new Set(["Arx4PriorsUnavailableError", "Arx4DictionarySkewError"]);
 
 function isChatSafeAsciiFragmentCodePoint(cp: number): boolean {
   return (
@@ -74,8 +84,16 @@ function computeTransportLength(value: string): number {
 }
 
 /**
+ * Public wrapper over {@link computeTransportLength} so link builders can compare
+ * how fragment candidates survive URL serialization and chat-surface escaping.
+ */
+export function getFragmentTransportLength(fragmentBody: string): number {
+  return computeTransportLength(fragmentBody);
+}
+
+/**
  * Returns the decoded visible length of a fragment body or hash.
- * Browsers may expose Unicode fragments as percent-escaped text, while ARX3 budgets by the
+ * Browsers may expose Unicode fragments as percent-escaped text, while arx3/arx4 budget by the
  * visible characters a user copies from the URL bar.
  */
 export function getVisibleFragmentLength(fragment: string): number {
@@ -127,6 +145,7 @@ function encodePayload(json: string, codec: PayloadCodec): string {
     case "arx":
     case "arx2":
     case "arx3":
+    case "arx4":
       throw new Error("arx codec requires async encoding — use encodeEnvelopeAsync instead.");
   }
 }
@@ -162,6 +181,7 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
     case "arx":
     case "arx2":
     case "arx3":
+    case "arx4":
       throw new Error("arx codec requires async decoding — use decodeFragmentAsync instead.");
   }
 }
@@ -170,8 +190,9 @@ function buildFragment(envelope: PayloadEnvelope, codec: PayloadCodec, packed: b
   const payloadEnvelope = { ...envelope, codec };
   const json = JSON.stringify(packed ? packEnvelope(payloadEnvelope) : payloadEnvelope);
   const value = `${compactTagForCodec(codec)}${encodePayload(json, codec)}`;
-  // Non-ARX codecs produce ASCII-only output, so transport length equals string length.
-  return { value, codec, packed, transportLength: value.length };
+  // Non-ARX codecs produce ASCII-only output, so transport length equals string length and neither
+  // surface's budget can separate them.
+  return { value, codec, packed, transportLength: value.length, urlSerializedLength: value.length };
 }
 
 function dedupeCodecs(requested: readonly PayloadCodec[]): PayloadCodec[] {
@@ -248,12 +269,22 @@ async function buildArx3Candidates(envelope: PayloadEnvelope): Promise<Candidate
   return buildDeferredArx3Candidates(envelope, computeTransportLength);
 }
 
+async function buildArx4Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
+  const { buildArx4Candidates: buildDeferredArx4Candidates } = await import("@/lib/payload/fragment-arx");
+  return buildDeferredArx4Candidates(envelope, computeTransportLength);
+}
+
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {
   const codecsToTry = getAsyncCandidateCodecs(options);
   const wireModes = options.preferPacked === false ? UNPACKED_ONLY_WIRE_MODES : PACKED_WIRE_MODES;
   const candidates: CandidateFragment[] = [];
 
   for (const codec of codecsToTry) {
+    if (codec === "arx4") {
+      candidates.push(...await buildArx4Candidates(envelope));
+      continue;
+    }
+
     if (codec === "arx3") {
       candidates.push(...await buildArx3Candidates(envelope));
       continue;
@@ -276,7 +307,15 @@ async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOp
   return candidates;
 }
 
-function selectCandidate(candidates: CandidateFragment[], budget?: number): CandidateFragment {
+function budgetLengthFor(candidate: CandidateFragment, policy: BudgetPolicy): number {
+  return policy === "urlSerialized" ? candidate.urlSerializedLength : candidate.transportLength;
+}
+
+function selectCandidate(
+  candidates: CandidateFragment[],
+  budget?: number,
+  policy: BudgetPolicy = "default",
+): CandidateFragment {
   if (candidates.length === 0) {
     throw new Error("No payload codec candidates are available.");
   }
@@ -285,14 +324,16 @@ function selectCandidate(candidates: CandidateFragment[], budget?: number): Cand
   let shortestInBudget: CandidateFragment | null = null;
 
   for (const candidate of candidates) {
-    if (candidate.transportLength < shortest.transportLength) {
+    const length = budgetLengthFor(candidate, policy);
+
+    if (length < budgetLengthFor(shortest, policy)) {
       shortest = candidate;
     }
 
     if (
       typeof budget === "number" &&
-      candidate.transportLength <= budget &&
-      (!shortestInBudget || candidate.transportLength < shortestInBudget.transportLength)
+      length <= budget &&
+      (!shortestInBudget || length < budgetLengthFor(shortestInBudget, policy))
     ) {
       shortestInBudget = candidate;
     }
@@ -334,8 +375,35 @@ export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions
  */
 export async function encodeEnvelopeAsync(envelope: PayloadEnvelope, options: EncodeOptions = {}): Promise<string> {
   const candidates = await buildCandidatesAsync(envelope, options);
-  const selected = selectCandidate(candidates, options.targetMaxFragmentLength);
-  return selected.value;
+  const policy: BudgetPolicy = options.budgetByTransport === true ? "urlSerialized" : "default";
+  return selectCandidate(candidates, options.targetMaxFragmentLength, policy).value;
+}
+
+/** The two fragments a shareable link needs, both selected from one candidate pool. */
+export type EncodedEnvelopeSurfaces = {
+  /** Default-policy winner, for the copy-paste URL. */
+  fragmentBody: string;
+  /** URL-serialized-budget winner, for destinations a URL serializer percent-encodes. */
+  transportFragmentBody: string;
+};
+
+/**
+ * Encodes an envelope once and returns both surface winners.
+ *
+ * A link needs two selections over the same candidates: the copy-paste URL keeps the arx3/arx4
+ * visible-length budget, while a markdown destination is measured percent-escaped. Running
+ * {@link encodeEnvelopeAsync} twice would recompress the payload, which for arx4 means running the
+ * context mixer a second time (~770 ms per 60 KB artifact) for two selections over identical bytes.
+ */
+export async function encodeEnvelopeSurfacesAsync(
+  envelope: PayloadEnvelope,
+  options: Omit<EncodeOptions, "budgetByTransport"> = {},
+): Promise<EncodedEnvelopeSurfaces> {
+  const candidates = await buildCandidatesAsync(envelope, options);
+  return {
+    fragmentBody: selectCandidate(candidates, options.targetMaxFragmentLength, "default").value,
+    transportFragmentBody: selectCandidate(candidates, options.targetMaxFragmentLength, "urlSerialized").value,
+  };
 }
 
 type ParsedFragmentHeader =
@@ -503,7 +571,8 @@ function resolveEnvelope(parsed: unknown, rawLength: number): ParsedPayload {
  * for example when decoding server-injected payloads that are not constrained by URL length.
  *
  * Returns structured `ParsedPayload` error responses for malformed fragments or invalid
- * envelopes, rather than throwing decode errors.
+ * envelopes, rather than throwing decode errors. A well-formed fragment whose codec asset is missing or
+ * version-skewed comes back as `asset-unavailable`, the one code a retry can clear.
  */
 export async function decodeFragmentAsync(hash: string, options?: DecodeOptions): Promise<ParsedPayload> {
   const header = parseFragmentHeader(hash, options);
@@ -521,11 +590,12 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
       const { decodeArxFragmentPayload } = await import("@/lib/payload/fragment-arx");
       const decodedFromAttempt = await decodeArxFragmentPayload(codec, remainder);
 
-      if (codec === "arx2" || codec === "arx3") {
+      if (codec === "arx") {
+        decodedJson = decodedFromAttempt as string;
+      } else {
+        // The tuple codecs rebuild the envelope themselves; only `arx` returns envelope JSON.
         parsed = decodedFromAttempt;
         decodedJson = null;
-      } else {
-        decodedJson = decodedFromAttempt as string;
       }
     } else {
       decodedJson = decodePayload(remainder, codec);
@@ -545,6 +615,13 @@ export async function decodeFragmentAsync(hash: string, options?: DecodeOptions)
   } catch (error) {
     if (error instanceof Error && error.name === "ArxDecodedPayloadTooLargeError") {
       return { ok: false, code: "decoded-too-large", message: error.message };
+    }
+    // A codec asset that is missing or version-skewed is a transport failure, not a malformed fragment:
+    // say so, because the same link decodes once the asset loads and the dictionary hint below would
+    // misdirect. Matched by name rather than instanceof so this module stays out of the lazily imported
+    // arx chunks on a non-arx page load.
+    if (error instanceof Error && ARX4_ASSET_ERROR_NAMES.has(error.name)) {
+      return { ok: false, code: "asset-unavailable", message: `${error.message} Reload to try again.` };
     }
     const arxHint = isArxCodec(codec)
       ? " It may have been encoded with a different ARX dictionary version."

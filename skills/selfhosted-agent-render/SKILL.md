@@ -49,7 +49,7 @@ Response (`201`):
 }
 ```
 
-The `payload` field is the same payload string used in fragment links — the compact fragment body after `#` (a single codec tag char followed by the payload). Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`) described in the `agent-render-linking` skill. The legacy `agent-render=v1.<codec>.<payload>` form (arx-family carry an extra `<dictVersion>.` segment) is also accepted for back-compatibility.
+The `payload` field is the same payload string used in fragment links — the compact fragment body after `#` (a single codec tag char followed by the payload). Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`) described in the `agent-render-linking` skill. The legacy `agent-render=v1.<codec>.<payload>` form (arx-family carry an extra `<dictVersion>.` segment) is also accepted for back-compatibility.
 
 ### Read an artifact
 
@@ -251,8 +251,8 @@ A single `patch` string may contain multiple `diff --git` sections.
 Encode the envelope using the same codec pipeline as fragment links:
 
 1. Serialize envelope as compact JSON
-2. Encode with a codec (`plain` = base64url, `lz` = lz-string, `deflate` = deflate + base64url, or the async arx/arx2/arx3 pipelines)
-3. Prepend the single-character codec tag (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3)
+2. Encode with a codec (`plain` = base64url, `lz` = lz-string, `deflate` = deflate + base64url, or the async arx/arx2/arx3 pipelines; `arx4` is emitted by the app only, since its context mixer is not hand-rollable)
+3. Prepend the single-character codec tag (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4)
 4. POST the resulting string as the `payload` field
 
 For simple cases, `plain` codec is sufficient:

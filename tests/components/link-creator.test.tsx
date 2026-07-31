@@ -46,6 +46,7 @@ function createGeneratedLink(title: string): GeneratedArtifactLink {
     fragmentLength: 64,
     hash: `#agent-render=v1.plain.${title}`,
     url,
+    markdownUrl: url,
     markdownLink: shareInfo.markdownLink,
     markdownLinkLength: shareInfo.length,
     discordMarkdownLinkWarning: shareInfo.discordWarning,
@@ -59,6 +60,14 @@ afterEach(() => {
 });
 
 describe("LinkCreator", () => {
+  it("offers every registered codec in the compression selector", () => {
+    render(<LinkCreator onPreviewHash={vi.fn()} />);
+
+    for (const option of ["auto", "plain", "lz", "deflate", "arx", "arx2", "arx3", "arx4"]) {
+      expect(screen.getByRole("button", { name: option })).toBeInTheDocument();
+    }
+  });
+
   it("keeps the newest generated link when async requests resolve out of order", async () => {
     const user = userEvent.setup();
 
