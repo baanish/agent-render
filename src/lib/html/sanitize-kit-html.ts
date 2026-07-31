@@ -188,35 +188,58 @@ function sanitizeElementAttributes(element: Element, tag: string): void {
   }
 }
 
+/**
+ * Deepest element nesting kept. Beyond this the subtree is dropped rather than rendered: the HTML
+ * parser imposes no nesting cap, so within the decoded-payload budget a fragment can describe a tree
+ * thousands of levels deep, which no viewer should try to lay out.
+ */
+export const MAX_KIT_HTML_DEPTH = 100;
+
+/**
+ * Sanitizes `parent`'s subtree in place. Iterative with an explicit stack rather than recursive:
+ * attacker-controlled nesting would otherwise overflow the main-thread stack with an uncaught
+ * RangeError before the renderer ever mounts.
+ */
 function sanitizeChildren(parent: Element): void {
-  for (const node of Array.from(parent.childNodes)) {
-    if (node.nodeType === Node.COMMENT_NODE) {
-      node.remove();
-      continue;
+  const stack: { element: Element; depth: number }[] = [{ element: parent, depth: 0 }];
+
+  while (stack.length > 0) {
+    const { element: current, depth } = stack.pop()!;
+
+    for (const node of Array.from(current.childNodes)) {
+      if (node.nodeType === Node.COMMENT_NODE) {
+        node.remove();
+        continue;
+      }
+
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        continue;
+      }
+
+      const element = node as Element;
+      const tag = element.tagName.toLowerCase();
+
+      if (droppedTags.has(tag)) {
+        element.remove();
+        continue;
+      }
+
+      if (!allowedTags.has(tag)) {
+        // Default-deny: unknown elements are removed with their subtree rather than unwrapped.
+        // Promoting the children of an unknown wrapper is the classic place mXSS reappears as the
+        // HTML parser evolves; the allowlist already covers every kit and prose tag.
+        element.remove();
+        continue;
+      }
+
+      if (depth >= MAX_KIT_HTML_DEPTH) {
+        element.remove();
+        continue;
+      }
+
+      sanitizeElementAttributes(element, tag);
+      stack.push({ element, depth: depth + 1 });
     }
-
-    if (node.nodeType !== Node.ELEMENT_NODE) {
-      continue;
-    }
-
-    const element = node as Element;
-    const tag = element.tagName.toLowerCase();
-
-    if (droppedTags.has(tag)) {
-      element.remove();
-      continue;
-    }
-
-    if (!allowedTags.has(tag)) {
-      // Default-deny: unknown elements are removed with their subtree rather than unwrapped.
-      // Promoting the children of an unknown wrapper is the classic place mXSS reappears as the
-      // HTML parser evolves; the allowlist already covers every kit and prose tag.
-      element.remove();
-      continue;
-    }
-
-    sanitizeElementAttributes(element, tag);
-    sanitizeChildren(element);
   }
 }
 

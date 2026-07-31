@@ -349,6 +349,12 @@ export function ViewerShell() {
         return;
       }
 
+      // Drop trust synchronously, before the new artifact renders. Selecting an artifact re-encodes
+      // the bundle into a fresh fragment, so the payload the server vouched for is no longer what
+      // the URL holds; clearing it only after the awaited encode would render the newly selected
+      // artifact verbatim during that window, and forever if the encode rejects.
+      injectedPayloadRef.current = false;
+      setTrustedPayload(false);
       setActiveArtifactId(artifactId);
       const requestId = artifactSelectionRequestRef.current + 1;
       artifactSelectionRequestRef.current = requestId;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { sanitizeKitHtml, sanitizeKitHtmlInto } from "@/lib/html/sanitize-kit-html";
+import { MAX_KIT_HTML_DEPTH, sanitizeKitHtml, sanitizeKitHtmlInto } from "@/lib/html/sanitize-kit-html";
 
 describe("sanitizeKitHtmlInto", () => {
   it("adopts sanitized nodes into the container without a string round trip", () => {
@@ -72,6 +72,14 @@ describe("sanitizeKitHtml", () => {
 
   it("drops unknown tags and their subtree (default-deny)", () => {
     expect(sanitizeKitHtml("<custom-widget><p>inner</p></custom-widget><p>kept</p>")).toBe("<p>kept</p>");
+  });
+
+  it("drops nesting past the depth cap instead of overflowing the stack", () => {
+    const depth = MAX_KIT_HTML_DEPTH + 500;
+    const deep = "<div>".repeat(depth) + "boom" + "</div>".repeat(depth);
+    const output = sanitizeKitHtml(deep);
+    // The call returns rather than throwing RangeError, and the tree is truncated at the cap.
+    expect(output.split("<div>").length - 1).toBe(MAX_KIT_HTML_DEPTH);
   });
 
   it("keeps https and data:image sources on images, drops http", () => {
