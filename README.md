@@ -69,7 +69,7 @@ In addition to the default static/fragment-based product, `agent-render` include
 **What it provides:**
 - REST API for creating, reading, updating, and deleting artifacts
 - UUID-based viewer links that render the same UI as fragment links
-- 24-hour sliding TTL with automatic expiry
+- 7-day sliding TTL (configurable) with automatic expiry
 - SQLite storage — no external database required
 - Docker Compose and daemon deployment options
 

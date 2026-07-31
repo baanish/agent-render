@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { decodeFragmentAsync } from "../../src/lib/payload/fragment";
 import { buildPayloadEnvelope } from "../src/envelope";
+import { MAX_DECODED_PAYLOAD_LENGTH } from "../../src/lib/payload/schema";
 import {
+  assertEnvelopeWithinBudget,
   assertFragmentBudget,
   createFragmentUrl,
   encodePayloadEnvelope,
@@ -29,5 +31,13 @@ describe("fragment mode", () => {
         content: "# Hello\n\nFrom the CLI.\n",
       });
     }
+  });
+
+  it("rejects an envelope over the decoded payload budget before encoding", () => {
+    const envelope = buildPayloadEnvelope(
+      [{ filename: "big.md", content: "x".repeat(MAX_DECODED_PAYLOAD_LENGTH + 1) }],
+      "auto",
+    );
+    expect(() => assertEnvelopeWithinBudget(envelope)).toThrow(/payload limit/);
   });
 });

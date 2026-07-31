@@ -1,6 +1,6 @@
 ---
 name: selfhosted-agent-render
-description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs public/share-friendly rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal for public/social sharing, corporate proxy/link-scanning environments, payloads that exceed the ~8 KB fragment budget, platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds as the fragment-based product (the server stores the payload string after a length/non-empty check; full envelope validation happens client-side when the viewer renders). The self-hosted server stores payloads in SQLite with a configurable sliding TTL that defaults to seven days.
+description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs public/share-friendly rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal for public/social sharing, corporate proxy/link-scanning environments, payloads that exceed the ~8 KB fragment budget, platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, JSON, kit HTML, and choices — same artifact kinds as the fragment-based product (the server stores the payload string after a length/non-empty check; full envelope validation happens client-side when the viewer renders). The self-hosted server stores payloads in SQLite with a configurable sliding TTL that defaults to seven days.
 ---
 
 # Self-Hosted Agent Render
@@ -255,6 +255,35 @@ A single `patch` string may contain multiple `diff --git` sections.
   "title": "Manifest",
   "filename": "manifest.json",
   "content": "{\n  \"ready\": true\n}"
+}
+```
+
+#### Kit HTML
+
+**Required:** `content` (string) — HTML using the shipped design kit (`ar-*` classes; see `docs/design-kit.md`). Fragment links render this sanitized; server-injected self-hosted payloads render verbatim in a sandboxed (origin-isolated) frame.
+
+```json
+{
+  "id": "report",
+  "kind": "html",
+  "content": "<div class=\"ar-grid\"><div class=\"ar-stat\"><p class=\"ar-stat-label\">Build</p><p class=\"ar-stat-value\">Passing</p></div></div>"
+}
+```
+
+#### Choices
+
+**Required:** non-empty `options` array (max 50), each with `id` and `label` (optional `detail`). Optional `prompt` and `multi`. Presentational: the user answers in chat.
+
+```json
+{
+  "id": "next-steps",
+  "kind": "choices",
+  "prompt": "Which follow-ups land first?",
+  "multi": true,
+  "options": [
+    { "id": "a", "label": "Fix the TTL", "detail": "off by one hour" },
+    { "id": "b", "label": "Document auth" }
+  ]
 }
 ```
 

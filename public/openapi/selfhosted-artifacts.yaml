@@ -66,6 +66,8 @@ paths:
     get:
       summary: Get artifact (refreshes TTL)
       operationId: getArtifact
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: Artifact row
@@ -73,6 +75,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ArtifactRow"
+        "401":
+          description: Unauthorized (when the password gate is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: Not found or expired
           content:

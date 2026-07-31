@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { decodeFragment, encodeEnvelope, encodeEnvelopeAsync, decodeFragmentAsync } from "@/lib/payload/fragment";
-import { isPayloadEnvelope, type PayloadEnvelope } from "@/lib/payload/schema";
+import {
+  MAX_CHOICE_OPTIONS,
+  MAX_CHOICE_TEXT_LENGTH,
+  isPayloadEnvelope,
+  type PayloadEnvelope,
+} from "@/lib/payload/schema";
 import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
 
 const htmlEnvelope: PayloadEnvelope = {
@@ -60,6 +65,23 @@ describe("html and choices envelope validation", () => {
     ).toBe(false);
     expect(
       isPayloadEnvelope({ ...choicesEnvelope, artifacts: [{ ...base, multi: "yes" }] }),
+    ).toBe(false);
+  });
+
+  it("rejects choices past the option-count and text-length caps", () => {
+    const base = choicesEnvelope.artifacts[0];
+    const tooMany = Array.from({ length: MAX_CHOICE_OPTIONS + 1 }, (_, index) => ({
+      id: `o${index}`,
+      label: "x",
+    }));
+    expect(isPayloadEnvelope({ ...choicesEnvelope, artifacts: [{ ...base, options: tooMany }] })).toBe(false);
+
+    const atCap = Array.from({ length: MAX_CHOICE_OPTIONS }, (_, index) => ({ id: `o${index}`, label: "x" }));
+    expect(isPayloadEnvelope({ ...choicesEnvelope, artifacts: [{ ...base, options: atCap }] })).toBe(true);
+
+    const longLabel = "x".repeat(MAX_CHOICE_TEXT_LENGTH + 1);
+    expect(
+      isPayloadEnvelope({ ...choicesEnvelope, artifacts: [{ ...base, options: [{ id: "a", label: longLabel }] }] }),
     ).toBe(false);
   });
 

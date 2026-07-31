@@ -3,7 +3,7 @@ import path from "node:path";
 import { stdin as defaultStdin } from "node:process";
 import { getConfigValue, resolveConfig, setConfigValue } from "./config";
 import { buildPayloadEnvelope, type ArtifactInput } from "./envelope";
-import { assertFragmentBudget, createFragmentUrl, encodePayloadEnvelope } from "./encoding";
+import { assertEnvelopeWithinBudget, assertFragmentBudget, createFragmentUrl, encodePayloadEnvelope } from "./encoding";
 import { formatArtifactOutput, type OutputFormat } from "./format";
 import { createInstanceArtifact } from "./instance";
 import type { RequestedKind } from "./kind";
@@ -100,6 +100,7 @@ async function runCreate(args: string[]): Promise<void> {
   const options = parseCreateOptions(args);
   const inputs = await readInputs(options);
   const envelope = buildPayloadEnvelope(inputs, options.kind, options.title);
+  assertEnvelopeWithinBudget(envelope);
   const config = await resolveConfig({ instanceUrl: options.instanceUrl, token: options.token });
   const mode: Exclude<Mode, "auto"> = options.mode === "auto"
     ? (config.instanceUrl ? "instance" : "fragment")

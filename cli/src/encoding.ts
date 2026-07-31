@@ -14,7 +14,7 @@ import {
   encodeEnvelopeSurfacesAsync,
   getVisibleFragmentLength,
 } from "../../src/lib/payload/fragment";
-import { MAX_FRAGMENT_LENGTH, type PayloadEnvelope } from "../../src/lib/payload/schema";
+import { MAX_DECODED_PAYLOAD_LENGTH, MAX_FRAGMENT_LENGTH, type PayloadEnvelope } from "../../src/lib/payload/schema";
 
 let codecsInitialized = false;
 
@@ -42,6 +42,20 @@ export function createFragmentUrl(baseUrl: string, fragmentBody: string): string
   const base = new URL(baseUrl);
   base.hash = "";
   return `${base.toString()}#${fragmentBody}`;
+}
+
+/**
+ * Rejects an envelope larger than the decoded-payload budget before any encode or upload, so both
+ * fragment and instance modes fail fast with a clear message instead of a wasted round trip or an
+ * undecodable link.
+ */
+export function assertEnvelopeWithinBudget(envelope: PayloadEnvelope): void {
+  const decodedLength = JSON.stringify(envelope).length;
+  if (decodedLength > MAX_DECODED_PAYLOAD_LENGTH) {
+    throw new Error(
+      `This artifact is ${decodedLength.toLocaleString()} characters, over the ${MAX_DECODED_PAYLOAD_LENGTH.toLocaleString()} character payload limit.`,
+    );
+  }
 }
 
 /** Enforces the public fragment transport budget for a generated fragment. */

@@ -2,6 +2,12 @@ export const MAX_FRAGMENT_LENGTH = 8192;
 export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 
+// Server-injected (self-hosted) payloads skip the fragment budget, so the choices renderer is
+// bounded here instead: a decision list with thousands of options (or huge option strings) would
+// otherwise mount an unbounded DOM. These are validation limits, not wire limits.
+export const MAX_CHOICE_OPTIONS = 50;
+export const MAX_CHOICE_TEXT_LENGTH = 2000;
+
 export const artifactKinds = ["markdown", "code", "diff", "csv", "json", "html", "choices"] as const;
 export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3", "arx4"] as const;
 
@@ -187,7 +193,7 @@ function isBaseArtifact(value: unknown): value is BaseArtifact {
 }
 
 function isChoiceOptionArray(value: unknown): value is ChoiceOption[] {
-  if (!Array.isArray(value) || value.length === 0) {
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_CHOICE_OPTIONS) {
     return false;
   }
 
@@ -195,7 +201,10 @@ function isChoiceOptionArray(value: unknown): value is ChoiceOption[] {
     if (!isRecord(option) || !hasString(option.id) || !hasString(option.label)) {
       return false;
     }
-    if (option.detail !== undefined && !hasString(option.detail)) {
+    if (option.id.length > MAX_CHOICE_TEXT_LENGTH || option.label.length > MAX_CHOICE_TEXT_LENGTH) {
+      return false;
+    }
+    if (option.detail !== undefined && (!hasString(option.detail) || option.detail.length > MAX_CHOICE_TEXT_LENGTH)) {
       return false;
     }
   }
