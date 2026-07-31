@@ -13,6 +13,9 @@ export type ResolvedConfig = StoredConfig & {
   configPath: string;
 };
 
+/** The env shape these helpers read: a bag of optional string vars, not the framework-augmented ProcessEnv. */
+export type EnvLookup = Readonly<Record<string, string | undefined>>;
+
 function normalizeConfigKey(key: string): ConfigKey {
   const normalized = key.replace(/[-_]/g, "").toLowerCase();
   if (normalized === "instanceurl") return "INSTANCE_URL";
@@ -21,14 +24,14 @@ function normalizeConfigKey(key: string): ConfigKey {
 }
 
 /** Resolves the XDG-compatible agent-render config file path. */
-export function getConfigPath(env: NodeJS.ProcessEnv = process.env): string {
+export function getConfigPath(env: EnvLookup = process.env): string {
   const configHome = env.XDG_CONFIG_HOME?.trim();
   const home = env.HOME?.trim() || os.homedir();
   return path.join(configHome || path.join(home, ".config"), "agent-render", "config.json");
 }
 
 /** Reads stored CLI configuration, treating a missing file as empty configuration. */
-export async function readStoredConfig(env: NodeJS.ProcessEnv = process.env): Promise<StoredConfig> {
+export async function readStoredConfig(env: EnvLookup = process.env): Promise<StoredConfig> {
   const configPath = getConfigPath(env);
   let contents: string;
   try {
@@ -53,7 +56,7 @@ export async function readStoredConfig(env: NodeJS.ProcessEnv = process.env): Pr
 /** Resolves CLI configuration with flags taking precedence over environment and file values. */
 export async function resolveConfig(
   flags: StoredConfig = {},
-  env: NodeJS.ProcessEnv = process.env,
+  env: EnvLookup = process.env,
 ): Promise<ResolvedConfig> {
   const stored = await readStoredConfig(env);
   return {
@@ -67,7 +70,7 @@ export async function resolveConfig(
 export async function setConfigValue(
   keyInput: string,
   value: string,
-  env: NodeJS.ProcessEnv = process.env,
+  env: EnvLookup = process.env,
 ): Promise<string> {
   const key = normalizeConfigKey(keyInput);
   const configPath = getConfigPath(env);
@@ -83,7 +86,7 @@ export async function setConfigValue(
 /** Reads one supported value directly from the config file. */
 export async function getConfigValue(
   keyInput: string,
-  env: NodeJS.ProcessEnv = process.env,
+  env: EnvLookup = process.env,
 ): Promise<string | undefined> {
   const key = normalizeConfigKey(keyInput);
   const config = await readStoredConfig(env);

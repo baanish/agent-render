@@ -10,5 +10,6 @@
     "noEmit": true,
     "incremental": false
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["../node_modules"]
 }
