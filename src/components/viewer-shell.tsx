@@ -457,7 +457,7 @@ export function ViewerShell() {
               </p>
               <div className="mt-6 flex flex-wrap gap-2 sm:mt-10 sm:gap-3">
                 <span className="mono-pill">static export</span>
-                <span className="mono-pill">7 renderers</span>
+                <span className="mono-pill">6 renderers</span>
                 <span className="mono-pill">zero retention</span>
               </div>
             </section>
@@ -482,9 +482,8 @@ export function ViewerShell() {
               <div className="bento-card px-5 py-6 sm:px-8 sm:py-8">
                 <p className="section-kicker">Static boundary</p>
                 <p className="mt-4 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-                  The browser decodes markdown, code, diffs, CSV, JSON, kit
-                  HTML, and choice lists locally from the fragment after the
-                  shell loads.
+                  The browser decodes markdown, code, diffs, CSV, JSON, and kit
+                  HTML locally from the fragment after the shell loads.
                 </p>
               </div>
               {ecosystemLinks.map((link) => (

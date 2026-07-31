@@ -93,6 +93,15 @@ describe("sanitizeKitHtml", () => {
     expect(sanitizeKitHtml('<img src="data:text/html;base64,AAAA">')).toBe('<img loading="lazy">');
   });
 
+  it("keeps the documented ar-choices markup intact", () => {
+    // The kit component is the contract agents author against (docs/design-kit.md): the id badge is
+    // generated from data-ar-id by CSS, so losing that attribute would silently drop the option ids
+    // the reader is meant to reply with.
+    const input =
+      '<ol class="ar-choices"><li data-ar-id="a">Fix the TTL off-by-one<small>Sweeper deletes an hour early.</small></li><li data-ar-id="b">Document the auth header</li></ol>';
+    expect(sanitizeKitHtml(input)).toBe(input);
+  });
+
   it("keeps kit structure: tables, details, data-ar-* and aria attributes", () => {
     const input =
       '<div class="ar-tabs"><div class="ar-tab" data-ar-tab="One" aria-label="first"><table><thead><tr><th scope="col">h</th></tr></thead><tbody><tr><td>v</td></tr></tbody></table></div></div><details open=""><summary>More</summary><p>body</p></details>';
