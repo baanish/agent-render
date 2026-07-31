@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import {
   MAX_FRAGMENT_LENGTH,
   type ArtifactPayload,
-  type ChoicesArtifact,
   type CodeArtifact,
   type CsvArtifact,
   type DiffArtifact,
@@ -95,13 +94,6 @@ const HtmlRenderer = dynamic(
     ),
   { ssr: false },
 );
-const ChoicesRenderer = dynamic(
-  () =>
-    import("@/components/renderers/choices-renderer").then(
-      (module) => module.ChoicesRenderer,
-    ),
-  { ssr: false },
-);
 
 function getArtifactBody(artifact: ArtifactPayload): string {
   if (artifact.kind === "diff") {
@@ -111,12 +103,6 @@ function getArtifactBody(artifact: ArtifactPayload): string {
     );
   }
 
-  if (artifact.kind === "choices") {
-    const lines = artifact.options.map(
-      (option) => `${option.id}) ${option.label}${option.detail ? `: ${option.detail}` : ""}`,
-    );
-    return artifact.prompt ? `${artifact.prompt}\n\n${lines.join("\n")}` : lines.join("\n");
-  }
 
   return artifact.content;
 }
@@ -129,8 +115,6 @@ function getArtifactSubtitle(artifact: ArtifactPayload): string {
   if (artifact.kind === "json") return "JSON";
   if (artifact.kind === "csv") return "CSV";
   if (artifact.kind === "html") return "Kit HTML";
-  if (artifact.kind === "choices")
-    return artifact.multi ? "Multiple choice, several allowed" : "Multiple choice";
   return (artifact as ArtifactPayload).kind;
 }
 
@@ -163,9 +147,6 @@ function getArtifactDetailRows(artifact: ArtifactPayload, bodyLength: number) {
     rows.push({ label: "View", value: artifact.view ?? "Unified later" });
   }
 
-  if (artifact.kind === "choices") {
-    rows.push({ label: "Options", value: numberFormatter.format(artifact.options.length) });
-  }
 
   return rows;
 }
@@ -271,8 +252,6 @@ export function ArtifactStage({
     activeArtifact.kind === "json" ? activeArtifact : null;
   const htmlArtifact: HtmlArtifact | null =
     activeArtifact.kind === "html" ? activeArtifact : null;
-  const choicesArtifact: ChoicesArtifact | null =
-    activeArtifact.kind === "choices" ? activeArtifact : null;
   const hasRawToggle = Boolean(markdownArtifact || csvArtifact || htmlArtifact);
 
   activeArtifactRef.current = activeArtifact;
@@ -635,11 +614,6 @@ export function ArtifactStage({
               <HtmlRenderer
                 artifact={htmlArtifact}
                 trusted={trustedPayload}
-                onReady={markActiveRendererReady}
-              />
-            ) : choicesArtifact ? (
-              <ChoicesRenderer
-                artifact={choicesArtifact}
                 onReady={markActiveRendererReady}
               />
             ) : (

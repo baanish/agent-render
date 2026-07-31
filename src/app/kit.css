@@ -289,39 +289,31 @@
   background: var(--surface-strong);
 }
 
-/* ── Choices renderer ── */
+/* ── Choices: a decision list the reader answers in chat ── */
 
-.ar-choices {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.ar-choices-prompt {
-  font-size: 1.05rem;
-  line-height: 1.6;
-}
-
-.ar-choice-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.kit-html .ar-choices {
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
   margin: 0;
   padding: 0;
 }
 
-.ar-choice {
+.kit-html .ar-choices > li {
   display: flex;
   align-items: flex-start;
-  gap: 0.9rem;
+  gap: 0.85rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface-strong);
-  padding: 0.9rem 1.1rem;
+  padding: 0.8rem 1rem;
+  font-weight: 600;
 }
 
-.ar-choice-id {
+/* The id badge is generated from the attribute so agent markup stays one short line per option. */
+.kit-html .ar-choices > li[data-ar-id]::before {
+  content: attr(data-ar-id);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.85rem;
   font-weight: 600;
@@ -330,24 +322,15 @@
   border-radius: var(--radius-md);
   min-width: 2rem;
   text-align: center;
-  padding: 0.15rem 0.45rem;
+  padding: 0.1rem 0.45rem;
   flex-shrink: 0;
 }
 
-.ar-choice-label {
-  font-weight: 600;
-  margin: 0;
-}
-
-.ar-choice-detail {
-  color: var(--text-muted);
+/* <small> inside an option is its supporting detail line. */
+.kit-html .ar-choices > li small {
+  display: block;
+  margin-top: 0.2rem;
   font-size: 0.88rem;
-  margin: 0.2rem 0 0;
-}
-
-.ar-choices-hint {
-  font-size: 0.85rem;
-  color: var(--text-soft);
-  border-top: 1px solid var(--border);
-  padding-top: 0.9rem;
+  font-weight: 400;
+  color: var(--text-muted);
 }

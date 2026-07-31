@@ -8,22 +8,15 @@ import { numberFormatter } from "@/lib/format";
 import type {
   GeneratedArtifactLink,
   LinkCreatorDraft,
-  LinkCreatorKind,
 } from "@/lib/payload/link-creator";
-import { artifactKinds, codecs } from "@/lib/payload/schema";
+import { artifactKinds, codecs, type ArtifactKind } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
 
 type LinkCreatorProps = {
   onPreviewHash: (hash: string) => void;
 };
 
-// The creator form authors one content string per artifact, so `choices` stays out of the picker;
-// see LinkCreatorKind.
-const creatorKinds = artifactKinds.filter(
-  (kind): kind is LinkCreatorKind => kind !== "choices",
-);
-
-const fieldHints: Record<LinkCreatorKind, string> = {
+const fieldHints: Record<ArtifactKind, string> = {
   markdown: "Paste markdown notes, release docs, or a spec excerpt.",
   code: "Paste a code snippet and add a language hint when it helps.",
   diff: "Paste a unified git patch to open the review-style diff renderer.",
@@ -32,7 +25,7 @@ const fieldHints: Record<LinkCreatorKind, string> = {
   html: "Paste kit HTML: structure and content with ar-* classes, no scripts or styles.",
 };
 
-const fieldPlaceholders: Record<LinkCreatorKind, string> = {
+const fieldPlaceholders: Record<ArtifactKind, string> = {
   markdown: "# Notes\n\nPaste markdown here.",
   code: 'export function hello() {\n  return "world";\n}',
   diff: 'diff --git a/src/example.ts b/src/example.ts\nindex 1111111..2222222 100644\n--- a/src/example.ts\n+++ b/src/example.ts\n@@ -1 +1 @@\n-export const value = "old";\n+export const value = "new";\n',
@@ -50,14 +43,14 @@ const tupleCodecs = new Set<string>(["arx2", "arx3", "arx4"]);
 
 function isCodecSupportedForKind(
   codec: LinkCreatorDraft["codec"],
-  kind: LinkCreatorKind,
+  kind: ArtifactKind,
 ): boolean {
   return kind !== "html" || codec === undefined || !tupleCodecs.has(codec);
 }
 
 type CodecOption = (typeof codecOptions)[number];
 
-function getCodecOptionsForKind(kind: LinkCreatorKind): readonly CodecOption[] {
+function getCodecOptionsForKind(kind: ArtifactKind): readonly CodecOption[] {
   return kind === "html" ? codecOptions.filter((option) => !tupleCodecs.has(option)) : codecOptions;
 }
 
@@ -82,7 +75,7 @@ function getBaseUrl() {
   return url.toString();
 }
 
-function getBodyFieldLabel(kind: LinkCreatorKind) {
+function getBodyFieldLabel(kind: ArtifactKind) {
   return kind === "diff" ? "Patch" : "Content";
 }
 
@@ -251,7 +244,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             role="group"
             aria-label="Artifact kind"
           >
-            {creatorKinds.map((kind) => {
+            {artifactKinds.map((kind) => {
               const Icon = kindIcons[kind];
               const isActive = draft.kind === kind;
 

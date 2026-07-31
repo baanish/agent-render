@@ -60,47 +60,4 @@ describe("buildPayloadEnvelope", () => {
     expect(envelope.artifacts[0]).toMatchObject({ kind: "code", language: "html" });
   });
 
-  it("parses a choices JSON document", () => {
-    const envelope = buildPayloadEnvelope(
-      [
-        {
-          filename: "next-steps.json",
-          content: JSON.stringify({
-            prompt: "Which fixes land?",
-            multi: true,
-            options: [
-              { id: "a", label: "Fix TTL", detail: "off by one" },
-              { id: "b", label: "Document auth" },
-            ],
-          }),
-        },
-      ],
-      "choices",
-    );
-
-    expect(envelope.artifacts[0]).toMatchObject({
-      kind: "choices",
-      prompt: "Which fixes land?",
-      multi: true,
-      options: [
-        { id: "a", label: "Fix TTL", detail: "off by one" },
-        { id: "b", label: "Document auth" },
-      ],
-    });
-  });
-
-  it("rejects malformed choices documents with a shape hint", () => {
-    expect(() => buildPayloadEnvelope([{ filename: "bad.json", content: "not json" }], "choices")).toThrow(
-      /must be JSON shaped/,
-    );
-    expect(() =>
-      buildPayloadEnvelope([{ filename: "bad.json", content: '{"options": [{"id": 1, "label": "x"}]}' }], "choices"),
-    ).toThrow(/string "id" and "label"/);
-    expect(() =>
-      buildPayloadEnvelope(
-        [{ filename: "dup.json", content: '{"options": [{"id": "a", "label": "x"}, {"id": "a", "label": "y"}]}' }],
-        "choices",
-      ),
-    ).toThrow(/duplicate option id/);
-  });
 });

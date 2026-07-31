@@ -33,9 +33,22 @@ inline styles and `<style>` blocks are stripped.
 | `ar-callout` (+ `-success`, `-warning`, `-danger`, `-info`) | Highlighted note |
 | `ar-tabs` > `ar-tab` with `data-ar-tab="Label"` | Tabbed panels; the viewer builds the tab bar |
 | `<details>` / `<summary>` | Native disclosure, styled by the kit |
+| `ar-choices` | Decision list; each `<li data-ar-id="a">` renders a badge from the attribute, a nested `<small>` is the detail line |
 
 Plain tables, headings, lists, blockquotes, code blocks, images (https or data:image), and links
 are styled automatically inside `.kit-html`; no classes needed.
+
+Decision lists are just a kit component, not a separate artifact kind: there is no channel back from
+the viewer, so options are presentation. Put the options inline with whatever context the reader needs
+and tell them how to answer, since the reply happens in chat.
+
+```html
+<p>Five follow-ups. Reply with the ids you want, e.g. <code>do a, c, e</code>.</p>
+<ol class="ar-choices">
+  <li data-ar-id="a">Fix the TTL off-by-one<small>Sweeper deletes an hour early.</small></li>
+  <li data-ar-id="b">Document the auth header</li>
+</ol>
+```
 
 Example:
 

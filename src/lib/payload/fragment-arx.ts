@@ -286,14 +286,14 @@ export async function buildArxCandidates(
 
 /**
  * The arx2/arx3/arx4 tuple wire format is pinned to the original artifact kinds — deployed decoders
- * throw on unknown kind codes — so envelopes carrying newer kinds (html, choices) must not mint
- * tuple-codec links. Returning false drops those codecs from the candidate pool (the same
- * fail-closed shape as the dictionary pin check) and lets arx/deflate/lz carry the envelope
- * instead. The JSON-based arx (v1) codec has no kind table and stays available.
+ * throw on unknown kind codes — so envelopes carrying `html` must not mint tuple-codec links.
+ * Returning false drops those codecs from the candidate pool (the same fail-closed shape as the
+ * dictionary pin check) and lets arx/deflate/lz carry the envelope instead. The JSON-based arx (v1)
+ * codec has no kind table and stays available.
  */
 function tupleCodecsSupportEnvelope(envelope: PayloadEnvelope): boolean {
   for (const artifact of envelope.artifacts) {
-    if (artifact.kind === "html" || artifact.kind === "choices") {
+    if (artifact.kind === "html") {
       return false;
     }
   }

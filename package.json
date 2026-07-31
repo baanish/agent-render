@@ -40,7 +40,7 @@
     "bench:codecs:update": "node scripts/bench-codecs.mjs --write-baseline",
     "assets:compress": "node scripts/compress-dictionary.mjs",
     "typecheck": "node scripts/ensure-next-types.mjs && tsc --noEmit && npm run typecheck --workspace cli",
-    "check": "npm run lint && npm run test && npm run bench:codecs && npm run typecheck && npm run build && npm run check:build-budgets",
+    "check": "npm run lint && npm run test && npm run test --workspace @agent-render/cli && npm run bench:codecs && npm run typecheck && npm run build && npm run check:build-budgets",
     "check:build-budgets": "node scripts/check-build-budgets.mjs",
     "check:public-export-docs": "node scripts/check-public-export-docs.mjs",
     "selfhosted:dev": "node --import tsx selfhosted/server.ts",

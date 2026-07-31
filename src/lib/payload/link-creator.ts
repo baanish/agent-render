@@ -18,15 +18,8 @@ import {
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
 
-/**
- * Kinds a single-content-string draft can express. `choices` is deliberately absent: its payload is
- * structured options, not one text body, so it is authored via the CLI or skill instead of the
- * browser creator form.
- */
-export type LinkCreatorKind = Exclude<ArtifactKind, "choices">;
-
 export type LinkCreatorDraft = {
-  kind: LinkCreatorKind;
+  kind: ArtifactKind;
   title: string;
   filename: string;
   content: string;

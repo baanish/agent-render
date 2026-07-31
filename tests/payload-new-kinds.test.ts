@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { decodeFragment, encodeEnvelope, encodeEnvelopeAsync, decodeFragmentAsync } from "@/lib/payload/fragment";
-import {
-  MAX_CHOICE_OPTIONS,
-  MAX_CHOICE_TEXT_LENGTH,
-  isPayloadEnvelope,
-  type PayloadEnvelope,
-} from "@/lib/payload/schema";
+import { isPayloadEnvelope, type PayloadEnvelope } from "@/lib/payload/schema";
 import { packEnvelope, unpackEnvelope } from "@/lib/payload/wire-format";
 
 const htmlEnvelope: PayloadEnvelope = {
@@ -25,25 +19,7 @@ const htmlEnvelope: PayloadEnvelope = {
   ],
 };
 
-const choicesEnvelope: PayloadEnvelope = {
-  v: 1,
-  codec: "plain",
-  activeArtifactId: "next-steps",
-  artifacts: [
-    {
-      id: "next-steps",
-      kind: "choices",
-      prompt: "Which fixes should land?",
-      multi: true,
-      options: [
-        { id: "a", label: "Fix TTL", detail: "off by one hour" },
-        { id: "b", label: "Document auth" },
-      ],
-    },
-  ],
-};
-
-describe("html and choices envelope validation", () => {
+describe("html envelope validation", () => {
   it("accepts an html artifact with content", () => {
     expect(isPayloadEnvelope(htmlEnvelope)).toBe(true);
   });
@@ -52,125 +28,29 @@ describe("html and choices envelope validation", () => {
     const invalid = { ...htmlEnvelope, artifacts: [{ id: "x", kind: "html" }] };
     expect(isPayloadEnvelope(invalid)).toBe(false);
   });
-
-  it("accepts a valid choices artifact", () => {
-    expect(isPayloadEnvelope(choicesEnvelope)).toBe(true);
-  });
-
-  it("rejects choices with empty or malformed options", () => {
-    const base = choicesEnvelope.artifacts[0];
-    expect(isPayloadEnvelope({ ...choicesEnvelope, artifacts: [{ ...base, options: [] }] })).toBe(false);
-    expect(
-      isPayloadEnvelope({ ...choicesEnvelope, artifacts: [{ ...base, options: [{ id: 1, label: "x" }] }] }),
-    ).toBe(false);
-    expect(
-      isPayloadEnvelope({ ...choicesEnvelope, artifacts: [{ ...base, multi: "yes" }] }),
-    ).toBe(false);
-  });
-
-  it("rejects choices past the option-count and text-length caps", () => {
-    const base = choicesEnvelope.artifacts[0];
-    const tooMany = Array.from({ length: MAX_CHOICE_OPTIONS + 1 }, (_, index) => ({
-      id: `o${index}`,
-      label: "x",
-    }));
-    expect(isPayloadEnvelope({ ...choicesEnvelope, artifacts: [{ ...base, options: tooMany }] })).toBe(false);
-
-    const atCap = Array.from({ length: MAX_CHOICE_OPTIONS }, (_, index) => ({ id: `o${index}`, label: "x" }));
-    expect(isPayloadEnvelope({ ...choicesEnvelope, artifacts: [{ ...base, options: atCap }] })).toBe(true);
-
-    const longLabel = "x".repeat(MAX_CHOICE_TEXT_LENGTH + 1);
-    expect(
-      isPayloadEnvelope({ ...choicesEnvelope, artifacts: [{ ...base, options: [{ id: "a", label: longLabel }] }] }),
-    ).toBe(false);
-  });
-
-  it("enforces the choices caps at encode time too, not only on decode", () => {
-    // The CLI validates via normalizeEnvelope only, so a cap missing here mints a link every
-    // viewer then rejects as invalid-envelope.
-    const overCap: PayloadEnvelope = {
-      ...choicesEnvelope,
-      artifacts: [
-        {
-          id: "next-steps",
-          kind: "choices",
-          options: Array.from({ length: MAX_CHOICE_OPTIONS + 1 }, (_, index) => ({
-            id: `o${index}`,
-            label: "x",
-          })),
-        },
-      ],
-    };
-    const result = normalizeEnvelope(overCap);
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.message).toContain("option limit");
-
-    const longPrompt: PayloadEnvelope = {
-      ...choicesEnvelope,
-      artifacts: [
-        {
-          id: "next-steps",
-          kind: "choices",
-          prompt: "p".repeat(MAX_CHOICE_TEXT_LENGTH + 1),
-          options: [{ id: "a", label: "one" }],
-        },
-      ],
-    };
-    const promptResult = normalizeEnvelope(longPrompt);
-    expect(promptResult.ok).toBe(false);
-    if (!promptResult.ok) expect(promptResult.message).toContain("character limit");
-  });
-
-  it("rejects duplicate option ids in normalization", () => {
-    const duplicated: PayloadEnvelope = {
-      ...choicesEnvelope,
-      artifacts: [
-        {
-          id: "next-steps",
-          kind: "choices",
-          options: [
-            { id: "a", label: "one" },
-            { id: "a", label: "two" },
-          ],
-        },
-      ],
-    };
-
-    const result = normalizeEnvelope(duplicated);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.message).toContain('duplicate option id "a"');
-    }
-  });
 });
 
-describe("html and choices wire transport", () => {
-  it("round-trips both kinds through the packed wire format", () => {
-    for (const envelope of [htmlEnvelope, choicesEnvelope]) {
-      const unpacked = unpackEnvelope(JSON.parse(JSON.stringify(packEnvelope(envelope))));
-      expect(unpacked).toEqual(envelope);
+describe("html wire transport", () => {
+  it("round-trips through the packed wire format", () => {
+    const unpacked = unpackEnvelope(JSON.parse(JSON.stringify(packEnvelope(htmlEnvelope))));
+    expect(unpacked).toEqual(htmlEnvelope);
+  });
+
+  it("round-trips through sync fragment encoding", () => {
+    const parsed = decodeFragment(encodeEnvelope(htmlEnvelope));
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.envelope.artifacts).toEqual(htmlEnvelope.artifacts);
     }
   });
 
-  it("round-trips both kinds through sync fragment encoding", () => {
-    for (const envelope of [htmlEnvelope, choicesEnvelope]) {
-      const parsed = decodeFragment(encodeEnvelope(envelope));
-      expect(parsed.ok).toBe(true);
-      if (parsed.ok) {
-        expect(parsed.envelope.artifacts).toEqual(envelope.artifacts);
-      }
-    }
-  });
-
-  it("never selects a tuple codec (arx2/arx3/arx4) for the new kinds", async () => {
-    for (const envelope of [htmlEnvelope, choicesEnvelope]) {
-      const fragment = await encodeEnvelopeAsync(envelope);
-      const parsed = await decodeFragmentAsync(fragment);
-      expect(parsed.ok).toBe(true);
-      if (parsed.ok) {
-        expect(["arx2", "arx3", "arx4"]).not.toContain(parsed.envelope.codec);
-        expect(parsed.envelope.artifacts).toEqual(envelope.artifacts);
-      }
+  it("never selects a tuple codec (arx2/arx3/arx4) for html", async () => {
+    const fragment = await encodeEnvelopeAsync(htmlEnvelope);
+    const parsed = await decodeFragmentAsync(fragment);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(["arx2", "arx3", "arx4"]).not.toContain(parsed.envelope.codec);
+      expect(parsed.envelope.artifacts).toEqual(htmlEnvelope.artifacts);
     }
   });
 });

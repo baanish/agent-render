@@ -162,17 +162,10 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
     artifacts: [
       {
         id: "review-choices",
-        kind: "choices",
+        kind: "html",
         title: "Post-review actions",
-        multi: true,
-        prompt: "The review found five follow-ups. Which should land before the release cut?",
-        options: [
-          { id: "a", label: "Fix the TTL off-by-one", detail: "Sweeper deletes artifacts one hour early." },
-          { id: "b", label: "Add auth header docs", detail: "The bearer fallback is undocumented." },
-          { id: "c", label: "Tighten sanitizer allowlist", detail: "Drop the data: image scheme." },
-          { id: "d", label: "Rename kit classes", detail: "Cosmetic; can wait for the next minor." },
-          { id: "e", label: "Bench token counts in CI", detail: "Guards the base64url selection win." },
-        ],
+        content:
+          "<p>The review found five follow-ups. Reply with the ids you want, e.g. <code>do a, c, e</code>.</p>\n<ol class=\"ar-choices\">\n<li data-ar-id=\"a\">Fix the TTL off-by-one<small>Sweeper deletes artifacts one hour early.</small></li>\n<li data-ar-id=\"b\">Add auth header docs<small>The bearer fallback is undocumented.</small></li>\n<li data-ar-id=\"c\">Tighten sanitizer allowlist<small>Drop the data: image scheme.</small></li>\n<li data-ar-id=\"d\">Rename kit classes<small>Cosmetic; can wait for the next minor.</small></li>\n<li data-ar-id=\"e\">Bench token counts in CI<small>Guards the base64url selection win.</small></li>\n</ol>",
       },
     ],
   },

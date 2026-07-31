@@ -78,7 +78,6 @@ Packed key map:
 
 - envelope: `codec -> c`, `title -> t`, `activeArtifactId -> a`, `artifacts -> r`
 - artifact: `id -> i`, `kind -> k`, `title -> t`, `filename -> f`, `content -> c`, `language -> l`, `patch -> p`, `oldContent -> o`, `newContent -> n`, `view -> w`
-- choices artifact: `prompt -> q`, `multi -> u`, `options -> o`; each option packs `id -> i`, `label -> l`, `detail -> d`
 
 arx2 uses a tuple wire envelope instead of JSON object keys:
 
@@ -86,8 +85,8 @@ arx2 uses a tuple wire envelope instead of JSON object keys:
 - multi-artifact bundle: `[2, [artifactTuple, ...], envelopeTitle?, activeIndex?]`
 - artifact tuples use kind codes: `m` markdown, `c` code, `d` diff, `s` csv, `j` json
 - trailing optional fields are trimmed; omitted optional slots before later values are encoded as `null`
-- the tuple kind table is pinned: envelopes containing `html` or `choices` artifacts are skipped by
-  the tuple codecs (arx2/arx3/arx4) and encode via `arx`, `deflate`, `lz`, or `plain` instead
+- the tuple kind table is pinned: envelopes containing `html` artifacts are skipped by the tuple
+  codecs (arx2/arx3/arx4) and encode via `arx`, `deflate`, `lz`, or `plain` instead
 
 Tuple fields:
 
@@ -102,13 +101,11 @@ Tuple fields:
 - optional `filename`
 - `content` for markdown, code, csv, json, and html
 - `patch` or `oldContent` plus `newContent` for diffs
-- non-empty `options` (unique `id` plus `label`, optional `detail`) for choices; optional `prompt` and `multi`
 
 ## Limits
 
 - Supported fragment budget: 8,192 decoded visible fragment characters
 - Supported decoded payload budget: 200,000 characters
-- Choices artifacts: at most 50 options; `prompt` and each option `id`/`label`/`detail` at most 2,000 characters
 - Kit HTML: element nesting deeper than 100 levels is dropped during sanitization
 - Discord markdown link limit: 2,000 characters for the full formatted `[label](url)` string
 - Larger payloads should fail with a clear error before rendering
@@ -275,28 +272,3 @@ Fragment payloads render sanitized: scripts, event handlers, inline styles, and 
 stripped. Server-injected payloads on a self-hosted instance render verbatim but inside a sandboxed
 (origin-isolated) iframe, so scripts run without reaching the viewer origin.
 
-### Choices artifact example
-
-```json
-{
-  "v": 1,
-  "codec": "plain",
-  "title": "Next steps",
-  "activeArtifactId": "next-steps",
-  "artifacts": [
-    {
-      "id": "next-steps",
-      "kind": "choices",
-      "prompt": "Which follow-ups should land before the release?",
-      "multi": true,
-      "options": [
-        { "id": "a", "label": "Fix the TTL off-by-one", "detail": "Sweeper deletes an hour early." },
-        { "id": "b", "label": "Document the auth header" }
-      ]
-    }
-  ]
-}
-```
-
-Choices are presentational: the viewer renders stable option ids and the reader answers in the
-conversation ("do a, c"). There is no response channel; keep option ids short and chat-friendly.

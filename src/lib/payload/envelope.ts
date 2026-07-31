@@ -1,9 +1,4 @@
-import {
-  MAX_CHOICE_OPTIONS,
-  MAX_CHOICE_TEXT_LENGTH,
-  type ArtifactPayload,
-  type PayloadEnvelope,
-} from "@/lib/payload/schema";
+import type { ArtifactPayload, PayloadEnvelope } from "@/lib/payload/schema";
 
 type EnvelopeValidationResult =
   | { ok: true; envelope: PayloadEnvelope }
@@ -16,37 +11,6 @@ function validateArtifact(artifact: ArtifactPayload): string | null {
 
     if (!hasPatch && !hasPair) {
       return `Diff artifact "${artifact.id}" must include a patch or an old/new content pair.`;
-    }
-  }
-
-  if (artifact.kind === "choices") {
-    if (artifact.options.length === 0) {
-      return `Choices artifact "${artifact.id}" must include at least one option.`;
-    }
-
-    // Mirror the decode-side caps in isPayloadEnvelope: without them an encoder (the CLI) would
-    // happily mint a link that every viewer then rejects as invalid-envelope.
-    if (artifact.options.length > MAX_CHOICE_OPTIONS) {
-      return `Choices artifact "${artifact.id}" has ${artifact.options.length} options, over the ${MAX_CHOICE_OPTIONS} option limit.`;
-    }
-
-    if (artifact.prompt !== undefined && artifact.prompt.length > MAX_CHOICE_TEXT_LENGTH) {
-      return `Choices artifact "${artifact.id}" has a prompt over the ${MAX_CHOICE_TEXT_LENGTH} character limit.`;
-    }
-
-    const seenOptionIds = new Set<string>();
-    for (const option of artifact.options) {
-      if (seenOptionIds.has(option.id)) {
-        return `Choices artifact "${artifact.id}" has duplicate option id "${option.id}".`;
-      }
-      if (
-        option.id.length > MAX_CHOICE_TEXT_LENGTH ||
-        option.label.length > MAX_CHOICE_TEXT_LENGTH ||
-        (option.detail !== undefined && option.detail.length > MAX_CHOICE_TEXT_LENGTH)
-      ) {
-        return `Choices option "${option.id}" has text over the ${MAX_CHOICE_TEXT_LENGTH} character limit.`;
-      }
-      seenOptionIds.add(option.id);
     }
   }
 

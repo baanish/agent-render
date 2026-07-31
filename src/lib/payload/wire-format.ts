@@ -29,23 +29,8 @@ type PackedTextArtifact = {
   f?: string;
 };
 
-type PackedChoiceOption = {
-  i: string;
-  l: string;
-  d?: string;
-};
 
-type PackedChoicesArtifact = {
-  i: string;
-  k: "choices";
-  t?: string;
-  f?: string;
-  q?: string;
-  u?: boolean;
-  o: PackedChoiceOption[];
-};
-
-type PackedArtifact = PackedCodeArtifact | PackedDiffArtifact | PackedTextArtifact | PackedChoicesArtifact;
+type PackedArtifact = PackedCodeArtifact | PackedDiffArtifact | PackedTextArtifact;
 
 type PackedEnvelope = {
   p: 1;
@@ -74,20 +59,6 @@ function packArtifact(artifact: ArtifactPayload): PackedArtifact {
         t: artifact.title,
         f: artifact.filename,
         c: artifact.content,
-      };
-    case "choices":
-      return {
-        i: artifact.id,
-        k: artifact.kind,
-        t: artifact.title,
-        f: artifact.filename,
-        q: artifact.prompt,
-        u: artifact.multi,
-        o: artifact.options.map((option) => ({
-          i: option.id,
-          l: option.label,
-          d: option.detail,
-        })),
       };
     case "code":
       return {
@@ -163,21 +134,6 @@ function unpackArtifact(artifact: PackedArtifact): ArtifactPayload {
     };
   }
 
-  if (artifact.k === "choices") {
-    return {
-      id: artifact.i,
-      kind: "choices",
-      title: artifact.t,
-      filename: artifact.f,
-      prompt: artifact.q,
-      multi: artifact.u,
-      options: artifact.o.map((option) => ({
-        id: option.i,
-        label: option.l,
-        detail: option.d,
-      })),
-    };
-  }
 
   return {
     id: artifact.i,
@@ -208,17 +164,6 @@ function looksLikePackedArtifact(value: unknown): value is PackedArtifact {
     return typeof value.c === "string";
   }
 
-  if (value.k === "choices") {
-    if (!Array.isArray(value.o) || value.o.length === 0) {
-      return false;
-    }
-    for (const option of value.o) {
-      if (!isRecord(option) || typeof option.i !== "string" || typeof option.l !== "string") {
-        return false;
-      }
-    }
-    return true;
-  }
 
   return false;
 }

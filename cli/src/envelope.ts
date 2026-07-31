@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { ArtifactPayload, ChoiceOption, PayloadEnvelope } from "../../src/lib/payload/schema";
+import type { ArtifactPayload, PayloadEnvelope } from "../../src/lib/payload/schema";
 import { normalizeEnvelope } from "../../src/lib/payload/envelope";
 import { detectArtifactKind, type RequestedKind } from "./kind";
 
@@ -15,47 +15,6 @@ function slugify(value: string): string {
     .replace(/^-+|-+$/g, "") || "artifact";
 }
 
-type ChoicesDocument = {
-  prompt?: string;
-  multi?: boolean;
-  options: ChoiceOption[];
-};
-
-const CHOICES_SHAPE = '{"prompt"?, "multi"?, "options": [{"id", "label", "detail"?}]}';
-
-function parseChoicesDocument(input: ArtifactInput): ChoicesDocument {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(input.content);
-  } catch {
-    throw new Error(`Choices input ${input.filename} must be JSON shaped ${CHOICES_SHAPE}.`);
-  }
-
-  if (typeof parsed !== "object" || parsed === null || !Array.isArray((parsed as { options?: unknown }).options)) {
-    throw new Error(`Choices input ${input.filename} must be JSON shaped ${CHOICES_SHAPE}.`);
-  }
-
-  const document = parsed as { prompt?: unknown; multi?: unknown; options: unknown[] };
-  if (document.prompt !== undefined && typeof document.prompt !== "string") {
-    throw new Error(`Choices "prompt" in ${input.filename} must be a string.`);
-  }
-  if (document.multi !== undefined && typeof document.multi !== "boolean") {
-    throw new Error(`Choices "multi" in ${input.filename} must be a boolean.`);
-  }
-
-  const options = document.options.map((option, index) => {
-    const record = option as { id?: unknown; label?: unknown; detail?: unknown };
-    if (typeof record?.id !== "string" || typeof record.label !== "string") {
-      throw new Error(`Choices option ${index + 1} in ${input.filename} needs string "id" and "label".`);
-    }
-    if (record.detail !== undefined && typeof record.detail !== "string") {
-      throw new Error(`Choices option "${record.id}" in ${input.filename} has a non-string "detail".`);
-    }
-    return { id: record.id, label: record.label, detail: record.detail };
-  });
-
-  return { prompt: document.prompt, multi: document.multi, options };
-}
 
 function buildArtifact(
   input: ArtifactInput,
@@ -68,18 +27,6 @@ function buildArtifact(
   const title = titleOverride?.trim() || filename;
   if (detected.kind === "diff") {
     return { id, kind: "diff", title, filename, patch: input.content, view: "unified" };
-  }
-  if (detected.kind === "choices") {
-    const document = parseChoicesDocument(input);
-    return {
-      id,
-      kind: "choices",
-      title,
-      filename,
-      prompt: document.prompt,
-      multi: document.multi,
-      options: document.options,
-    };
   }
   if (detected.kind === "code") {
     return {

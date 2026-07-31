@@ -2,14 +2,8 @@ export const MAX_FRAGMENT_LENGTH = 8192;
 export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 
-// Server-injected (self-hosted) payloads skip the fragment budget, so the choices renderer is
-// bounded here instead: a decision list with thousands of options (or huge option strings) would
-// otherwise mount an unbounded DOM. These are validation limits, not wire limits.
-export const MAX_CHOICE_OPTIONS = 50;
-/** Applies to each option's id, label, and detail, and to the artifact prompt. */
-export const MAX_CHOICE_TEXT_LENGTH = 2000;
 
-export const artifactKinds = ["markdown", "code", "diff", "csv", "json", "html", "choices"] as const;
+export const artifactKinds = ["markdown", "code", "diff", "csv", "json", "html"] as const;
 export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3", "arx4"] as const;
 
 export type ArtifactKind = (typeof artifactKinds)[number];
@@ -102,20 +96,6 @@ export type HtmlArtifact = BaseArtifact & {
   content: string;
 };
 
-export type ChoiceOption = {
-  id: string;
-  label: string;
-  detail?: string;
-};
-
-// Presentational multiple-choice bundle: the viewer renders stable option ids the reader answers
-// with in chat ("do a, c, e"). Deliberately no response channel — the viewer stays static.
-export type ChoicesArtifact = BaseArtifact & {
-  kind: "choices";
-  prompt?: string;
-  multi?: boolean;
-  options: ChoiceOption[];
-};
 
 export type ArtifactPayload =
   | MarkdownArtifact
@@ -123,8 +103,7 @@ export type ArtifactPayload =
   | CsvArtifact
   | JsonArtifact
   | DiffArtifact
-  | HtmlArtifact
-  | ChoicesArtifact;
+  | HtmlArtifact;
 
 export type PayloadEnvelope = {
   v: 1;
@@ -193,25 +172,6 @@ function isBaseArtifact(value: unknown): value is BaseArtifact {
   return hasString(value.id) && isArtifactKind(value.kind);
 }
 
-function isChoiceOptionArray(value: unknown): value is ChoiceOption[] {
-  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_CHOICE_OPTIONS) {
-    return false;
-  }
-
-  for (const option of value) {
-    if (!isRecord(option) || !hasString(option.id) || !hasString(option.label)) {
-      return false;
-    }
-    if (option.id.length > MAX_CHOICE_TEXT_LENGTH || option.label.length > MAX_CHOICE_TEXT_LENGTH) {
-      return false;
-    }
-    if (option.detail !== undefined && (!hasString(option.detail) || option.detail.length > MAX_CHOICE_TEXT_LENGTH)) {
-      return false;
-    }
-  }
-
-  return true;
-}
 
 /**
  * Runtime shape guard for payload envelopes decoded from untyped input.
@@ -258,22 +218,6 @@ export function isPayloadEnvelope(value: unknown): value is PayloadEnvelope {
       continue;
     }
 
-    if (artifact.kind === "choices") {
-      const choicesArtifact = artifact as { options?: unknown; multi?: unknown; prompt?: unknown };
-      if (!isChoiceOptionArray(choicesArtifact.options)) {
-        return false;
-      }
-      if (choicesArtifact.multi !== undefined && typeof choicesArtifact.multi !== "boolean") {
-        return false;
-      }
-      if (
-        choicesArtifact.prompt !== undefined &&
-        (!hasString(choicesArtifact.prompt) || choicesArtifact.prompt.length > MAX_CHOICE_TEXT_LENGTH)
-      ) {
-        return false;
-      }
-      continue;
-    }
 
     if (!hasString((artifact as { content?: unknown }).content)) {
       return false;

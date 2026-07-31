@@ -64,9 +64,9 @@ export const sampleLinkCards = [
   },
   {
     title: "Review checklist",
-    hash: "#dbZFNi9wwDIb_ivB5slAoPaSH0m5pKfRQtgM9lB4UW1mLOPbUlif7wf73lb1h57IEkviV9FjS-2hOZnx3MOf-tmY0juaAQuZgRE83dGbawHqyS-AiKqPKucuD9YktFRWzGf8-Gn4rtKh4OTXor1RkeMkDtMIptsh_jRw9wR6YU40OZj6T_oaQtqGeyhX88Ww9FJ9qcBBQUyaaUyaQXhoIC4Gt8kmJ1YySKx1Meu0OVQ76_cZ3veJ4_AlpnofpfkixDe00-HsjOlEGpzihApiFZ220gOaAXp2BMIf7K_N0eMFOO_azc4BVPHhC1wjJttEatI02aZmqM4YwoV2AC-iQydaVopC78OzOO_KtF4pQMLLwg9Zqadp2Jxr2a06nPolDwRF4xVuCon6tdMG5HXdDEVeChQVswFK6I41yncpKwvYjWIywoSboUjs30p3AyjHlC68tqvG-UFQzJC3aolW_dEMc4frHTv1eMbvSKZPa8uF9zQGKLrV7DhtHRf7T5xk",
-    fragmentLength: 512,
-    kind: "choices",
+    hash: "#dhZJNj9MwEIb_ysjnphUS4lBCJFgEQuKASm-Uw8SeNKM4nsh2mi2r_e9M0uxpV-rFst_5eDwfT2Yw-3cbc1lOa_bGUeMxk9mYrK8DXZgmsC3ZznPKKqPKcZEL2wpbSipGs__zZPgtU6dim3u_ZvwlKRc3J0CbWcLsNJPLoTq2BKutkTE4aPhCevVepmIc0hYONPgrTJxbyOrMLsFVRpgw5A3Q9ryF0oqjygngBqxq5W4RtuVuqE6hFA_WY0qfTgbjyzdPZjZ5BocZC9XZzXaVv_HjAjoef4I0TVFfCwlUph69r35PRANFcOQpUwKMmRstKoH6QCtjBMLor8q-BZQ7z2-RaiV9dg5w1LpaQjcnFZtWztyWWjOp2ui7RtsBJ9AGiR17CpncXYRVxJHPbaYACQNn_qfpNEKmebAr6WuUYal3jt0D93gmSDr-nu4SnBIOFLAn6DjfukwvJTxI6imz_QgWg45LHRqJCyrQY4aeg8S7CFLEFwpWhy-dFmJ1SbTbHODhxwr6PmLUpZgT15jow_sxekg6oGXXdHPCK8pOfGWe_z7_Bw",
+    fragmentLength: 563,
+    kind: "html",
     artifactCount: 1,
   },
 ] satisfies readonly SampleLinkCard[];

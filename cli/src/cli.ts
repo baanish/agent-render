@@ -23,9 +23,8 @@ type CreateOptions = {
 };
 
 // `.html` files auto-detect as code (source view); kit rendering is an explicit `--kind html` so
-// arbitrary HTML files are never silently reinterpreted. `--kind choices` reads a JSON document
-// shaped {"prompt"?, "multi"?, "options": [{"id", "label", "detail"?}]}.
-const KINDS = new Set<RequestedKind>(["auto", "markdown", "code", "diff", "csv", "json", "html", "choices"]);
+// arbitrary HTML files are never silently reinterpreted.
+const KINDS = new Set<RequestedKind>(["auto", "markdown", "code", "diff", "csv", "json", "html"]);
 const MODES = new Set<Mode>(["auto", "instance", "fragment"]);
 const FORMATS = new Set<OutputFormat>(["url", "markdown", "discord", "slack", "plain"]);
 const DEFAULT_VIEWER_URL = "https://agent-render.com/";

@@ -1,6 +1,6 @@
 ---
 name: selfhosted-agent-render
-description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs public/share-friendly rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal for public/social sharing, corporate proxy/link-scanning environments, payloads that exceed the ~8 KB fragment budget, platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, JSON, kit HTML, and choices — same artifact kinds as the fragment-based product (the server stores the payload string after a length/non-empty check; full envelope validation happens client-side when the viewer renders). The self-hosted server stores payloads in SQLite with a configurable sliding TTL that defaults to seven days.
+description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs public/share-friendly rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal for public/social sharing, corporate proxy/link-scanning environments, payloads that exceed the ~8 KB fragment budget, platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, JSON, and kit HTML — same artifact kinds as the fragment-based product (the server stores the payload string after a length/non-empty check; full envelope validation happens client-side when the viewer renders). The self-hosted server stores payloads in SQLite with a configurable sliding TTL that defaults to seven days.
 ---
 
 # Self-Hosted Agent Render
@@ -270,23 +270,6 @@ A single `patch` string may contain multiple `diff --git` sections.
 }
 ```
 
-#### Choices
-
-**Required:** non-empty `options` array (max 50), each with `id` and `label` (optional `detail`). Optional `prompt` and `multi`. Presentational: the user answers in chat.
-
-```json
-{
-  "id": "next-steps",
-  "kind": "choices",
-  "prompt": "Which follow-ups land first?",
-  "multi": true,
-  "options": [
-    { "id": "a", "label": "Fix the TTL", "detail": "off by one hour" },
-    { "id": "b", "label": "Document auth" }
-  ]
-}
-```
-
 > **Common mistake:** Diff artifacts do NOT use a `content` field. Use `patch` for unified diffs or provide both `oldContent` and `newContent`. A `content` field on a diff artifact will fail envelope validation.
 
 Encode the envelope using the same codec pipeline as fragment links:
@@ -296,7 +279,7 @@ Encode the envelope using the same codec pipeline as fragment links:
 3. Prepend the single-character codec tag (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4)
 4. POST the resulting string as the `payload` field
 
-> **`html` and `choices` artifacts must not use `arx2`, `arx3`, or `arx4`.** Those codecs use a pinned tuple wire format whose kind table predates both kinds, so such a payload stores fine and then fails to decode in the viewer. Use `plain`, `lz`, `deflate`, or `arx` (automatic codec selection already excludes the tuple codecs for these kinds).
+> **`html` artifacts must not use `arx2`, `arx3`, or `arx4`.** Those codecs use a pinned tuple wire format whose kind table predates the kind, so such a payload stores fine and then fails to decode in the viewer. Use `plain`, `lz`, `deflate`, or `arx` (automatic codec selection already excludes the tuple codecs for these kinds).
 
 For simple cases, `plain` codec is sufficient:
 
