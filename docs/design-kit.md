@@ -12,9 +12,11 @@ inline styles and `<style>` blocks are stripped.
   styles, no foreign content (svg/math), no `id`/`name` attributes. The allowlist lives in
   `src/lib/html/sanitize-kit-html.ts`.
 - Server-injected payloads on a self-hosted instance (UUID links) render verbatim, scripts
-  included, but inside a sandboxed iframe (`allow-scripts` without `allow-same-origin`): the HTML
-  runs in an opaque origin, so scripts and forms work while the document cannot reach the parent
-  DOM, the auth cookie, or the artifact API. Because the frame is origin-isolated it does not inherit
+  included, but inside a sandboxed iframe with `allow-scripts` and nothing else: the HTML runs in an
+  opaque origin, so it cannot reach the parent DOM, the auth cookie, or the artifact API. Forms,
+  popups and modal dialogs are withheld deliberately — an opaque origin stops a payload reading
+  secrets but not asking for them, and `prompt()` or a lookalike sign-in form would harvest the
+  shared password just as well. Because the frame is origin-isolated it does not inherit
   the kit stylesheet: trusted HTML should be a self-contained document with its own styles. The
   `ar-*` kit vocabulary is for the sanitized inline (fragment) path.
 - Kit interactivity is viewer-owned JS keyed off `ar-*` classes, so sanitized artifacts still get

@@ -40,15 +40,20 @@ export function HtmlRenderer({ artifact, trusted, onReady }: HtmlRendererProps) 
 
   if (trusted) {
     // Server-injected (self-hosted) HTML runs verbatim, but sandboxed WITHOUT allow-same-origin, so
-    // scripts and forms work while the document sits in an opaque origin: it cannot reach the parent
-    // DOM, the auth cookie, or the artifact API. Height is fixed by CSS (the parent cannot read a
+    // scripts work while the document sits in an opaque origin: it cannot reach the parent DOM, the
+    // auth cookie, or the artifact API. Height is fixed by CSS (the parent cannot read a
     // cross-origin frame's scrollHeight), and the frame scrolls internally.
+    //
+    // allow-scripts ONLY, deliberately. An opaque origin stops the frame reading secrets, but it
+    // does not stop it asking for them: allow-modals would let a payload prompt() for the shared
+    // password, and allow-forms would let it POST a lookalike sign-in form off-origin. Agents relay
+    // untrusted content, so a stored artifact is hostile UI even on the operator's own instance.
     return (
       <iframe
         className="kit-html-frame"
         data-testid="renderer-html-trusted"
         data-renderer-ready="true"
-        sandbox="allow-scripts allow-popups allow-forms allow-modals"
+        sandbox="allow-scripts"
         srcDoc={artifact.content}
         title={artifact.title ?? artifact.id}
         onLoad={onReady}

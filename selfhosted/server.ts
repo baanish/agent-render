@@ -375,11 +375,13 @@ async function isValidPassword(candidate: string): Promise<boolean> {
 /** True when the request reached the server over TLS, directly or via a trusted terminating proxy. */
 function isSecureRequest(req: IncomingMessage): boolean {
   if (trustProxyHeaders) {
-    const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "")
-      .split(",")[0]
-      .trim()
-      .toLowerCase();
-    if (forwardedProto) return forwardedProto === "https";
+    const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "").trim().toLowerCase();
+    // Only a single value is trusted. A trusted proxy overwrites this header (nginx
+    // `proxy_set_header X-Forwarded-Proto $scheme`); a comma-separated chain means some hop appended
+    // instead, so the leftmost value is client-supplied and could clear the Secure flag. Fall back
+    // to the real socket rather than believe a value an attacker may have prepended.
+    if (forwardedProto === "https") return true;
+    if (forwardedProto === "http") return false;
   }
   return (req.socket as TLSSocket).encrypted === true;
 }

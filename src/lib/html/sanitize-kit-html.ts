@@ -132,12 +132,41 @@ const perTagAllowedAttributes: Record<string, Set<string>> = {
   time: new Set(["datetime"]),
 };
 
+/** Whitespace or C0/C1 controls anywhere in an href: parsers strip these before resolving. */
+const CONTROL_OR_SPACE_PATTERN = /[\s\u0000-\u001f\u007f-\u009f]/;
+
 function isSafeHref(value: string): boolean {
   // https/mailto only. Bare-fragment (`#...`) hrefs are rejected: rendered inline on the viewer
   // origin they would rewrite the shell's own location.hash and swap the active artifact for
-  // attacker-crafted content inside the product chrome. http is rejected so active links can't
+  // attacker-crafted content inside the product chrome. http is rejected so active links cannot
   // downgrade to cleartext.
-  return /^(https:|mailto:)/i.test(value.trim());
+  //
+  // Parsed rather than prefix-matched: `https:example.com` and `https:/\evil.example` both satisfy
+  // a `^https:` regex but the browser normalizes them into navigations the allowlist never meant to
+  // permit. Whitespace and C0 controls are rejected outright because parsers strip them first, so
+  // `java\tscript:` would otherwise reach the URL parser as a scheme this check never saw.
+  const trimmed = value.trim();
+  if (CONTROL_OR_SPACE_PATTERN.test(trimmed)) {
+    return false;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return false;
+  }
+
+  if (parsed.protocol === "mailto:") {
+    return true;
+  }
+
+  return (
+    parsed.protocol === "https:"
+    && parsed.hostname.length > 0
+    && parsed.username === ""
+    && parsed.password === ""
+  );
 }
 
 function isSafeImageSrc(value: string): boolean {
@@ -274,6 +303,13 @@ export function sanitizeKitHtmlInto(container: HTMLElement, html: string): void 
 
   const body = parseAndSanitize(html);
   const ownerDocument = container.ownerDocument;
-  const adopted = Array.from(body.childNodes, (node) => ownerDocument.importNode(node, true));
-  container.replaceChildren(...adopted);
+  // Collect into a fragment and insert once, rather than spreading the node list into
+  // replaceChildren: a wide-but-shallow tree can hold more siblings than the engine's argument
+  // limit, which would throw where a deep tree is already capped by MAX_KIT_HTML_DEPTH.
+  const fragment = ownerDocument.createDocumentFragment();
+  for (const node of Array.from(body.childNodes)) {
+    fragment.appendChild(ownerDocument.importNode(node, true));
+  }
+  container.replaceChildren();
+  container.appendChild(fragment);
 }

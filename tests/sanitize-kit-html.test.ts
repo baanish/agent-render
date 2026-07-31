@@ -46,6 +46,23 @@ describe("sanitizeKitHtml", () => {
     expect(sanitizeKitHtml('<a href="#pAttackerFragment">x</a>')).toBe("<a>x</a>");
   });
 
+  it("rejects userinfo and embedded control characters in hrefs", () => {
+    // Userinfo is the classic display spoof: the label reads apple.com, the host is evil.example.
+    expect(sanitizeKitHtml('<a href="https://apple.com@evil.example">x</a>')).toBe("<a>x</a>");
+    // Parsers strip whitespace and controls before resolving, so a tab could smuggle a scheme past
+    // a check that only inspected the raw string.
+    expect(sanitizeKitHtml('<a href="java\tscript:alert(1)">x</a>')).toBe("<a>x</a>");
+    expect(sanitizeKitHtml('<a href="https://exa\nmple.com">x</a>')).toBe("<a>x</a>");
+    // A scheme with no host resolves nowhere useful and is rejected rather than passed through.
+    expect(sanitizeKitHtml('<a href="https://">x</a>')).toBe("<a>x</a>");
+  });
+
+  it("keeps scheme-relative https forms the URL parser normalizes to a real host", () => {
+    // `https:example.com` parses to https://example.com/. It looks odd but resolves to an ordinary
+    // https link, and the policy allows https to any host, so stripping it would be theatre.
+    expect(sanitizeKitHtml('<a href="https:example.com">x</a>')).toBe('<a href="https:example.com">x</a>');
+  });
+
   it("forces noopener rel on target=_blank links and drops other targets", () => {
     expect(sanitizeKitHtml('<a href="https://example.com" target="_blank">x</a>')).toBe(
       '<a href="https://example.com" target="_blank" rel="noopener noreferrer">x</a>',
