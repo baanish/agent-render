@@ -43,6 +43,24 @@ const fieldPlaceholders: Record<LinkCreatorKind, string> = {
 
 const codecOptions = ["auto", ...codecs] as const;
 
+// The arx2/arx3/arx4 tuple wire format is pinned to the original artifact kinds, so offering them
+// for an html draft would advertise a codec that yields no candidates. Mirrors
+// tupleCodecsSupportEnvelope in fragment-arx.ts.
+const tupleCodecs = new Set<string>(["arx2", "arx3", "arx4"]);
+
+function isCodecSupportedForKind(
+  codec: LinkCreatorDraft["codec"],
+  kind: LinkCreatorKind,
+): boolean {
+  return kind !== "html" || codec === undefined || !tupleCodecs.has(codec);
+}
+
+type CodecOption = (typeof codecOptions)[number];
+
+function getCodecOptionsForKind(kind: LinkCreatorKind): readonly CodecOption[] {
+  return kind === "html" ? codecOptions.filter((option) => !tupleCodecs.has(option)) : codecOptions;
+}
+
 const defaultLinkCreatorDraft: LinkCreatorDraft = {
   kind: "markdown",
   title: "Product brief",
@@ -114,11 +132,16 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
         return current;
       }
 
+      const nextDraft = { ...current.draft, [field]: value };
+
+      // Switching to a kind the tuple codecs cannot carry would otherwise leave a now-unsupported
+      // codec pinned, and an explicit request for it has no candidates to select from.
+      if (!isCodecSupportedForKind(nextDraft.codec, nextDraft.kind)) {
+        nextDraft.codec = "auto";
+      }
+
       return {
-        draft: {
-          ...current.draft,
-          [field]: value,
-        },
+        draft: nextDraft,
         version: current.version + 1,
       };
     });
@@ -343,7 +366,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                 aria-label="Compression algorithm"
               >
                 <span className="metric-label">Compression</span>
-                {codecOptions.map((option) => (
+                {getCodecOptionsForKind(draft.kind).map((option) => (
                   <button
                     key={option}
                     type="button"

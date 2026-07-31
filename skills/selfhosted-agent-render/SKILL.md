@@ -296,6 +296,8 @@ Encode the envelope using the same codec pipeline as fragment links:
 3. Prepend the single-character codec tag (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4)
 4. POST the resulting string as the `payload` field
 
+> **`html` and `choices` artifacts must not use `arx2`, `arx3`, or `arx4`.** Those codecs use a pinned tuple wire format whose kind table predates both kinds, so such a payload stores fine and then fails to decode in the viewer. Use `plain`, `lz`, `deflate`, or `arx` (automatic codec selection already excludes the tuple codecs for these kinds).
+
 For simple cases, `plain` codec is sufficient:
 
 ```text
