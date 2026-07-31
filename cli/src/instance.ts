@@ -51,6 +51,15 @@ export async function createInstanceArtifact(
     throw new Error(`Instance create failed (${response.status}): ${detail || response.statusText}`);
   }
 
-  const created = parseArtifactCreated(JSON.parse(responseText) as unknown);
+  let parsedBody: unknown;
+  try {
+    parsedBody = JSON.parse(responseText);
+  } catch {
+    // A 2xx with a non-JSON body (proxy error page, misconfigured server) should give the same
+    // clear message as a malformed JSON body, not a raw SyntaxError.
+    throw new Error("The agent-render instance returned an invalid create response.");
+  }
+
+  const created = parseArtifactCreated(parsedBody);
   return instanceUrl(baseUrl, created.id);
 }

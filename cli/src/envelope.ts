@@ -100,17 +100,22 @@ export function buildPayloadEnvelope(
   requestedKind: RequestedKind,
   title?: string,
 ): PayloadEnvelope {
-  const idCounts = new Map<string, number>();
+  // Reserve every real slug first, so a generated `<base>-N` suffix can never collide with a later
+  // file whose own name slugifies to that same string (report-2.md alongside two report.md files).
+  const takenIds = new Set(
+    inputs.map((input) => slugify(path.basename(input.filename, path.extname(input.filename)))),
+  );
+  const usedIds = new Set<string>();
   const artifacts = inputs.map((input) => {
     const baseId = slugify(path.basename(input.filename, path.extname(input.filename)));
-    const count = (idCounts.get(baseId) ?? 0) + 1;
-    idCounts.set(baseId, count);
-    return buildArtifact(
-      input,
-      requestedKind,
-      count === 1 ? baseId : `${baseId}-${count}`,
-      inputs.length === 1 ? title : undefined,
-    );
+    let id = baseId;
+    let suffix = 2;
+    while (usedIds.has(id) || (id !== baseId && takenIds.has(id))) {
+      id = `${baseId}-${suffix}`;
+      suffix += 1;
+    }
+    usedIds.add(id);
+    return buildArtifact(input, requestedKind, id, inputs.length === 1 ? title : undefined);
   });
 
   const candidate: PayloadEnvelope = {

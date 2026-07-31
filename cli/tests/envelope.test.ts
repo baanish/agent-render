@@ -15,6 +15,21 @@ describe("buildPayloadEnvelope", () => {
     expect(envelope.artifacts.map((artifact) => artifact.filename)).toEqual(["report.md", "report.md"]);
   });
 
+  it("does not let a generated suffix collide with a real filename slug", () => {
+    const envelope = buildPayloadEnvelope(
+      [
+        { filename: "report-2.md", content: "# Two" },
+        { filename: "a/report.md", content: "# A" },
+        { filename: "b/report.md", content: "# B" },
+      ],
+      "auto",
+    );
+
+    const ids = envelope.artifacts.map((artifact) => artifact.id);
+    expect(new Set(ids).size).toBe(3);
+    expect(ids).toEqual(["report-2", "report", "report-3"]);
+  });
+
   it("uses --title for a single artifact without leaking its local path", () => {
     const envelope = buildPayloadEnvelope(
       [{ filename: "/private/work/report.md", content: "# Report" }],

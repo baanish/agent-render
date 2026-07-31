@@ -6,6 +6,7 @@ export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 // bounded here instead: a decision list with thousands of options (or huge option strings) would
 // otherwise mount an unbounded DOM. These are validation limits, not wire limits.
 export const MAX_CHOICE_OPTIONS = 50;
+/** Applies to each option's id, label, and detail, and to the artifact prompt. */
 export const MAX_CHOICE_TEXT_LENGTH = 2000;
 
 export const artifactKinds = ["markdown", "code", "diff", "csv", "json", "html", "choices"] as const;
@@ -265,7 +266,10 @@ export function isPayloadEnvelope(value: unknown): value is PayloadEnvelope {
       if (choicesArtifact.multi !== undefined && typeof choicesArtifact.multi !== "boolean") {
         return false;
       }
-      if (choicesArtifact.prompt !== undefined && !hasString(choicesArtifact.prompt)) {
+      if (
+        choicesArtifact.prompt !== undefined &&
+        (!hasString(choicesArtifact.prompt) || choicesArtifact.prompt.length > MAX_CHOICE_TEXT_LENGTH)
+      ) {
         return false;
       }
       continue;

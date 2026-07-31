@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -41,7 +41,14 @@ export async function readStoredConfig(env: EnvLookup = process.env): Promise<St
     throw error;
   }
 
-  const parsed: unknown = JSON.parse(contents);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(contents);
+  } catch {
+    // Name the file: config is read on every create, including fragment mode that needs none, so a
+    // bare SyntaxError here would fail an unrelated command with no way to find the cause.
+    throw new Error(`Config file ${configPath} is not valid JSON.`);
+  }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new Error(`Config file ${configPath} must contain a JSON object.`);
   }
@@ -80,6 +87,9 @@ export async function setConfigValue(
 
   await mkdir(path.dirname(configPath), { recursive: true });
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  // writeFile's mode only applies when it creates the file, so an existing world-readable config
+  // would keep its permissions while now holding a bearer token.
+  await chmod(configPath, 0o600);
   return configPath;
 }
 

@@ -117,7 +117,16 @@ async function runCreate(args: string[]): Promise<void> {
     const encoded = await encodePayloadEnvelope(envelope);
     assertFragmentBudget(encoded.fragmentBody);
     url = createFragmentUrl(DEFAULT_VIEWER_URL, encoded.fragmentBody);
-    markdownUrl = createFragmentUrl(DEFAULT_VIEWER_URL, encoded.transportFragmentBody);
+    // The markdown surface is a different candidate (selected by percent-escaped length), so it
+    // carries its own visible length and needs its own budget check: the viewer enforces the visible
+    // budget on whatever fragment it opens, so an unchecked link here could render "too-large" for a
+    // payload whose --format url link works.
+    if (encoded.transportFragmentBody === encoded.fragmentBody) {
+      markdownUrl = url;
+    } else {
+      assertFragmentBudget(encoded.transportFragmentBody);
+      markdownUrl = createFragmentUrl(DEFAULT_VIEWER_URL, encoded.transportFragmentBody);
+    }
   }
 
   const formatted = formatArtifactOutput(options.format, label, url, markdownUrl);

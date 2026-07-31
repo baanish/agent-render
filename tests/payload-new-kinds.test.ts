@@ -85,6 +85,42 @@ describe("html and choices envelope validation", () => {
     ).toBe(false);
   });
 
+  it("enforces the choices caps at encode time too, not only on decode", () => {
+    // The CLI validates via normalizeEnvelope only, so a cap missing here mints a link every
+    // viewer then rejects as invalid-envelope.
+    const overCap: PayloadEnvelope = {
+      ...choicesEnvelope,
+      artifacts: [
+        {
+          id: "next-steps",
+          kind: "choices",
+          options: Array.from({ length: MAX_CHOICE_OPTIONS + 1 }, (_, index) => ({
+            id: `o${index}`,
+            label: "x",
+          })),
+        },
+      ],
+    };
+    const result = normalizeEnvelope(overCap);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain("option limit");
+
+    const longPrompt: PayloadEnvelope = {
+      ...choicesEnvelope,
+      artifacts: [
+        {
+          id: "next-steps",
+          kind: "choices",
+          prompt: "p".repeat(MAX_CHOICE_TEXT_LENGTH + 1),
+          options: [{ id: "a", label: "one" }],
+        },
+      ],
+    };
+    const promptResult = normalizeEnvelope(longPrompt);
+    expect(promptResult.ok).toBe(false);
+    if (!promptResult.ok) expect(promptResult.message).toContain("character limit");
+  });
+
   it("rejects duplicate option ids in normalization", () => {
     const duplicated: PayloadEnvelope = {
       ...choicesEnvelope,
