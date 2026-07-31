@@ -371,7 +371,7 @@ Prefer your own reverse proxy or identity-aware access layer when authentication
 When `AGENT_RENDER_PASSWORD` is unset, anyone who can reach the server can create, read, update, and delete artifacts. When it is set:
 
 - `POST`, `PUT`, and `DELETE` API requests require `Authorization: Bearer <AGENT_RENDER_PASSWORD>` or the server-issued authentication cookie.
-- Stored UUID viewer pages and static HTML pages require the authentication cookie. Without it, the server returns a `401` sign-in page; submitting the password form to `/auth` sets an `HttpOnly`, `Secure`, `SameSite=Lax` cookie and redirects back to the requested page.
+- Stored UUID viewer pages and static HTML pages require the authentication cookie. Without it, the server returns a `401` sign-in page; submitting the password form to `/auth` sets an `HttpOnly`, `SameSite=Lax` cookie and redirects back to the requested page. The cookie is marked `Secure` only when the request arrived over TLS, so it works on a direct-HTTP LAN or Tailscale deployment; behind a TLS-terminating proxy set `AGENT_RENDER_TRUST_PROXY=1` so `X-Forwarded-Proto: https` is honored.
 - `GET /api/artifacts/:id` requires the same credentials; static assets, API discovery, and `GET /health` remain open.
 - Protected API requests without valid credentials return `401 Unauthorized` with a bearer challenge.
 

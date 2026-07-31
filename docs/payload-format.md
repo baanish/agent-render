@@ -108,6 +108,8 @@ Tuple fields:
 
 - Supported fragment budget: 8,192 decoded visible fragment characters
 - Supported decoded payload budget: 200,000 characters
+- Choices artifacts: at most 50 options; `prompt` and each option `id`/`label`/`detail` at most 2,000 characters
+- Kit HTML: element nesting deeper than 100 levels is dropped during sanitization
 - Discord markdown link limit: 2,000 characters for the full formatted `[label](url)` string
 - Larger payloads should fail with a clear error before rendering
 - Compression is selected automatically across packed/non-packed candidates; arx and arx2 optimize conservative transport length, while arx3 optimizes compact visible length for its dense Unicode wire

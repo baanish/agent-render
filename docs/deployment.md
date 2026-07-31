@@ -147,7 +147,7 @@ Put the self-hosted server behind your existing reverse proxy or identity-aware 
 For a small or local deployment without a separate auth layer, set `AGENT_RENDER_PASSWORD` to enable shared-secret fallback auth:
 
 - API write requests (`POST`, `PUT`, and `DELETE`, including `POST /api/cleanup`) accept `Authorization: Bearer <AGENT_RENDER_PASSWORD>`. The server returns a bearer challenge with API `401` responses. Same-origin browser clients may use the authentication cookie instead.
-- Stored UUID viewer pages and other static HTML pages require the authentication cookie. Without it, the server returns a `401` sign-in page; submitting that form to `/auth` sets an `HttpOnly`, `Secure`, `SameSite=Lax` cookie and redirects back to the requested page.
+- Stored UUID viewer pages and other static HTML pages require the authentication cookie. Without it, the server returns a `401` sign-in page; submitting that form to `/auth` sets an `HttpOnly`, `SameSite=Lax` cookie (`Secure` on TLS requests) and redirects back to the requested page.
 - `GET /api/artifacts/{id}` requires the same bearer or cookie credentials as writes. Static assets, API discovery, and `GET /health` remain open.
 - A protected request without valid credentials returns `401 Unauthorized`.
 

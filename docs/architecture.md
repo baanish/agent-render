@@ -26,6 +26,8 @@ The static export also emits `sitemap.xml` at the site root (and under `NEXT_PUB
 - `diff` - review-style diff view with unified and split modes
 - `csv` - table-focused data grid built from parsed rows and dynamic columns
 - `json` - lightweight read-only tree view plus a native raw source view
+- `html` - kit-styled rich layout; sanitized and adopted inline for fragments, sandboxed iframe for server-injected payloads
+- `choices` - presentational decision list with stable option ids the reader answers with in chat
 
 The viewer shell now routes all seven artifact kinds (markdown, code, diff, csv, json, html, choices) through dynamically imported client-only renderers so the landing shell stays light and static-host friendly. Kit `html` artifacts render sanitized on fragment links and verbatim only for server-injected self-hosted payloads; see `docs/design-kit.md`.
 
@@ -151,7 +153,7 @@ SQLite with a single `artifacts` table:
 
 ### TTL
 
-Artifacts use a 24-hour sliding TTL. Each successful read (API or viewer) extends `expires_at` by 24 hours. Expired entries are lazily deleted on read, swept automatically on startup and once an hour, and can also be batch-cleaned on demand via `POST /api/cleanup`.
+Artifacts use a seven-day sliding TTL by default (`AGENT_RENDER_TTL_HOURS` overrides it). Each successful read (API or viewer) extends `expires_at` by that duration. Expired entries are lazily deleted on read, swept automatically on startup and once an hour, and can also be batch-cleaned on demand via `POST /api/cleanup`.
 
 UUID mode should not be described as zero-retention in its current form. The server stores the encoded payload until expiry or deletion. A future encrypted short-link mode could store ciphertext in SQLite while keeping the decryption key in the URL fragment, but that design is not implemented.
 

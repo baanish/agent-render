@@ -153,3 +153,8 @@ final-light*.png
 
 # Self-hosted server runtime database (local default ./data/agent-render.db; see selfhosted/db.ts)
 /data/*.db*
+
+# Token bench esbuild bridge. Lives in the repo (not os.tmpdir()) so the bundle's external
+# brotli-wasm specifier still resolves through node_modules; cleaned up on exit, ignored in case
+# the run is killed. See scripts/bench-tokens.mjs.
+/.token-bench-*/
