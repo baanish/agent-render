@@ -1,7 +1,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { existsSync, readFileSync, createReadStream, statSync } from "node:fs";
 import { stat } from "node:fs/promises";
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import type { TLSSocket } from "node:tls";
 import path from "node:path";
 import {
   createArtifact,
@@ -25,6 +26,14 @@ const API_CATALOG_LINK_HEADER = '</.well-known/api-catalog>; rel="api-catalog"; 
 const authPassword = process.env.AGENT_RENDER_PASSWORD;
 const authCookieName = "agent_render_auth";
 const authSalt = randomBytes(32);
+// The shared password only ever flows through scrypt (a slow KDF), never a bare hash, so online
+// guessing on the write endpoint is rate-limited by the derivation cost and a leaked cookie cannot
+// be brute-forced back to the password. The salt is ephemeral (process memory only), so cookies
+// are invalidated on restart. authKey is null when no password is configured (gate disabled).
+const authKey = authPassword === undefined ? null : scryptSync(authPassword, authSalt, 32);
+// The cookie the browser holds derives from authKey, not the raw password, and is a fixed-length
+// public token checked per request with a cheap constant-time compare.
+const authCookieToken = authKey === null ? "" : createHmac("sha256", authSalt).update(authKey).digest("base64url");
 
 const contentTypes = new Map<string, string>([
   [".html", "text/html; charset=utf-8"],
@@ -329,8 +338,20 @@ function constantTimeEqual(left: string, right: string): boolean {
   return timingSafeEqual(leftDigest, rightDigest);
 }
 
-function expectedAuthCookie(): string {
-  return createHmac("sha256", authSalt).update(authPassword ?? "").digest("base64url");
+/** Verifies a candidate password against the derived key in constant time via the same slow KDF. */
+function isValidPassword(candidate: string): boolean {
+  if (authKey === null) return true;
+  return timingSafeEqual(scryptSync(candidate, authSalt, 32), authKey);
+}
+
+/** True when the request reached the server over TLS, directly or via a terminating proxy. */
+function isSecureRequest(req: IncomingMessage): boolean {
+  const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "")
+    .split(",")[0]
+    .trim()
+    .toLowerCase();
+  if (forwardedProto) return forwardedProto === "https";
+  return (req.socket as TLSSocket).encrypted === true;
 }
 
 function cookieValue(req: IncomingMessage, name: string): string | null {
@@ -345,16 +366,16 @@ function cookieValue(req: IncomingMessage, name: string): string | null {
 }
 
 function hasValidCookie(req: IncomingMessage): boolean {
-  if (authPassword === undefined) return true;
+  if (authKey === null) return true;
   const supplied = cookieValue(req, authCookieName);
-  return supplied !== null && constantTimeEqual(supplied, expectedAuthCookie());
+  return supplied !== null && constantTimeEqual(supplied, authCookieToken);
 }
 
 function hasValidApiAuth(req: IncomingMessage): boolean {
-  if (authPassword === undefined || hasValidCookie(req)) return true;
+  if (authKey === null || hasValidCookie(req)) return true;
   const authorization = req.headers.authorization;
   if (!authorization?.startsWith("Bearer ")) return false;
-  return constantTimeEqual(authorization.slice("Bearer ".length), authPassword);
+  return isValidPassword(authorization.slice("Bearer ".length));
 }
 
 function safeRedirect(value: string | null): string {
@@ -505,10 +526,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
     const redirect = safeRedirect(form.get("redirect"));
     const suppliedPassword = form.get("password") ?? "";
-    if (authPassword === undefined || constantTimeEqual(suppliedPassword, authPassword)) {
+    if (isValidPassword(suppliedPassword)) {
+      // Secure only when the request arrived over TLS: on a direct-HTTP deployment the browser would
+      // drop a Secure cookie and every gated page would loop back to the sign-in form.
+      const secureAttribute = isSecureRequest(req) ? " Secure;" : "";
       res.setHeader(
         "Set-Cookie",
-        `${authCookieName}=${expectedAuthCookie()}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=31536000`,
+        `${authCookieName}=${authCookieToken}; HttpOnly;${secureAttribute} SameSite=Lax; Path=/; Max-Age=31536000`,
       );
       res.writeHead(303, { Location: redirect });
       res.end();

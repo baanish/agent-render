@@ -226,14 +226,29 @@ describe("optional self-hosted password gate", () => {
     expect(setCookie).toContain("agent_render_auth=");
     expect(setCookie).not.toContain(password);
     expect(setCookie).toContain("HttpOnly");
-    expect(setCookie).toContain("Secure");
     expect(setCookie).toContain("SameSite=Lax");
     expect(setCookie).toContain("Path=/");
     expect(setCookie).toContain("Max-Age=31536000");
+    // Over plain HTTP the cookie must not be Secure, or the browser drops it and login loops.
+    expect(setCookie).not.toContain("Secure");
 
     const page = await fetch(`${base}/security`, { headers: { Cookie: cookie } });
     expect(page.status).toBe(200);
     expect(await page.text()).toContain("<title>Security</title>");
+  });
+
+  it("marks the cookie Secure when the request arrives over forwarded TLS", async () => {
+    const login = await fetch(`${base}/auth`, {
+      method: "POST",
+      redirect: "manual",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-Forwarded-Proto": "https",
+      },
+      body: new URLSearchParams({ password, redirect: "/" }),
+    });
+    expect(login.status).toBe(303);
+    expect(login.headers.get("set-cookie") ?? "").toContain("Secure");
   });
 
   it("rejects a wrong form password and will not redirect off-origin", async () => {
