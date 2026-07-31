@@ -1,8 +1,14 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { existsSync, readFileSync, createReadStream, statSync } from "node:fs";
 import { stat } from "node:fs/promises";
-import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, scrypt, scryptSync, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
 import type { TLSSocket } from "node:tls";
+
+const scryptAsync = promisify(scrypt);
+// A password can be at most this many bytes before the KDF runs, so unauthenticated floods cannot
+// force scrypt work over arbitrarily large inputs.
+const MAX_PASSWORD_LENGTH = 256;
 import path from "node:path";
 import {
   createArtifact,
@@ -23,14 +29,21 @@ const outputDirectoryWithSeparator = `${outputDirectory}${path.sep}`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const API_CATALOG_CONTENT_TYPE = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
 const API_CATALOG_LINK_HEADER = '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"';
-const authPassword = process.env.AGENT_RENDER_PASSWORD;
+// An empty string is treated as unset, not as an empty shared secret: an empty AGENT_RENDER_PASSWORD
+// in a compose file should leave the gate disabled, never enable it with a blank password.
+const authPassword = process.env.AGENT_RENDER_PASSWORD ? process.env.AGENT_RENDER_PASSWORD : undefined;
 const authCookieName = "agent_render_auth";
 const authSalt = randomBytes(32);
 // The shared password only ever flows through scrypt (a slow KDF), never a bare hash, so online
 // guessing on the write endpoint is rate-limited by the derivation cost and a leaked cookie cannot
 // be brute-forced back to the password. The salt is ephemeral (process memory only), so cookies
 // are invalidated on restart. authKey is null when no password is configured (gate disabled).
+// scryptSync is acceptable here: it runs exactly once at startup, before the server accepts traffic.
 const authKey = authPassword === undefined ? null : scryptSync(authPassword, authSalt, 32);
+// Client-supplied X-Forwarded-Proto is only honored when the operator opts in (deployment sits
+// behind a trusted TLS-terminating proxy); otherwise a client could forge the scheme and force the
+// Secure cookie flag off on a real HTTPS deployment.
+const trustProxyHeaders = process.env.AGENT_RENDER_TRUST_PROXY === "1";
 // The cookie the browser holds derives from authKey, not the raw password, and is a fixed-length
 // public token checked per request with a cheap constant-time compare.
 const authCookieToken = authKey === null ? "" : createHmac("sha256", authSalt).update(authKey).digest("base64url");
@@ -338,19 +351,27 @@ function constantTimeEqual(left: string, right: string): boolean {
   return timingSafeEqual(leftDigest, rightDigest);
 }
 
-/** Verifies a candidate password against the derived key in constant time via the same slow KDF. */
-function isValidPassword(candidate: string): boolean {
+/**
+ * Verifies a candidate password against the derived key in constant time via the same slow KDF.
+ * Async so the scrypt work runs on the libuv threadpool instead of blocking the event loop, and
+ * length-bounded so an unauthenticated flood cannot force KDF work over huge inputs.
+ */
+async function isValidPassword(candidate: string): Promise<boolean> {
   if (authKey === null) return true;
-  return timingSafeEqual(scryptSync(candidate, authSalt, 32), authKey);
+  if (candidate.length === 0 || candidate.length > MAX_PASSWORD_LENGTH) return false;
+  const derived = (await scryptAsync(candidate, authSalt, 32)) as Buffer;
+  return timingSafeEqual(derived, authKey);
 }
 
-/** True when the request reached the server over TLS, directly or via a terminating proxy. */
+/** True when the request reached the server over TLS, directly or via a trusted terminating proxy. */
 function isSecureRequest(req: IncomingMessage): boolean {
-  const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "")
-    .split(",")[0]
-    .trim()
-    .toLowerCase();
-  if (forwardedProto) return forwardedProto === "https";
+  if (trustProxyHeaders) {
+    const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "")
+      .split(",")[0]
+      .trim()
+      .toLowerCase();
+    if (forwardedProto) return forwardedProto === "https";
+  }
   return (req.socket as TLSSocket).encrypted === true;
 }
 
@@ -371,7 +392,7 @@ function hasValidCookie(req: IncomingMessage): boolean {
   return supplied !== null && constantTimeEqual(supplied, authCookieToken);
 }
 
-function hasValidApiAuth(req: IncomingMessage): boolean {
+async function hasValidApiAuth(req: IncomingMessage): Promise<boolean> {
   if (authKey === null || hasValidCookie(req)) return true;
   const authorization = req.headers.authorization;
   if (!authorization?.startsWith("Bearer ")) return false;
@@ -509,7 +530,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     // Reads are gated too: an open GET /api/artifacts/:id would let anyone with a link bypass the
     // page cookie gate (and, with the wildcard CORS above, let any website read artifacts).
-    if (!hasValidApiAuth(req)) {
+    if (!(await hasValidApiAuth(req))) {
       res.setHeader("WWW-Authenticate", "Bearer");
       jsonResponse(res, 401, { error: "Unauthorized." });
       return;
@@ -526,7 +547,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
     const redirect = safeRedirect(form.get("redirect"));
     const suppliedPassword = form.get("password") ?? "";
-    if (isValidPassword(suppliedPassword)) {
+    if (await isValidPassword(suppliedPassword)) {
       // Secure only when the request arrived over TLS: on a direct-HTTP deployment the browser would
       // drop a Secure cookie and every gated page would loop back to the sign-in form.
       const secureAttribute = isSecureRequest(req) ? " Secure;" : "";

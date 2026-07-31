@@ -133,11 +133,11 @@ const perTagAllowedAttributes: Record<string, Set<string>> = {
 };
 
 function isSafeHref(value: string): boolean {
-  const trimmed = value.trim();
-  if (trimmed.startsWith("#")) {
-    return true;
-  }
-  return /^(https?:|mailto:)/i.test(trimmed);
+  // https/mailto only. Bare-fragment (`#...`) hrefs are rejected: rendered inline on the viewer
+  // origin they would rewrite the shell's own location.hash and swap the active artifact for
+  // attacker-crafted content inside the product chrome. http is rejected so active links can't
+  // downgrade to cleartext.
+  return /^(https:|mailto:)/i.test(value.trim());
 }
 
 function isSafeImageSrc(value: string): boolean {
@@ -208,9 +208,10 @@ function sanitizeChildren(parent: Element): void {
     }
 
     if (!allowedTags.has(tag)) {
-      // Unknown-but-harmless tags unwrap so their text survives; children are sanitized first.
-      sanitizeChildren(element);
-      element.replaceWith(...Array.from(element.childNodes));
+      // Default-deny: unknown elements are removed with their subtree rather than unwrapped.
+      // Promoting the children of an unknown wrapper is the classic place mXSS reappears as the
+      // HTML parser evolves; the allowlist already covers every kit and prose tag.
+      element.remove();
       continue;
     }
 
@@ -219,16 +220,37 @@ function sanitizeChildren(parent: Element): void {
   }
 }
 
+function parseAndSanitize(html: string): HTMLElement {
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  sanitizeChildren(parsed.body);
+  return parsed.body;
+}
+
 /**
- * Returns a safe HTML string for inline rendering on the viewer origin, or an empty string when no
- * DOM parser is available (non-browser environments).
+ * Returns a safe HTML string for the sanitized subset, or an empty string when no DOM parser is
+ * available. Prefer {@link sanitizeKitHtmlInto} for rendering: this string form round-trips through
+ * a second parse when assigned to innerHTML, which is the mutation-XSS surface adoption avoids.
  */
 export function sanitizeKitHtml(html: string): string {
   if (typeof DOMParser === "undefined") {
     return "";
   }
+  return parseAndSanitize(html).innerHTML;
+}
 
-  const parsed = new DOMParser().parseFromString(html, "text/html");
-  sanitizeChildren(parsed.body);
-  return parsed.body.innerHTML;
+/**
+ * Sanitizes `html` and adopts the resulting nodes directly into `container`, replacing its current
+ * children. This avoids serializing back to a string and letting the browser re-parse it (the
+ * mutation-XSS vector): the exact nodes the sanitizer inspected are the nodes that render.
+ */
+export function sanitizeKitHtmlInto(container: HTMLElement, html: string): void {
+  if (typeof DOMParser === "undefined") {
+    container.replaceChildren();
+    return;
+  }
+
+  const body = parseAndSanitize(html);
+  const ownerDocument = container.ownerDocument;
+  const adopted = Array.from(body.childNodes, (node) => ownerDocument.importNode(node, true));
+  container.replaceChildren(...adopted);
 }

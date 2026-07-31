@@ -40,6 +40,7 @@ function startServer(
   port: number,
   files: { root: string; outDir: string },
   configuredPassword?: string,
+  extraEnv?: Record<string, string>,
 ): ChildProcess {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
@@ -47,6 +48,7 @@ function startServer(
     HOST: "127.0.0.1",
     OUT_DIR: files.outDir,
     DB_PATH: path.join(files.root, "agent-render.db"),
+    ...extraEnv,
   };
   if (configuredPassword === undefined) delete env.AGENT_RENDER_PASSWORD;
   else env.AGENT_RENDER_PASSWORD = configuredPassword;
@@ -237,7 +239,8 @@ describe("optional self-hosted password gate", () => {
     expect(await page.text()).toContain("<title>Security</title>");
   });
 
-  it("marks the cookie Secure when the request arrives over forwarded TLS", async () => {
+  it("ignores X-Forwarded-Proto unless the proxy is trusted", async () => {
+    // Default deployment does not trust the header, so a forged https scheme must not add Secure.
     const login = await fetch(`${base}/auth`, {
       method: "POST",
       redirect: "manual",
@@ -248,7 +251,7 @@ describe("optional self-hosted password gate", () => {
       body: new URLSearchParams({ password, redirect: "/" }),
     });
     expect(login.status).toBe(303);
-    expect(login.headers.get("set-cookie") ?? "").toContain("Secure");
+    expect(login.headers.get("set-cookie") ?? "").not.toContain("Secure");
   });
 
   it("rejects a wrong form password and will not redirect off-origin", async () => {
@@ -287,6 +290,56 @@ describe("self-hosted server without a password", () => {
         body: JSON.stringify({ payload: "popen" }),
       });
       expect(created.status).toBe(201);
+    } finally {
+      await stopServer(child);
+      rmSync(files.root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("self-hosted server with an empty password", () => {
+  it("treats AGENT_RENDER_PASSWORD='' as unset (gate disabled, not a blank secret)", async () => {
+    const files = fixture();
+    const port = await freePort();
+    const base = `http://127.0.0.1:${port}`;
+    const child = startServer(port, files, "");
+    try {
+      await waitForHealth(base, child);
+      // Gate disabled: a write with no credentials succeeds rather than a blank Bearer authenticating.
+      const created = await fetch(`${base}/api/artifacts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payload: "pempty" }),
+      });
+      expect(created.status).toBe(201);
+    } finally {
+      await stopServer(child);
+      rmSync(files.root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("self-hosted server with a trusted proxy", () => {
+  it("honors X-Forwarded-Proto=https for the Secure cookie flag", async () => {
+    const files = fixture();
+    const port = await freePort();
+    const base = `http://127.0.0.1:${port}`;
+    const child = startServer(port, files, "correct horse battery staple", {
+      AGENT_RENDER_TRUST_PROXY: "1",
+    });
+    try {
+      await waitForHealth(base, child);
+      const login = await fetch(`${base}/auth`, {
+        method: "POST",
+        redirect: "manual",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-Forwarded-Proto": "https",
+        },
+        body: new URLSearchParams({ password: "correct horse battery staple", redirect: "/" }),
+      });
+      expect(login.status).toBe(303);
+      expect(login.headers.get("set-cookie") ?? "").toContain("Secure");
     } finally {
       await stopServer(child);
       rmSync(files.root, { recursive: true, force: true });

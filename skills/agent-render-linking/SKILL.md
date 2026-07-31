@@ -181,7 +181,7 @@ and form controls are stripped). Use the `ar-*` components and the pinned utilit
 ```
 
 Tabs need no scripts: give each `ar-tab` panel a `data-ar-tab` label and the viewer builds the bar.
-On self-hosted instances, server-injected (UUID) payloads render verbatim instead of sanitized;
+On self-hosted instances, server-injected (UUID) payloads render verbatim in a sandboxed frame instead of sanitized inline;
 that mode is governed by the self-hosted skill.
 
 Note: `html` and `choices` artifacts are carried by the `arx`, `deflate`, `lz`, and `plain` codecs

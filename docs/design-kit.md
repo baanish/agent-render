@@ -12,8 +12,11 @@ inline styles and `<style>` blocks are stripped.
   styles, no foreign content (svg/math), no `id`/`name` attributes. The allowlist lives in
   `src/lib/html/sanitize-kit-html.ts`.
 - Server-injected payloads on a self-hosted instance (UUID links) render verbatim, scripts
-  included, in a same-origin frame. That is the operator's documented risk; see the self-hosted
-  skill and deployment docs.
+  included, but inside a sandboxed iframe (`allow-scripts` without `allow-same-origin`): the HTML
+  runs in an opaque origin, so scripts and forms work while the document cannot reach the parent
+  DOM, the auth cookie, or the artifact API. Because the frame is origin-isolated it does not inherit
+  the kit stylesheet: trusted HTML should be a self-contained document with its own styles. The
+  `ar-*` kit vocabulary is for the sanitized inline (fragment) path.
 - Kit interactivity is viewer-owned JS keyed off `ar-*` classes, so sanitized artifacts still get
   tabs and disclosure behavior without shipping a single agent-authored script.
 
@@ -73,5 +76,5 @@ and must change together with this table and the skill.
   stripped on fragment links and are a scope error on trusted ones: use the kit).
 - Prefer components over utility soup; reach for utilities only where no component fits.
 - Keep it dense and scannable: stats up top, detail behind tabs or `<details>`.
-- Links to external resources should use absolute `https:` URLs; images must be `https:` or
-  `data:image/*;base64`.
+- Links must use absolute `https:` (or `mailto:`) URLs; `http:` and bare-fragment (`#...`) hrefs
+  are stripped. Images must be `https:` or `data:image/*;base64`.

@@ -270,8 +270,8 @@ Malformed JSON should still use `kind: "json"`; the viewer will show the parse e
 
 Kit HTML carries structure and content only; the viewer ships the design (see `docs/design-kit.md`).
 Fragment payloads render sanitized: scripts, event handlers, inline styles, and form controls are
-stripped. Only server-injected payloads on a self-hosted instance render verbatim, at the
-operator's documented risk.
+stripped. Server-injected payloads on a self-hosted instance render verbatim but inside a sandboxed
+(origin-isolated) iframe, so scripts run without reaching the viewer origin.
 
 ### Choices artifact example
 

@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { HtmlArtifact } from "@/lib/payload/schema";
-import { sanitizeKitHtml } from "@/lib/html/sanitize-kit-html";
+import { sanitizeKitHtmlInto } from "@/lib/html/sanitize-kit-html";
 
 type HtmlRendererProps = {
   artifact: HtmlArtifact;
   /**
    * True only when the payload arrived via server injection (self-hosted UUID mode). Trusted
-   * content renders verbatim in a same-origin frame at the operator's documented risk; fragment
-   * payloads are mintable by anyone and always render sanitized.
+   * content renders verbatim in a sandboxed (origin-isolated) frame; fragment payloads are mintable
+   * by anyone and always render sanitized inline.
    */
   trusted: boolean;
   onReady: () => void;
@@ -22,10 +22,6 @@ type HtmlRendererProps = {
  */
 export function HtmlRenderer({ artifact, trusted, onReady }: HtmlRendererProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const sanitized = useMemo(
-    () => (trusted ? null : sanitizeKitHtml(artifact.content)),
-    [artifact.content, trusted],
-  );
 
   useEffect(() => {
     if (trusted) {
@@ -34,27 +30,28 @@ export function HtmlRenderer({ artifact, trusted, onReady }: HtmlRendererProps) 
 
     const container = containerRef.current;
     if (container) {
+      // Adopt the sanitized nodes directly rather than assigning a string to innerHTML: the browser
+      // never re-parses the sanitizer's output, so serialize/re-parse mutation XSS has no surface.
+      sanitizeKitHtmlInto(container, artifact.content);
       initKitTabs(container);
     }
     onReady();
-  }, [sanitized, trusted, onReady]);
+  }, [artifact.content, trusted, onReady]);
 
   if (trusted) {
+    // Server-injected (self-hosted) HTML runs verbatim, but sandboxed WITHOUT allow-same-origin, so
+    // scripts and forms work while the document sits in an opaque origin: it cannot reach the parent
+    // DOM, the auth cookie, or the artifact API. Height is fixed by CSS (the parent cannot read a
+    // cross-origin frame's scrollHeight), and the frame scrolls internally.
     return (
       <iframe
         className="kit-html-frame"
         data-testid="renderer-html-trusted"
         data-renderer-ready="true"
+        sandbox="allow-scripts allow-popups allow-forms allow-modals"
         srcDoc={artifact.content}
         title={artifact.title ?? artifact.id}
-        onLoad={(event) => {
-          const frame = event.currentTarget;
-          const height = frame.contentDocument?.documentElement.scrollHeight ?? 0;
-          if (height > 0) {
-            frame.style.height = `${height + 24}px`;
-          }
-          onReady();
-        }}
+        onLoad={onReady}
       />
     );
   }
@@ -65,7 +62,6 @@ export function HtmlRenderer({ artifact, trusted, onReady }: HtmlRendererProps) 
       className="kit-html"
       data-testid="renderer-html"
       data-renderer-ready="true"
-      dangerouslySetInnerHTML={{ __html: sanitized ?? "" }}
     />
   );
 }

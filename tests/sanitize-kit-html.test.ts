@@ -1,6 +1,23 @@
 import { describe, expect, it } from "vitest";
 
-import { sanitizeKitHtml } from "@/lib/html/sanitize-kit-html";
+import { sanitizeKitHtml, sanitizeKitHtmlInto } from "@/lib/html/sanitize-kit-html";
+
+describe("sanitizeKitHtmlInto", () => {
+  it("adopts sanitized nodes into the container without a string round trip", () => {
+    const container = document.createElement("div");
+    sanitizeKitHtmlInto(container, '<div class="ar-card">safe</div><script>alert(1)</script>');
+    expect(container.querySelector("script")).toBeNull();
+    expect(container.querySelector(".ar-card")?.textContent).toBe("safe");
+  });
+
+  it("replaces prior children on each call", () => {
+    const container = document.createElement("div");
+    sanitizeKitHtmlInto(container, "<p>first</p>");
+    sanitizeKitHtmlInto(container, "<p>second</p>");
+    expect(container.querySelectorAll("p")).toHaveLength(1);
+    expect(container.textContent).toBe("second");
+  });
+});
 
 describe("sanitizeKitHtml", () => {
   it("removes script elements and their content", () => {
@@ -22,6 +39,11 @@ describe("sanitizeKitHtml", () => {
     expect(sanitizeKitHtml('<a href="javascript:alert(1)">x</a>')).toBe("<a>x</a>");
     expect(sanitizeKitHtml('<a href="https://example.com">x</a>')).toBe('<a href="https://example.com">x</a>');
     expect(sanitizeKitHtml('<a href="mailto:a@b.c">x</a>')).toBe('<a href="mailto:a@b.c">x</a>');
+  });
+
+  it("drops http and bare-fragment hrefs (cleartext downgrade and shell hash takeover)", () => {
+    expect(sanitizeKitHtml('<a href="http://example.com">x</a>')).toBe("<a>x</a>");
+    expect(sanitizeKitHtml('<a href="#pAttackerFragment">x</a>')).toBe("<a>x</a>");
   });
 
   it("forces noopener rel on target=_blank links and drops other targets", () => {
@@ -48,9 +70,8 @@ describe("sanitizeKitHtml", () => {
     expect(output).toBe('<div class="ar-card">x</div>');
   });
 
-  it("unwraps unknown tags but keeps their sanitized children", () => {
-    const output = sanitizeKitHtml("<custom-widget><p onclick=\"x()\">inner</p></custom-widget>");
-    expect(output).toBe("<p>inner</p>");
+  it("drops unknown tags and their subtree (default-deny)", () => {
+    expect(sanitizeKitHtml("<custom-widget><p>inner</p></custom-widget><p>kept</p>")).toBe("<p>kept</p>");
   });
 
   it("keeps https and data:image sources on images, drops http", () => {
