@@ -319,6 +319,37 @@ describe("self-hosted server with an empty password", () => {
   });
 });
 
+describe("self-hosted auth rate limiting", () => {
+  it("refuses further attempts before the KDF once the budget is spent", async () => {
+    const files = fixture();
+    const port = await freePort();
+    const base = `http://127.0.0.1:${port}`;
+    const child = startServer(port, files, "correct horse battery staple");
+    try {
+      await waitForHealth(base, child);
+
+      let sawRateLimit = false;
+      for (let attempt = 0; attempt < 15; attempt += 1) {
+        const response = await fetch(`${base}/api/artifacts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer wrong-${attempt}` },
+          body: JSON.stringify({ payload: "pnope" }),
+        });
+        if (response.status === 429) {
+          expect(response.headers.get("retry-after")).toBeTruthy();
+          sawRateLimit = true;
+          break;
+        }
+        expect(response.status).toBe(401);
+      }
+      expect(sawRateLimit).toBe(true);
+    } finally {
+      await stopServer(child);
+      rmSync(files.root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("self-hosted server with an unusable password", () => {
   it("fails fast when AGENT_RENDER_PASSWORD exceeds the candidate length bound", async () => {
     const files = fixture();

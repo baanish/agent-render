@@ -361,9 +361,49 @@ function constantTimeEqual(left: string, right: string): boolean {
 }
 
 /**
+ * Failed credential attempts per client, so a flood cannot keep the KDF busy.
+ *
+ * The length bound below caps the cost of ONE attempt; without this, unlimited attempts still
+ * saturate the libuv threadpool (4 threads by default) and stall unrelated I/O — database reads,
+ * static files, /health — for everyone. Entries are pruned as they expire, so an attacker rotating
+ * source addresses grows this map only as fast as it drains.
+ */
+const failedAuthAttempts = new Map<string, { count: number; resetAt: number }>();
+const AUTH_ATTEMPT_WINDOW_MS = 60_000;
+const MAX_AUTH_ATTEMPTS_PER_WINDOW = 10;
+
+function clientKey(req: IncomingMessage): string {
+  return req.socket.remoteAddress ?? "unknown";
+}
+
+/** True when this client has spent its attempt budget and should be refused before any KDF work. */
+function isAuthRateLimited(req: IncomingMessage): boolean {
+  const key = clientKey(req);
+  const entry = failedAuthAttempts.get(key);
+  if (entry === undefined) return false;
+  if (Date.now() >= entry.resetAt) {
+    failedAuthAttempts.delete(key);
+    return false;
+  }
+  return entry.count >= MAX_AUTH_ATTEMPTS_PER_WINDOW;
+}
+
+function recordFailedAuth(req: IncomingMessage): void {
+  const key = clientKey(req);
+  const now = Date.now();
+  const entry = failedAuthAttempts.get(key);
+  if (entry === undefined || now >= entry.resetAt) {
+    failedAuthAttempts.set(key, { count: 1, resetAt: now + AUTH_ATTEMPT_WINDOW_MS });
+    return;
+  }
+  entry.count += 1;
+}
+
+/**
  * Verifies a candidate password against the derived key in constant time via the same slow KDF.
  * Async so the scrypt work runs on the libuv threadpool instead of blocking the event loop, and
- * length-bounded so an unauthenticated flood cannot force KDF work over huge inputs.
+ * length-bounded so a single attempt cannot force KDF work over a huge input. Callers must gate on
+ * {@link isAuthRateLimited} first — that is what bounds the aggregate cost.
  */
 async function isValidPassword(candidate: string): Promise<boolean> {
   if (authKey === null) return true;
@@ -541,7 +581,14 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     // Reads are gated too: an open GET /api/artifacts/:id would let anyone with a link bypass the
     // page cookie gate (and, with the wildcard CORS above, let any website read artifacts).
+    if (authKey !== null && !hasValidCookie(req) && isAuthRateLimited(req)) {
+      res.setHeader("Retry-After", String(AUTH_ATTEMPT_WINDOW_MS / 1000));
+      jsonResponse(res, 429, { error: "Too many failed authentication attempts." });
+      return;
+    }
+
     if (!(await hasValidApiAuth(req))) {
+      recordFailedAuth(req);
       res.setHeader("WWW-Authenticate", "Bearer");
       jsonResponse(res, 401, { error: "Unauthorized." });
       return;
@@ -558,6 +605,11 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
     const redirect = safeRedirect(form.get("redirect"));
     const suppliedPassword = form.get("password") ?? "";
+    if (isAuthRateLimited(req)) {
+      res.setHeader("Retry-After", String(AUTH_ATTEMPT_WINDOW_MS / 1000));
+      htmlResponse(res, 429, passwordPage(redirect, true));
+      return;
+    }
     if (await isValidPassword(suppliedPassword)) {
       // Secure only when the request arrived over TLS: on a direct-HTTP deployment the browser would
       // drop a Secure cookie and every gated page would loop back to the sign-in form.
@@ -570,6 +622,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       res.end();
       return;
     }
+    recordFailedAuth(req);
     htmlResponse(res, 401, passwordPage(redirect, true));
     return;
   }
