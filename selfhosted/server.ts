@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { existsSync, readFileSync, createReadStream } from "node:fs";
+import { existsSync, readFileSync, createReadStream, statSync } from "node:fs";
 import { stat } from "node:fs/promises";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import path from "node:path";
 import {
   createArtifact,
@@ -22,6 +22,9 @@ const outputDirectoryWithSeparator = `${outputDirectory}${path.sep}`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const API_CATALOG_CONTENT_TYPE = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
 const API_CATALOG_LINK_HEADER = '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"';
+const authPassword = process.env.AGENT_RENDER_PASSWORD;
+const authCookieName = "agent_render_auth";
+const authSalt = randomBytes(32);
 
 const contentTypes = new Map<string, string>([
   [".html", "text/html; charset=utf-8"],
@@ -320,6 +323,100 @@ function isUuid(value: string): boolean {
   return UUID_RE.test(value);
 }
 
+function constantTimeEqual(left: string, right: string): boolean {
+  const leftDigest = createHmac("sha256", authSalt).update(left).digest();
+  const rightDigest = createHmac("sha256", authSalt).update(right).digest();
+  return timingSafeEqual(leftDigest, rightDigest);
+}
+
+function expectedAuthCookie(): string {
+  return createHmac("sha256", authSalt).update(authPassword ?? "").digest("base64url");
+}
+
+function cookieValue(req: IncomingMessage, name: string): string | null {
+  for (const part of (req.headers.cookie ?? "").split(";")) {
+    const separator = part.indexOf("=");
+    if (separator === -1) continue;
+    if (part.slice(0, separator).trim() === name) {
+      return part.slice(separator + 1).trim();
+    }
+  }
+  return null;
+}
+
+function hasValidCookie(req: IncomingMessage): boolean {
+  if (authPassword === undefined) return true;
+  const supplied = cookieValue(req, authCookieName);
+  return supplied !== null && constantTimeEqual(supplied, expectedAuthCookie());
+}
+
+function hasValidApiAuth(req: IncomingMessage): boolean {
+  if (authPassword === undefined || hasValidCookie(req)) return true;
+  const authorization = req.headers.authorization;
+  if (!authorization?.startsWith("Bearer ")) return false;
+  return constantTimeEqual(authorization.slice("Bearer ".length), authPassword);
+}
+
+function safeRedirect(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
+    return "/";
+  }
+  try {
+    const parsed = new URL(value, "http://localhost");
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "/";
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function passwordPage(redirect: string, invalid = false): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in — agent-render</title></head>
+<body><main><h1>Sign in to agent-render</h1>${invalid ? "<p>Incorrect password.</p>" : ""}
+<form method="post" action="/auth">
+<label>Password <input type="password" name="password" required autofocus></label>
+<input type="hidden" name="redirect" value="${escapeHtml(redirect)}">
+<button type="submit">Sign in</button>
+</form></main></body>
+</html>`;
+}
+
+function requireBrowserAuth(req: IncomingMessage, res: ServerResponse, redirect: string): boolean {
+  if (hasValidCookie(req)) return false;
+  htmlResponse(res, 401, passwordPage(redirect));
+  return true;
+}
+
+function staticHtmlPath(urlPath: string): string | null {
+  const normalizedPath = urlPath === "/" ? "/index.html" : urlPath;
+  let filePath = path.resolve(path.join(outputDirectory, normalizedPath));
+  if (!filePath.startsWith(outputDirectoryWithSeparator) && filePath !== outputDirectory) {
+    return null;
+  }
+
+  try {
+    if (statSync(filePath).isDirectory()) {
+      filePath = path.join(filePath, "index.html");
+    }
+  } catch {
+    if (!path.extname(filePath)) {
+      filePath = path.join(filePath, "index.html");
+    }
+  }
+
+  return existsSync(filePath) && path.extname(filePath) === ".html" ? filePath : null;
+}
+
 /**
  * Generate a simple error HTML page for expired or missing artifacts.
  */
@@ -381,13 +478,44 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (pathname.startsWith("/api/")) {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
     if (method === "OPTIONS") {
       res.writeHead(204);
       res.end();
       return;
     }
+
+    // Reads are gated too: an open GET /api/artifacts/:id would let anyone with a link bypass the
+    // page cookie gate (and, with the wildcard CORS above, let any website read artifacts).
+    if (!hasValidApiAuth(req)) {
+      res.setHeader("WWW-Authenticate", "Bearer");
+      jsonResponse(res, 401, { error: "Unauthorized." });
+      return;
+    }
+  }
+
+  if (pathname === "/auth" && method === "POST") {
+    let form: URLSearchParams;
+    try {
+      form = new URLSearchParams(await readBody(req));
+    } catch {
+      htmlResponse(res, 400, passwordPage("/"));
+      return;
+    }
+    const redirect = safeRedirect(form.get("redirect"));
+    const suppliedPassword = form.get("password") ?? "";
+    if (authPassword === undefined || constantTimeEqual(suppliedPassword, authPassword)) {
+      res.setHeader(
+        "Set-Cookie",
+        `${authCookieName}=${expectedAuthCookie()}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=31536000`,
+      );
+      res.writeHead(303, { Location: redirect });
+      res.end();
+      return;
+    }
+    htmlResponse(res, 401, passwordPage(redirect, true));
+    return;
   }
 
   // POST /api/artifacts — create
@@ -465,6 +593,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   // GET /:uuid — render viewer with stored payload
   const pathSegment = pathname.slice(1);
   if (method === "GET" && isUuid(pathSegment)) {
+    if (requireBrowserAuth(req, res, `${pathname}${url.search}`)) return;
     const row = getArtifact(pathSegment);
     if (!row) {
       htmlResponse(res, 404, errorPage("Artifact not found", "This artifact has expired or does not exist."));
@@ -481,6 +610,10 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       htmlResponse(res, 500, errorPage("Server error", "Failed to render the artifact viewer."));
     }
     return;
+  }
+
+  if (method === "GET" && staticHtmlPath(pathname)) {
+    if (requireBrowserAuth(req, res, `${pathname}${url.search}`)) return;
   }
 
   // Static file fallback

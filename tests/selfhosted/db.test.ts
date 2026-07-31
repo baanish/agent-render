@@ -57,9 +57,9 @@ describe("getArtifact", () => {
 
     const second = getArtifact(id);
     expect(second).not.toBeNull();
-    // After refresh, expires_at should be ~24h from now, much later than the 1s we set
+    // After refresh, expires_at should be ~7d from now, much later than the 1s we set
     const expiresMs = new Date(second!.expires_at).getTime();
-    expect(expiresMs).toBeGreaterThan(Date.now() + 23 * 60 * 60 * 1000);
+    expect(expiresMs).toBeGreaterThan(Date.now() + 6 * 24 * 60 * 60 * 1000);
   });
 
   it("returns null and deletes expired artifacts", () => {

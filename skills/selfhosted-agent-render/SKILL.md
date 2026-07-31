@@ -1,6 +1,6 @@
 ---
 name: selfhosted-agent-render
-description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs public/share-friendly rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal for public/social sharing, corporate proxy/link-scanning environments, payloads that exceed the ~8 KB fragment budget, platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds as the fragment-based product (the server stores the payload string after a length/non-empty check; full envelope validation happens client-side when the viewer renders). The self-hosted server stores payloads in SQLite with a 24-hour sliding TTL.
+description: Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs public/share-friendly rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal for public/social sharing, corporate proxy/link-scanning environments, payloads that exceed the ~8 KB fragment budget, platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds as the fragment-based product (the server stores the payload string after a length/non-empty check; full envelope validation happens client-side when the viewer renders). The self-hosted server stores payloads in SQLite with a configurable sliding TTL that defaults to seven days.
 ---
 
 # Self-Hosted Agent Render
@@ -29,11 +29,20 @@ The self-hosted server exposes a simple REST API.
 
 Discovery: `GET /.well-known/api-catalog` returns RFC 9727 `application/linkset+json` with an `item` link to `/api/artifacts` and `service-desc` metadata pointing to the OpenAPI file for this optional self-hosted API.
 
+When `AGENT_RENDER_PASSWORD` is set, send it as a bearer token on API write requests:
+
+```http
+Authorization: Bearer <AGENT_RENDER_PASSWORD>
+```
+
+The same-origin browser authentication cookie is also accepted. Missing or invalid credentials on a protected route return `401` with a bearer challenge. Artifact API reads are gated with the same credentials, so agents fetching stored artifacts need the bearer header too.
+
 ### Create an artifact
 
 ```http
 POST /api/artifacts
 Content-Type: application/json
+Authorization: Bearer <AGENT_RENDER_PASSWORD>
 
 {
   "payload": "p<base64url-encoded-json>"
@@ -70,13 +79,14 @@ Response (`200`):
 }
 ```
 
-Each successful read extends the TTL by 24 hours.
+Each successful read extends the TTL by the configured duration (seven days by default).
 
 ### Update an artifact
 
 ```http
 PUT /api/artifacts/:id
 Content-Type: application/json
+Authorization: Bearer <AGENT_RENDER_PASSWORD>
 
 {
   "payload": "p<new-payload>"
@@ -87,12 +97,14 @@ Content-Type: application/json
 
 ```http
 DELETE /api/artifacts/:id
+Authorization: Bearer <AGENT_RENDER_PASSWORD>
 ```
 
 ### Cleanup expired
 
 ```http
 POST /api/cleanup
+Authorization: Bearer <AGENT_RENDER_PASSWORD>
 ```
 
 Response: `{ "deleted": 5 }`
@@ -263,8 +275,9 @@ p<base64url(JSON.stringify(envelope))>
 
 ## TTL behavior
 
-- Artifacts expire 24 hours after creation
-- Every successful read (API or viewer) extends the expiry by another 24 hours
+- Artifacts expire seven days after creation by default
+- Set `AGENT_RENDER_TTL_HOURS` to a positive integer to change the sliding TTL
+- Every successful read (API or viewer) extends the expiry by the configured duration
 - Expired artifacts return 404 and are lazily cleaned up on access
 - The server also sweeps expired rows automatically on startup and once an hour
 - Run `POST /api/cleanup` to batch-remove all expired artifacts on demand
@@ -283,7 +296,7 @@ npm run build
 npm run selfhosted:dev
 ```
 
-The server runs on port 3000 by default. Set `PORT` and `DB_PATH` environment variables to customize.
+The server runs on port 3000 by default. Set `PORT` and `DB_PATH` to customize it. `AGENT_RENDER_TTL_HOURS` controls the sliding TTL and defaults to `168`; `AGENT_RENDER_PASSWORD` enables the built-in shared-secret auth fallback.
 
 ### Docker Compose
 
@@ -324,15 +337,18 @@ pm2 start selfhosted/dist/server.js --name agent-render
 
 ## Auth and access control
 
-The self-hosted server does not include built-in authentication. By default, anyone who can reach the server can create, read, and delete artifacts.
+Prefer your own reverse proxy or identity-aware access layer when authentication is required. It can protect every route and provide stronger policy, SSO, auditing, and secret management. The built-in `AGENT_RENDER_PASSWORD` option is a fallback for small or local deployments.
 
-Options for protecting the server:
+When `AGENT_RENDER_PASSWORD` is unset, anyone who can reach the server can create, read, update, and delete artifacts. When it is set:
 
-### Public access
+- `POST`, `PUT`, and `DELETE` API requests require `Authorization: Bearer <AGENT_RENDER_PASSWORD>` or the server-issued authentication cookie.
+- Stored UUID viewer pages and static HTML pages require the authentication cookie. Without it, the server returns a `401` sign-in page; submitting the password form to `/auth` sets an `HttpOnly`, `Secure`, `SameSite=Lax` cookie and redirects back to the requested page.
+- `GET /api/artifacts/:id` requires the same credentials; static assets, API discovery, and `GET /health` remain open.
+- Protected API requests without valid credentials return `401 Unauthorized` with a bearer challenge.
 
-If you want the server to be publicly accessible, no additional configuration is needed. This is the recommended setup for non-sensitive artifacts that need short, share-friendly public URLs.
+The built-in password therefore protects writes, browser entry points, and artifact API reads with one shared secret. Put the deployment behind a reverse proxy or identity-aware proxy when you need per-user access instead of a shared password.
 
-### Cloudflare Tunnel + Zero Trust (recommended for remote access)
+### Cloudflare Tunnel + Zero Trust
 
 For exposing the server securely to the internet:
 
@@ -344,7 +360,7 @@ For exposing the server securely to the internet:
 
 This gives you authentication, access logs, and DDoS protection without modifying the application.
 
-### Reverse proxy with auth
+### Other reverse proxies
 
 Place the server behind nginx, Caddy, or Traefik with HTTP basic auth, OAuth2 proxy, or mTLS.
 
@@ -367,12 +383,13 @@ PAYLOAD=$(echo -n '{"v":1,"codec":"plain","artifacts":[{"id":"demo","kind":"mark
 
 curl -s -X POST http://localhost:3000/api/artifacts \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AGENT_RENDER_PASSWORD" \
   -d "{\"payload\": \"p$PAYLOAD\"}"
 ```
 
 ## Cleanup guidance
 
-Artifacts auto-expire after 24 hours of inactivity, and the server sweeps expired rows on startup and hourly, so storage reclaims itself. For proactive cleanup:
+Artifacts auto-expire after seven days of inactivity by default, and the server sweeps expired rows on startup and hourly, so storage reclaims itself. Set `AGENT_RENDER_TTL_HOURS` to a positive integer to choose another duration. For proactive cleanup:
 
 - Call `POST /api/cleanup` to remove all expired artifacts immediately
 - Call `DELETE /api/artifacts/:id` to remove specific artifacts
@@ -382,7 +399,8 @@ Artifacts auto-expire after 24 hours of inactivity, and the server sweeps expire
 - Use self-hosted mode for public sharing, large payloads, corporate-proxy contexts, or agent-driven workflows
 - Use fragment links for quick, trusted direct shares that fit in the budget
 - Keep the server on the same machine as the agent for simplicity
-- Use Cloudflare Tunnel if you need remote access with authentication
+- Put remote deployments behind your existing authenticated reverse proxy
+- Use `AGENT_RENDER_PASSWORD` only as a small-deployment fallback
 - Let TTL handle cleanup for most cases
 
 ## Future encrypted short-link mode
