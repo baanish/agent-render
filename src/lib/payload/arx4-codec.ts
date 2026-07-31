@@ -890,7 +890,10 @@ export async function loadArx4Priors(source?: string | Arx4Priors): Promise<numb
     for (const url of urls) {
       const fetched = await fetchArx4Priors(url);
       if (isArx4Priors(fetched) && fetched.version === EXPECTED_ARX4_PRIORS_VERSION) {
-        return installArx4Priors(fetched);
+        const installed = installArx4Priors(fetched);
+        // A digest-mismatched asset from one URL must not short-circuit the others: the
+        // remaining URL may still serve the intact file (mid-deploy or corrupted cache).
+        if (installed >= 0) return installed;
       }
     }
     return -1;

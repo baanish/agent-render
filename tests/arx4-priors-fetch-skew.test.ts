@@ -57,4 +57,13 @@ describe("arx4 priors fetch skew", () => {
     expect(getActiveArx4PriorsVersion()).toBe(EXPECTED_ARX4_PRIORS_VERSION);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
+
+  it("keeps fetching past a digest-corrupt right-version .br asset", async () => {
+    const corruptPriors: Arx4Priors = { ...priors, kinds: { ...priors.kinds, markdown: "x" } };
+    const fetchSpy = stubPriorsFetch((url) => (url.endsWith(".br") ? corruptPriors : priors));
+
+    expect(await loadArx4Priors()).toBe(EXPECTED_ARX4_PRIORS_VERSION);
+    expect(getActiveArx4PriorsVersion()).toBe(EXPECTED_ARX4_PRIORS_VERSION);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
 });
