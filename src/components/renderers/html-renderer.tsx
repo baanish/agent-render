@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { HtmlArtifact } from "@/lib/payload/schema";
 import { sanitizeKitHtmlInto } from "@/lib/html/sanitize-kit-html";
+import { withBasePath } from "@/lib/site/base-path";
 
 type HtmlRendererProps = {
   artifact: HtmlArtifact;
@@ -22,6 +23,42 @@ type HtmlRendererProps = {
  */
 export function HtmlRenderer({ artifact, trusted, onReady }: HtmlRendererProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const frameRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Trusted path: hand the markup to the isolation frame once it reports ready. The frame is
+  // origin-opaque, so a postMessage handshake is the only channel; it also means the frame renders
+  // empty if opened directly, rather than becoming a general HTML-rendering endpoint.
+  useEffect(() => {
+    if (!trusted) {
+      return;
+    }
+
+    const handleMessage = (event: MessageEvent) => {
+      const frame = frameRef.current;
+      if (!frame || event.source !== frame.contentWindow) {
+        return;
+      }
+
+      const data = event.data as { type?: string; height?: number } | null;
+      if (data?.type === "agent-render:frame-ready") {
+        frame.contentWindow?.postMessage(
+          { type: "agent-render:artifact-html", html: artifact.content },
+          "*",
+        );
+        onReady();
+        return;
+      }
+
+      if (data?.type === "agent-render:artifact-height" && typeof data.height === "number") {
+        frame.style.height = `${data.height + 24}px`;
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [artifact.content, trusted, onReady]);
 
   useEffect(() => {
     if (trusted) {
@@ -39,24 +76,26 @@ export function HtmlRenderer({ artifact, trusted, onReady }: HtmlRendererProps) 
   }, [artifact.content, trusted, onReady]);
 
   if (trusted) {
-    // Server-injected (self-hosted) HTML runs verbatim, but sandboxed WITHOUT allow-same-origin, so
-    // scripts work while the document sits in an opaque origin: it cannot reach the parent DOM, the
-    // auth cookie, or the artifact API. Height is fixed by CSS (the parent cannot read a
-    // cross-origin frame's scrollHeight), and the frame scrolls internally.
+    // Server-injected (self-hosted) HTML runs verbatim in the isolation frame, which is a separate
+    // document (public/artifact-frame.html) rather than a srcdoc. That distinction is the whole
+    // feature: a srcdoc inherits this page's nonce/hash-only script-src, which blocked every
+    // artifact script, and inherits no stylesheet, so kit classes rendered unstyled. The frame
+    // carries its own CSP (set by the self-hosted server for that path) and links the generated kit
+    // stylesheet, so scripts run and the kit renders.
     //
-    // allow-scripts ONLY, deliberately. An opaque origin stops the frame reading secrets, but it
-    // does not stop it asking for them: allow-modals would let a payload prompt() for the shared
-    // password, and allow-forms would let it POST a lookalike sign-in form off-origin. Agents relay
+    // sandbox is allow-scripts ONLY, deliberately. The opaque origin stops the frame reading the
+    // viewer DOM, the auth cookie, or the artifact API; withholding forms and modals stops it
+    // *asking* for the shared password with a prompt() or a lookalike sign-in form. Agents relay
     // untrusted content, so a stored artifact is hostile UI even on the operator's own instance.
     return (
       <iframe
+        ref={frameRef}
         className="kit-html-frame"
         data-testid="renderer-html-trusted"
         data-renderer-ready="true"
         sandbox="allow-scripts"
-        srcDoc={artifact.content}
+        src={withBasePath("/artifact-frame.html")}
         title={artifact.title ?? artifact.id}
-        onLoad={onReady}
       />
     );
   }

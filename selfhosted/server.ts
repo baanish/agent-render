@@ -181,6 +181,33 @@ function hashesForFile(filePath: string): string[] {
  * payload cannot beacon out or load a tracking pixel. The tradeoff is that legitimately cross-origin
  * images in an artifact will not load on the self-hosted viewer. See docs/deployment.md.
  */
+/**
+ * CSP for the artifact isolation frame (public/artifact-frame.html).
+ *
+ * This document exists to run a trusted artifact's own markup and scripts, so unlike every other
+ * page it must allow inline script and style. What keeps that safe is everything it withholds:
+ * no connect-src and no form-action, so a payload cannot exfiltrate what it renders or phish
+ * credentials to a remote endpoint, and the embedding iframe carries `sandbox="allow-scripts"`
+ * without `allow-same-origin`, so the document sits in an opaque origin with no access to the
+ * viewer DOM, the auth cookie, or the artifact API.
+ */
+function artifactFrameContentSecurityPolicy(): string {
+  return [
+    "default-src 'none'",
+    "base-uri 'none'",
+    "form-action 'none'",
+    "frame-ancestors 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' https: data:",
+    "font-src 'self' data:",
+    "script-src 'unsafe-inline'",
+  ].join("; ");
+}
+
+function isArtifactFramePath(filePath: string): boolean {
+  return path.basename(filePath) === "artifact-frame.html";
+}
+
 function contentSecurityPolicy(hashes: string[], nonce?: string): string {
   const scriptSrc = [
     "'self'",
@@ -343,7 +370,9 @@ async function serveStatic(res: ServerResponse, urlPath: string, method: string)
   // Exported HTML pages carry a strict CSP, using the hashes of the EXACT file served (each route
   // ships different inline scripts). No nonce: static pages inject no per-response script.
   if (path.extname(filePath) === ".html") {
-    headers["Content-Security-Policy"] = contentSecurityPolicy(hashesForFile(filePath));
+    headers["Content-Security-Policy"] = isArtifactFramePath(filePath)
+      ? artifactFrameContentSecurityPolicy()
+      : contentSecurityPolicy(hashesForFile(filePath));
   }
 
   res.writeHead(200, headers);

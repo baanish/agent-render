@@ -29,7 +29,7 @@
     "build": "node scripts/clean-build-output.mjs && next build",
     "preview": "node scripts/serve-export.mjs",
     "start": "npm run preview",
-    "lint": "eslint . && npm run check:public-export-docs && npm run check:skill-digests",
+    "lint": "eslint . && npm run check:public-export-docs && npm run check:skill-digests && npm run check:artifact-frame-css",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "env -u NO_COLOR playwright test",
@@ -47,7 +47,9 @@
     "selfhosted:build": "tsc -p selfhosted/tsconfig.json",
     "selfhosted:start": "node selfhosted/dist/server.js",
     "selfhosted:csp-smoke": "node scripts/csp-smoke.mjs",
-    "check:skill-digests": "node scripts/check-skill-digests.mjs"
+    "check:skill-digests": "node scripts/check-skill-digests.mjs",
+    "build:artifact-frame-css": "node scripts/build-artifact-frame-css.mjs",
+    "check:artifact-frame-css": "node scripts/build-artifact-frame-css.mjs --check"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",

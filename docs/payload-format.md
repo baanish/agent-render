@@ -269,7 +269,8 @@ Malformed JSON should still use `kind: "json"`; the viewer will show the parse e
 
 Kit HTML carries structure and content only; the viewer ships the design (see `docs/design-kit.md`).
 Fragment payloads render sanitized: scripts, event handlers, inline styles, and form controls are
-stripped. Server-injected payloads on a self-hosted instance render verbatim but inside a sandboxed
-(origin-isolated) iframe granted `allow-scripts` only, so scripts run without reaching the viewer
-origin and without being able to open dialogs or submit forms.
+stripped. Server-injected payloads on a self-hosted instance render verbatim inside the isolation frame at
+`/artifact-frame.html`, an origin-isolated document with its own CSP granted `allow-scripts` only,
+so scripts run and the kit renders without reaching the viewer origin and without being able to
+exfiltrate, open dialogs, or submit forms.
 

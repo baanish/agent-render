@@ -56,6 +56,7 @@ function createFixture(): { root: string; outDir: string } {
   writeFileSync(path.join(outDir, "index.html"), INDEX_HTML);
   writeFileSync(path.join(outDir, "sub", "index.html"), SUB_HTML);
   writeFileSync(path.join(outDir, "app.js"), "export const x = 1;\n");
+  writeFileSync(path.join(outDir, "artifact-frame.html"), "<!doctype html><title>frame</title>");
   return { root, outDir };
 }
 
@@ -115,6 +116,24 @@ describe("selfhosted Content-Security-Policy", () => {
     expect(res.status).toBe(201);
     return ((await res.json()) as { id: string }).id;
   }
+
+  it("gives the artifact isolation frame its own CSP: inline scripts yes, exfiltration no", async () => {
+    // The frame exists to run a trusted artifact's own scripts, which the viewer's hash-only
+    // script-src forbids, so it must NOT inherit the viewer policy. What keeps it safe is the
+    // absence of connect-src and form-action, plus the sandbox on the embedding iframe.
+    const response = await fetch(`${base}/artifact-frame.html`);
+    expect(response.status).toBe(200);
+    const policy = response.headers.get("content-security-policy") ?? "";
+
+    expect(policy).toContain("script-src 'unsafe-inline'");
+    expect(policy).toContain("default-src 'none'");
+    expect(policy).toContain("form-action 'none'");
+    expect(policy).not.toContain("connect-src");
+    // The viewer's own pages keep the strict policy.
+    const viewer = await fetch(`${base}/index.html`);
+    expect(viewer.headers.get("content-security-policy") ?? "").toContain("'self'");
+    expect(viewer.headers.get("content-security-policy") ?? "").not.toContain("script-src 'unsafe-inline'");
+  });
 
   it("locks down script-src with self-derived hashes + a nonce on the injected viewer", async () => {
     const id = await createArtifact();

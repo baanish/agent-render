@@ -12,13 +12,17 @@ inline styles and `<style>` blocks are stripped.
   styles, no foreign content (svg/math), no `id`/`name` attributes. The allowlist lives in
   `src/lib/html/sanitize-kit-html.ts`.
 - Server-injected payloads on a self-hosted instance (UUID links) render verbatim, scripts
-  included, but inside a sandboxed iframe with `allow-scripts` and nothing else: the HTML runs in an
-  opaque origin, so it cannot reach the parent DOM, the auth cookie, or the artifact API. Forms,
-  popups and modal dialogs are withheld deliberately — an opaque origin stops a payload reading
-  secrets but not asking for them, and `prompt()` or a lookalike sign-in form would harvest the
-  shared password just as well. Because the frame is origin-isolated it does not inherit
-  the kit stylesheet: trusted HTML should be a self-contained document with its own styles. The
-  `ar-*` kit vocabulary is for the sanitized inline (fragment) path.
+  included, inside the isolation frame at `/artifact-frame.html`. That frame is a separate document,
+  not a `srcdoc`: a `srcdoc` inherits the viewer's nonce/hash-only `script-src` (which blocks every
+  artifact script) and inherits no stylesheet. The frame carries its own CSP from the self-hosted
+  server and links a generated copy of this kit, so scripts run **and** `ar-*` classes are styled.
+  It is embedded with `sandbox="allow-scripts"` and no `allow-same-origin`, so it sits in an opaque
+  origin with no access to the viewer DOM, the auth cookie, or the artifact API; its CSP has no
+  `connect-src` or `form-action`, so a payload can neither exfiltrate nor phish. Forms, popups and
+  modal dialogs are withheld deliberately — an opaque origin stops a payload reading secrets but not
+  asking for them, and `prompt()` or a lookalike sign-in form would harvest the shared password just
+  as well. The frame stylesheet is generated from `src/app/kit.css` by
+  `npm run build:artifact-frame-css`, and lint fails if it drifts.
 - Kit interactivity is viewer-owned JS keyed off `ar-*` classes, so sanitized artifacts still get
   tabs and disclosure behavior without shipping a single agent-authored script.
 
