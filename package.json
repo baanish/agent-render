@@ -5,7 +5,7 @@
   "workspaces": [
     "cli"
   ],
-  "description": "A static, zero-retention artifact viewer for markdown, code, diffs, CSV, and JSON.",
+  "description": "A static, zero-retention artifact viewer for markdown, code, diffs, CSV, JSON, and kit HTML.",
   "license": "MIT",
   "homepage": "https://agent-render.com",
   "repository": {
@@ -29,7 +29,7 @@
     "build": "node scripts/clean-build-output.mjs && next build",
     "preview": "node scripts/serve-export.mjs",
     "start": "npm run preview",
-    "lint": "eslint . && npm run check:public-export-docs",
+    "lint": "eslint . && npm run check:public-export-docs && npm run check:skill-digests",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "env -u NO_COLOR playwright test",
@@ -46,7 +46,8 @@
     "selfhosted:dev": "node --import tsx selfhosted/server.ts",
     "selfhosted:build": "tsc -p selfhosted/tsconfig.json",
     "selfhosted:start": "node selfhosted/dist/server.js",
-    "selfhosted:csp-smoke": "node scripts/csp-smoke.mjs"
+    "selfhosted:csp-smoke": "node scripts/csp-smoke.mjs",
+    "check:skill-digests": "node scripts/check-skill-digests.mjs"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
