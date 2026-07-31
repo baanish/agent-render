@@ -1,6 +1,13 @@
 /** Default sliding time-to-live duration in hours (7 days). */
 export const DEFAULT_TTL_HOURS = 7 * 24;
 
+/**
+ * Largest TTL accepted, in hours (100 years). A safe-integer millisecond bound is not enough: the
+ * maximum representable Date is 8.64e15 ms, so a larger-but-still-safe value would pass startup
+ * validation and then make every expiry computation an Invalid Date.
+ */
+const MAX_TTL_HOURS = 100 * 365 * 24;
+
 function configuredTtlHours(value: string | undefined): number {
   if (value === undefined) return DEFAULT_TTL_HOURS;
   if (!/^[1-9]\d*$/.test(value)) {
@@ -8,8 +15,8 @@ function configuredTtlHours(value: string | undefined): number {
   }
 
   const hours = Number(value);
-  if (!Number.isSafeInteger(hours) || !Number.isSafeInteger(hours * 60 * 60 * 1000)) {
-    throw new Error("AGENT_RENDER_TTL_HOURS must be a positive integer.");
+  if (!Number.isSafeInteger(hours) || hours > MAX_TTL_HOURS) {
+    throw new Error(`AGENT_RENDER_TTL_HOURS must be a positive integer no greater than ${MAX_TTL_HOURS}.`);
   }
   return hours;
 }

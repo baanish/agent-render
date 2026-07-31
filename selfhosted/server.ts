@@ -34,19 +34,28 @@ const API_CATALOG_LINK_HEADER = '</.well-known/api-catalog>; rel="api-catalog"; 
 const authPassword = process.env.AGENT_RENDER_PASSWORD ? process.env.AGENT_RENDER_PASSWORD : undefined;
 const authCookieName = "agent_render_auth";
 const authSalt = randomBytes(32);
+
+// Reject an unusable password at startup rather than deriving a key no candidate can ever match:
+// isValidPassword bounds candidates at MAX_PASSWORD_LENGTH, so a longer configured secret would
+// start cleanly and then refuse every correct login. Same fail-fast posture as AGENT_RENDER_TTL_HOURS.
+if (authPassword !== undefined && authPassword.length > MAX_PASSWORD_LENGTH) {
+  throw new Error(`AGENT_RENDER_PASSWORD must be at most ${MAX_PASSWORD_LENGTH} characters.`);
+}
+
 // The shared password only ever flows through scrypt (a slow KDF), never a bare hash, so online
-// guessing on the write endpoint is rate-limited by the derivation cost and a leaked cookie cannot
-// be brute-forced back to the password. The salt is ephemeral (process memory only), so cookies
-// are invalidated on restart. authKey is null when no password is configured (gate disabled).
+// guessing on the write endpoint is rate-limited by the derivation cost. The salt is ephemeral
+// (process memory only), so cookies are invalidated on restart. authKey is null when no password is
+// configured (gate disabled).
 // scryptSync is acceptable here: it runs exactly once at startup, before the server accepts traffic.
 const authKey = authPassword === undefined ? null : scryptSync(authPassword, authSalt, 32);
 // Client-supplied X-Forwarded-Proto is only honored when the operator opts in (deployment sits
 // behind a trusted TLS-terminating proxy); otherwise a client could forge the scheme and force the
 // Secure cookie flag off on a real HTTPS deployment.
 const trustProxyHeaders = process.env.AGENT_RENDER_TRUST_PROXY === "1";
-// The cookie the browser holds derives from authKey, not the raw password, and is a fixed-length
-// public token checked per request with a cheap constant-time compare.
-const authCookieToken = authKey === null ? "" : createHmac("sha256", authSalt).update(authKey).digest("base64url");
+// An independent random token, not a function of the password: the cookie is a bearer credential in
+// its own right, so deriving it from the secret would buy nothing and only widen the password's
+// exposure. Regenerated per process, which is what invalidates cookies across restarts.
+const authCookieToken = authKey === null ? "" : randomBytes(32).toString("base64url");
 
 const contentTypes = new Map<string, string>([
   [".html", "text/html; charset=utf-8"],

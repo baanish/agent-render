@@ -319,6 +319,25 @@ describe("self-hosted server with an empty password", () => {
   });
 });
 
+describe("self-hosted server with an unusable password", () => {
+  it("fails fast when AGENT_RENDER_PASSWORD exceeds the candidate length bound", async () => {
+    const files = fixture();
+    const port = await freePort();
+    // A password longer than the per-request bound would start cleanly and then reject every
+    // correct login, so startup must fail instead.
+    const child = startServer(port, files, "p".repeat(257));
+    try {
+      const exitCode = await new Promise<number | null>((resolve) => {
+        child.once("close", (code) => resolve(code));
+      });
+      expect(exitCode).not.toBe(0);
+    } finally {
+      await stopServer(child);
+      rmSync(files.root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("self-hosted server with a trusted proxy", () => {
   it("honors X-Forwarded-Proto=https for the Secure cookie flag", async () => {
     const files = fixture();
