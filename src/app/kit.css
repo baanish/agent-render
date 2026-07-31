@@ -300,10 +300,17 @@
   padding: 0;
 }
 
+/*
+ * Grid, not flex: the label is a bare text node beside <small>, so as flex items they would sit on
+ * one line. Auto-placement puts the label in column two, and pinning <small> to that same column
+ * wraps it onto the row below, which is the documented shape.
+ */
 .kit-html .ar-choices > li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.85rem;
+  row-gap: 0.2rem;
+  align-items: start;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface-strong);
@@ -311,9 +318,15 @@
   font-weight: 600;
 }
 
+.kit-html .ar-choices > li > small {
+  grid-column: 2;
+}
+
 /* The id badge is generated from the attribute so agent markup stays one short line per option. */
 .kit-html .ar-choices > li[data-ar-id]::before {
   content: attr(data-ar-id);
+  grid-column: 1;
+  grid-row: 1 / -1;
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.85rem;
   font-weight: 600;

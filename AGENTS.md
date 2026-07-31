@@ -9,7 +9,7 @@ If the code and this file diverge, trust the code first and update this file.
 
 `agent-render` is a fully static, zero-retention artifact viewer for AI-generated outputs.
 
-It is meant to make markdown, code, diffs, CSV, and JSON readable across chat surfaces that do a poor job rendering rich artifacts inline.
+It is meant to make markdown, code, diffs, CSV, JSON, and kit HTML readable across chat surfaces that do a poor job rendering rich artifacts inline.
 
 Core product traits right now:
 - open source
