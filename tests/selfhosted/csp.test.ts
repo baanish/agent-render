@@ -129,6 +129,10 @@ describe("selfhosted Content-Security-Policy", () => {
     expect(policy).toContain("default-src 'none'");
     expect(policy).toContain("form-action 'none'");
     expect(policy).not.toContain("connect-src");
+    // No remote image host either: default-src 'none' does not cover images, so a permissive
+    // img-src would let a rendered artifact beacon what it renders back out via <img> or CSS url().
+    expect(policy).toContain("img-src 'self' data: blob:");
+    expect(policy).not.toContain("https:");
     // The viewer's own pages keep the strict policy.
     const viewer = await fetch(`${base}/index.html`);
     expect(viewer.headers.get("content-security-policy") ?? "").toContain("'self'");

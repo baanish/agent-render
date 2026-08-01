@@ -97,3 +97,6 @@ and must change together with this table and the skill.
 - Keep it dense and scannable: stats up top, detail behind tabs or `<details>`.
 - Links must use absolute `https:` (or `mailto:`) URLs; `http:` and bare-fragment (`#...`) hrefs
   are stripped. Images must be `https:` or `data:image/*;base64`.
+- Remote images render on the public fragment site but not on a self-hosted instance, whose CSP
+  keeps images same-origin so a stored artifact cannot beacon out. Inline `data:` images work
+  everywhere; prefer them when the artifact must look the same in both places.
