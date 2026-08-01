@@ -61,7 +61,7 @@ export function closeDb(): void {
 }
 
 /**
- * Insert a new artifact with a UUID v4 identifier and 24-hour TTL.
+ * Insert a new artifact with a UUID v4 identifier and the configured sliding TTL.
  *
  * @param payload - The agent-render payload string to store.
  * @returns The generated UUID and the computed expiration timestamp.

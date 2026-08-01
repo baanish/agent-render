@@ -1,4 +1,20 @@
 @import "tailwindcss";
+@import "./kit.css";
+
+/*
+ * Utility safelist for `html` artifacts: agent markup is not scanned by Tailwind at build time, so
+ * the composable subset the kit promises must be pinned here. The list is product surface — it is
+ * documented in docs/design-kit.md and the agent skill; extend all three together.
+ */
+@source inline("{block,inline-block,flex,inline-flex,grid,hidden}");
+@source inline("{flex-row,flex-col,flex-wrap,items-start,items-center,items-end,justify-start,justify-center,justify-between,justify-end}");
+@source inline("gap-{0,1,2,3,4,6,8}");
+@source inline("{p,px,py,pt,pb,pl,pr,m,mx,my,mt,mb,ml,mr}-{0,1,2,3,4,6,8}");
+@source inline("grid-cols-{1,2,3,4}");
+@source inline("text-{xs,sm,base,lg,xl,2xl,3xl}");
+@source inline("font-{normal,medium,semibold,bold}");
+@source inline("text-{left,center,right}");
+@source inline("{w-full,max-w-full,min-w-0,overflow-x-auto,overflow-hidden,whitespace-nowrap,break-words,rounded,border,border-t,border-b,italic,underline,uppercase,tracking-wide,leading-tight,leading-relaxed,shrink-0,grow}");
 
 :root {
   /* ── Surface hierarchy — warm ivory with sunset undertone ── */

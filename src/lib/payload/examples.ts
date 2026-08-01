@@ -138,6 +138,37 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
       },
     ],
   },
+  {
+    v: 1,
+    codec: "plain",
+    title: "Kit HTML dashboard",
+    activeArtifactId: "deploy-report",
+    artifacts: [
+      {
+        id: "deploy-report",
+        kind: "html",
+        title: "Deploy report",
+        filename: "deploy-report.html",
+        content:
+          '<div class="ar-grid">\n  <div class="ar-stat">\n    <p class="ar-stat-label">Build</p>\n    <p class="ar-stat-value">Passing</p>\n  </div>\n  <div class="ar-stat">\n    <p class="ar-stat-label">Tests</p>\n    <p class="ar-stat-value">212 / 212</p>\n  </div>\n  <div class="ar-stat">\n    <p class="ar-stat-label">Bundle</p>\n    <p class="ar-stat-value">-4.1 kB</p>\n  </div>\n</div>\n<div class="ar-callout ar-callout-warning">\n  <strong>One flaky retry</strong> in the e2e suite; see the second tab.\n</div>\n<div class="ar-tabs">\n  <div class="ar-tab" data-ar-tab="Summary">\n    <p>Deploy <span class="ar-badge ar-badge-success">ready</span> pending the checklist below.</p>\n    <table>\n      <thead><tr><th>Surface</th><th>Status</th></tr></thead>\n      <tbody>\n        <tr><td>Static export</td><td>Ready</td></tr>\n        <tr><td>Self-hosted image</td><td>Ready</td></tr>\n      </tbody>\n    </table>\n  </div>\n  <div class="ar-tab" data-ar-tab="Flaky test">\n    <p><code>viewer-decode.spec.ts</code> passed on retry 1; no code change required.</p>\n  </div>\n</div>',
+      },
+    ],
+  },
+  {
+    v: 1,
+    codec: "plain",
+    title: "Review checklist",
+    activeArtifactId: "review-choices",
+    artifacts: [
+      {
+        id: "review-choices",
+        kind: "html",
+        title: "Post-review actions",
+        content:
+          "<p>The review found five follow-ups. Reply with the ids you want, e.g. <code>do a, c, e</code>.</p>\n<ol class=\"ar-choices\">\n<li data-ar-id=\"a\">Fix the TTL off-by-one<small>Sweeper deletes artifacts one hour early.</small></li>\n<li data-ar-id=\"b\">Add auth header docs<small>The bearer fallback is undocumented.</small></li>\n<li data-ar-id=\"c\">Tighten sanitizer allowlist<small>Drop the data: image scheme.</small></li>\n<li data-ar-id=\"d\">Rename kit classes<small>Cosmetic; can wait for the next minor.</small></li>\n<li data-ar-id=\"e\">Bench token counts in CI<small>Guards the base64url selection win.</small></li>\n</ol>",
+      },
+    ],
+  },
 ];
 
 const sampleDescriptions: Record<string, string> = {

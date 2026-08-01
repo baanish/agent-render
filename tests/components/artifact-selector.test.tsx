@@ -20,7 +20,7 @@ describe("ArtifactSelector", () => {
         activeArtifactId="roadmap"
         getHeading={(artifact) => artifact.title ?? artifact.id}
         getSupportingLabel={(artifact) => artifact.id}
-        kindIcons={{ markdown: FileText, code: FileCode2, diff: FileText, csv: FileText, json: FileText }}
+        kindIcons={{ markdown: FileText, code: FileCode2, diff: FileText, csv: FileText, json: FileText, html: FileText }}
         onSelect={onSelect}
       />,
     );

@@ -4,6 +4,11 @@ info:
   description: |
     Optional SQLite-backed API for storing agent-render artifact payloads and serving UUID viewer links.
     Same routes are available when running `npm run selfhosted:dev` or the Docker image.
+    Deploy behind an authenticated reverse proxy when reads must be private. If `AGENT_RENDER_PASSWORD`
+    is configured, write operations accept it as a bearer token (or via the server-issued browser cookie)
+    and return 401 for missing or invalid credentials. Artifact API reads require the same
+    credentials, so a leaked link alone cannot bypass the page gate.
+    Artifacts use a sliding TTL controlled by `AGENT_RENDER_TTL_HOURS`, defaulting to 168 hours (seven days).
   version: "1.0.0"
 servers:
   - url: "{origin}"
@@ -16,6 +21,8 @@ paths:
     post:
       summary: Create artifact
       operationId: createArtifact
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -42,6 +49,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid credentials when built-in password auth is enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /api/artifacts/{id}:
     parameters:
       - name: id
@@ -53,6 +66,8 @@ paths:
     get:
       summary: Get artifact (refreshes TTL)
       operationId: getArtifact
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: Artifact row
@@ -60,6 +75,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ArtifactRow"
+        "401":
+          description: Unauthorized (when the password gate is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: Not found or expired
           content:
@@ -69,6 +90,8 @@ paths:
     put:
       summary: Update artifact payload
       operationId: updateArtifact
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -101,9 +124,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid credentials when built-in password auth is enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
       summary: Delete artifact
       operationId: deleteArtifact
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: Deleted
@@ -120,10 +151,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid credentials when built-in password auth is enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /api/cleanup:
     post:
       summary: Remove all expired artifacts
       operationId: cleanupExpired
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: Count of deleted rows
@@ -134,7 +173,21 @@ paths:
                 properties:
                   deleted:
                     type: integer
+        "401":
+          description: Missing or invalid credentials when built-in password auth is enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Set `Authorization: Bearer <AGENT_RENDER_PASSWORD>` on protected write operations when the
+        built-in password fallback is enabled. The same-origin browser authentication cookie established by
+        the HTML sign-in form is also accepted.
   schemas:
     Error:
       type: object

@@ -2,7 +2,8 @@ export const MAX_FRAGMENT_LENGTH = 8192;
 export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 
-export const artifactKinds = ["markdown", "code", "diff", "csv", "json"] as const;
+
+export const artifactKinds = ["markdown", "code", "diff", "csv", "json", "html"] as const;
 export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3", "arx4"] as const;
 
 export type ArtifactKind = (typeof artifactKinds)[number];
@@ -88,12 +89,21 @@ export type DiffArtifact = BaseArtifact & {
   view?: "unified" | "split";
 };
 
+// Kit HTML: structure-and-content markup using the shipped design kit. Untrusted (fragment)
+// payloads render sanitized; server-injected payloads render verbatim. See sanitize-kit-html.ts.
+export type HtmlArtifact = BaseArtifact & {
+  kind: "html";
+  content: string;
+};
+
+
 export type ArtifactPayload =
   | MarkdownArtifact
   | CodeArtifact
   | CsvArtifact
   | JsonArtifact
-  | DiffArtifact;
+  | DiffArtifact
+  | HtmlArtifact;
 
 export type PayloadEnvelope = {
   v: 1;
@@ -162,6 +172,7 @@ function isBaseArtifact(value: unknown): value is BaseArtifact {
   return hasString(value.id) && isArtifactKind(value.kind);
 }
 
+
 /**
  * Runtime shape guard for payload envelopes decoded from untyped input.
  *
@@ -206,6 +217,7 @@ export function isPayloadEnvelope(value: unknown): value is PayloadEnvelope {
       }
       continue;
     }
+
 
     if (!hasString((artifact as { content?: unknown }).content)) {
       return false;

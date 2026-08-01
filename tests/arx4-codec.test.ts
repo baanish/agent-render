@@ -24,7 +24,9 @@ import { compactTagForCodec, type ArtifactKind, type PayloadEnvelope } from "@/l
 
 const ARX4_TAG = compactTagForCodec("arx4");
 
-const drafts: Record<ArtifactKind, LinkCreatorDraft> = {
+// Only the kinds the arx4 tuple format carries; html envelopes skip the tuple codecs entirely
+// (tupleCodecsSupportEnvelope) and are covered in the html fragment tests instead.
+const drafts: Record<Exclude<ArtifactKind, "html">, LinkCreatorDraft> = {
   markdown: {
     kind: "markdown",
     title: "Release notes",
@@ -120,7 +122,7 @@ describe("arx4 codec", () => {
       ["json", "j"],
       ["csv", "j"],
       ["diff", "c"],
-    ] as [ArtifactKind, Arx4PriorId][])("round-trips a %s draft on the %s prior", async (kind, priorId) => {
+    ] as [Exclude<ArtifactKind, "html">, Arx4PriorId][])("round-trips a %s draft on the %s prior", async (kind, priorId) => {
       const generatedLink = await createGeneratedArtifactLinkAsync(drafts[kind], "https://agent-render.com/");
 
       expect(generatedLink.codec).toBe("arx4");

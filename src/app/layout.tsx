@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     canonical: getCanonicalSiteUrl("/"),
   },
   title: "agent-render",
-  description: "A static, zero-retention artifact viewer shell for fragment-based markdown, code, diff, CSV, and JSON payloads.",
+  description: "A static, zero-retention artifact viewer shell for fragment-based markdown, code, diff, CSV, JSON, and kit HTML payloads.",
 };
 
 const themeInitScript = `

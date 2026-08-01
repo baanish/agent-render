@@ -23,11 +23,12 @@ type PackedDiffArtifact = {
 
 type PackedTextArtifact = {
   i: string;
-  k: "markdown" | "csv" | "json";
+  k: "markdown" | "csv" | "json" | "html";
   c: string;
   t?: string;
   f?: string;
 };
+
 
 type PackedArtifact = PackedCodeArtifact | PackedDiffArtifact | PackedTextArtifact;
 
@@ -51,6 +52,7 @@ function packArtifact(artifact: ArtifactPayload): PackedArtifact {
     case "markdown":
     case "csv":
     case "json":
+    case "html":
       return {
         i: artifact.id,
         k: artifact.kind,
@@ -132,6 +134,7 @@ function unpackArtifact(artifact: PackedArtifact): ArtifactPayload {
     };
   }
 
+
   return {
     id: artifact.i,
     kind: artifact.k,
@@ -157,9 +160,10 @@ function looksLikePackedArtifact(value: unknown): value is PackedArtifact {
     );
   }
 
-  if (value.k === "markdown" || value.k === "csv" || value.k === "json") {
+  if (value.k === "markdown" || value.k === "csv" || value.k === "json" || value.k === "html") {
     return typeof value.c === "string";
   }
+
 
   return false;
 }

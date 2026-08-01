@@ -74,13 +74,16 @@ The server starts on port 3000. Create artifacts via `POST /api/artifacts` and v
 
 ### Environment variables
 
-| Variable             | Default                  | Description                                            |
-| -------------------- | ------------------------ | ------------------------------------------------------ |
-| `PORT`               | `3000`                   | Server listen port                                     |
-| `HOST`               | `0.0.0.0`                | Server bind address                                    |
-| `DB_PATH`            | `./data/agent-render.db` | SQLite database file path                              |
-| `OUT_DIR`            | `out`                    | Path to the static build output                        |
-| `SHUTDOWN_GRACE_MS`  | `5000`                   | Drain window on SIGTERM/SIGINT before a forced (non-zero) exit |
+| Variable                    | Default                  | Description                                                     |
+| --------------------------- | ------------------------ | --------------------------------------------------------------- |
+| `PORT`                      | `3000`                   | Server listen port                                              |
+| `HOST`                      | `0.0.0.0`                | Server bind address                                             |
+| `DB_PATH`                   | `./data/agent-render.db` | SQLite database file path                                       |
+| `OUT_DIR`                   | `out`                    | Path to the static build output                                 |
+| `AGENT_RENDER_TTL_HOURS`    | `168`                    | Sliding artifact TTL in hours (positive integer)                |
+| `AGENT_RENDER_PASSWORD`     | unset                    | Shared-secret fallback auth; prefer a reverse proxy             |
+| `AGENT_RENDER_TRUST_PROXY`  | unset                    | Set to `1` only behind a trusted proxy, to honor `X-Forwarded-Proto` and per-client `X-Forwarded-For` |
+| `SHUTDOWN_GRACE_MS`         | `5000`                   | Drain window before a forced (non-zero) exit on SIGTERM/SIGINT |
 
 ### Docker Compose
 
@@ -135,16 +138,22 @@ pm2 start selfhosted/dist/server.js --name agent-render
 
 The server uses SQLite with WAL mode. The database file is created automatically at the path specified by `DB_PATH`. The parent directory is created if it does not exist.
 
-Artifacts have a 24-hour sliding TTL. Each successful view extends the expiry. Expired entries are lazily cleaned on read, swept automatically on startup and once an hour, and can be batch-removed on demand via `POST /api/cleanup`.
+Artifacts have a seven-day sliding TTL by default. Set `AGENT_RENDER_TTL_HOURS` to a positive integer to change it. Each successful view extends the expiry by the configured duration. Expired entries are lazily cleaned on read, swept automatically on startup and once an hour, and can be batch-removed on demand via `POST /api/cleanup`.
 
 ### Auth and access control
 
-The self-hosted server does not include built-in authentication. Options for protecting it:
+Put the self-hosted server behind your existing reverse proxy or identity-aware access layer when authentication is required. nginx, Caddy, Traefik, Cloudflare Access, and similar products provide stronger policy, SSO, audit, and secret-management options than the server's built-in fallback.
 
-- **Public**: No additional configuration. Recommended for public/non-sensitive artifacts that benefit from short share-friendly links.
-- **Cloudflare Tunnel + Zero Trust**: Expose the server through a Cloudflare Tunnel and add Access policies for authentication. This is the recommended approach for remote access with SSO.
-- **Reverse proxy**: Place behind nginx, Caddy, or Traefik with HTTP basic auth, OAuth2 proxy, or mTLS.
-- **Local only**: Set `HOST=127.0.0.1` to bind to localhost only.
+For a small or local deployment without a separate auth layer, set `AGENT_RENDER_PASSWORD` to enable shared-secret fallback auth:
+
+- API write requests (`POST`, `PUT`, and `DELETE`, including `POST /api/cleanup`) accept `Authorization: Bearer <AGENT_RENDER_PASSWORD>`. The server returns a bearer challenge with API `401` responses. Same-origin browser clients may use the authentication cookie instead.
+- Stored UUID viewer pages and other static HTML pages require the authentication cookie. Without it, the server returns a `401` sign-in page; submitting that form to `/auth` sets an `HttpOnly`, `SameSite=Lax` cookie (`Secure` on TLS requests) and redirects back to the requested page.
+- `GET /api/artifacts/{id}` requires the same bearer or cookie credentials as writes. Static assets, API discovery, and `GET /health` remain open.
+- A protected request without valid credentials returns `401 Unauthorized`.
+
+The built-in password gates writes, browser pages, and artifact API reads. It is still a shared static secret, not per-user auth or an audit trail; use a reverse proxy or identity-aware proxy when you need real accounts. If `AGENT_RENDER_PASSWORD` is unset, the fallback is disabled and the server remains public; bind `HOST=127.0.0.1` if it should only be reachable locally.
+
+The password is run through scrypt (never a bare hash), and failed attempts are rate-limited per client (10 per minute) so a credential flood cannot keep the KDF busy and stall unrelated requests. Behind a reverse proxy set `AGENT_RENDER_TRUST_PROXY=1`, or every client shares the proxy's address as one rate-limit bucket and a single bad actor can lock everyone else out; the proxy must append `X-Forwarded-For` (the nearest hop is used, since a client can forge earlier entries). The auth cookie is `Secure` only when the request arrived over TLS. The server sees the real socket scheme by default; behind a proxy that terminates TLS and forwards over HTTP, set `AGENT_RENDER_TRUST_PROXY=1` so it honors `X-Forwarded-Proto: https` and still marks the cookie `Secure`. Do not set it when the server is directly reachable, or a client could forge the header.
 
 Every response carries baseline hardening headers: `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, and `X-Frame-Options: SAMEORIGIN`. HTML responses additionally carry a strict **`Content-Security-Policy`**. Its `script-src` allows only same-origin scripts, the build's own inline scripts (by `sha256` hash, derived at runtime from the served `index.html` so they never drift from the build), and — on a stored-artifact viewer page — the injected payload bootstrap (by a per-response `nonce`). So even if a renderer dependency regressed into an injection sink, attacker-controlled inline script in a stored payload cannot execute. It also includes `'wasm-unsafe-eval'`, which the arx-family codecs need to decompress Brotli via WebAssembly — this permits WebAssembly compilation but not JavaScript `eval`, so it is far narrower than `'unsafe-eval'`. The policy also sets `default-src 'self'`, `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'self'`, and `form-action 'self'`.
 

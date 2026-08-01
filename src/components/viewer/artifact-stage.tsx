@@ -14,6 +14,7 @@ import {
   type CodeArtifact,
   type CsvArtifact,
   type DiffArtifact,
+  type HtmlArtifact,
   type JsonArtifact,
   type MarkdownArtifact,
   type PayloadEnvelope,
@@ -31,6 +32,8 @@ type ArtifactStageProps = {
   onArtifactSelect: (artifactId: string) => void;
   onRendererReady: (readyKey: string) => void;
   rendererReadyKey: string;
+  /** True when the payload came from server injection (self-hosted UUID mode); see HtmlRenderer. */
+  trustedPayload: boolean;
   statusTone: {
     color: string;
     label: string;
@@ -84,6 +87,13 @@ const JsonRenderer = dynamic(
     ),
   { ssr: false },
 );
+const HtmlRenderer = dynamic(
+  () =>
+    import("@/components/renderers/html-renderer").then(
+      (module) => module.HtmlRenderer,
+    ),
+  { ssr: false },
+);
 
 function getArtifactBody(artifact: ArtifactPayload): string {
   if (artifact.kind === "diff") {
@@ -92,6 +102,7 @@ function getArtifactBody(artifact: ArtifactPayload): string {
       `${artifact.oldContent ?? ""}\n---\n${artifact.newContent ?? ""}`
     );
   }
+
 
   return artifact.content;
 }
@@ -103,6 +114,7 @@ function getArtifactSubtitle(artifact: ArtifactPayload): string {
     return artifact.view ? `${artifact.view} diff` : "Diff";
   if (artifact.kind === "json") return "JSON";
   if (artifact.kind === "csv") return "CSV";
+  if (artifact.kind === "html") return "Kit HTML";
   return (artifact as ArtifactPayload).kind;
 }
 
@@ -135,6 +147,7 @@ function getArtifactDetailRows(artifact: ArtifactPayload, bodyLength: number) {
     rows.push({ label: "View", value: artifact.view ?? "Unified later" });
   }
 
+
   return rows;
 }
 
@@ -151,6 +164,7 @@ function getDownloadFilename(artifact: ArtifactPayload): string {
   if (artifact.kind === "csv") return `${artifact.id}.csv`;
   if (artifact.kind === "json") return `${artifact.id}.json`;
   if (artifact.kind === "diff") return `${artifact.id}.patch`;
+  if (artifact.kind === "html") return `${artifact.id}.html`;
   return `${artifact.id}.txt`;
 }
 
@@ -201,6 +215,7 @@ export function ArtifactStage({
   onRendererReady,
   rendererReadyKey,
   statusTone,
+  trustedPayload,
 }: ArtifactStageProps) {
   const [artifactCopyState, setArtifactCopyState] = useState<
     "idle" | "copied" | "failed"
@@ -235,7 +250,9 @@ export function ArtifactStage({
     activeArtifact.kind === "csv" ? activeArtifact : null;
   const jsonArtifact: JsonArtifact | null =
     activeArtifact.kind === "json" ? activeArtifact : null;
-  const hasRawToggle = Boolean(markdownArtifact || csvArtifact);
+  const htmlArtifact: HtmlArtifact | null =
+    activeArtifact.kind === "html" ? activeArtifact : null;
+  const hasRawToggle = Boolean(markdownArtifact || csvArtifact || htmlArtifact);
 
   activeArtifactRef.current = activeArtifact;
   activeArtifactBodyRef.current = activeArtifactBody;
@@ -372,7 +389,9 @@ export function ArtifactStage({
             ? "text/csv;charset=utf-8"
             : activeArtifact.kind === "diff"
               ? "text/x-diff;charset=utf-8"
-              : "text/plain;charset=utf-8";
+              : activeArtifact.kind === "html"
+                ? "text/html;charset=utf-8"
+                : "text/plain;charset=utf-8";
 
     const blob = new Blob([activeArtifactBody], {
       type: mimeType,
@@ -585,6 +604,18 @@ export function ArtifactStage({
               <CsvRenderer artifact={csvArtifact} onReady={markActiveRendererReady} />
             ) : jsonArtifact ? (
               <JsonRenderer artifact={jsonArtifact} onReady={markActiveRendererReady} />
+            ) : htmlArtifact && viewMode === "raw" ? (
+              <RawArtifactSource
+                content={htmlArtifact.content}
+                onReady={markActiveRendererReady}
+                testId="renderer-html-raw"
+              />
+            ) : htmlArtifact ? (
+              <HtmlRenderer
+                artifact={htmlArtifact}
+                trusted={trustedPayload}
+                onReady={markActiveRendererReady}
+              />
             ) : (
               <pre>{getPreviewText(activeArtifactBody)}</pre>
             )}

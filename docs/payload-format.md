@@ -85,6 +85,8 @@ arx2 uses a tuple wire envelope instead of JSON object keys:
 - multi-artifact bundle: `[2, [artifactTuple, ...], envelopeTitle?, activeIndex?]`
 - artifact tuples use kind codes: `m` markdown, `c` code, `d` diff, `s` csv, `j` json
 - trailing optional fields are trimmed; omitted optional slots before later values are encoded as `null`
+- the tuple kind table is pinned: envelopes containing `html` artifacts are skipped by the tuple
+  codecs (arx2/arx3/arx4) and encode via `arx`, `deflate`, `lz`, or `plain` instead
 
 Tuple fields:
 
@@ -97,13 +99,14 @@ Tuple fields:
 - `kind`
 - optional `title`
 - optional `filename`
-- `content` for markdown, code, csv, and json
+- `content` for markdown, code, csv, json, and html
 - `patch` or `oldContent` plus `newContent` for diffs
 
 ## Limits
 
 - Supported fragment budget: 8,192 decoded visible fragment characters
 - Supported decoded payload budget: 200,000 characters
+- Kit HTML: element nesting deeper than 100 levels is dropped during sanitization
 - Discord markdown link limit: 2,000 characters for the full formatted `[label](url)` string
 - Larger payloads should fail with a clear error before rendering
 - Compression is selected automatically across packed/non-packed candidates; arx and arx2 optimize conservative transport length, while arx3 optimizes compact visible length for its dense Unicode wire
@@ -244,3 +247,31 @@ Real diff artifacts can contain multiple `diff --git` sections inside one `patch
 ```
 
 Malformed JSON should still use `kind: "json"`; the viewer will show the parse error and a raw fallback instead of crashing.
+
+### Kit HTML artifact example
+
+```json
+{
+  "v": 1,
+  "codec": "plain",
+  "title": "Deploy report",
+  "activeArtifactId": "report",
+  "artifacts": [
+    {
+      "id": "report",
+      "kind": "html",
+      "filename": "report.html",
+      "content": "<div class=\"ar-grid\"><div class=\"ar-stat\"><p class=\"ar-stat-label\">Build</p><p class=\"ar-stat-value\">Passing</p></div></div>"
+    }
+  ]
+}
+```
+
+Kit HTML carries structure and content only; the viewer ships the design (see `docs/design-kit.md`).
+Fragment payloads render sanitized: scripts, event handlers, inline styles, and form controls are
+stripped. Server-injected payloads on a self-hosted instance render verbatim inside the isolation frame at
+`/artifact-frame.html`, an origin-isolated document with its own CSP granted `allow-scripts` only,
+so scripts run and the kit renders without reaching the viewer origin, opening dialogs, or
+submitting forms. Frame self-navigation is not blocked by any CSP directive, so this isolates the
+viewer from the artifact rather than preventing the artifact from phoning home.
+

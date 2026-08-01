@@ -7,7 +7,7 @@
 
 `agent-render` is a fully static, zero-retention artifact viewer for AI-generated outputs.
 
-Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based sharing for markdown, code, diffs, CSV, and JSON so the payload stays in the browser URL fragment instead of being sent to a server.
+Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based sharing for markdown, code, diffs, CSV, JSON, and kit HTML dashboards so the payload stays in the browser URL fragment instead of being sent to a server.
 
 ## OpenClaw
 
@@ -28,7 +28,7 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 
 ## Status
 
-- Markdown, code, diff, CSV, and JSON all render in the static shell
+- Markdown, code, diff, CSV, JSON, and kit HTML all render in the static shell
 - Fragment transport supports `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, and `arx4`, with automatic shortest-fragment selection across available wire formats
 - The `arx` substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json` with a pre-compressed `/arx2-dictionary.json.br` variant; `arx3` reuses those proven bytes and optimizes for compact visible Unicode fragments; `arx4` adds the curated context-mixer priors at `/arx4-priors.json` with a pre-compressed `/arx4-priors.json.br` variant
 - The viewer toolbar copies artifact bodies to the clipboard, downloads them as files, and (for markdown) supports browser print-to-PDF
@@ -41,6 +41,7 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 - `diff` - review-style multi-file git patch viewer with unified and split modes
 - `csv` - parsed table view with sticky headers and horizontal overflow handling
 - `json` - lightweight read-only tree view plus native raw source view, with graceful malformed JSON fallback
+- `html` - rich layout built from the shipped design kit; sanitized for fragment links, sandboxed iframe for server-injected payloads
 
 ## Principles
 
@@ -69,7 +70,7 @@ In addition to the default static/fragment-based product, `agent-render` include
 **What it provides:**
 - REST API for creating, reading, updating, and deleting artifacts
 - UUID-based viewer links that render the same UI as fragment links
-- 24-hour sliding TTL with automatic expiry
+- 7-day sliding TTL (configurable) with automatic expiry
 - SQLite storage — no external database required
 - Docker Compose and daemon deployment options
 

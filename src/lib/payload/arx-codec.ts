@@ -504,6 +504,11 @@ function artifactToArx2Tuple(artifact: ArtifactPayload): Arx2ArtifactTuple {
       return trimOptionalTuple(["s", artifact.id, artifact.content, artifact.title, artifact.filename]);
     case "json":
       return trimOptionalTuple(["j", artifact.id, artifact.content, artifact.title, artifact.filename]);
+    case "html":
+      // The arx tuple wire format is pinned (deployed decoders reject unknown kind codes), so the
+      // tuple codecs do not carry this kind. tupleCodecsSupportEnvelope in fragment-arx.ts drops
+      // their candidates for such envelopes before this function can be reached.
+      throw new Error('The arx codecs do not support "html" artifacts.');
   }
 }
 

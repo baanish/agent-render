@@ -58,6 +58,7 @@ function renderStage(activeArtifact: ArtifactPayload) {
       onArtifactSelect={vi.fn()}
       onRendererReady={vi.fn()}
       rendererReadyKey="ready"
+      trustedPayload={false}
       statusTone={statusTone}
     />,
   );

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Artifact</title>
+<!--
+  Isolation frame for trusted (server-injected) kit HTML.
+
+  Why a separate document instead of srcdoc: a srcdoc frame inherits the embedding page's CSP, so
+  the viewer's nonce/hash-only script-src blocked every artifact script, and it inherits no
+  stylesheet, so the kit classes rendered unstyled. A document fetched over its own URL carries its
+  own CSP response headers (set by selfhosted/server.ts for this exact path) and can link the kit
+  stylesheet, which is what makes trusted HTML actually work.
+
+  The frame is embedded with sandbox="allow-scripts" and no allow-same-origin, so it runs in an
+  opaque origin: artifact scripts execute but cannot reach the parent DOM, the auth cookie, or the
+  artifact API. Its CSP has no connect-src, so they cannot phone home either.
+-->
+<link rel="stylesheet" href="./artifact-frame.css">
+</head>
+<body>
+<div class="kit-html" id="artifact-root"></div>
+<script>
+(function () {
+  var root = document.getElementById("artifact-root");
+  var delivered = false;
+
+  // The parent hands over the artifact HTML once. Nothing is read from the URL, so a link to this
+  // page on its own renders empty rather than becoming an open HTML-rendering endpoint.
+  //
+  // event.source is checked rather than event.origin: this document is sandboxed into an opaque
+  // origin, so every inbound message reports origin "null" and comparing it proves nothing. The
+  // source check is what matters — without it any window holding a reference to this frame (an
+  // ancestor walking window.frames, for instance) could race its own markup in ahead of the viewer.
+  window.addEventListener("message", function (event) {
+    if (delivered || event.source !== parent) return;
+    var data = event.data;
+    if (!data || data.type !== "agent-render:artifact-html" || typeof data.html !== "string") return;
+    delivered = true;
+    // codeql[js/xss] Deliberate, and the reason this document exists. Rendering a trusted artifact
+    // verbatim means an HTML sink; there is no sink-free way to do it. What contains it is the
+    // container, not the assignment: sandboxed with allow-scripts and no allow-same-origin, so it
+    // runs in an opaque origin with no access to the viewer DOM, the auth cookie, or the artifact
+    // API, and the markup arrives only from the direct parent, checked above.
+    //
+    // That is isolation of the viewer FROM the artifact, not egress prevention. The absent
+    // connect-src and form-action close the fetch and form paths, but a script can still navigate
+    // this frame to an attacker URL and no CSP directive stops that. See docs/design-kit.md.
+    root.innerHTML = data.html;
+    // Scripts inserted via innerHTML never execute; re-create them so a trusted artifact's own
+    // behavior runs, which is the entire point of this frame.
+    var scripts = root.querySelectorAll("script");
+    for (var index = 0; index < scripts.length; index += 1) {
+      var original = scripts[index];
+      var replacement = document.createElement("script");
+      for (var attribute = 0; attribute < original.attributes.length; attribute += 1) {
+        replacement.setAttribute(original.attributes[attribute].name, original.attributes[attribute].value);
+      }
+      replacement.textContent = original.textContent;
+      original.parentNode.replaceChild(replacement, original);
+    }
+    parent.postMessage({ type: "agent-render:artifact-height", height: document.documentElement.scrollHeight }, "*");
+  });
+
+  parent.postMessage({ type: "agent-render:frame-ready" }, "*");
+})();
+</script>
+</body>
+</html>

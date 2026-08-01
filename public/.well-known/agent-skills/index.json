@@ -4,16 +4,16 @@
     {
       "name": "agent-render-linking",
       "type": "skill-md",
-      "description": "Create zero-retention agent-render.com links for markdown, code, diffs, CSV, or JSON artifacts. Markdown artifacts support inline mermaid diagram rendering via fenced code blocks. Use when an agent needs to share a nicely rendered artifact in the browser instead of pasting raw content into chat. Trigger for requests like \"share this as a link\", \"make a diff link\", \"render this markdown/code/csv/json\", \"show this diagram\", or when chat rendering is weak. Agent Render is open source, hosted on Cloudflare Pages, and self-hostable. Use platform-specific linked-text syntax only on surfaces that support it cleanly, such as Discord Markdown links, Telegram HTML links, or Slack mrkdwn links; otherwise send a short summary plus the raw URL.",
+      "description": "Create zero-retention agent-render.com links for markdown, code, diffs, CSV, JSON, or kit HTML artifacts. Markdown artifacts support inline mermaid diagram rendering via fenced code blocks. Kit HTML renders rich layouts from the viewer's design system, including decision lists the user answers in chat. Use when an agent needs to share a nicely rendered artifact in the browser instead of pasting raw content into chat. Trigger for requests like \"share this as a link\", \"make a diff link\", \"render this markdown/code/csv/json\", \"show this diagram\", or when chat rendering is weak. Agent Render is open source, hosted on Cloudflare Pages, and self-hostable. Use platform-specific linked-text syntax only on surfaces that support it cleanly, such as Discord Markdown links, Telegram HTML links, or Slack mrkdwn links; otherwise send a short summary plus the raw URL.",
       "url": "https://raw.githubusercontent.com/baanish/agent-render/main/skills/agent-render-linking/SKILL.md",
-      "digest": "sha256:93826ebd4143754c284e5e6445de33bc2978e01921fd9ef8ce13c5fef028ad29"
+      "digest": "sha256:f92d36b89eac8e9a5d7f6eee1253555c1b6b7e0684923ae8f053e5984952944e"
     },
     {
       "name": "selfhosted-agent-render",
       "type": "skill-md",
-      "description": "Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs to share rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal when payloads exceed the ~8 KB fragment budget, when links will be shared on platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, and JSON — same artifact kinds and envelope validation as the fragment-based product. The self-hosted server stores payloads in SQLite with a 24-hour sliding TTL.",
+      "description": "Create and manage agent-render artifacts via a self-hosted UUID-based server. Use when an agent needs public/share-friendly rendered artifacts through short UUID links instead of fragment-encoded URLs. Ideal for public/social sharing, corporate proxy/link-scanning environments, payloads that exceed the ~8 KB fragment budget, platforms that mangle long URLs, or when the agent and viewer run on the same machine. Supports markdown, code, diffs, CSV, JSON, and kit HTML — same artifact kinds as the fragment-based product (the server stores the payload string after a length/non-empty check; full envelope validation happens client-side when the viewer renders). The self-hosted server stores payloads in SQLite with a configurable sliding TTL that defaults to seven days.",
       "url": "https://raw.githubusercontent.com/baanish/agent-render/main/skills/selfhosted-agent-render/SKILL.md",
-      "digest": "sha256:7a65d95b72529606eac7d93f77f710b93771caa2deea1f2e77834e177f974b9e"
+      "digest": "sha256:06daaa17868d70f5da760087a9946e2ff829ce447be7a02903f6aa23dce67f7f"
     }
   ]
 }
