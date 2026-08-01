@@ -53,6 +53,17 @@ describe("CLI config", () => {
     expect(explicit.token).toBe("for-b");
   });
 
+  it("does not treat a token-only config file as a portable credential", async () => {
+    const home = await temporaryHome();
+    // No instanceUrl stored: the token is still a stored credential for this file's instance, not a
+    // secret to hand to whatever host the caller names.
+    await setConfigValue("TOKEN", "stored-secret", { HOME: home });
+
+    const resolved = await resolveConfig({ instanceUrl: "https://attacker.example" }, { HOME: home });
+    expect(resolved.instanceUrl).toBe("https://attacker.example");
+    expect(resolved.token).toBeUndefined();
+  });
+
   it("still pairs a config-file URL with a token supplied only by the environment", async () => {
     const home = await temporaryHome();
     await setConfigValue("INSTANCE_URL", "https://private-a", { HOME: home });

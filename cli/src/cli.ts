@@ -75,10 +75,25 @@ function parseCreateOptions(args: string[]): CreateOptions {
   return options;
 }
 
+/**
+ * Decodes input as strict UTF-8.
+ *
+ * Buffer.toString("utf8") silently replaces malformed bytes with U+FFFD, so a mis-encoded file (a
+ * latin-1 diff, a truncated multibyte sequence) would be published with corrupted characters and no
+ * warning. Failing is the only honest option: the CLI cannot know the intended encoding.
+ */
+function decodeUtf8Strict(bytes: Buffer, source: string): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new Error(`${source} is not valid UTF-8. Convert it to UTF-8 before sharing it.`);
+  }
+}
+
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const chunk of defaultStdin) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  return Buffer.concat(chunks).toString("utf8");
+  return decodeUtf8Strict(Buffer.concat(chunks), "Input on stdin");
 }
 
 async function readInputs(options: CreateOptions): Promise<ArtifactInput[]> {
@@ -87,7 +102,7 @@ async function readInputs(options: CreateOptions): Promise<ArtifactInput[]> {
   }
   return Promise.all(options.files.map(async (filename) => ({
     filename,
-    content: await readFile(filename, "utf8"),
+    content: decodeUtf8Strict(await readFile(filename), filename),
   })));
 }
 
@@ -100,11 +115,14 @@ async function runCreate(args: string[]): Promise<void> {
   const inputs = await readInputs(options);
   const envelope = buildPayloadEnvelope(inputs, options.kind, options.title);
   assertEnvelopeWithinBudget(envelope);
-  // Explicit fragment mode needs no instance settings, so a malformed config file must not fail a
-  // purely local encode.
-  const config = options.mode === "fragment"
-    ? { instanceUrl: undefined, token: undefined }
-    : await resolveConfig({ instanceUrl: options.instanceUrl, token: options.token });
+  // Only read stored config when something is actually missing from it. Explicit fragment mode needs
+  // no instance settings at all, and an explicit --instance-url with --token is fully specified, so
+  // neither should be failed by a malformed config file they never consult.
+  const needsStoredConfig =
+    options.mode !== "fragment" && !(options.instanceUrl !== undefined && options.token !== undefined);
+  const config = needsStoredConfig
+    ? await resolveConfig({ instanceUrl: options.instanceUrl, token: options.token })
+    : { instanceUrl: options.mode === "fragment" ? undefined : options.instanceUrl, token: options.token };
   const mode: Exclude<Mode, "auto"> = options.mode === "auto"
     ? (config.instanceUrl ? "instance" : "fragment")
     : options.mode;

@@ -63,10 +63,9 @@ export async function readStoredConfig(env: EnvLookup = process.env): Promise<St
 /**
  * Resolves CLI configuration with flags taking precedence over environment and file values.
  *
- * The endpoint and its credential resolve as a pair, not independently: a token is only carried
- * forward from a layer at or below the one that supplied the URL. Resolving them separately means
- * `--instance-url https://other-host` (with no `--token`) sends the token stored for a *different*
- * instance to that host.
+ * The endpoint and its credential resolve together, not independently. Resolving them separately
+ * means `--instance-url https://other-host` (with no `--token`) sends a token stored for a
+ * *different* instance to that host.
  */
 export async function resolveConfig(
   flags: StoredConfig = {},
@@ -74,22 +73,27 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   const stored = await readStoredConfig(env);
 
+  // Index of the config-file layer below; the stored token is only usable when the endpoint came
+  // from that same file.
+  const STORED_LAYER_INDEX = 2;
   const layers: { instanceUrl?: string; token?: string }[] = [
     { instanceUrl: flags.instanceUrl, token: flags.token },
     { instanceUrl: env.AGENT_RENDER_INSTANCE_URL, token: env.AGENT_RENDER_TOKEN },
     { instanceUrl: stored.instanceUrl, token: stored.token },
   ];
 
-  const instanceUrl = layers.find((layer) => layer.instanceUrl !== undefined)?.instanceUrl;
-  // A token is usable only if its own layer does not name a DIFFERENT host: a layer that names no
-  // URL (a bare --token, or AGENT_RENDER_TOKEN beside a config-file URL) is not tied to an endpoint,
-  // but the config file's token belongs to the config file's instance and must not follow an
-  // --instance-url override to somewhere else.
-  const token = layers.find(
-    (layer) =>
-      layer.token !== undefined
-      && (layer.instanceUrl === undefined || layer.instanceUrl === instanceUrl),
-  )?.token;
+  const urlLayerIndex = layers.findIndex((layer) => layer.instanceUrl !== undefined);
+  const instanceUrl = urlLayerIndex === -1 ? undefined : layers[urlLayerIndex]!.instanceUrl;
+
+  // The stored token is bound to the stored endpoint, full stop. A config file holding only a token
+  // is still a stored credential for that file's instance, not a portable secret: without this,
+  // `--instance-url https://attacker` would hand it to whatever host the caller names. Flags and the
+  // environment are supplied deliberately for this one invocation, so they stay usable.
+  const storedTokenIsBound = urlLayerIndex === STORED_LAYER_INDEX;
+  const token =
+    flags.token
+    ?? env.AGENT_RENDER_TOKEN
+    ?? (storedTokenIsBound ? stored.token : undefined);
 
   return {
     instanceUrl,
