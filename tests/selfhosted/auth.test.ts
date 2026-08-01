@@ -348,6 +348,37 @@ describe("self-hosted auth rate limiting", () => {
   });
 });
 
+describe("self-hosted concurrent auth cost", () => {
+  it("refuses a concurrent bearer burst instead of queueing a scrypt job per request", async () => {
+    const files = fixture();
+    const port = await freePort();
+    const base = `http://127.0.0.1:${port}`;
+    const child = startServer(port, files, "correct horse battery staple");
+    try {
+      await waitForHealth(base, child);
+
+      // Fired together, so none has failed-and-been-recorded when the others reach the pre-check.
+      // Without an in-flight budget every one of these would start its own KDF derivation.
+      const responses = await Promise.all(
+        Array.from({ length: 12 }, (_, attempt) =>
+          fetch(`${base}/api/artifacts`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer burst-${attempt}` },
+            body: JSON.stringify({ payload: "pburst" }),
+          }),
+        ),
+      );
+
+      const statuses = responses.map((response) => response.status);
+      expect(statuses.every((status) => status === 401 || status === 429)).toBe(true);
+      expect(statuses.filter((status) => status === 429).length).toBeGreaterThan(0);
+    } finally {
+      await stopServer(child);
+      rmSync(files.root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("self-hosted server with an unusable password", () => {
   it("fails fast when AGENT_RENDER_PASSWORD exceeds the candidate length bound", async () => {
     const files = fixture();
