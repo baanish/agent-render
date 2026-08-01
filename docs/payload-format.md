@@ -271,6 +271,7 @@ Kit HTML carries structure and content only; the viewer ships the design (see `d
 Fragment payloads render sanitized: scripts, event handlers, inline styles, and form controls are
 stripped. Server-injected payloads on a self-hosted instance render verbatim inside the isolation frame at
 `/artifact-frame.html`, an origin-isolated document with its own CSP granted `allow-scripts` only,
-so scripts run and the kit renders without reaching the viewer origin and without being able to
-exfiltrate, open dialogs, or submit forms.
+so scripts run and the kit renders without reaching the viewer origin, opening dialogs, or
+submitting forms. Frame self-navigation is not blocked by any CSP directive, so this isolates the
+viewer from the artifact rather than preventing the artifact from phoning home.
 

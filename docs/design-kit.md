@@ -18,7 +18,12 @@ inline styles and `<style>` blocks are stripped.
   server and links a generated copy of this kit, so scripts run **and** `ar-*` classes are styled.
   It is embedded with `sandbox="allow-scripts"` and no `allow-same-origin`, so it sits in an opaque
   origin with no access to the viewer DOM, the auth cookie, or the artifact API; its CSP has no
-  `connect-src` or `form-action`, so a payload can neither exfiltrate nor phish. Forms, popups and
+  `connect-src` or `form-action`, which removes the obvious egress paths. It is **not** an egress
+  guarantee: a script can navigate its own frame to an attacker URL and no CSP directive prevents
+  that, so a trusted artifact can still phone home if it wants to. Running artifact scripts and
+  preventing egress are mutually exclusive, and self-hosted mode deliberately chooses to run them --
+  the agent authoring the artifact already has shell access on the operator's machine, so the frame
+  is not the narrow point. What the frame does buy is isolation from the viewer origin. Forms, popups and
   modal dialogs are withheld deliberately — an opaque origin stops a payload reading secrets but not
   asking for them, and `prompt()` or a lookalike sign-in form would harvest the shared password just
   as well. The frame stylesheet is generated from `src/app/kit.css` by
@@ -98,5 +103,5 @@ and must change together with this table and the skill.
 - Links must use absolute `https:` (or `mailto:`) URLs; `http:` and bare-fragment (`#...`) hrefs
   are stripped. Images must be `https:` or `data:image/*;base64`.
 - Remote images render on the public fragment site but not on a self-hosted instance, whose CSP
-  keeps images same-origin so a stored artifact cannot beacon out. Inline `data:` images work
+  keeps images same-origin so a *sanitized* artifact has no image beacon. Inline `data:` images work
   everywhere; prefer them when the artifact must look the same in both places.
