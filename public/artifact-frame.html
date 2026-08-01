@@ -39,11 +39,14 @@
     if (!data || data.type !== "agent-render:artifact-html" || typeof data.html !== "string") return;
     delivered = true;
     // codeql[js/xss] Deliberate, and the reason this document exists. Rendering a trusted artifact
-    // verbatim means an HTML sink; there is no sink-free way to do it. What makes it safe is the
-    // container, not the assignment: this document is sandboxed with allow-scripts and no
-    // allow-same-origin, so it runs in an opaque origin with no access to the viewer DOM, the auth
-    // cookie, or the artifact API, and its CSP carries no connect-src or form-action, so nothing
-    // here can exfiltrate or phish. The markup arrives only from the direct parent, checked above.
+    // verbatim means an HTML sink; there is no sink-free way to do it. What contains it is the
+    // container, not the assignment: sandboxed with allow-scripts and no allow-same-origin, so it
+    // runs in an opaque origin with no access to the viewer DOM, the auth cookie, or the artifact
+    // API, and the markup arrives only from the direct parent, checked above.
+    //
+    // That is isolation of the viewer FROM the artifact, not egress prevention. The absent
+    // connect-src and form-action close the fetch and form paths, but a script can still navigate
+    // this frame to an attacker URL and no CSP directive stops that. See docs/design-kit.md.
     root.innerHTML = data.html;
     // Scripts inserted via innerHTML never execute; re-create them so a trusted artifact's own
     // behavior runs, which is the entire point of this frame.

@@ -85,14 +85,23 @@ export async function resolveConfig(
   const urlLayerIndex = layers.findIndex((layer) => layer.instanceUrl !== undefined);
   const instanceUrl = urlLayerIndex === -1 ? undefined : layers[urlLayerIndex]!.instanceUrl;
 
-  // The stored token is bound to the stored endpoint, full stop. A config file holding only a token
-  // is still a stored credential for that file's instance, not a portable secret: without this,
-  // `--instance-url https://attacker` would hand it to whatever host the caller names. Flags and the
-  // environment are supplied deliberately for this one invocation, so they stay usable.
+  // A credential is only sent to the endpoint it belongs to. Two ways a layer can claim ownership:
+  //
+  //   - it names its own instanceUrl, in which case its token is for THAT host and is usable only
+  //     when that host is the one selected (an env pair overridden by --instance-url must not have
+  //     its token follow the override), and
+  //   - it is the config file, whose token is a stored credential for the stored instance even when
+  //     the file records no URL of its own; otherwise `--instance-url https://attacker` would hand a
+  //     token-only config straight over.
+  //
+  // A layer that supplies a bare token and no URL of its own (an explicit --token, or
+  // AGENT_RENDER_TOKEN beside a config-file URL) is not claiming an endpoint, so it stays usable.
+  const envTokenIsBound = env.AGENT_RENDER_INSTANCE_URL === undefined
+    || env.AGENT_RENDER_INSTANCE_URL === instanceUrl;
   const storedTokenIsBound = urlLayerIndex === STORED_LAYER_INDEX;
   const token =
     flags.token
-    ?? env.AGENT_RENDER_TOKEN
+    ?? (envTokenIsBound ? env.AGENT_RENDER_TOKEN : undefined)
     ?? (storedTokenIsBound ? stored.token : undefined);
 
   return {
