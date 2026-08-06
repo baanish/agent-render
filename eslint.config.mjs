@@ -12,7 +12,7 @@ const compat = new FlatCompat({
 const config = [...compat.extends("next/core-web-vitals")];
 
 config.push({
-  ignores: [".next/**", "out/**", "playwright-report/**", "test-results/**"],
+  ignores: [".next/**", "out/**", "playwright-report/**", "test-results/**", "ds-bundle/**", ".design-sync/**"],
 });
 
 export default config;

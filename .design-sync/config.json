@@ -1,0 +1,47 @@
+{
+  "projectId": "cadc747e-85f1-42c6-8cc7-230f2bf35887",
+  "pkg": "agent-render",
+  "globalName": "AgentRender",
+  "shape": "package",
+  "buildCmd": "npm run build && node .design-sync/harvest-css.mjs",
+  "cssEntry": ".design-sync/.cache/ds-css/main.css",
+  "srcDir": "src",
+  "tsconfig": "tsconfig.json",
+  "entry": ".design-sync/ds-entry.ts",
+  "guidelinesGlob": ["docs/*.md"],
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "ViewerShell": { "cardMode": "single", "primaryStory": "EmptyHomepage", "viewport": "1280x900" },
+    "LinkCreator": { "cardMode": "column" }
+  },
+  "dtsPropsFor": {
+    "MarkdownRenderer": "artifact: { id: string; kind: \"markdown\"; content: string; title?: string; filename?: string }; onReady?: () => void;",
+    "CodeRenderer": "artifact: { id: string; kind: \"code\"; content: string; language?: string; title?: string; filename?: string }; compact?: boolean; onReady?: () => void;",
+    "DiffRenderer": "artifact: { id: string; kind: \"diff\"; patch?: string; oldContent?: string; newContent?: string; language?: string; view?: \"unified\" | \"split\"; title?: string; filename?: string }; onReady?: () => void;",
+    "CsvRenderer": "artifact: { id: string; kind: \"csv\"; content: string; title?: string; filename?: string }; onReady?: () => void;",
+    "JsonRenderer": "artifact: { id: string; kind: \"json\"; content: string; title?: string; filename?: string }; onReady?: () => void;",
+    "MermaidBlock": "code: string; onReady?: () => void;",
+    "ArtifactSelector": "artifacts: Array<{ id: string; kind: \"markdown\" | \"code\" | \"diff\" | \"csv\" | \"json\"; content?: string; patch?: string; oldContent?: string; newContent?: string; language?: string; view?: \"unified\" | \"split\"; title?: string; filename?: string }>; activeArtifactId: string; onSelect: (artifactId: string) => void; kindIcons: Record<\"markdown\" | \"code\" | \"diff\" | \"csv\" | \"json\", React.ComponentType<{ className?: string }>>; getHeading: (artifact: { id: string; kind: string; title?: string; filename?: string }) => string; getSupportingLabel: (artifact: { id: string; kind: string; title?: string; filename?: string }) => string;",
+    "ArtifactStage": "activeArtifact: { id: string; kind: \"markdown\" | \"code\" | \"diff\" | \"csv\" | \"json\"; content?: string; patch?: string; oldContent?: string; newContent?: string; language?: string; view?: \"unified\" | \"split\"; title?: string; filename?: string }; envelope: { v: 1; codec: \"plain\" | \"lz\" | \"deflate\" | \"arx\" | \"arx2\" | \"arx3\" | \"arx4\"; title?: string; activeArtifactId?: string; artifacts: Array<{ id: string; kind: string; content?: string; title?: string; filename?: string }> }; fragmentLength: number; hash: string; onArtifactSelect: (artifactId: string) => void; onRendererReady: (readyKey: string) => void; rendererReadyKey: string; statusTone: { color: string; label: string; message: string };",
+    "FragmentDetailsDisclosure": "statusLabel: string; statusMessage: string; fragmentLength: string; maxLength: string; codec: string; hashPreview: string;",
+    "LinkCreator": "onPreviewHash: (hash: string) => void;",
+    "SampleLinks": "activeHash: string; animationStyle: React.CSSProperties;",
+    "ThemeToggle": "className?: string;",
+    "ViewerShell": ""
+  },
+  "componentSrcMap": {
+    "ViewerShell": "src/components/viewer-shell.tsx",
+    "ThemeToggle": "src/components/theme-toggle.tsx",
+    "ArtifactSelector": "src/components/viewer/artifact-selector.tsx",
+    "ArtifactStage": "src/components/viewer/artifact-stage.tsx",
+    "FragmentDetailsDisclosure": "src/components/viewer/fragment-details-disclosure.tsx",
+    "MarkdownRenderer": "src/components/renderers/markdown-renderer.tsx",
+    "CodeRenderer": "src/components/renderers/code-renderer.tsx",
+    "DiffRenderer": "src/components/renderers/diff-renderer.tsx",
+    "CsvRenderer": "src/components/renderers/csv-renderer.tsx",
+    "JsonRenderer": "src/components/renderers/json-renderer.tsx",
+    "MermaidBlock": "src/components/renderers/mermaid-block.tsx",
+    "LinkCreator": "src/components/home/link-creator.tsx",
+    "SampleLinks": "src/components/home/sample-links.tsx"
+  }
+}
