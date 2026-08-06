@@ -21,7 +21,7 @@ export function FragmentDetailsDisclosure({
   hashPreview,
 }: FragmentDetailsDisclosureProps) {
   return (
-    <details className="artifact-disclosure" data-testid="fragment-disclosure">
+    <details className="artifact-disclosure" data-testid="fragment-disclosure" open>
       <summary className="artifact-disclosure-summary">
         <span className="artifact-disclosure-summary-copy">
           <span className="section-kicker">Fragment details</span>
