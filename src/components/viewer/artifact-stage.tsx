@@ -601,10 +601,7 @@ export function ArtifactStage({
           data-testid="artifact-metadata-grid"
         >
           {artifactDetailRows.map((row) => (
-            <div
-              key={row.label}
-              className="bento-card px-5 py-5 sm:px-6 sm:py-6"
-            >
+            <div key={row.label} className="bento-card">
               <p className="metric-label">{row.label}</p>
               <p className="artifact-meta-value">{row.value}</p>
             </div>
@@ -617,7 +614,6 @@ export function ArtifactStage({
           hashPreview={getHashPreview(hash)}
           maxLength={numberFormatter.format(MAX_FRAGMENT_LENGTH)}
           statusLabel={statusTone.label}
-          statusMessage={statusTone.message}
         />
       </section>
     </section>

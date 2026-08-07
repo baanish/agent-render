@@ -249,7 +249,6 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
         <div className="markdown-code-frame">
           <div className="markdown-code-head">
             <span className="markdown-code-chip">{language}</span>
-            <span className="markdown-code-caption">premium fence</span>
           </div>
           <EmbeddedCodeRenderer
             compact

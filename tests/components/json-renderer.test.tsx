@@ -53,6 +53,18 @@ describe("JsonRenderer", () => {
     expect(document.querySelector(".cm-editor")).not.toBeInTheDocument();
   });
 
+  it("syntax-highlights the raw source with the tree's token classes", async () => {
+    render(<JsonRenderer artifact={createArtifact()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Raw" }));
+
+    const raw = screen.getByTestId("renderer-json-raw");
+    expect(raw.querySelector(".json-key")?.textContent).toBe('"name"');
+    expect(raw.querySelector(".json-string")?.textContent).toBe('"agent-render"');
+    // Colons come from the source text, never from the tree's ::after glyph.
+    expect(raw).toHaveTextContent('"name": "agent-render"');
+  });
+
   it("renders array nodes with numeric child labels", () => {
     render(<JsonRenderer artifact={createArtifact({ content: '{ "items": ["alpha", "beta"] }' })} />);
 

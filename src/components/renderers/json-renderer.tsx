@@ -76,10 +76,51 @@ function JsonNode({ label, value, level = 0 }: { label?: string; value: JsonValu
   );
 }
 
+// One alternation pass: strings (key vs value decided by a trailing colon),
+// numbers, and literals. Anything unmatched (punctuation, malformed text)
+// stays uncolored, so this is safe for the parse-error raw view too.
+const JSON_TOKEN_RX = /("(?:[^"\\\n]|\\.)*")(\s*:)?|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\btrue\b|\bfalse\b|\bnull\b/g;
+
+function highlightJsonSource(content: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  let last = 0;
+  for (const match of content.matchAll(JSON_TOKEN_RX)) {
+    const [full, string, colon] = match;
+    if (match.index > last) {
+      nodes.push(content.slice(last, match.index));
+    }
+    const tokenClass =
+      string !== undefined
+        ? colon
+          ? "json-key"
+          : "json-string"
+        : full === "true" || full === "false"
+          ? "json-boolean"
+          : full === "null"
+            ? "json-null"
+            : "json-number";
+    nodes.push(
+      <span key={match.index} className={tokenClass}>
+        {string ?? full}
+      </span>,
+    );
+    if (string !== undefined && colon) {
+      nodes.push(colon);
+    }
+    last = match.index + full.length;
+  }
+  if (last < content.length) {
+    nodes.push(content.slice(last));
+  }
+  return nodes;
+}
+
 function JsonRawSource({ content }: { content: string }) {
+  const highlighted = useMemo(() => highlightJsonSource(content), [content]);
+
   return (
     <pre className="json-raw-source" data-testid="renderer-json-raw">
-      <code>{content}</code>
+      <code>{highlighted}</code>
     </pre>
   );
 }
@@ -152,7 +193,6 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
             Raw
           </button>
         </div>
-        <span className="mono-pill">read-only</span>
       </div>
       {view === "tree" ? (
         <JsonTreeBoundary key={artifact.id} fallback={<JsonRawSource content={artifact.content} />}>

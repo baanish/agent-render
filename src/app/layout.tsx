@@ -1,25 +1,26 @@
 import type { Metadata } from "next";
-import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Manrope, Spline_Sans_Mono, SUSE } from "next/font/google";
 import type { ReactNode } from "react";
 import { getCanonicalSiteUrl, getMetadataBase } from "@/lib/site/canonical-base";
 import "./globals.css";
 
-const display = Fraunces({
+const display = Manrope({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["500", "600", "700"],
+  weight: ["500", "600", "700", "800"],
 });
 
-const sans = IBM_Plex_Sans({
+const sans = SUSE({
   subsets: ["latin"],
   variable: "--font-sans",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
 });
 
-const mono = IBM_Plex_Mono({
+const mono = Spline_Sans_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
