@@ -79,7 +79,7 @@ function getDefaultMode(view: DiffArtifact["view"], isNarrowScreen: boolean) {
 function getDiffOptions(mode: DiffViewMode): DiffOptions {
   return {
     diffStyle: mode,
-    theme: "pierre-dark",
+    theme: "agent-render",
     themeType: "dark",
     overflow: "wrap",
     disableFileHeader: true,

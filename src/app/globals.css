@@ -1736,6 +1736,23 @@ select.creator-input {
   --diffs-font-size: 0.74rem;
   --diffs-bg: #1c1915;
   --diffs-fg: #e6dfcf;
+  /* Tokens for the "agent-render" CSS-variables Shiki theme (registered in
+     src/lib/diff/pierre-react.ts): the app's rainbow palette, so diff syntax
+     matches the code renderer instead of a foreign theme. */
+  --diffs-foreground: #e6dfcf;
+  --diffs-background: #1c1915;
+  --diffs-token-keyword: var(--rb-0);
+  --diffs-token-function: var(--rb-4);
+  --diffs-token-string: var(--rb-3);
+  --diffs-token-string-expression: var(--rb-3);
+  --diffs-token-constant: var(--rb-1);
+  --diffs-token-parameter: var(--rb-2);
+  --diffs-token-link: var(--rb-2);
+  --diffs-token-comment: #8b8271;
+  --diffs-token-punctuation: #b0a794;
+  --diffs-token-inserted: #9ccfae;
+  --diffs-token-deleted: #d96a5c;
+  --diffs-token-changed: var(--rb-1);
   --diffs-bg-context-override: #26221b;
   --diffs-bg-separator-override: #181510;
   --diffs-bg-hover-override: #26221b;
