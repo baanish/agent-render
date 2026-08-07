@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>agent-render · rain garden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --dusk:#2e4038; --dusk-deep:#243129; --pond:#3f5a4c;
+    --el:#f4f2ea; --el-dim:#b9c4ba; --el-faint:#7f8f83;
+    --rain-up:#6fb3ff; --rain-bend:#ff7a6e; --rain-clear:#f4f2ea; --sprig:#9fd8a8;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(159,216,168,.06), transparent 60%),
+      radial-gradient(700px 420px at 8% 108%, rgba(111,179,255,.05), transparent 55%),
+      var(--dusk-deep);
+    color:var(--el);
+    font:500 16px/1.65 "M PLUS Rounded 1c", system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .garden{max-width:1120px; margin:0 auto; padding:44px 32px 150px; position:relative;}
+
+  .cloud-tag{
+    position:absolute; top:30px; right:34px; z-index:2;
+    background:var(--pond); border-radius:40px; padding:12px 24px;
+    font:700 12.5px/1 "M PLUS Rounded 1c"; letter-spacing:.1em; color:var(--sprig);
+    box-shadow:0 10px 26px -12px rgba(0,0,0,.55);
+  }
+  .cloud-tag::before{content:"☁ "; color:var(--el)}
+
+  .hero-pond{margin-top:26px; position:relative;}
+  .hero-pond h1{
+    margin:0; max-width:15ch;
+    font:800 clamp(2.5rem,6.2vw,4.8rem)/1.06 "M PLUS Rounded 1c",sans-serif; letter-spacing:-0.03em; text-wrap:balance;
+  }
+  .hero-pond h1 .float{color:var(--rain-up)}
+  .hero-pond .spore{margin-top:24px; max-width:52ch; color:var(--el-dim); font-size:17px; line-height:1.75}
+  .hero-pond .spore b{color:var(--el)}
+
+  .rainfield{
+    margin-top:36px; height:170px; border-radius:26px; overflow:hidden; position:relative;
+    background:linear-gradient(180deg, rgba(63,90,76,.5), rgba(36,49,41,.9));
+    border:1.5px solid rgba(159,216,168,.16);
+  }
+  .rainfield .drop{
+    position:absolute; width:3px; border-radius:3px; opacity:.75;
+    animation:fallup linear infinite;
+  }
+  .drop.up{background:var(--rain-up); animation-name:rise; height:26px}
+  .drop.bend{background:var(--rain-bend); height:18px; animation-name:arc}
+  .drop.clear{background:var(--rain-clear); height:22px; animation-name:drift}
+  @keyframes rise{from{transform:translateY(190px)}to{transform:translateY(-60px)}}
+  @keyframes arc{0%{transform:translate(-14px,190px)}50%{transform:translate(16px,70px)}100%{transform:translate(-8px,-50px)}}
+  @keyframes drift{0%{transform:translate(8px,190px)}100%{transform:translate(-8px,-50px)}}
+  @media (prefers-reduced-motion: reduce){.drop{animation:none; transform:translateY(60px)}}
+  .rain-legend{display:flex; gap:26px; margin-top:16px; flex-wrap:wrap}
+  .rl{display:flex; align-items:center; gap:9px; font:700 12px/1 "M PLUS Rounded 1c"; color:var(--el-dim)}
+  .rl i{width:10px; height:10px; border-radius:50%; display:inline-block}
+  .rl .u{background:var(--rain-up)} .rl .b{background:var(--rain-bend)} .rl .c{background:var(--rain-clear)}
+
+  .terraces{display:grid; grid-template-columns:1.35fr 1fr; gap:20px; margin-top:44px;}
+  .terrace{
+    background:var(--pond); border-radius:22px; padding:26px 28px;
+    border:1.5px solid rgba(159,216,168,.14);
+    box-shadow:0 18px 34px -22px rgba(0,0,0,.6);
+  }
+  .terrace .tt{font:700 12px/1 "M PLUS Rounded 1c"; letter-spacing:.18em; text-transform:uppercase; color:var(--sprig)}
+  .terrace p{color:var(--el-dim); font-size:14.5px; line-height:1.75; margin:12px 0 0}
+  .terrace code{font-weight:700; color:var(--rain-up); font-size:13px}
+  .terrace.deep{background:var(--dusk); }
+  .terrace .big{font:800 21px/1.35 "M PLUS Rounded 1c"; color:var(--el); letter-spacing:-0.01em}
+
+  .seedbed{
+    margin-top:22px; background:var(--dusk); border-radius:24px; padding:26px 28px 28px;
+    border:1.5px solid rgba(111,179,255,.22);
+  }
+  .seedbed .sb-head{display:flex; justify-content:space-between; align-items:baseline}
+  .seedbed .sb-head .t{font:800 15px/1 "M PLUS Rounded 1c"; letter-spacing:.04em}
+  .seedbed .sb-head .r{font:700 11.5px/1 "M PLUS Rounded 1c"; color:var(--el-faint); letter-spacing:.12em; text-transform:uppercase}
+  .seed-rows{display:grid; grid-template-columns:1fr 1fr; gap:16px 28px; margin-top:22px}
+  .seed-cell label{display:block; font:700 10.5px/1 "M PLUS Rounded 1c"; letter-spacing:.16em; text-transform:uppercase; color:var(--sprig); margin-bottom:9px}
+  .seed-input{width:100%; background:var(--dusk-deep); border:1.5px solid rgba(159,216,168,.2); border-radius:12px; color:var(--el); font:500 14.5px/1.5 "M PLUS Rounded 1c"; padding:11px 15px; outline:none}
+  .seed-input:focus{border-color:var(--rain-up)}
+  .seed-full{grid-column:1/-1}
+  .seed-soil{
+    background:var(--dusk-deep); border:1.5px solid rgba(159,216,168,.2); border-radius:14px;
+    padding:15px 17px; min-height:130px; white-space:pre-wrap; font:500 13.5px/1.8 "M PLUS Rounded 1c"; color:var(--el);
+  }
+  .spore-kinds{display:flex; gap:10px; flex-wrap:wrap}
+  .spore-kinds span{
+    padding:10px 17px; border-radius:30px; background:var(--dusk-deep);
+    border:1.5px solid rgba(159,216,168,.2); color:var(--el-dim);
+    font:700 12px/1 "M PLUS Rounded 1c"; cursor:pointer;
+  }
+  .spore-kinds span.on{background:var(--sprig); color:var(--dusk-deep); border-color:var(--sprig)}
+  .seed-foot{display:flex; align-items:center; justify-content:space-between; gap:22px; margin-top:26px; flex-wrap:wrap}
+  .scatter-btn{
+    background:var(--rain-up); color:#0e2438; border:none; cursor:pointer; border-radius:30px;
+    font:800 13.5px/1 "M PLUS Rounded 1c"; letter-spacing:.05em; padding:15px 30px;
+    box-shadow:0 12px 26px -14px rgba(111,179,255,.7);
+  }
+  .scatter-btn:active{transform:translateY(2px)}
+  .seed-stats{font:700 12px/1.8 "M PLUS Rounded 1c"; color:var(--el-dim)}
+  .seed-stats b{color:var(--el)}
+
+  .garden-foot{
+    margin-top:44px; display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    font:700 11px/1.7 "M PLUS Rounded 1c"; letter-spacing:.12em; text-transform:uppercase; color:var(--el-faint);
+  }
+  @media (max-width:880px){.terraces,.seed-rows{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <!--
+    DIRECTION CONTRACT C6 — gravity-rain garden (fused challenger, kept literal-light)
+    THESIS: the fragment is weather; content rises and settles onto the reader's side without the host ever touching it.
+    OWN-WORLD: dusk garden greens, pond terraces, upward blue rain, bending coral rain, clear drifting rain; rounded type with weight doing hierarchy.
+    STORY: the visitor watches the payload rain rise out of the host side, sees only clear drops land on the reader side, then plants a link of their own.
+    FIRST VIEWPORT: cloud tag, planted headline, spore copy, the animated rainfield with its color legend.
+    FORM: challenger 6 of 6 dealt, fused with agent-render; seed key 5b5b8c00.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div class="garden">
+    <div class="cloud-tag">CLOUD SEEDING · CLIENT SIDE ONLY</div>
+
+    <section class="hero-pond">
+      <h1>Zero-retention artifact viewer for <span class="float">AI outputs</span></h1>
+      <p class="spore">Artifact content lives in the URL fragment. In static mode the host does not receive artifact content on the page request. <b>The rain rises here, but none of it lands on our soil.</b> Links can still appear in browser history, screenshots, and copied messages.</p>
+    </section>
+
+    <div class="rainfield" aria-hidden="true" id="rain"></div>
+    <div class="rain-legend">
+      <span class="rl"><i class="u"></i> payload rising — fragment only</span>
+      <span class="rl"><i class="b"></i> hazards bent around hosts</span>
+      <span class="rl"><i class="c"></i> clear reads, decoded locally</span>
+    </div>
+
+    <div class="terraces">
+      <section class="terrace">
+        <div class="tt">How the weather works</div>
+        <p>The compact fragment <code>#&lt;tag&gt;&lt;payload&gt;</code> carries everything. One tag letter names the codec: p l d a b c e. Browsers decode markdown, code, diffs, CSV, and JSON in place; the host serves the empty beds and moves on.</p>
+        <p class="big" style="margin-top:18px">Nothing retained.<br>Everything readable.</p>
+      </section>
+      <section class="terrace deep">
+        <div class="tt">Garden conditions</div>
+        <p>Fragment budget <b style="color:var(--el)">8,192</b> chars before the weather turns. Decoded ceiling <b style="color:var(--el)">200,000</b>. Discord-md warns past 2,000. Self-hostable when your own garden needs rain barrels.</p>
+      </section>
+    </div>
+
+    <section class="seedbed">
+      <div class="sb-head"><span class="t">Plant a link</span><span class="r">Bed 02 · Local seed only</span></div>
+      <div class="seed-rows">
+        <div class="seed-cell"><label>Seed name (title)</label><input class="seed-input" value="Product brief"></div>
+        <div class="seed-cell"><label>Packet (filename)</label><input class="seed-input" value="brief.md"></div>
+        <div class="seed-cell seed-full"><label>Soil (content)</label>
+          <div class="seed-soil"># Launch note
+Share one artifact at a time without uploading it anywhere.
+- Markdown stays readable
+- Code keeps its language hint
+- The link works from a static export</div>
+        </div>
+        <div class="seed-cell seed-full"><label>Variety (kind)</label>
+          <div class="spore-kinds"><span class="on">Markdown</span><span>Code</span><span>Diff</span><span>CSV</span><span>JSON</span></div>
+        </div>
+      </div>
+      <div class="seed-foot">
+        <button class="scatter-btn">Scatter link →</button>
+        <span class="seed-stats">SOIL LOAD <b>1,204 / 8,192</b> · SEED <b>ARX4</b> · GATE <b>OPEN</b></span>
+      </div>
+    </section>
+
+    <footer class="garden-foot">
+      <span>agent-render · zero retention by host design</span>
+      <span>static soil · self-hostable rain</span>
+      <span>tend your own fragment</span>
+    </footer>
+  </div>
+
+  <script>
+    (function(){
+      const field = document.getElementById('rain');
+      const kinds = ['up','bend','clear'];
+      for (let i = 0; i < 42; i++) {
+        const d = document.createElement('span');
+        const k = kinds[i % 3];
+        d.className = 'drop ' + k;
+        d.style.left = (Math.random() * 98) + '%';
+        d.style.top = '0';
+        d.style.animationDuration = (2.4 + Math.random() * 3.4) + 's';
+        d.style.animationDelay = (-Math.random() * 4) + 's';
+        field.appendChild(d);
+      }
+    })();
+  </script>
+</body>
+</html>

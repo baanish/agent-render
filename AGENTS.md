@@ -253,9 +253,23 @@ Be conservative with product claims and precise with protocol changes.
 
 Protect that simplicity.
 
+## UI design directives (owner-established)
+
+The owner ran a full impeccable-style redesign (bone-keycap-over-charcoal world, fused from the 12 concept drafts kept under `.impeccable/drafts/`) and will push back hard on these slop patterns; do not reintroduce them:
+
+- No self-evident narration labels in the UI: the app is a viewer, so never render chrome text like "read-only", "Decoded", a bare artifact-kind kicker (`tsx`/`CSV`), library names ("codemirror"), or the component filename ("viewer-shell"). Show the real filename or show nothing.
+- No dead space: no decorative empty grid rows, no margin-inside-margin squeeze at mobile widths, no half-blank inspector cells. Layouts stay dense.
+- No floating chrome: surfaces are hairline etched panels (no rounded cream cards, no radial-gradient washes); controls use the keycap grammar: buttons and pills have a 2px machined depth (lit top edge, solid bottom foot that collapses on :active), and inputs recess into the chassis with inset shadow. Decorative shadows stay out.
+- Conditional presence: the fragment inspector only renders when a fragment is present, and promotes to the top of the page on decode error.
+- A real footer is required, not a one-line stub.
+
+Shipped decision: the diff renderer uses `@pierre/diffs` (lazy-loaded, Shiki-based, no vendor CSS). Earlier `@git-diff-view/react` was replaced in the full rebuild to keep the heaviest diff stack light and theme-plumbed off the bench palette.
+
 ## Cursor Cloud specific instructions
 
 These notes are for cloud agents whose environment already has dependencies installed (`npm install` and Chromium for Playwright run on startup). They capture only non-obvious caveats; standard commands live under `## Development commands` and `docs/testing.md`.
+
+- On the owner's Linux machine the default `workspace_readwrite` sandbox fails at kernel level (user namespaces unavailable; Landlock and bubblewrap both return EPERM). Any Shell call there must pass `required_permissions: ["all"]` or it will not spawn. Don't conclude you "can't run shell commands" — retry with the permission request. Applies to the dev server, Playwright, and `npm install`.
 
 - `npm run dev` serves the client shell on port `3000` with no base path. The Playwright config (`playwright.config.ts`) is separate: it runs its own `NEXT_PUBLIC_BASE_PATH=/agent-render npm run build && npm run preview` on port `4401`, so you do not need a dev server running for `npm run test:e2e`.
 - Locally, `npm run test:e2e` also runs the screenshot regression suite (`tests/e2e/visual.spec.ts`), which can fail on a cloud VM due to platform font/rendering differences. Set `CI=1` (e.g. `CI=1 npm run test:e2e`) to skip visual snapshots and run only the behavioral browser flow, matching CI behavior. Do not run `npm run test:e2e:update` to "fix" these unless a visual change is genuinely intended.

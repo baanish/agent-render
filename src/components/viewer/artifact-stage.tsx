@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { Check, Code, Copy, Download, Eye, Link2, Printer } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { numberFormatter } from "@/lib/format";
@@ -32,16 +31,9 @@ type ArtifactStageProps = {
   onRendererReady: (readyKey: string) => void;
   rendererReadyKey: string;
   statusTone: {
-    color: string;
     label: string;
-    message: string;
   };
 };
-
-const toolbarAnimationStyle: CSSProperties = { animationDelay: "80ms" };
-const selectorAnimationStyle: CSSProperties = { animationDelay: "100ms" };
-const contentAnimationStyle: CSSProperties = { animationDelay: "140ms" };
-const metadataAnimationStyle: CSSProperties = { animationDelay: "200ms" };
 
 const MarkdownRenderer = dynamic(
   () =>
@@ -96,16 +88,6 @@ function getArtifactBody(artifact: ArtifactPayload): string {
   return artifact.content;
 }
 
-function getArtifactSubtitle(artifact: ArtifactPayload): string {
-  if (artifact.kind === "markdown") return "Markdown";
-  if (artifact.kind === "code") return artifact.language ?? "Code";
-  if (artifact.kind === "diff")
-    return artifact.view ? `${artifact.view} diff` : "Diff";
-  if (artifact.kind === "json") return "JSON";
-  if (artifact.kind === "csv") return "CSV";
-  return (artifact as ArtifactPayload).kind;
-}
-
 function getArtifactHeading(artifact: ArtifactPayload): string {
   return artifact.title ?? artifact.filename ?? artifact.id;
 }
@@ -154,7 +136,6 @@ function getDownloadFilename(artifact: ArtifactPayload): string {
   return `${artifact.id}.txt`;
 }
 
-
 /**
  * Renders the 'Raw' view of markdown/CSV as un-highlighted plain text — by design.
  *
@@ -189,8 +170,10 @@ function RawArtifactSource({
 /**
  * Renders the artifact-first viewer branch after the shell has decoded a valid fragment.
  *
- * Keeps toolbar actions, artifact switching, metadata, and heavy renderer wrappers out of the
- * empty-state shell chunk while preserving the same viewer behavior for decoded payloads.
+ * Header is a single console strip: mono filename heading, an inline stat row, and the
+ * action keycap row (copy, markdown link, print, rendered/raw, download). Below it sit the
+ * bundle selector (only when the envelope carries more than one artifact), the charcoal
+ * stage frame, the metadata grid, and the fragment disclosure.
  */
 export function ArtifactStage({
   activeArtifact,
@@ -213,11 +196,6 @@ export function ArtifactStage({
   const activeArtifactRef = useRef<ArtifactPayload | null>(activeArtifact);
   const activeArtifactBody = useMemo(() => getArtifactBody(activeArtifact), [activeArtifact]);
   const activeArtifactHeading = useMemo(() => getArtifactHeading(activeArtifact), [activeArtifact]);
-  const activeArtifactSubtitle = useMemo(() => getArtifactSubtitle(activeArtifact), [activeArtifact]);
-  const activeArtifactSupportingLabel = useMemo(
-    () => getArtifactSupportingLabel(activeArtifact, activeArtifactHeading),
-    [activeArtifact, activeArtifactHeading],
-  );
   const artifactDetailRows = useMemo(
     () => getArtifactDetailRows(activeArtifact, activeArtifactBody.length),
     [activeArtifact, activeArtifactBody.length],
@@ -408,23 +386,31 @@ export function ArtifactStage({
 
   return (
     <section className="artifact-first-layout">
-      <div
-        className="artifact-toolbar-bar fade-up print-hide-on-markdown"
-        style={toolbarAnimationStyle}
-      >
-        <div className="artifact-toolbar-left">
-          <span
-            className="mono-pill"
-            style={{ borderColor: statusTone.color, color: statusTone.color }}
-          >
-            {statusTone.label}
-          </span>
-          <span className="font-mono text-xs text-[color:var(--text-soft)]">
-            {activeArtifactSupportingLabel}
-          </span>
-          <span className="font-mono text-xs text-[color:var(--text-soft)]">
-            {numberFormatter.format(fragmentLength)} chars
-          </span>
+      <header className="console-strip print-hide-on-markdown">
+        <div className="console-strip-lead">
+          <h2 className="console-heading" data-testid="artifact-toolbar-filename">
+            {activeArtifact.filename ?? activeArtifactHeading}
+          </h2>
+          <div className="bench-board stat-row" aria-label="Artifact metadata">
+            <span className="bench-cell stat-item">
+              kind <span className="stat-value">{activeArtifact.kind}</span>
+            </span>
+            <span className="bench-cell stat-item">
+              size{" "}
+              <span className="stat-value">
+                {numberFormatter.format(activeArtifactBody.length)} chars
+              </span>
+            </span>
+            <span className="bench-cell stat-item">
+              codec <span className="stat-value">{envelope.codec}</span>
+            </span>
+            <span className="bench-cell stat-item">
+              fragment{" "}
+              <span className="bench-readout">
+                {numberFormatter.format(fragmentLength)} / {numberFormatter.format(MAX_FRAGMENT_LENGTH)}
+              </span>
+            </span>
+          </div>
         </div>
         <div className="viewer-toolbar">
           <button
@@ -510,23 +496,19 @@ export function ArtifactStage({
             Download
           </button>
         </div>
-      </div>
+      </header>
 
       {markdownLinkShareInfo?.discordViewerNotice ? (
         <p
-          className="artifact-share-warning fade-up print-hide-on-markdown"
+          className="artifact-share-warning print-hide-on-markdown"
           role="status"
-          style={toolbarAnimationStyle}
         >
           {markdownLinkShareInfo.discordViewerNotice}
         </p>
       ) : null}
 
       {envelope.artifacts.length > 1 ? (
-        <section
-          className="print-hide-on-markdown fade-up"
-          style={selectorAnimationStyle}
-        >
+        <div className="print-hide-on-markdown">
           <ArtifactSelector
             artifacts={envelope.artifacts}
             activeArtifactId={activeArtifact.id}
@@ -535,91 +517,58 @@ export function ArtifactStage({
             kindIcons={kindIcons}
             onSelect={onArtifactSelect}
           />
-        </section>
+        </div>
       ) : null}
 
-      <section
-        className="artifact-content-section fade-up"
-        style={contentAnimationStyle}
-      >
-        <div className="print-hide-on-markdown">
-          <p className="section-kicker">
-            {activeArtifactSubtitle}
-          </p>
-          <h3 className="font-display mt-3 text-[2.2rem] font-bold leading-[0.96] tracking-[-0.04em] sm:mt-4 sm:text-[3rem] lg:text-[3.5rem] lg:leading-[0.94]">
-            {activeArtifactHeading}
-          </h3>
-        </div>
-
-        <div className="viewer-frame viewer-frame-primary mt-6 sm:mt-10">
-          <div
-            className={cn(
-              "artifact-preview",
-              markdownArtifact &&
-                viewMode === "rendered" &&
-                "is-markdown print-markdown-target",
-            )}
-          >
-            {markdownArtifact && viewMode === "raw" ? (
-              <RawArtifactSource
-                content={markdownArtifact.content}
-                onReady={markActiveRendererReady}
-                testId="renderer-markdown-raw"
-              />
-            ) : markdownArtifact ? (
-              <MarkdownRenderer
-                artifact={markdownArtifact}
-                onReady={markActiveRendererReady}
-              />
-            ) : codeArtifact ? (
-              <CodeRenderer artifact={codeArtifact} onReady={markActiveRendererReady} />
-            ) : diffArtifact ? (
-              <DiffRenderer artifact={diffArtifact} onReady={markActiveRendererReady} />
-            ) : csvArtifact && viewMode === "raw" ? (
-              <RawArtifactSource
-                content={csvArtifact.content}
-                onReady={markActiveRendererReady}
-                testId="renderer-csv-raw"
-              />
-            ) : csvArtifact ? (
-              <CsvRenderer artifact={csvArtifact} onReady={markActiveRendererReady} />
-            ) : jsonArtifact ? (
-              <JsonRenderer artifact={jsonArtifact} onReady={markActiveRendererReady} />
-            ) : (
-              <pre>{getPreviewText(activeArtifactBody)}</pre>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section
-        className="print-hide-on-markdown fade-up"
-        style={metadataAnimationStyle}
-      >
+      <div className="viewer-frame viewer-frame-primary">
         <div
-          className="bento-grid bento-grid-compact"
-          data-testid="artifact-metadata-grid"
+          className={cn(
+            "artifact-preview",
+            markdownArtifact &&
+              viewMode === "rendered" &&
+              "is-markdown print-markdown-target",
+          )}
         >
-          {artifactDetailRows.map((row) => (
-            <div
-              key={row.label}
-              className="bento-card px-5 py-5 sm:px-6 sm:py-6"
-            >
-              <p className="metric-label">{row.label}</p>
-              <p className="artifact-meta-value">{row.value}</p>
-            </div>
-          ))}
+          {markdownArtifact && viewMode === "raw" ? (
+            <RawArtifactSource
+              content={markdownArtifact.content}
+              onReady={markActiveRendererReady}
+              testId="renderer-markdown-raw"
+            />
+          ) : markdownArtifact ? (
+            <MarkdownRenderer
+              artifact={markdownArtifact}
+              onReady={markActiveRendererReady}
+            />
+          ) : codeArtifact ? (
+            <CodeRenderer artifact={codeArtifact} onReady={markActiveRendererReady} />
+          ) : diffArtifact ? (
+            <DiffRenderer artifact={diffArtifact} onReady={markActiveRendererReady} />
+          ) : csvArtifact && viewMode === "raw" ? (
+            <RawArtifactSource
+              content={csvArtifact.content}
+              onReady={markActiveRendererReady}
+              testId="renderer-csv-raw"
+            />
+          ) : csvArtifact ? (
+            <CsvRenderer artifact={csvArtifact} onReady={markActiveRendererReady} />
+          ) : jsonArtifact ? (
+            <JsonRenderer artifact={jsonArtifact} onReady={markActiveRendererReady} />
+          ) : (
+            <pre>{getPreviewText(activeArtifactBody)}</pre>
+          )}
         </div>
+      </div>
 
-        <FragmentDetailsDisclosure
-          codec={envelope.codec}
-          fragmentLength={numberFormatter.format(fragmentLength)}
-          hashPreview={getHashPreview(hash)}
-          maxLength={numberFormatter.format(MAX_FRAGMENT_LENGTH)}
-          statusLabel={statusTone.label}
-          statusMessage={statusTone.message}
-        />
-      </section>
+      <FragmentDetailsDisclosure
+        artifactCount={numberFormatter.format(envelope.artifacts.length)}
+        artifactFacts={artifactDetailRows}
+        codec={envelope.codec}
+        fragmentLength={numberFormatter.format(fragmentLength)}
+        hashPreview={getHashPreview(hash)}
+        maxLength={numberFormatter.format(MAX_FRAGMENT_LENGTH)}
+        statusLabel={statusTone.label}
+      />
     </section>
   );
 }

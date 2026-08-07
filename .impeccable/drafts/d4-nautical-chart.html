@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>agent-render · nautical chart marginalia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f2efe6; --paper-deep:#e9e5d6; --ink:#1d2b33; --ink-soft:#45565e; --ink-faint:#7d8b91;
+    --water:#2f6f8f; --water-deep:#1c4a63; --hazard:#c25e1e; --rule:#b9bfba; --rule-soft:#d3d7cd;
+    --magenta-note:#8f3f6e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; color:var(--ink); -webkit-font-smoothing:antialiased;
+    font:400 15.5px/1.6 "Newsreader", Georgia, serif;
+    background:
+      radial-gradient(1200px 800px at 20% -10%, rgba(47,111,143,.05), transparent 60%),
+      repeating-linear-gradient(0deg, transparent 0 119px, rgba(28,74,99,.05) 119px 120px),
+      repeating-linear-gradient(90deg, transparent 0 119px, rgba(28,74,99,.05) 119px 120px),
+      var(--paper);
+  }
+  .sheet{max-width:1180px; margin:0 auto; padding:0 36px 140px;}
+  .chart-head{
+    display:grid; grid-template-columns:auto 1fr auto; align-items:end; gap:28px;
+    border-bottom:3px double var(--ink); padding:22px 0 16px;
+  }
+  .chart-head .folio{font:500 11px/1.5 "Spline Sans Mono",monospace; letter-spacing:.16em; color:var(--ink-soft); text-transform:uppercase;}
+  .chart-head .folio b{color:var(--ink)}
+  .chart-head .center{text-align:center}
+  .chart-head .title{font:600 19px/1.15 "Newsreader",serif; font-style:italic; letter-spacing:.01em;}
+  .chart-head .title b{font-style:normal; font-weight:700}
+  .chart-head .right{text-align:right; font:500 11px/1.5 "Spline Sans Mono",monospace; color:var(--ink-soft); letter-spacing:.14em; text-transform:uppercase}
+
+  .hero{
+    position:relative; margin-top:56px; padding:0 0 0 200px; min-height:300px;
+  }
+  .hero::before{
+    content:""; position:absolute; left:0; top:6px; bottom:6px; width:172px;
+    border:1.5px solid var(--water); border-radius:2px;
+    background:
+      linear-gradient(rgba(47,111,143,.07), rgba(47,111,143,.02)),
+      repeating-linear-gradient(0deg, transparent 0 34px, rgba(28,74,99,.16) 34px 35px);
+  }
+  .hero .rose{
+    position:absolute; left:34px; top:38px; width:104px; height:104px; opacity:.9;
+  }
+  .hero h1{
+    margin:0; max-width:16ch;
+    font:600 clamp(2.4rem,5.4vw,4.2rem)/1.02 "Newsreader",serif; letter-spacing:-0.025em;
+    text-wrap:balance;
+  }
+  .hero .rhumb{
+    margin-top:22px; max-width:56ch; color:var(--ink-soft); font-size:16px; line-height:1.7;
+  }
+  .hero .rhumb i{color:var(--water-deep); font-weight:600}
+  .legend-row{display:flex; gap:34px; margin-top:30px; flex-wrap:wrap}
+  .legend-item{display:flex; align-items:baseline; gap:10px; font:500 12px/1 "Spline Sans Mono",monospace; letter-spacing:.06em; color:var(--ink-soft)}
+  .legend-item .sw{width:22px;height:0;border-top:3px solid var(--water); position:relative; top:-2px}
+  .legend-item .sw.dash{border-top-style:dashed; border-color:var(--hazard)}
+  .legend-item .sw.dot{border-top:none}
+  .legend-item .sw.dot::after{content:""; position:absolute; left:9px; top:-5px; width:7px; height:7px; border-radius:50%; background:var(--magenta-note)}
+
+  .sounding-band{
+    margin-top:70px; border-top:1.5px solid var(--ink); border-bottom:1.5px solid var(--ink);
+    display:grid; grid-template-columns:repeat(4,1fr);
+  }
+  .sounding{padding:18px 22px; border-right:1px solid var(--rule-soft)}
+  .sounding:last-child{border-right:none}
+  .sounding .depth{font:600 24px/1 "Spline Sans Mono",monospace; color:var(--water-deep); font-variant-numeric:tabular-nums}
+  .sounding .depth sub{font-size:11px; color:var(--ink-faint); font-weight:400}
+  .sounding .label{font:500 10.5px/1.4 "Spline Sans Mono",monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-soft); margin-top:8px}
+
+  .note-block{
+    margin-top:64px; display:grid; grid-template-columns:220px 1fr; gap:48px;
+    border-top:1px solid var(--rule); padding-top:40px;
+  }
+  .note-margin{
+    font:400 13px/1.65 "Newsreader",serif; font-style:italic; color:var(--water-deep);
+    border-top:2.5px solid var(--water); padding-top:12px;
+  }
+  .note-margin .marg-ref{font:600 10.5px/1 "Spline Sans Mono",monospace; font-style:normal; letter-spacing:.2em; color:var(--ink-faint); display:block; margin-bottom:8px}
+  .note-body h2{font:700 24px/1.15 "Newsreader",serif; margin:0 0 16px; letter-spacing:-0.01em}
+  .note-body p{margin:0 0 14px; color:var(--ink-soft); max-width:62ch}
+  .note-body code{font:500 13px/1 "Spline Sans Mono",monospace; background:var(--paper-deep); padding:2px 6px; color:var(--water-deep)}
+
+  .plot-form{
+    margin-top:70px; border:1.5px solid var(--ink); background:rgba(255,255,255,.35);
+    box-shadow: 6px 6px 0 rgba(28,74,99,.08);
+  }
+  .plot-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:1.5px solid var(--ink); padding:14px 22px; background:var(--paper-deep);
+  }
+  .plot-head .t{font:700 16px/1 "Newsreader",serif;}
+  .plot-head .r{font:500 11px/1 "Spline Sans Mono",monospace; letter-spacing:.14em; color:var(--ink-soft); text-transform:uppercase}
+  .plot-grid{display:grid; grid-template-columns:1fr 1fr; gap:0;}
+  .plot-cell{padding:22px; border-right:1px solid var(--rule-soft);}
+  .plot-cell:nth-child(2n){border-right:none}
+  .plot-cell.full{grid-column:1/-1; border-top:1px solid var(--rule-soft)}
+  .plot-cell label{display:block; font:600 10.5px/1 "Spline Sans Mono",monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--water-deep); margin-bottom:10px}
+  .plot-input{width:100%; background:transparent; border:none; border-bottom:1.5px solid var(--ink-faint); font:500 15px/1.5 "Spline Sans Mono",monospace; color:var(--ink); padding:4px 0 8px; outline:none}
+  .plot-input:focus{border-bottom-color:var(--water)}
+  .plot-textarea{border:1px solid var(--rule); background:rgba(255,255,255,.5); padding:16px 18px; font:400 13.5px/1.8 "Spline Sans Mono",monospace; color:var(--ink); min-height:150px; white-space:pre-wrap}
+  .plot-kinds{display:flex; gap:2px; width:max-content; border:1.5px solid var(--ink)}
+  .plot-kinds span{padding:10px 16px; font:600 11px/1 "Spline Sans Mono",monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); background:transparent; cursor:pointer}
+  .plot-kinds span.on{background:var(--ink); color:var(--paper)}
+  .plot-foot{
+    display:flex; align-items:center; justify-content:space-between; gap:24px;
+    border-top:1.5px solid var(--ink); padding:18px 22px; background:var(--paper-deep); flex-wrap:wrap;
+  }
+  .plot-go{
+    background:var(--water-deep); color:var(--paper); border:none;
+    font:600 13px/1 "Spline Sans Mono",monospace; letter-spacing:.1em; text-transform:uppercase;
+    padding:15px 26px; cursor:pointer;
+  }
+  .plot-go:active{transform:translateY(1px)}
+  .plot-stats{font:500 12px/1.6 "Spline Sans Mono",monospace; color:var(--ink-soft)}
+  .plot-stats b{color:var(--water-deep)}
+
+  .chart-foot{
+    margin-top:80px; border-top:3px double var(--ink); padding-top:18px;
+    display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap;
+    font:500 11px/1.7 "Spline Sans Mono",monospace; letter-spacing:.1em; color:var(--ink-soft); text-transform:uppercase;
+  }
+  @media (max-width:900px){.hero{padding-left:0}.hero::before{display:none}.note-block,.plot-grid{grid-template-columns:1fr}.sounding-band{grid-template-columns:1fr 1fr}.plot-cell{border-right:none}}
+</style>
+</head>
+<body>
+  <!--
+    DIRECTION CONTRACT D4 — nautical chart marginalia
+    THESIS: the page is a printed chart; the artifact is the surveyed water, chrome is marginalia.
+    OWN-WORLD: warm chart paper, measured serif for names, mono for soundings, deep-sea blue as the one working color.
+    STORY: a navigator reads the marginalia to know the sheet, then plots the artifact in.
+    FIRST VIEWPORT: folio head, italic chart title, rose box, headline + rhumb line, legend row, sounding band.
+    FORM: candidate 4 of 7 grounded list; seed key 5b5b8c00 (assigned).
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div class="sheet">
+    <header class="chart-head">
+      <div class="folio">SHEET <b>AR·3</b> · EDITION <b>v3.0</b><br>PROJECTION <b>STATIC EXPORT</b></div>
+      <div class="center">
+        <div class="title">Chart of <b>Zero-retention artifact viewing</b> for AI outputs</div>
+      </div>
+      <div class="right">AGENT-RENDER<br>SURVEYED · CLIENT-SIDE ONLY</div>
+    </header>
+
+    <section class="hero">
+      <svg class="rose" viewBox="0 0 100 100" fill="none" stroke="#1c4a63" stroke-width="1">
+        <circle cx="50" cy="50" r="48"/><circle cx="50" cy="50" r="34"/>
+        <path d="M50 2v96M2 50h96M50 50L86 14M50 50L14 14M50 50l36 36M50 50l-36 36" opacity=".5"/>
+        <path d="M50 8 L56 50 L50 92 L44 50 Z" fill="#1c4a63" stroke="none"/>
+        <text x="50" y="6" text-anchor="middle" font-size="8" fill="#1c4a63" font-family="serif" stroke="none">N</text>
+      </svg>
+      <h1>Artifact content lives in the URL fragment.</h1>
+      <p class="rhumb">In static mode the host does not receive artifact content on the page request. <i>Shared by transfer, retained nowhere.</i> Links can still appear in browser history, screenshots, and copied messages; plot your course accordingly.</p>
+      <div class="legend-row">
+        <span class="legend-item"><span class="sw"></span> rendered locally</span>
+        <span class="legend-item"><span class="sw dash"></span> budget hazard at 8,192 chars</span>
+        <span class="legend-item"><span class="sw dot"></span> discord-md warns past 2,000</span>
+      </div>
+    </section>
+
+    <section class="sounding-band">
+      <div class="sounding"><div class="depth">8192<sub>ch</sub></div><div class="label">Fragment budget</div></div>
+      <div class="sounding"><div class="depth">200k<sub>ch</sub></div><div class="label">Decoded payload max</div></div>
+      <div class="sounding"><div class="depth">5</div><div class="label">Renderers on chart</div></div>
+      <div class="sounding"><div class="depth">0</div><div class="label">Bytes retained server-side</div></div>
+    </section>
+
+    <section class="note-block">
+      <aside class="note-margin">
+        <span class="marg-ref">MARGINAL NOTE · 1</span>
+        The fragment is the whole cargo: <span style="font-family:'Spline Sans Mono',monospace;font-style:normal">#&lt;tag&gt;&lt;payload&gt;</span>. One tag letter names the codec; the host only ever serves the empty chart.
+      </aside>
+      <div class="note-body">
+        <h2>What this chart shows</h2>
+        <p>The browser decodes markdown, code, diffs, CSV, and JSON locally from the fragment after the shell loads. Five renderers, one sheet. Codecs <code>plain · lz · deflate · arx · arx2 · arx3 · arx4</code>; the compact tag form is what the current edition emits.</p>
+      </div>
+    </section>
+
+    <section class="plot-form">
+      <div class="plot-head"><span class="t">Plot an artifact</span><span class="r">Field entry · local only</span></div>
+      <div class="plot-grid">
+        <div class="plot-cell"><label>Title</label><input class="plot-input" value="Product brief"></div>
+        <div class="plot-cell"><label>Filename</label><input class="plot-input" value="brief.md"></div>
+        <div class="plot-cell full"><label>Content</label>
+          <div class="plot-textarea"># Launch note
+Share one artifact at a time without uploading it anywhere.
+- Markdown stays readable
+- Code keeps its language hint
+- The link works from a static export</div>
+        </div>
+        <div class="plot-cell full"><label>Kind</label>
+          <div class="plot-kinds"><span class="on">Markdown</span><span>Code</span><span>Diff</span><span>CSV</span><span>JSON</span></div>
+        </div>
+      </div>
+      <div class="plot-foot">
+        <button class="plot-go">Plot the link →</button>
+        <span class="plot-stats">DEPTH <b>1,204 / 8,192</b> · CODEC <b>ARX4</b> · DISCORD-MD <b>WITHIN MARKS</b></span>
+      </div>
+    </section>
+
+    <footer class="chart-foot">
+      <span>agent-render · zero retention by host design</span>
+      <span>corrections to this sheet are issued as new links</span>
+      <span>survey your own payload before sounding</span>
+    </footer>
+  </div>
+</body>
+</html>

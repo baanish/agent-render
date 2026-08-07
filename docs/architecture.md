@@ -60,7 +60,11 @@ That keeps the viewer static-hosting friendly while removing the brittle parts o
 
 ## Bundle tradeoffs
 
-The largest remaining deferred cost is still the diff renderer stack, primarily `@git-diff-view/*` and its highlighting internals. Its vendor stylesheet is served from `public/vendor/diff-view-pure.css` with a precompressed `.css.br` variant and injected only when a rich diff mounts, so the empty shell and non-diff artifacts do not pay that CSS cost. The stack remains because it still provides the best review-style UX for multi-file git patches, split/unified modes, and syntax-aware rendering with less product code than a bespoke replacement.
+The largest remaining deferred cost is still the diff renderer stack. After the full rebuild, that stack is `@pierre/diffs` (Shiki-based, dynamically imported, no vendor CSS mirror into `public/`). It lazy-loads only when a diff artifact mounts, keeping the empty shell and non-diff artifacts off that cost. The stack provides the review-style UX for multi-file git patches, split/unified modes, and syntax-aware rendering with less product code than a bespoke replacement.
+
+`agent-render` uses `@pierre/diffs` `PatchDiff`/`MultiFileDiff`/`FileDiff` components instead of `@codemirror/merge`.
+
+- `@pierre/diffs` matches the product goal better because it is already shaped like a GitHub-style review surface
 
 The JSON and markdown paths are now substantially lighter because:
 
@@ -71,9 +75,9 @@ The JSON and markdown paths are now substantially lighter because:
 
 ## Diff choice
 
-`agent-render` uses `@git-diff-view/react` plus git-diff `DiffFile` instances instead of `@codemirror/merge`.
+`agent-render` uses `@pierre/diffs` `PatchDiff`/`MultiFileDiff`/`FileDiff` components instead of `@codemirror/merge`.
 
-- `@git-diff-view/*` matches the product goal better because it is already shaped like a GitHub-style review surface
+- `@pierre/diffs` matches the product goal better because it is already shaped like a GitHub-style review surface
 - split and unified views are built in
 - syntax highlighting and diff affordances are stronger out of the box for artifact viewing
 - individual file patches can be rendered as a sequence while preserving filenames and boundaries

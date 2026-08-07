@@ -1,0 +1,321 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   bench.css — NEW grammar pieces only (lamp, readout, carbon strip, stamp,
+   perf). It defines NO :root/.dark tokens; the entire token spine (canonical
+   colors + shared keycap/recess depth recipe + --bench-* aliases) lives in
+   globals.css :root/.dark. The longstanding controls (.artifact-action,
+   .mono-pill, .creator-*) consume the same tokens — ONE spine, two sheets.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* D7 physical LED lamp — the ONLY glow in the system; radius-dot, tiny */
+.bench-lamp {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--bench-green);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--bench-green) 65%, transparent),
+    inset 0 -2px 2px rgba(0, 0, 0, 0.4);
+}
+.bench-lamp.is-amber {
+  background: var(--bench-amber);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--bench-amber) 65%, transparent),
+    inset 0 -2px 2px rgba(0, 0, 0, 0.4);
+}
+.bench-lamp.is-red {
+  background: var(--bench-alert);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--bench-alert) 65%, transparent),
+    inset 0 -2px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* D7/D3 VFD readout — amber mono on the dark content chassis, no halo */
+.bench-readout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--bench-amber);
+  background: var(--bench-body);
+  border: 1px solid var(--bench-body-line);
+  border-radius: 3px;
+  padding: 0.4rem 0.7rem;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+/* D1 carbon-copy strip — generated-link output only; the single light-blue band */
+.bench-carbon-bar {
+  border-top: 1px dashed var(--border-strong);
+  border-bottom: 1px dashed var(--border-strong);
+  padding: 0.5rem 0.95rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: var(--bench-carbon-tint);
+}
+.bench-carbon-bar b {
+  color: var(--bench-carbon-red);
+  font-weight: 600;
+}
+.bench-stamp {
+  display: inline-block;
+  border: 2px solid var(--bench-carbon-red);
+  color: var(--bench-carbon-red);
+  background: transparent;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.6rem;
+  transform: rotate(-1.1deg);
+}
+.bench-perf {
+  border-top: 1px dashed var(--border-strong);
+}
+
+/* Kind/segment chips: shallow bone keycaps, selected goes COMMIT orange */
+.bench-chiprow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.85rem 1.25rem 0;
+}
+.bench-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.42rem 0.72rem;
+  border: 1px solid var(--bench-rule-strong);
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--bench-chrome-hi), var(--bench-chrome));
+  box-shadow: var(--bench-key-lit), var(--bench-key-foot);
+  color: var(--bench-ink-soft);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.bench-chip.is-on {
+  background: linear-gradient(180deg, var(--bench-orange), var(--bench-orange-strong));
+  border-color: var(--bench-orange-strong);
+  color: #fff8ef;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Structural grammar (C4 density board + home rig/section/links + hero).
+   These classes are consumed by the rebuilt components; tokens come from
+   globals :root/.dark only.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* C4 density board: 2px rule-strong outer border, hairline interior cells */
+/* bench-ink tracks the theme (charcoal on bone in light, ivory on charcoal in dark). */
+.bench-board,
+.bench-board-head,
+.bench-cell {
+  color: var(--bench-ink);
+}
+.bench-board {
+  border: 2px solid var(--bench-rule-strong);
+  background: linear-gradient(180deg,
+      var(--bench-chrome-hi) 0%,
+      var(--bench-chrome) 55%,
+      var(--bench-chrome-lo) 100%);
+  box-shadow: var(--bench-key-lit), var(--bench-key-foot);
+}
+.bench-board-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.1rem;
+  background: linear-gradient(180deg,
+      var(--bench-chrome-hi) 0%,
+      var(--bench-chrome) 100%);
+  border-bottom: 1.5px solid var(--bench-rule-strong);
+}
+.bench-board-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bench-ink-soft);
+}
+.bench-board-head-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.bench-cell {
+  padding: 1rem 1.25rem;
+  border-right: 1px solid var(--bench-rule);
+}
+.bench-cell:last-child {
+  border-right: none;
+}
+.bench-grid {
+  display: grid;
+}
+
+/* Engraved caps label (mono uppercase, small) */
+.bench-caps {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bench-ink-soft);
+}
+
+/* Home rig: full-width creator + side rail columns, docked with hairline rule */
+.bench-rig {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+@media (min-width: 1024px) {
+  .bench-rig {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+}
+.bench-col-creator,
+.bench-col-side {
+  min-width: 0;
+}
+
+/* Bench section: a titled block with a board-head strip */
+.bench-section {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  border: 2px solid var(--bench-rule-strong);
+  background: linear-gradient(180deg,
+      var(--bench-chrome-hi) 0%,
+      var(--bench-chrome) 55%,
+      var(--bench-chrome-lo) 100%);
+  box-shadow: var(--bench-key-lit), var(--bench-key-foot);
+}
+.bench-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.1rem;
+  background: linear-gradient(180deg,
+      var(--bench-chrome-hi) 0%,
+      var(--bench-chrome) 100%);
+  border-bottom: 1.5px solid var(--bench-rule-strong);
+}
+.bench-section-title {
+  margin: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bench-ink-soft);
+}
+
+/* Ecosystem reference rows (C4 flat hairline table) */
+.bench-links {
+  display: grid;
+  gap: 0;
+}
+.bench-links-row {
+  display: grid;
+  grid-template-columns: 6.5rem 10rem 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.7rem 0.95rem;
+  border-top: 1px solid var(--bench-rule);
+  color: inherit;
+}
+.bench-links-row:first-child {
+  border-top: none;
+}
+.bench-links-row:hover {
+  background: color-mix(in srgb, var(--accent) 5%, var(--bench-chrome));
+}
+.bench-links-kicker {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bench-ink-faint);
+}
+.bench-links-title {
+  font-weight: 600;
+  color: var(--bench-ink);
+}
+.bench-links-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--bench-ink-soft);
+}
+@media (max-width: 640px) {
+  .bench-links-row {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+}
+
+/* Hero */
+.bench-hero {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 64rem;
+}
+.bench-hero-headline {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2.2rem, 4.8vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1.02;
+  color: var(--bench-ink);
+  text-wrap: balance;
+}
+.dark .bench-hero-headline {
+  color: #ede7da;
+}
+.bench-hero-truth {
+  color: var(--bench-ink-soft);
+  line-height: 1.7;
+}
+.bench-hero-warning {
+  color: var(--bench-ink-soft);
+  line-height: 1.7;
+}
+.dark .bench-hero .bench-hero-truth,
+.dark .bench-hero .bench-hero-warning {
+  color: #b0a695;
+}
+.bench-hero-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+.bench-hero-warning b,
+.bench-hero-truth b {
+  color: var(--bench-ink);
+  font-weight: 600;
+}
+.dark .bench-hero .bench-hero-warning b,
+.dark .bench-hero .bench-hero-truth b {
+  color: #e8e0d4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artifact-action,
+  .artifact-action:active {
+    transition: none;
+    transform: none;
+  }
+}

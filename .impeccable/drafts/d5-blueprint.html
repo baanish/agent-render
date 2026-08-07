@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>agent-render · blueprint sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cyanotype:#173f63; --cyanotype-deep:#112f4b; --line:rgba(214,229,240,.5); --line-strong:rgba(235,244,250,.9);
+    --ink:#e8f1f8; --ink-dim:#9fb6c9; --ink-faint:#5d7democracy;
+  }
+  :root{ --ink-faint:#5d7d95; --amber:#f5b545; }
+  *{box-sizing:border-box}
+  body{
+    margin:0; color:var(--ink); -webkit-font-smoothing:antialiased;
+    font:300 15.5px/1.6 "Fira Sans", system-ui, sans-serif;
+    background:
+      linear-gradient(rgba(21,48,76,.6), rgba(17,47,75,.6)),
+      repeating-linear-gradient(0deg, transparent 0 23px, rgba(214,229,240,.05) 23px 24px),
+      repeating-linear-gradient(90deg, transparent 0 23px, rgba(214,229,240,.05) 23px 24px),
+      repeating-linear-gradient(0deg, transparent 0 119px, rgba(214,229,240,.1) 119px 120px),
+      repeating-linear-gradient(90deg, transparent 0 119px, rgba(214,229,240,.1) 119px 120px),
+      var(--cyanotype);
+  }
+  .sheet{max-width:1220px; margin:0 auto; padding:0 40px 150px;}
+  .titleblock{
+    display:grid; grid-template-columns:1fr auto; align-items:end;
+    border-bottom:1.5px solid var(--line-strong); padding:30px 0 18px;
+  }
+  .titleblock .sheet-no{font:500 11px/1.6 "Fira Code",monospace; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-dim)}
+  .titleblock .sheet-no b{color:var(--ink)}
+  .titleblock .org{font:600 20px/1.1 "Fira Sans"; letter-spacing:.22em; text-transform:uppercase; text-align:right}
+  .titleblock .org span{display:block; font:400 10.5px/1.5 "Fira Code",monospace; letter-spacing:.3em; color:var(--ink-dim); margin-top:6px}
+
+  .drawing-zone{margin-top:64px;}
+  .zones{display:none}
+  .elevation{max-width:100%}
+  .zones span{border-left:1.5px solid var(--line); padding-left:10px}
+  .zones span b{color:var(--ink); font-weight:500}
+  .elevation h1{
+    margin:0; max-width:17ch;
+    font:600 clamp(2.4rem,5.6vw,4.4rem)/1.04 "Fira Sans",sans-serif; letter-spacing:-0.02em; text-wrap:balance;
+  }
+  .dim-line{display:flex; align-items:center; gap:0; margin:34px 0; max-width:640px}
+  .dim-line .tick{width:1.5px;height:12px;background:var(--line-strong)}
+  .dim-line .bar{flex:1;height:1.5px;background:var(--line)}
+  .dim-line .label{font:500 11px/1 "Fira Code",monospace; color:var(--ink-dim); letter-spacing:.12em; padding:0 14px; white-space:nowrap}
+  .spec-note{max-width:58ch; color:var(--ink-dim); font-size:16px; line-height:1.7}
+  .spec-note .ref{color:var(--amber); font-family:"Fira Code",monospace; font-size:13.5px}
+  .callouts{display:grid; grid-template-columns:repeat(3,1fr); gap:0; margin-top:56px; border:1px solid var(--line);}
+  .callouts > div{padding:18px 22px; border-right:1px solid var(--line);}
+  .callouts > div:last-child{border-right:none}
+  .callouts .co{font:500 10.5px/1 "Fira Code",monospace; letter-spacing:.18em; color:var(--amber); text-transform:uppercase}
+  .callouts .co::before{content:"◦ "}
+  .callouts .cv{font:400 13.5px/1.5 "Fira Sans"; color:var(--ink); margin-top:8px}
+  .callouts .cv b{font-weight:600}
+
+  .section-block{margin-top:80px; border:1.5px solid var(--line-strong);}
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:16px 24px; border-bottom:1.5px solid var(--line-strong);
+    font:600 14px/1 "Fira Sans"; letter-spacing:.12em; text-transform:uppercase;
+  }
+  .section-head .ref{font:500 11px/1 "Fira Code",monospace; color:var(--ink-dim); letter-spacing:.1em}
+  .form-draw{display:grid; grid-template-columns:1fr 1fr; gap:0;}
+  .form-cell{padding:24px; border-right:1px solid var(--line);}
+  .form-cell:nth-child(2n){border-right:none}
+  .form-cell.wide{grid-column:1/-1; border-top:1px solid var(--line)}
+  .form-cell label{display:block; font:500 10.5px/1 "Fira Code",monospace; letter-spacing:.2em; text-transform:uppercase; color:var(--amber); margin-bottom:10px}
+  .form-cell label::after{content:" ⌀.5 · TYP"; color:var(--ink-faint); letter-spacing:.1em}
+  .form-input{width:100%; background:transparent; border:none; border-bottom:1.5px dashed var(--line); color:var(--ink); font:400 15px/1.5 "Fira Code",monospace; padding:4px 0 8px; outline:none}
+  .form-input:focus{border-bottom-color:var(--amber); border-bottom-style:solid}
+  .form-canvas{border:1px solid var(--line); background:rgba(232,241,248,.03); padding:16px 18px; min-height:150px; font:400 13.5px/1.8 "Fira Code",monospace; color:var(--ink); white-space:pre-wrap}
+  .parts-kinds{display:flex; gap:6px; flex-wrap:wrap}
+  .parts-kinds span{
+    padding:10px 15px; border:1px solid var(--line); font:500 11px/1 "Fira Code",monospace;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer;
+  }
+  .parts-kinds span.on{border-color:var(--amber); color:var(--amber); background:rgba(245,181,69,.06)}
+  .form-foot{display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-top:1.5px solid var(--line-strong); flex-wrap:wrap; gap:20px}
+  .stamp-btn{
+    background:transparent; color:var(--ink); border:1.5px solid var(--ink); cursor:pointer;
+    font:600 12.5px/1 "Fira Code",monospace; letter-spacing:.16em; text-transform:uppercase; padding:15px 26px;
+  }
+  .stamp-btn:hover{border-color:var(--amber); color:var(--amber)}
+  .form-foot .tally{font:400 12px/1.7 "Fira Code",monospace; color:var(--ink-dim)}
+  .form-foot .tally b{color:var(--ink); font-weight:500}
+
+  .rev-strip{
+    margin-top:70px; display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap;
+    border-top:1.5px solid var(--line-strong); padding-top:16px;
+    font:400 11px/1.7 "Fira Code",monospace; color:var(--ink-dim); letter-spacing:.08em;
+  }
+  .rev-strip .rev{color:var(--ink-faint)}
+  @media (max-width:900px){.drawing-zone,.form-draw{grid-template-columns:1fr}.zones{display:none}.callouts{grid-template-columns:1fr}.callouts>div{border-right:none;border-bottom:1px solid var(--line)}.callouts>div:last-child{border-bottom:none}}
+</style>
+</head>
+<body>
+  <!--
+    DIRECTION CONTRACT D5 — blueprint / linen diazo sheet
+    THESIS: one artifact = one drawing; the form is a section cut through the product.
+    OWN-WORLD: cyanotype grid field, monoline annotations, amber revision marks as the only warm signal.
+    STORY: an engineer reads the sheet title block, checks callouts, fills the cut, and stamps the drawing shared.
+    FIRST VIEWPORT: title block, zone ruler, elevation headline, dimension line, spec note, three-callout strip.
+    FORM: candidate 5 of 7 grounded list; seed key 5b5b8c00.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div class="sheet">
+    <header class="titleblock">
+      <div class="sheet-no">SHEET <b>1 / 1</b> · SCALE <b>N.T.S.</b> · REV <b>C</b> · DRAWN BY <b>AGENT</b></div>
+      <div class="org">agent-render<span>zero-retention artifact viewer</span></div>
+    </header>
+
+    <section class="drawing-zone">
+      <div class="elevation">
+        <h1>Zero-retention artifact viewer for AI outputs</h1>
+        <div class="dim-line">
+          <span class="tick"></span><span class="bar"></span><span class="label">PAYLOAD ≤ 8,192 CH · DECODED ≤ 200,000 CH</span><span class="bar"></span><span class="tick"></span>
+        </div>
+        <p class="spec-note">Artifact content lives in the URL fragment. In static mode the host does not receive artifact content on the page request. Content decodes where it is read; retention ends at the fragment. Links can still appear in browser history, screenshots, and copied messages <span class="ref">[NOTE 2, REV C]</span>.</p>
+        <div class="callouts">
+          <div><div class="co">CO·1 TRANSPORT</div><div class="cv"><b>#&lt;tag&gt;&lt;payload&gt;</b> compact fragment form; no query params in the request line.</div></div>
+          <div><div class="co">CO·2 CODECS</div><div class="cv">plain · lz · deflate · arx · arx2 · arx3 · <b>arx4</b>; one tag char each.</div></div>
+          <div><div class="co">CO·3 RENDERERS</div><div class="cv"><b>5</b> on sheet: markdown · code · diff · csv · json, decoded locally.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block">
+      <div class="section-head"><span>SECTION C-C · LINK CREATION</span><span class="ref">FIT: BASELINE ENTRY · LOCAL ONLY</span></div>
+      <div class="form-draw">
+        <div class="form-cell"><label>Item 1 · Title</label><input class="form-input" value="Product brief"></div>
+        <div class="form-cell"><label>Item 2 · Filename</label><input class="form-input" value="brief.md"></div>
+        <div class="form-cell wide"><label>Item 3 · Content block</label>
+          <div class="form-canvas"># Launch note
+Share one artifact at a time without uploading it anywhere.
+- Markdown stays readable
+- Code keeps its language hint
+- The link works from a static export</div>
+        </div>
+        <div class="form-cell wide"><label>Item 4 · Kind of part</label>
+          <div class="parts-kinds"><span class="on">Markdown</span><span>Code</span><span>Diff</span><span>CSV</span><span>JSON</span></div>
+        </div>
+      </div>
+      <div class="form-foot">
+        <button class="stamp-btn">⟶ Issue link · stamp</button>
+        <span class="tally">MATERIAL USED <b>1,204 / 8,192 CH</b> · CODEC <b>ARX4</b> · DISCORD-MD <b>PASS</b></span>
+      </div>
+    </section>
+
+    <footer class="rev-strip">
+      <span>REV C · 2026-08 · REDRAWN: HEADER BLOCK, FORM GRID</span>
+      <span class="rev">zero retention by host design · verify payload before issue</span>
+      <span>NOT TO SCALE · DO NOT WELD</span>
+    </footer>
+  </div>
+</body>
+</html>

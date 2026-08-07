@@ -53,10 +53,6 @@ function createExportFixture(): { root: string; outDir: string } {
     "brotli-compressed-json",
   );
   writeFileSync(
-    path.join(outDir, "vendor", "diff-view-pure.css.br"),
-    "brotli-compressed-css",
-  );
-  writeFileSync(
     path.join(outDir, ".well-known", "api-catalog"),
     readFileSync(path.resolve("public", ".well-known", "api-catalog")),
   );
@@ -242,21 +238,6 @@ describe("RFC 9727 api-catalog", () => {
         "Accept-Encoding",
       );
 
-      const compressedDiffStyleResponse = await fetch(
-        `http://127.0.0.1:${port}/vendor/diff-view-pure.css.br`,
-        { method: "HEAD" },
-      );
-      expect(compressedDiffStyleResponse.status).toBe(200);
-      expect(compressedDiffStyleResponse.headers.get("content-type")).toBe(
-        "text/css; charset=utf-8",
-      );
-      expect(compressedDiffStyleResponse.headers.get("content-encoding")).toBe(
-        "br",
-      );
-      expect(compressedDiffStyleResponse.headers.get("vary")).toBe(
-        "Accept-Encoding",
-      );
-
       const escapeResponse = await rawHttpGet(port, "/../secret.txt");
       expect(escapeResponse.status).toBe(404);
       expect(escapeResponse.body).not.toContain("outside-out");
@@ -368,21 +349,6 @@ describe("RFC 9727 api-catalog", () => {
         "br",
       );
       expect(compressedOverlayResponse.headers.get("vary")).toBe(
-        "Accept-Encoding",
-      );
-
-      const compressedDiffStyleResponse = await fetch(
-        `http://127.0.0.1:${port}/vendor/diff-view-pure.css.br`,
-        { method: "HEAD" },
-      );
-      expect(compressedDiffStyleResponse.status).toBe(200);
-      expect(compressedDiffStyleResponse.headers.get("content-type")).toBe(
-        "text/css; charset=utf-8",
-      );
-      expect(compressedDiffStyleResponse.headers.get("content-encoding")).toBe(
-        "br",
-      );
-      expect(compressedDiffStyleResponse.headers.get("vary")).toBe(
         "Accept-Encoding",
       );
     } finally {

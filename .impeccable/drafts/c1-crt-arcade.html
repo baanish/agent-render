@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>agent-render · decoding stage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --crt:#08090c; --phos:#33ff88; --phos-dim:#1a2540; --gold:#ffd94d; --hazard:#ff4d6d;
+    --ink:#c8ffd9; --ink-dim:#5a8a70;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:#040507; color:var(--ink);
+    font:400 22px/1.45 "VT323", "Courier New", monospace;
+    -webkit-font-smoothing:antialiased;
+    cursor:crosshair;
+  }
+  .cab{
+    max-width:1080px; margin:24px auto 96px; position:relative;
+    background:var(--crt); border:3px solid #14171d; border-radius:18px;
+    box-shadow: inset 0 0 90px rgba(51,255,136,.05), 0 30px 60px -30px rgba(0,0,0,.9);
+    padding:52px 56px 44px; overflow:hidden;
+  }
+  .cab::before{ /* scanlines */
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:5;
+    background:repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,.32) 3px 4px);
+    mix-blend-mode:multiply;
+  }
+  .cab::after{ /* phosphor vignette */
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:6;
+    background:radial-gradient(ellipse at center, transparent 62%, rgba(0,0,0,.55) 100%);
+  }
+  .score-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font:400 11px/1 "Press Start 2P", monospace; color:var(--ink-dim); letter-spacing:.12em;
+    margin-bottom:44px; text-transform:uppercase;
+  }
+  .score-row .hi{color:var(--phos); text-shadow:0 0 8px rgba(51,255,136,.7)}
+  .credits{color:var(--gold)}
+  .marquee{
+    text-align:center; margin:20px 0 8px;
+    font:400 clamp(1.5rem,4.2vw,2.6rem)/1.5 "Press Start 2P",monospace;
+    color:var(--phos); text-shadow:0 0 10px rgba(51,255,136,.75), 0 0 40px rgba(51,255,136,.3);
+    text-transform:uppercase; letter-spacing:.02em;
+  }
+  .marquee .red{color:var(--hazard); text-shadow:0 0 10px rgba(255,77,109,.7)}
+  .sub-marquee{
+    text-align:center; font:400 26px/1.4 "VT323",monospace; color:var(--ink);
+    max-width:44ch; margin:26px auto 0;
+  }
+  .sub-marquee .glow{color:var(--phos)}
+  .insert{
+    text-align:center; font:400 12px/1 "Press Start 2P",monospace; color:var(--gold);
+    margin-top:34px; animation:blinkc 1.3s steps(1) infinite; letter-spacing:.2em; text-transform:uppercase;
+  }
+  @keyframes blinkc{50%{opacity:0}}
+  .stage{
+    margin-top:50px; border:2px solid var(--phos-dim); padding:4px;
+    background:rgba(26,37,64,.18);
+  }
+  .stage-inner{border:1px dashed rgba(90,138,112,.4); padding:26px 30px;}
+  .stage-title{font:400 11px/1 "Press Start 2P",monospace; color:var(--phos); letter-spacing:.14em; text-transform:uppercase; margin-bottom:22px; text-shadow:0 0 6px rgba(51,255,136,.6)}
+  .inv{display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin:6px 0 4px;}
+  .inv div{
+    border:2px solid var(--phos-dim); padding:16px 8px 14px; text-align:center;
+    font:400 9px/1.7 "Press Start 2P",monospace; color:var(--ink-dim); letter-spacing:.08em; text-transform:uppercase;
+  }
+  .inv div.on{border-color:var(--phos); color:var(--phos); box-shadow:0 0 14px rgba(51,255,136,.28), inset 0 0 14px rgba(51,255,136,.08)}
+  .pixel-row{display:flex; gap:5px; justify-content:center; margin-top:18px}
+  .pixel-row i{width:9px;height:9px;background:var(--phos-dim);display:block}
+  .pixel-row i.lit{background:var(--phos); box-shadow:0 0 6px rgba(51,255,136,.8)}
+
+  .playfield{
+    position:relative; margin-top:46px; border:2px solid var(--phos-dim); padding:24px 26px 20px; background:rgba(26,37,64,.14);
+  }
+  .playfield .pf-head{display:flex; justify-content:space-between; font:400 10px/1 "Press Start 2P",monospace; color:var(--gold); text-transform:uppercase; letter-spacing:.12em; margin-bottom:20px}
+  .pf-row{margin:16px 0; display:grid; grid-template-columns:150px 1fr; gap:18px; align-items:baseline}
+  .pf-row label{font:400 9px/1.6 "Press Start 2P",monospace; color:var(--ink-dim); letter-spacing:.1em; text-transform:uppercase}
+  .pf-input{
+    font:400 24px/1.3 "VT323",monospace; color:var(--phos); background:transparent;
+    border:none; border-bottom:2px dashed var(--phos-dim); outline:none; width:100%; text-shadow:0 0 6px rgba(51,255,136,.5);
+  }
+  .pf-input:focus{border-bottom-color:var(--phos)}
+  .pf-box{
+    border:2px solid var(--phos-dim); background:rgba(8,9,12,.7); padding:16px 18px; min-height:110px;
+    font:400 22px/1.5 "VT323",monospace; color:var(--ink); white-space:pre-wrap;
+  }
+  .pf-kinds{display:flex; flex-wrap:wrap; gap:8px}
+  .pf-kinds span{
+    padding:9px 13px; font:400 9px/1 "Press Start 2P",monospace; letter-spacing:.08em; color:var(--ink-dim);
+    border:2px solid var(--phos-dim); cursor:pointer; text-transform:uppercase;
+  }
+  .pf-kinds span.on{border-color:var(--gold); color:var(--gold); box-shadow:0 0 10px rgba(255,217,77,.3)}
+  .start-row{display:flex; align-items:center; gap:26px; margin-top:28px; flex-wrap:wrap}
+  .start-btn{
+    background:var(--hazard); color:#1a0208; border:none; cursor:pointer;
+    font:400 12px/1 "Press Start 2P",monospace; letter-spacing:.1em; padding:18px 28px; text-transform:uppercase;
+    box-shadow:0 0 16px rgba(255,77,109,.5), inset 0 -4px 0 rgba(0,0,0,.25);
+  }
+  .start-btn:active{transform:translateY(2px); box-shadow:0 0 8px rgba(255,77,109,.4), inset 0 -2px 0 rgba(0,0,0,.25)}
+  .hp{font:400 9px/1.7 "Press Start 2P",monospace; color:var(--ink-dim); letter-spacing:.1em; line-height:2}
+  .hp b{color:var(--phos); font-weight:400}
+  .cab-foot{
+    margin-top:40px; display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    font:400 9px/1.7 "Press Start 2P",monospace; color:var(--ink-dim); letter-spacing:.1em; text-transform:uppercase;
+  }
+  @media (prefers-reduced-motion: reduce){.insert{animation:none}}
+  @media (max-width:760px){.cab{padding:34px 22px 30px}.inv{grid-template-columns:repeat(3,1fr)}.pf-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <!--
+    DIRECTION CONTRACT C1 — CRT arcade decoding stage (fused challenger)
+    THESIS: decoding the fragment is the attract mode; generating a link is inserting the coin.
+    OWN-WORLD: phosphor green on tube black, scanlines and vignette as real layers, gold reserved for credits/money, red only to commit.
+    STORY: the player powers the cabinet, sees the renderers as lit sprites, feeds the playfield, and presses start.
+    FIRST VIEWPORT: score row, pixel marquee, sub-marquee, INSERT COIN cue, the renderer inventory cabinet.
+    FORM: challenger 1 of 6 dealt (pixel-arch cabinet), fused with agent-render; seed key 5b5b8c00.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div class="cab">
+    <div class="score-row">
+      <span>RETENTION <span class="hi">0</span></span>
+      <span>HI-FRAGMENT <span class="hi">8192</span></span>
+      <span class="credits">CREDIT ∞</span>
+    </div>
+
+    <marquee class="marquee" style="display:block">ZERO-RETENTION<br>ARTIFACT <span class="red">VIEWER</span></marquee>
+    <p class="sub-marquee">Payload lives in the URL fragment. <span class="glow">The host never receives it.</span> Five renderers loaded: markdown · code · diff · csv · json.</p>
+    <p class="insert">Insert artifact to continue</p>
+
+    <div class="stage">
+      <div class="stage-inner">
+        <div class="stage-title">Select your renderer</div>
+        <div class="inv">
+          <div class="on">MARK<br>DOWN</div>
+          <div>CODE</div>
+          <div>DIFF<br>U/S</div>
+          <div>CSV<br>GRID</div>
+          <div>JSON<br>TREE</div>
+        </div>
+        <div class="pixel-row" aria-hidden="true">
+          <i></i><i></i><i class="lit"></i><i></i><i class="lit"></i><i class="lit"></i><i></i><i></i><i class="lit"></i><i></i><i></i><i class="lit"></i><i class="lit"></i><i class="lit"></i><i></i><i></i><i class="lit"></i><i></i><i class="lit"></i><i class="lit"></i><i></i><i></i><i class="lit"></i><i></i><i></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="playfield">
+      <div class="pf-head"><span>1UP — CREATE LINK</span><span>BONUS AT 2000 DISCORD</span></div>
+      <div class="pf-row"><label>Player name</label><input class="pf-input" value="Product brief"></div>
+      <div class="pf-row"><label>File tag</label><input class="pf-input" value="brief.md"></div>
+      <div class="pf-row" style="grid-template-columns:1fr; margin-top:22px">
+        <label>Payload insert</label>
+        <div class="pf-box"># Launch note
+Share one artifact at a time without uploading it anywhere.
+- Markdown stays readable
+- Code keeps its language hint
+- Link works from a static export</div>
+      </div>
+      <div class="pf-row" style="grid-template-columns:1fr"><label>Vehicle select</label>
+        <div class="pf-kinds"><span class="on">Markdown</span><span>Code</span><span>Diff</span><span>CSV</span><span>JSON</span></div>
+      </div>
+      <div class="start-row">
+        <button class="start-btn">» Start · generate link</button>
+        <div class="hp">HI-SCORE LIMIT <b>8,192 CH</b><br>LOADED <b>1,204 CH</b> · CODEC <b>ARX4</b></div>
+      </div>
+    </div>
+
+    <div class="cab-foot">
+      <span>© AGENT-RENDER AMUSEMENTS</span>
+      <span>ZERO RETENTION — HOST SEES NOTHING</span>
+      <span>MULTIPLAYER VIA PASTE</span>
+    </div>
+  </div>
+</body>
+</html>

@@ -19,8 +19,3 @@
   Content-Type: application/json; charset=utf-8
   Content-Encoding: br
   Vary: Accept-Encoding
-
-/vendor/diff-view-pure.css.br
-  Content-Type: text/css; charset=utf-8
-  Content-Encoding: br
-  Vary: Accept-Encoding

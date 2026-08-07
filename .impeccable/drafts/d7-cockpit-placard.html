@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>agent-render · QRH card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --panel:#23262b; --panel-hi:#2c2f36; --panel-lo:#1b1d22; --bezel:#15171b;
+    --ink:#e6e8e4; --ink-dim:#9aa0a6; --ink-faint:#5c6167;
+    --illum-amber:#ffb24c; --illum-green:#5bd99a; --engraved:#878d94;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:#111318; color:var(--ink);
+    font:500 15px/1.55 "Barlow Semi Condensed", system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .console{max-width:1140px; margin:0 auto; padding:40px 28px 140px;}
+  .panel-top{
+    display:flex; align-items:center; gap:20px; background:var(--panel-hi);
+    border:1px solid #393d45; border-bottom:none; border-radius:8px 8px 0 0;
+    padding:14px 22px;
+  }
+  .anon{display:flex; align-items:center; gap:9px; font:400 11px/1 "Share Tech Mono",monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--engraved)}
+  .anon .lamp{width:9px; height:9px; border-radius:50%; background:var(--illum-green); box-shadow:0 0 7px var(--illum-green), inset 0 -2px 2px rgba(0,0,0,.4)}
+  .anon.warn .lamp{background:var(--illum-amber); box-shadow:0 0 7px var(--illum-amber), inset 0 -2px 2px rgba(0,0,0,.4)}
+  .panel-title{margin-left:auto; font:600 13px/1 "Barlow Semi Condensed"; letter-spacing:.28em; text-transform:uppercase; color:var(--ink)}
+  .panel-body{background:var(--panel); border:1px solid #393d45; padding:36px 34px 30px;}
+  .screw{position:relative}
+  .screw::before,.screw::after{content:""; position:absolute; width:10px; height:10px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #565b63, #20232a 70%); box-shadow:inset 0 1px 1px rgba(255,255,255,.15), 0 1px 2px rgba(0,0,0,.5)}
+  .screw::before{top:-14px; left:-10px}
+  .screw::after{top:-14px; right:-10px}
+
+  .qrh-head{display:grid; grid-template-columns:auto 1fr; gap:36px; align-items:start; margin-bottom:10px;}
+  .qrh-mark{
+    width:148px; height:148px; border:1.5px solid var(--engraved); border-radius:6px;
+    display:grid; place-items:center; background:var(--panel-lo); flex-shrink:0;
+  }
+  .qrh-mark svg{width:100px;height:100px}
+  .qrh-kicker{font:400 10.5px/1.8 "Share Tech Mono",monospace; letter-spacing:.3em; color:var(--illum-amber); text-transform:uppercase}
+  .qrh h1{
+    margin:8px 0 0; max-width:18ch;
+    font:700 clamp(2rem,4.6vw,3.4rem)/1.02 "Barlow Semi Condensed",sans-serif; letter-spacing:-0.025em; text-wrap:balance;
+  }
+  .placard{
+    margin-top:22px; background:var(--panel-lo); border:1px solid #393d45; border-radius:4px;
+    padding:16px 20px; color:var(--ink-dim); font-size:15px; line-height:1.75; max-width:64ch;
+  }
+  .placard::before{content:"NOTE  "; color:var(--illum-amber); font:400 10px/1 "Share Tech Mono",monospace; letter-spacing:.22em}
+  .placard b{color:var(--ink)}
+
+  .switch-board{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:0;
+    margin-top:34px; border:1px solid #393d45; border-radius:6px; overflow:hidden;
+  }
+  .sw-cell{background:var(--panel-hi); padding:18px 20px; border-right:1px solid #393d45;}
+  .sw-cell:last-child{border-right:none}
+  .sw-label{font:400 10px/1.4 "Share Tech Mono",monospace; letter-spacing:.2em; text-transform:uppercase; color:var(--engraved)}
+  .sw-state{display:flex; align-items:center; gap:9px; margin-top:11px; font:600 17px/1 "Barlow Semi Condensed"; color:var(--ink)}
+  .sw-state .led{width:8px; height:8px; border-radius:50%; background:var(--illum-green); box-shadow:0 0 6px var(--illum-green)}
+  .sw-state.amber .led{background:var(--illum-amber); box-shadow:0 0 6px var(--illum-amber)}
+  .sw-sub{font:400 10.5px/1.6 "Share Tech Mono",monospace; color:var(--ink-faint); margin-top:7px; letter-spacing:.08em}
+
+  .procedures{margin-top:40px; display:grid; grid-template-columns:200px 1fr; gap:0; border:1px solid #393d45; border-radius:6px; overflow:hidden;}
+  .proc-title{background:var(--panel-lo); padding:20px; font:400 10.5px/1.9 "Share Tech Mono",monospace; letter-spacing:.24em; text-transform:uppercase; color:var(--engraved); border-right:1px solid #393d45;}
+  .proc-list{padding:6px 26px 14px}
+  .proc-item{display:grid; grid-template-columns:34px 1fr auto; gap:16px; align-items:baseline; padding:13px 0; border-bottom:1px solid #2c2f36}
+  .proc-item:last-child{border-bottom:none}
+  .proc-num{font:400 11px/1 "Share Tech Mono",monospace; color:var(--illum-amber); letter-spacing:.1em}
+  .proc-name{font-weight:600; letter-spacing:-0.01em}
+  .proc-detail{font:400 11px/1.5 "Share Tech Mono",monospace; color:var(--ink-faint); text-align:right; letter-spacing:.06em}
+
+  .creation-panel{margin-top:44px; border:1px solid #393d45; border-radius:8px; overflow:hidden; position:relative}
+  .cp-head{display:flex; align-items:center; justify-content:space-between; background:var(--panel-lo); padding:14px 22px; border-bottom:1px solid #393d45;}
+  .cp-head .t{font:600 13px/1 "Barlow Semi Condensed"; letter-spacing:.2em; text-transform:uppercase}
+  .cp-head .r{font:400 10.5px/1 "Share Tech Mono",monospace; color:var(--engraved); letter-spacing:.16em}
+  .cp-body{display:grid; grid-template-columns:1fr 1fr; gap:0; background:var(--panel);}
+  .cp-cell{padding:22px 24px; border-right:1px solid #2c2f36}
+  .cp-cell:nth-child(2n){border-right:none}
+  .cp-cell.wide{grid-column:1/-1; border-top:1px solid #2c2f36}
+  .cp-cell label{display:block; font:400 10px/1 "Share Tech Mono",monospace; letter-spacing:.24em; text-transform:uppercase; color:var(--engraved); margin-bottom:10px}
+  .cp-input{width:100%; background:var(--panel-lo); border:1px solid #393d45; border-radius:3px; color:var(--ink); font:400 14px/1.5 "Share Tech Mono",monospace; padding:10px 12px; outline:none}
+  .cp-input:focus{border-color:var(--illum-amber)}
+  .cp-canvas{border:1px solid #393d45; border-radius:3px; background:var(--panel-lo); padding:14px 16px; min-height:140px; font:400 12.5px/1.8 "Share Tech Mono",monospace; color:var(--ink); white-space:pre-wrap}
+  .selector{display:flex; gap:8px; flex-wrap:wrap}
+  .selector span{
+    padding:10px 13px; border:1px solid #393d45; border-radius:3px; background:var(--panel-lo);
+    font:400 11px/1 "Share Tech Mono",monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer;
+  }
+  .selector span.on{border-color:var(--illum-amber); color:var(--illum-amber); background:rgba(255,178,76,.05)}
+  .cp-foot{display:flex; align-items:center; justify-content:space-between; gap:20px; background:var(--panel-lo); border-top:1px solid #393d45; padding:16px 22px; flex-wrap:wrap}
+  .commit-btn{
+    background:var(--illum-amber); color:#191504; border:none; cursor:pointer;
+    font:700 12.5px/1 "Barlow Semi Condensed"; letter-spacing:.14em; text-transform:uppercase; padding:15px 28px; border-radius:3px;
+    box-shadow:0 0 14px rgba(255,178,76,.28);
+  }
+  .commit-btn:active{transform:translateY(1px)}
+  .cp-readout{font:400 11px/1.7 "Share Tech Mono",monospace; color:var(--engraved); letter-spacing:.08em}
+  .cp-readout b{color:var(--ink)}
+
+  .console-foot{
+    margin-top:34px; background:var(--panel-hi); border:1px solid #393d45; border-top:none; border-radius:0 0 8px 8px;
+    display:flex; justify-content:space-between; gap:20px; padding:13px 22px; flex-wrap:wrap;
+    font:400 10.5px/1.6 "Share Tech Mono",monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint);
+  }
+  @media (max-width:900px){.qrh-head{grid-template-columns:1fr}.switch-board{grid-template-columns:1fr 1fr}.procedures{grid-template-columns:1fr}.proc-title{border-right:none; border-bottom:1px solid #393d45}.cp-body{grid-template-columns:1fr}.cp-cell{border-right:none}}
+</style>
+</head>
+<body>
+  <!--
+    DIRECTION CONTRACT D7 — cockpit QRH card
+    THESIS: the tool reads like a placarded quick-reference card: everything is state, nothing decorates.
+    OWN-WORLD: matte panel grays, engraved caps, amber for action and caution, green for confirmed state; illumination carries meaning, never accents.
+    STORY: the operator reads the card top-down: identification, notes, switch states, procedure list, then commits.
+    FIRST VIEWPORT: bezel + annunciators, engraved panel title, stencil mark, placarded headline, NOTE block, four-gang switch board.
+    FORM: candidate 7 of 7 grounded list; seed key 5b5b8c00.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div class="console">
+    <div class="panel-top">
+      <span class="anon"><span class="lamp"></span>CLIENT DECODE · ACTIVE</span>
+      <span class="anon warn"><span class="lamp"></span>SERVER STORAGE · NONE</span>
+      <span class="panel-title">AGENT-RENDER · QRH 03</span>
+    </div>
+
+    <div class="panel-body screw">
+      <div class="qrh-head">
+        <div class="qrh-mark">
+          <svg viewBox="0 0 100 100" fill="none" stroke="#878d94" stroke-width="2">
+            <rect x="10" y="10" width="80" height="80" rx="5"/>
+            <path d="M28 60 L40 34 h6 l12 26 M33 50 h20 M62 40 h16 M62 50 h16 M62 60 h16" stroke-linecap="square"/>
+            <rect x="60" y="70" width="18" height="10" fill="#ffb24c" stroke="none"/>
+          </svg>
+        </div>
+        <div class="qrh">
+          <div class="qrh-kicker">QUICK REFERENCE · ARTIFACT VIEWING</div>
+          <h1>Zero-retention artifact viewer for AI outputs</h1>
+        </div>
+      </div>
+
+      <div class="placard">Artifact content lives in the URL fragment. In static mode the host <b>does not receive</b> artifact content on the page request. Links can still appear in browser history, screenshots, and copied messages.</div>
+
+      <div class="switch-board">
+        <div class="sw-cell"><div class="sw-label">Retention</div><div class="sw-state"><span class="led"></span>NONE</div><div class="sw-sub">by host design, not policy</div></div>
+        <div class="sw-cell"><div class="sw-label">Transport</div><div class="sw-state"><span class="led"></span>FRAGMENT</div><div class="sw-sub">#&lt;tag&gt;&lt;payload&gt;</div></div>
+        <div class="sw-cell"><div class="sw-label">Renderers</div><div class="sw-state"><span class="led"></span>5 ARMED</div><div class="sw-sub">md · code · diff · csv · json</div></div>
+        <div class="sw-cell"><div class="sw-label">Budget</div><div class="sw-state amber"><span class="led"></span>8,192 CH</div><div class="sw-sub">caution limit on fragment</div></div>
+      </div>
+
+      <div class="procedures">
+        <div class="proc-title">NORMAL<br>PROCEDURES</div>
+        <div class="proc-list">
+          <div class="proc-item"><span class="proc-num">NP·1</span><span class="proc-name">Paste or generate a link</span><span class="proc-detail">codec auto: arx4</span></div>
+          <div class="proc-item"><span class="proc-num">NP·2</span><span class="proc-name">Decode happens client-side only</span><span class="proc-detail">host receives nothing</span></div>
+          <div class="proc-item"><span class="proc-num">NP·3</span><span class="proc-name">Select artifact from bundle</span><span class="proc-detail">activeArtifactId</span></div>
+          <div class="proc-item"><span class="proc-num">NP·4</span><span class="proc-name">Export copy · download · print</span><span class="proc-detail">markdown prints clean</span></div>
+        </div>
+      </div>
+
+      <section class="creation-panel">
+        <div class="cp-head"><span class="t">LINK GENERATION PANEL</span><span class="r">PNL 03-C · LOCAL OPS</span></div>
+        <div class="cp-body">
+          <div class="cp-cell"><label>Item · Title</label><input class="cp-input" value="Product brief"></div>
+          <div class="cp-cell"><label>Item · Filename</label><input class="cp-input" value="brief.md"></div>
+          <div class="cp-cell wide"><label>Item · Content bus</label>
+            <div class="cp-canvas"># Launch note
+Share one artifact at a time without uploading it anywhere.
+- Markdown stays readable
+- Code keeps its language hint
+- The link works from a static export</div>
+          </div>
+          <div class="cp-cell wide"><label>Item · Kind selector</label>
+            <div class="selector"><span class="on">Markdown</span><span>Code</span><span>Diff</span><span>CSV</span><span>JSON</span></div>
+          </div>
+        </div>
+        <div class="cp-foot">
+          <button class="commit-btn">Commit link →</button>
+          <span class="cp-readout">LOAD <b>1,204 / 8,192 CH</b> · CODEC <b>ARX4</b> · DISCORD GATE <b>CLEAR</b></span>
+        </div>
+      </section>
+    </div>
+
+    <div class="console-foot">
+      <span>QRH 03 · REV C · agent-render</span>
+      <span>zero retention by host design</span>
+      <span>KEEP WITH THE CHECKLIST · DO NOT STOW</span>
+    </div>
+  </div>
+</body>
+</html>

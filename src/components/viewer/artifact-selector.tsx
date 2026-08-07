@@ -12,9 +12,9 @@ type ArtifactSelectorProps = {
 };
 
 /**
- * Renders artifact tabs in the viewer header so users can switch within a decoded bundle.
- * Uses `artifacts`, `activeArtifactId`, and `onSelect` to drive selection, plus heading/label formatters.
- * Keeps navigation in UI state with icon + metadata badges for each artifact kind.
+ * Horizontal keycap strip for switching artifacts inside a decoded bundle.
+ * Only mounted by the stage when the envelope carries more than one artifact;
+ * each chip shows kind icon, heading, and a mono meta line.
  */
 export function ArtifactSelector({
   artifacts,
@@ -25,7 +25,10 @@ export function ArtifactSelector({
   getSupportingLabel,
 }: ArtifactSelectorProps) {
   return (
-    <div className="artifact-selector-row" data-testid="artifact-selector-row">
+    <div
+      className="artifact-selector-row bench-board"
+      data-testid="artifact-selector-row"
+    >
       {artifacts.map((artifact) => {
         const Icon = kindIcons[artifact.kind];
         const heading = getHeading(artifact);
@@ -36,7 +39,7 @@ export function ArtifactSelector({
           <button
             key={artifact.id}
             type="button"
-            className={cn("artifact-switcher", isCurrent && "is-active")}
+            className={cn("bench-cell", "artifact-switcher", isCurrent && "is-active")}
             onClick={() => onSelect(artifact.id)}
             aria-pressed={isCurrent}
             aria-label={`Open artifact ${heading}`}
@@ -44,10 +47,10 @@ export function ArtifactSelector({
             <span className="artifact-switcher-icon">
               <Icon className="h-4 w-4" />
             </span>
-            <span className="artifact-switcher-content min-w-0 flex-1 text-left">
-              <span className="artifact-switcher-title block truncate text-sm font-semibold leading-5">{heading}</span>
-              <span className="artifact-switcher-meta mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                <span className="section-kicker !text-[0.64rem] !tracking-[0.1em]">{artifact.kind}</span>
+            <span className="artifact-switcher-content">
+              <span className="artifact-switcher-title">{heading}</span>
+              <span className="artifact-switcher-meta">
+                <span>{artifact.kind}</span>
                 <span className="truncate">{supportingLabel}</span>
               </span>
             </span>

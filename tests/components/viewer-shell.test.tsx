@@ -17,7 +17,7 @@ describe("ViewerShell homepage", () => {
     expect(screen.getByText(/artifact content lives in the URL fragment/i)).toBeVisible();
     expect(screen.getByText(/the static host does not receive artifact content/i)).toBeVisible();
     expect(screen.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
-    expect(screen.getByRole("link", { name: /github/i })).toBeVisible();
+    expect(screen.getAllByRole("link", { name: /github/i })[0]).toBeVisible();
     expect(screen.getByRole("link", { name: /payload format docs/i })).toBeVisible();
     expect(screen.getByRole("link", { name: /safety.*security page/i })).toBeVisible();
     expect(screen.getByRole("link", { name: /openclaw/i })).toBeVisible();
