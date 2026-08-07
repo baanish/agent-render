@@ -294,12 +294,8 @@ function DiffFallback({
       data-mobile-layout={getIsNarrowScreen() ? "true" : "false"}
     >
       <div className="diff-renderer-toolbar">
-        <div className="code-renderer-meta">
-          <span className="mono-pill">raw patch fallback</span>
-          <span className="section-kicker">invalid unified diff</span>
-        </div>
         {rawPatch ? (
-          <button type="button" className={`artifact-action ${copyState === "copied" ? "is-primary" : ""}`} onClick={handleCopyRawDiff}>
+          <button type="button" className={`artifact-action ${copyState === "copied" ? "is-confirmed" : ""}`} onClick={handleCopyRawDiff}>
             {copyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             {copyState === "copied" ? "Copied raw diff" : "Copy raw diff"}
           </button>
@@ -340,7 +336,7 @@ function DiffLoading({
       data-mobile-layout={isNarrowScreen ? "true" : "false"}
     >
       <div className="artifact-empty-state" role="status">
-        <p>Preparing the rich diff renderer.</p>
+        <p>Preparing patch.</p>
       </div>
     </div>
   );
@@ -437,7 +433,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       })
       .catch((error) => {
         if (!cancelled) {
-          setDiffLibraryError(error instanceof Error ? error : new Error("Failed to load the rich diff renderer."));
+          setDiffLibraryError(error instanceof Error ? error : new Error("Patch view unavailable."));
         }
       });
 
@@ -450,7 +446,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
     if (diffLibraryError) {
       return getFallbackState(
         artifact,
-        "The rich diff renderer could not be loaded. Showing the raw patch instead.",
+        "The patch view could not be loaded. Showing the raw patch instead.",
         diffLibraryError,
       );
     }
@@ -622,16 +618,11 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       data-mobile-layout={isNarrowScreen ? "true" : "false"}
     >
       <div className="diff-renderer-toolbar">
-        <div className="code-renderer-meta">
-          <span className="mono-pill">review-style diff</span>
-          <span className="section-kicker">syntax highlighted</span>
-        </div>
         {isNarrowScreen ? (
           <div className="diff-view-toggle">
-            <span className="mono-pill diff-mobile-note">Unified is the phone default</span>
             <button
               type="button"
-              className={`artifact-action ${mode === "split" ? "" : "is-primary"}`}
+              className={`artifact-action ${mode === "split" ? "" : "is-depressed"}`}
               onClick={() => setMode(mode === "split" ? "unified" : "split")}
               aria-pressed={mode === "split"}
             >
@@ -643,7 +634,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
           <div className="diff-view-toggle">
             <button
               type="button"
-              className={`artifact-action ${mode === "unified" ? "is-primary" : ""}`}
+              className={`artifact-action ${mode === "unified" ? "is-depressed" : ""}`}
               onClick={() => setMode("unified")}
             >
               <Rows3 className="h-3.5 w-3.5" />
@@ -651,7 +642,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
             </button>
             <button
               type="button"
-              className={`artifact-action ${mode === "split" ? "is-primary" : ""}`}
+              className={`artifact-action ${mode === "split" ? "is-depressed" : ""}`}
               onClick={() => setMode("split")}
             >
               <Columns2 className="h-3.5 w-3.5" />
@@ -671,8 +662,8 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
                   className={`patch-bundle-link ${activeFileId === meta.id ? "is-active" : ""}`}
                   onClick={() => handleFileSelect(meta.id)}
                 >
-                  <span className="mono-pill">{meta.status}</span>
                   <span className="truncate">{meta.displayPath}</span>
+                  <span className="patch-file-status">{meta.status}</span>
                 </button>
               ))}
             </nav>
@@ -680,9 +671,9 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
               {diffFiles.map(({ meta, diffFile }) => (
                 <section key={meta.id} id={`patch-file-${meta.id}`} className="patch-file-section">
                   <header className="patch-file-header">
-                    <div>
-                      <p className="section-kicker">{meta.status}</p>
+                    <div className="patch-file-ident">
                       <h4>{meta.displayPath}</h4>
+                      <span className="patch-file-status">{meta.status}</span>
                     </div>
                     {meta.oldPath && meta.newPath && meta.oldPath !== meta.newPath ? (
                       <span className="mono-pill">{meta.oldPath} -&gt; {meta.newPath}</span>

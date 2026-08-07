@@ -233,7 +233,6 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
           <div className="markdown-mermaid-frame">
             <div className="markdown-code-head">
               <span className="markdown-code-chip">mermaid</span>
-              <span className="markdown-code-caption">diagram</span>
             </div>
             <MermaidBlock
               code={code}
@@ -249,7 +248,6 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
         <div className="markdown-code-frame">
           <div className="markdown-code-head">
             <span className="markdown-code-chip">{language}</span>
-            <span className="markdown-code-caption">premium fence</span>
           </div>
           <EmbeddedCodeRenderer
             compact
@@ -278,7 +276,6 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   return (
     <div className="markdown-document" data-testid="renderer-markdown" data-renderer-ready={readyBlockCount >= embeddedBlockCount ? "true" : "false"}>
       <header className="markdown-print-heading">
-        <p className="section-kicker">Markdown artifact</p>
         <h1>{heading}</h1>
         {artifact.filename ? <p>{artifact.filename}</p> : null}
       </header>

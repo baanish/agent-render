@@ -143,16 +143,15 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
     <div className="json-renderer-shell" data-testid="renderer-json" data-renderer-ready="true">
       <div className="json-renderer-toolbar">
         <div className="diff-view-toggle">
-          <button type="button" className={`artifact-action ${view === "tree" ? "is-primary" : ""}`} onClick={() => setView("tree")}>
+          <button type="button" className={`artifact-action ${view === "tree" ? "is-depressed" : ""}`} onClick={() => setView("tree")}>
             <ListTree className="h-3.5 w-3.5" />
             Tree
           </button>
-          <button type="button" className={`artifact-action ${view === "raw" ? "is-primary" : ""}`} onClick={() => setView("raw")}>
+          <button type="button" className={`artifact-action ${view === "raw" ? "is-depressed" : ""}`} onClick={() => setView("raw")}>
             <Braces className="h-3.5 w-3.5" />
             Raw
           </button>
         </div>
-        <span className="mono-pill">read-only</span>
       </div>
       {view === "tree" ? (
         <JsonTreeBoundary key={artifact.id} fallback={<JsonRawSource content={artifact.content} />}>

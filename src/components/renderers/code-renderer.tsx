@@ -334,10 +334,6 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
     >
       {compact ? null : (
         <div className="code-renderer-toolbar">
-          <div className="code-renderer-meta">
-            <span className="mono-pill code-renderer-language-pill">{language}</span>
-            <span className="section-kicker code-renderer-readonly-label">read-only codemirror</span>
-          </div>
           <button
             type="button"
             className="artifact-action is-code"
