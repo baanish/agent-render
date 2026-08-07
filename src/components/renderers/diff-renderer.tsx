@@ -222,10 +222,6 @@ function DiffFallback({
       data-mobile-layout={getIsNarrowScreen() ? "true" : "false"}
     >
       <div className="diff-renderer-toolbar">
-        <div className="code-renderer-meta">
-          <span className="mono-pill">raw patch fallback</span>
-          <span className="section-kicker">invalid unified diff</span>
-        </div>
         {rawPatch ? (
           <button type="button" className={`artifact-action ${copyState === "copied" ? "is-primary" : ""}`} onClick={handleCopyRawDiff}>
             {copyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
@@ -370,13 +366,8 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       data-mobile-layout={isNarrowScreen ? "true" : "false"}
     >
       <div className="diff-renderer-toolbar">
-        <div className="code-renderer-meta">
-          <span className="mono-pill">review-style diff</span>
-          <span className="section-kicker">syntax highlighted</span>
-        </div>
         {isNarrowScreen ? (
           <div className="diff-view-toggle">
-            <span className="mono-pill diff-mobile-note">Unified is the phone default</span>
             <button
               type="button"
               className={`artifact-action ${mode === "split" ? "" : "is-primary"}`}

@@ -1713,9 +1713,6 @@ select.creator-input {
   margin-left: -1px;
 }
 
-.diff-mobile-note {
-  min-height: 2.1rem;
-}
 
 /* Diff bodies: dark charcoal in BOTH themes (also supplies the vendor palette) */
 .diff-renderer-frame {
@@ -2342,10 +2339,6 @@ select.creator-input {
     gap: 0.45rem;
   }
 
-  .diff-mobile-note {
-    justify-content: flex-start;
-    min-height: 0;
-  }
 
   .diff-renderer-shell[data-mobile-layout="true"] .diff-view-toggle .artifact-action {
     flex: 0 1 auto;
