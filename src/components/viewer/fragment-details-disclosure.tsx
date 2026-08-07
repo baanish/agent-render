@@ -25,13 +25,13 @@ export function FragmentDetailsDisclosure({
       <summary className="artifact-disclosure-summary">
         <span className="artifact-disclosure-summary-copy">
           <span className="section-kicker">Fragment details</span>
-          <span className="artifact-disclosure-title text-sm font-medium text-[color:var(--text-primary)]">
+          <span className="artifact-disclosure-title">
             Codec, budget, and hash preview
           </span>
         </span>
       </summary>
       <div className="artifact-disclosure-body">
-        <p className="artifact-disclosure-status text-sm leading-6 text-[color:var(--text-muted)]">{statusMessage}</p>
+        <p className="artifact-disclosure-status text-[color:var(--text-muted)]">{statusMessage}</p>
         <div className="artifact-disclosure-grid">
           <div className="metric-card">
             <p className="metric-label">Status</p>

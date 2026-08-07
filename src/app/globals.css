@@ -302,8 +302,26 @@ select {
   overflow: hidden;
 }
 
+/* QRH limits strip: one dense horizontal row on desktop, 2-up on phones
+   (auto-fit at 150px computes exactly 2 tracks at 390px, which the mobile
+   e2e contract pins). */
 .bento-grid-compact {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.bento-grid-compact::before {
+  content: "Limits";
+  grid-column: 1 / -1;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.54rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-shadow: 0 1px 0 var(--engrave);
 }
 
 .bento-card {
@@ -312,7 +330,15 @@ select {
   border-radius: 0;
   background: none;
   box-shadow: none;
-  padding: 9px 12px !important;
+  padding: 6px 10px !important;
+}
+
+.bento-card .metric-label {
+  font-size: 0.54rem;
+}
+
+.bento-card .artifact-meta-value {
+  font-size: 0.72rem;
 }
 
 .bento-card:first-child {
@@ -2071,9 +2097,10 @@ select.creator-input {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  padding: 9px 12px;
+  padding: 6px 10px;
   cursor: pointer;
   list-style: none;
+  background: var(--surface-muted);
 }
 
 .artifact-disclosure-summary-copy {
@@ -2084,8 +2111,13 @@ select.creator-input {
 }
 
 .artifact-disclosure-title {
-  font-size: 0.74rem !important;
-  line-height: 1.45;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.62rem !important;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.6;
+  color: var(--text-muted) !important;
 }
 
 .artifact-disclosure-summary::-webkit-details-marker {
@@ -2122,7 +2154,19 @@ select.creator-input {
 
 .artifact-disclosure-status {
   margin: 0;
-  font-size: 0.74rem !important;
+  font-size: 0.7rem !important;
+  font-family: var(--font-mono), monospace;
+  letter-spacing: 0.02em;
+}
+
+.artifact-disclosure-status::before {
+  content: "Note / ";
+  font-weight: 600;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  text-shadow: 0 1px 0 var(--engrave);
 }
 
 .artifact-disclosure-grid {
@@ -2139,7 +2183,15 @@ select.creator-input {
   border-radius: 0;
   background: none;
   box-shadow: none;
-  padding: 8px 10px;
+  padding: 6px 10px;
+}
+
+.artifact-disclosure-grid .metric-card .metric-label {
+  font-size: 0.54rem;
+}
+
+.artifact-disclosure-grid .metric-card .metric-value {
+  font-size: 0.72rem;
 }
 
 .artifact-disclosure-grid .metric-card:first-child {
@@ -2154,9 +2206,19 @@ select.creator-input {
   padding: 8px 0 0;
 }
 
+/* Hash readout: amber mono on a recessed dark slot (the design contract's
+   VFD-readout register, reserved for machine data like this). */
 .artifact-hash-preview-code {
   margin-top: 6px !important;
   margin-bottom: 0;
+  padding: 7px 10px;
+  border: 1px solid #0a0806;
+  border-radius: 2px;
+  background: var(--surface-code);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.55);
+  color: var(--rb-1) !important;
+  font-size: 0.66rem !important;
+  line-height: 1.65;
 }
 
 .fade-up {
