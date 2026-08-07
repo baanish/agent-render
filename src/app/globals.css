@@ -1912,6 +1912,16 @@ select.creator-input {
   border: 1px solid var(--surface-code-chrome-border);
   border-radius: var(--radius-lg);
   background: var(--surface-code);
+}
+
+/* Raw source keeps its literal colons; the tree's .json-key::after glyph and
+   spacing must not double them here. */
+.json-raw-source .json-key {
+  margin-right: 0;
+}
+
+.json-raw-source .json-key::after {
+  content: none;
   color: var(--surface-code-text);
   padding: 1rem 1.05rem 1.15rem;
   font-family: var(--font-mono), monospace;
