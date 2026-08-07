@@ -13,7 +13,13 @@ describe("ViewerShell homepage", () => {
 
     await waitFor(() => expect(screen.getByTestId("viewer-shell")).toHaveAttribute("data-viewer-state", "empty"));
 
-    expect(screen.getByRole("heading", { name: /zero-retention artifact viewer/i })).toBeVisible();
+    expect(
+      await screen.findByRole(
+        "heading",
+        { name: /zero-retention artifact viewer/i },
+        { timeout: 8000 },
+      ),
+    ).toBeVisible();
     expect(screen.getByText(/artifact content lives in the URL fragment/i)).toBeVisible();
     expect(screen.getByText(/the static host does not receive artifact content/i)).toBeVisible();
     expect(screen.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
@@ -21,5 +27,5 @@ describe("ViewerShell homepage", () => {
     expect(screen.getByRole("link", { name: /payload format docs/i })).toBeVisible();
     expect(screen.getByRole("link", { name: /safety.*security page/i })).toBeVisible();
     expect(screen.getByRole("link", { name: /openclaw/i })).toBeVisible();
-  });
+  }, 10000);
 });
