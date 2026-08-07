@@ -1725,36 +1725,29 @@ select.creator-input {
   background: #1c1915;
 }
 
-.diff-tailwindcss-wrapper,
-.diff-renderer-frame [data-theme="light"],
-.diff-renderer-frame [data-theme="dark"] {
+/* @pierre/diffs renders in shadow DOM; these custom properties inherit through
+   the shadow boundary and pin the chrome to the charcoal chassis. Syntax tokens
+   come from the pinned pierre-dark Shiki theme. */
+.diff-renderer-frame {
   color-scheme: dark;
   color: #e6dfcf;
-  --diff-bgColor-default: #1c1915;
-  --diff-add-content--: #1e2f24;
-  --diff-del-content--: #3a201b;
-  --diff-add-content-highlight--: #2c4a38;
-  --diff-del-content-highlight--: #57271f;
-  --diff-border--: #cfc6b41f;
-  --diff-add-lineNumber--: #22352b;
-  --diff-del-lineNumber--: #41231e;
-  --diff-plain-content--: #1c1915;
-  --diff-expand-content--: #181510;
-  --diff-plain-lineNumber-color--: #8b8271;
-  --diff-expand-lineNumber-color--: #6e6656;
-  --diff-plain-lineNumber--: #181510;
-  --diff-expand-lineNumber--: #14110d;
-  --diff-hunk-content--: #26221b;
-  --diff-hunk-content-color--: #b0a794;
-  --diff-hunk-lineNumber--: #26221b;
-  --diff-add-widget--: #26221b;
-  --diff-add-widget-color--: #b0a794;
-  --diff-empty-content--: #181510;
-}
-
-.diff-tailwindcss-wrapper {
-  font-family: var(--font-mono), monospace;
-  font-size: 0.74rem;
+  --diffs-font-family: var(--font-mono), monospace;
+  --diffs-header-font-family: var(--font-mono), monospace;
+  --diffs-font-size: 0.74rem;
+  --diffs-bg: #1c1915;
+  --diffs-fg: #e6dfcf;
+  --diffs-bg-context-override: #26221b;
+  --diffs-bg-separator-override: #181510;
+  --diffs-bg-hover-override: #26221b;
+  --diffs-fg-number-override: #8b8271;
+  --diffs-addition-color-override: #9ccfae;
+  --diffs-deletion-color-override: #d96a5c;
+  --diffs-bg-addition-override: #1e2f24;
+  --diffs-bg-addition-number-override: #22352b;
+  --diffs-bg-addition-emphasis-override: #2c4a38;
+  --diffs-bg-deletion-override: #3a201b;
+  --diffs-bg-deletion-number-override: #41231e;
+  --diffs-bg-deletion-emphasis-override: #57271f;
 }
 
 .patch-bundle-shell {

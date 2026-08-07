@@ -47,12 +47,13 @@ export const budgets = [
     type: "loadable",
   },
   {
-    // Guards the rich diff library (@git-diff-view/react), the heaviest deferred
-    // chunk. 340 KiB gzipped is intentionally generous because the library is
-    // large but always lazy-loaded. A jump here means a version bump pulled in
-    // more — confirm the upgrade is wanted before raising.
-    importKeyParts: ["components/renderers/diff-renderer", "@git-diff-view/react"],
-    maxBytes: 340 * 1024,
+    // Guards the deferred diff renderer chunk (@pierre/diffs core + renderer).
+    // Shiki grammars and themes are NOT in this chunk: the library loads them
+    // as separate on-demand chunks per language, outside this key. A jump here
+    // means a version bump grew the core — confirm the upgrade is wanted
+    // before raising.
+    importKeyParts: ["components/viewer/artifact-stage", "diff-renderer"],
+    maxBytes: 160 * 1024,
     name: "rich diff library deferred JS",
     type: "loadable",
   },
