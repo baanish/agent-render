@@ -158,23 +158,22 @@ test("renders multi-file diffs without mutating the payload hash", async ({ page
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(beforeHash);
 });
 
-test("loads the compressed diff stylesheet only after opening a diff artifact", async ({ page }) => {
-  await waitForViewerState(page, "empty");
-  await expect
-    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some((link) => link.getAttribute("href")?.includes("diff-view-pure.css"))))
-    .toBe(false);
-
+test("renders rich diffs in shadow DOM without any external diff stylesheet", async ({ page }) => {
   await goToHash(page, getFragmentHash("Phase 1 sample diff"));
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "diff");
   await expect(page.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "rich");
 
+  // @pierre/diffs renders into shadow roots; styling ships inside them.
+  await expect
+    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll(".patch-file-section *")).some((element) => element.shadowRoot !== null)))
+    .toBe(true);
+
   const stylesheetHrefs = await page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]'), (link) => link.getAttribute("href") ?? ""));
-  expect(stylesheetHrefs.some((href) => href.endsWith("/vendor/diff-view-pure.css.br"))).toBe(true);
-  expect(stylesheetHrefs.some((href) => href.endsWith("/vendor/diff-view-pure.css"))).toBe(false);
+  expect(stylesheetHrefs.some((href) => href.includes("diff-view"))).toBe(false);
 });
 
-test("keeps fallback diffs off the rich diff stylesheet path", async ({ page }) => {
+test("shows the raw patch fallback for invalid unified diffs", async ({ page }) => {
   const fallbackDiffEnvelope = {
     v: 1,
     codec: "plain",
@@ -195,9 +194,6 @@ test("keeps fallback diffs off the rich diff stylesheet path", async ({ page }) 
   await expect(page.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "fallback");
   await expect(page.locator('[data-testid="viewer-shell"][data-renderer-ready="true"]')).toBeVisible();
   await expect(page.getByTestId("renderer-diff-fallback-raw")).toContainText("not a unified diff");
-  await expect
-    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some((link) => link.getAttribute("href")?.includes("diff-view-pure.css"))))
-    .toBe(false);
 });
 
 test.describe("mobile UX", () => {

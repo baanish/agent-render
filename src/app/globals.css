@@ -1713,9 +1713,6 @@ select.creator-input {
   margin-left: -1px;
 }
 
-.diff-mobile-note {
-  min-height: 2.1rem;
-}
 
 /* Diff bodies: dark charcoal in BOTH themes (also supplies the vendor palette) */
 .diff-renderer-frame {
@@ -1725,36 +1722,46 @@ select.creator-input {
   background: #1c1915;
 }
 
-.diff-tailwindcss-wrapper,
-.diff-renderer-frame [data-theme="light"],
-.diff-renderer-frame [data-theme="dark"] {
+/* @pierre/diffs renders in shadow DOM; these custom properties inherit through
+   the shadow boundary and pin the chrome to the charcoal chassis. Syntax tokens
+   come from the pinned pierre-dark Shiki theme. */
+.diff-renderer-frame {
   color-scheme: dark;
   color: #e6dfcf;
-  --diff-bgColor-default: #1c1915;
-  --diff-add-content--: #1e2f24;
-  --diff-del-content--: #3a201b;
-  --diff-add-content-highlight--: #2c4a38;
-  --diff-del-content-highlight--: #57271f;
-  --diff-border--: #cfc6b41f;
-  --diff-add-lineNumber--: #22352b;
-  --diff-del-lineNumber--: #41231e;
-  --diff-plain-content--: #1c1915;
-  --diff-expand-content--: #181510;
-  --diff-plain-lineNumber-color--: #8b8271;
-  --diff-expand-lineNumber-color--: #6e6656;
-  --diff-plain-lineNumber--: #181510;
-  --diff-expand-lineNumber--: #14110d;
-  --diff-hunk-content--: #26221b;
-  --diff-hunk-content-color--: #b0a794;
-  --diff-hunk-lineNumber--: #26221b;
-  --diff-add-widget--: #26221b;
-  --diff-add-widget-color--: #b0a794;
-  --diff-empty-content--: #181510;
-}
-
-.diff-tailwindcss-wrapper {
-  font-family: var(--font-mono), monospace;
-  font-size: 0.74rem;
+  --diffs-font-family: var(--font-mono), monospace;
+  --diffs-header-font-family: var(--font-mono), monospace;
+  --diffs-font-size: 0.74rem;
+  --diffs-bg: #1c1915;
+  --diffs-fg: #e6dfcf;
+  /* Tokens for the "agent-render" CSS-variables Shiki theme (registered in
+     src/lib/diff/pierre-react.ts): the app's rainbow palette, so diff syntax
+     matches the code renderer instead of a foreign theme. */
+  --diffs-foreground: #e6dfcf;
+  --diffs-background: #1c1915;
+  --diffs-token-keyword: var(--rb-0);
+  --diffs-token-function: var(--rb-4);
+  --diffs-token-string: var(--rb-3);
+  --diffs-token-string-expression: var(--rb-3);
+  --diffs-token-constant: var(--rb-1);
+  --diffs-token-parameter: var(--rb-2);
+  --diffs-token-link: var(--rb-2);
+  --diffs-token-comment: #8b8271;
+  --diffs-token-punctuation: #b0a794;
+  --diffs-token-inserted: #9ccfae;
+  --diffs-token-deleted: #d96a5c;
+  --diffs-token-changed: var(--rb-1);
+  --diffs-bg-context-override: #26221b;
+  --diffs-bg-separator-override: #181510;
+  --diffs-bg-hover-override: #26221b;
+  --diffs-fg-number-override: #8b8271;
+  --diffs-addition-color-override: #9ccfae;
+  --diffs-deletion-color-override: #d96a5c;
+  --diffs-bg-addition-override: #1e2f24;
+  --diffs-bg-addition-number-override: #22352b;
+  --diffs-bg-addition-emphasis-override: #2c4a38;
+  --diffs-bg-deletion-override: #3a201b;
+  --diffs-bg-deletion-number-override: #41231e;
+  --diffs-bg-deletion-emphasis-override: #57271f;
 }
 
 .patch-bundle-shell {
@@ -2332,10 +2339,6 @@ select.creator-input {
     gap: 0.45rem;
   }
 
-  .diff-mobile-note {
-    justify-content: flex-start;
-    min-height: 0;
-  }
 
   .diff-renderer-shell[data-mobile-layout="true"] .diff-view-toggle .artifact-action {
     flex: 0 1 auto;

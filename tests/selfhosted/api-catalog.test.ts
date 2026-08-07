@@ -53,7 +53,7 @@ function createExportFixture(): { root: string; outDir: string } {
     "brotli-compressed-json",
   );
   writeFileSync(
-    path.join(outDir, "vendor", "diff-view-pure.css.br"),
+    path.join(outDir, "vendor", "fixture-style.css.br"),
     "brotli-compressed-css",
   );
   writeFileSync(
@@ -243,7 +243,7 @@ describe("RFC 9727 api-catalog", () => {
       );
 
       const compressedDiffStyleResponse = await fetch(
-        `http://127.0.0.1:${port}/vendor/diff-view-pure.css.br`,
+        `http://127.0.0.1:${port}/vendor/fixture-style.css.br`,
         { method: "HEAD" },
       );
       expect(compressedDiffStyleResponse.status).toBe(200);
@@ -372,7 +372,7 @@ describe("RFC 9727 api-catalog", () => {
       );
 
       const compressedDiffStyleResponse = await fetch(
-        `http://127.0.0.1:${port}/vendor/diff-view-pure.css.br`,
+        `http://127.0.0.1:${port}/vendor/fixture-style.css.br`,
         { method: "HEAD" },
       );
       expect(compressedDiffStyleResponse.status).toBe(200);
