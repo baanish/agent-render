@@ -614,7 +614,6 @@ export function ArtifactStage({
           hashPreview={getHashPreview(hash)}
           maxLength={numberFormatter.format(MAX_FRAGMENT_LENGTH)}
           statusLabel={statusTone.label}
-          statusMessage={statusTone.message}
         />
       </section>
     </section>

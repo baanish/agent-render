@@ -14,7 +14,6 @@ describe("FragmentDetailsDisclosure", () => {
         hashPreview="#agent-render=v1.lz.abc"
         maxLength={String(MAX_FRAGMENT_LENGTH)}
         statusLabel="Decoded"
-        statusMessage="Fragment decoded successfully."
       />,
     );
 

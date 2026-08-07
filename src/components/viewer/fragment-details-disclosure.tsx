@@ -1,6 +1,5 @@
 type FragmentDetailsDisclosureProps = {
   statusLabel: string;
-  statusMessage: string;
   fragmentLength: string;
   maxLength: string;
   codec: string;
@@ -14,7 +13,6 @@ type FragmentDetailsDisclosureProps = {
  */
 export function FragmentDetailsDisclosure({
   statusLabel,
-  statusMessage,
   fragmentLength,
   maxLength,
   codec,
@@ -31,7 +29,6 @@ export function FragmentDetailsDisclosure({
         </span>
       </summary>
       <div className="artifact-disclosure-body">
-        <p className="artifact-disclosure-status text-[color:var(--text-muted)]">{statusMessage}</p>
         <div className="artifact-disclosure-grid">
           <div className="metric-card">
             <p className="metric-label">Status</p>

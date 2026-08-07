@@ -1579,8 +1579,7 @@ select.creator-input {
   background: #26221b;
 }
 
-.markdown-code-chip,
-.markdown-code-caption {
+.markdown-code-chip {
   font-family: var(--font-mono), monospace;
   font-size: 0.72rem;
   font-weight: 600;
@@ -1590,10 +1589,6 @@ select.creator-input {
 
 .markdown-code-chip {
   color: color-mix(in srgb, var(--surface-code-text) 92%, white 8%);
-}
-
-.markdown-code-caption {
-  color: color-mix(in srgb, var(--surface-code-text) 58%, transparent);
 }
 
 .markdown-code-pre {
@@ -1629,16 +1624,11 @@ select.creator-input {
 }
 
 /* No self-narrating renderer chrome */
-.code-renderer-language-pill,
-.code-renderer-readonly-label {
+.code-renderer-language-pill {
   display: none;
 }
 
 .diff-renderer-shell[data-diff-state="rich"] .code-renderer-meta {
-  display: none;
-}
-
-.json-renderer-toolbar > .mono-pill {
   display: none;
 }
 
@@ -2152,23 +2142,6 @@ select.creator-input {
   padding: 10px 12px 12px;
 }
 
-.artifact-disclosure-status {
-  margin: 0;
-  font-size: 0.7rem !important;
-  font-family: var(--font-mono), monospace;
-  letter-spacing: 0.02em;
-}
-
-.artifact-disclosure-status::before {
-  content: "Note / ";
-  font-weight: 600;
-  font-size: 0.6rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-soft);
-  text-shadow: 0 1px 0 var(--engrave);
-}
-
 .artifact-disclosure-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -2286,7 +2259,6 @@ select.creator-input {
   }
 
   .hero-link-body,
-  .artifact-disclosure-status,
   .sample-link p {
     line-height: 1.48;
   }
@@ -2562,10 +2534,6 @@ select.creator-input {
 
   .artifact-disclosure-title {
     line-height: 1.35;
-  }
-
-  .artifact-disclosure-status {
-    font-size: 0.88rem;
   }
 
   .artifact-disclosure-body {
@@ -2931,7 +2899,6 @@ select.creator-input {
   }
 
   body[data-print-mode="markdown"] .markdown-code-chip,
-  body[data-print-mode="markdown"] .markdown-code-caption,
   body[data-print-mode="markdown"] .markdown-table th,
   body[data-print-mode="markdown"] .markdown-article strong,
   body[data-print-mode="markdown"] .markdown-article h1,

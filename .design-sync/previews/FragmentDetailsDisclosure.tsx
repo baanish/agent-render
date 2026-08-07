@@ -15,7 +15,6 @@ export const Decoded = () => (
   <Open>
     <FragmentDetailsDisclosure
       statusLabel="Decoded"
-      statusMessage="Fragment decoded successfully."
       fragmentLength="1,982"
       maxLength="8,192"
       codec="arx4"
@@ -29,7 +28,6 @@ export const DecodeError = () => (
   <Open>
     <FragmentDetailsDisclosure
       statusLabel="Error"
-      statusMessage="Fragment payload is malformed JSON after decoding."
       fragmentLength="204"
       maxLength="8,192"
       codec="plain"
@@ -42,7 +40,6 @@ export const DecodeError = () => (
 export const Collapsed = () => (
   <FragmentDetailsDisclosure
     statusLabel="Decoded"
-    statusMessage="Fragment decoded successfully."
     fragmentLength="1,982"
     maxLength="8,192"
     codec="arx4"
