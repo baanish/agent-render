@@ -304,7 +304,7 @@ const packageManifestFixture = JSON.stringify(
     },
     dependencies: {
       "@codemirror/view": "^6.38.2",
-      "@git-diff-view/react": "^0.1.1",
+      "@pierre/diffs": "^1.3.3",
       "brotli-wasm": "^3.0.1",
       "fflate": "^0.8.2",
       "lucide-react": "^0.577.0",

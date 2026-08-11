@@ -1,25 +1,34 @@
 import type { Metadata } from "next";
-import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { getCanonicalSiteUrl, getMetadataBase } from "@/lib/site/canonical-base";
 import "./globals.css";
 
-const display = Fraunces({
-  subsets: ["latin"],
+const display = localFont({
+  src: [
+    { path: "../fonts/manrope-v20-latin-500.woff2", weight: "500" },
+    { path: "../fonts/manrope-v20-latin-600.woff2", weight: "600" },
+    { path: "../fonts/manrope-v20-latin-700.woff2", weight: "700" },
+    { path: "../fonts/manrope-v20-latin-800.woff2", weight: "800" },
+  ],
   variable: "--font-display",
-  weight: ["500", "600", "700"],
 });
 
-const sans = IBM_Plex_Sans({
-  subsets: ["latin"],
+const sans = localFont({
+  src: [
+    { path: "../fonts/suse-v4-latin-500.woff2", weight: "500" },
+    { path: "../fonts/suse-v4-latin-600.woff2", weight: "600" },
+    { path: "../fonts/suse-v4-latin-700.woff2", weight: "700" },
+  ],
   variable: "--font-sans",
-  weight: ["400", "500", "600", "700"],
 });
 
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
+const mono = localFont({
+  src: [
+    { path: "../fonts/spline-sans-mono-v13-latin-500.woff2", weight: "500" },
+    { path: "../fonts/spline-sans-mono-v13-latin-600.woff2", weight: "600" },
+  ],
   variable: "--font-mono",
-  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -44,9 +53,8 @@ const themeInitScript = `
 `;
 
 /**
- * Root layout for the static shell that installs fonts and the pre-hydration theme class.
- * Accepts `children` from Next.js app routing and keeps the exported shell provider-free.
- * Sets hydration-safe HTML/body structure used by lazy renderer mounts and fallback screens.
+ * Root layout for the static shell. Fonts are now self-hosted woff2 bundles in src/fonts/
+ * so dev doesn't block on font.googleapis.com, and typography tokens render immediately.
  */
 export default function RootLayout({
   children,

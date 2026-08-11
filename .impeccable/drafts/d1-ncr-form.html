@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>agent-render — CR-39 carbonless lab slip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f5f2ea; --paper-copy:#eef7fb; --carbon:#c0342b; --carbon-dim:#a83428;
+    --ink:#26241f; --ink-soft:#585447; --ink-faint:#8a8577;
+    --rule:#c9c4b4; --rule-soft:#dcd8ca; --pin-hole:#e2ded2;
+    --orange-stamp:#c9741c;
+  }
+  *{box-sizing:border-box}
+  html{background:#3b3a36 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='%233b3a36'/%3E%3Ccircle cx='1' cy='1' r='.5' fill='%23413f3a'/%3E%3C/svg%3E");}
+  body{
+    margin:0; color:var(--ink);
+    font:400 14.5px/1.55 "Archivo",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .sheet{
+    max-width:880px; margin:56px auto 96px; position:relative;
+    background:var(--paper);
+    border:1px solid var(--rule);
+    box-shadow:0 1px 0 #fff inset, 0 24px 48px -24px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.28);
+  }
+  .punch-strip{
+    height:38px; border-bottom:1px dashed var(--rule);
+    display:flex; align-items:center; justify-content:space-between; padding:0 24px;
+    background:repeating-linear-gradient(90deg, var(--pin-hole) 0 14px, transparent 14px 46px);
+    background-position: 12px 12px; background-size: 46px 14px; background-repeat: no-repeat;
+  }
+  .punch-strip .left, .punch-strip .right{font:600 10px/1 "IBM Plex Mono",monospace; letter-spacing:.14em; color:var(--ink-faint); text-transform:uppercase; background:var(--paper); padding:3px 6px;}
+  .form-head{
+    display:grid; grid-template-columns:1fr auto; align-items:end; gap:24px;
+    padding:28px 32px 22px; border-bottom:2.5px solid var(--ink);
+  }
+  .form-title{font:700 21px/1.15 "Archivo",sans-serif; letter-spacing:-0.01em; margin:0}
+  .form-sub{font:500 11px/1.5 "IBM Plex Mono",monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-top:8px}
+  .doc-number{text-align:right}
+  .doc-number .label{font:600 9.5px/1 "IBM Plex Mono",monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-faint)}
+  .doc-number .value{font:600 16px/1.25 "IBM Plex Mono",monospace; color:var(--carbon); margin-top:4px}
+  .carbon-bar{
+    padding:10px 32px; background:var(--paper-copy); border-bottom:1px solid var(--rule-soft);
+    font:500 11.5px/1.6 "IBM Plex Mono",monospace; color:var(--ink-soft); letter-spacing:.02em;
+  }
+  .carbon-bar b{color:var(--carbon); font-weight:600}
+  .row{padding:26px 32px; border-bottom:1px solid var(--rule-soft);}
+  .row:last-of-type{border-bottom:none}
+  .field{
+    display:grid; grid-template-columns: 178px 1fr; gap:8px 28px; padding:10px 0; align-items:start;
+  }
+  .field + .field{border-top:1px dotted var(--rule);}
+  .f-label{
+    font:600 10.5px/2 "IBM Plex Mono",monospace; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink-soft); padding-top:4px;
+  }
+  .f-input{
+    font:400 14px/1.5 "IBM Plex Mono", monospace; color:var(--ink);
+    border:none; border-bottom:1px solid var(--ink-faint); background:transparent;
+    padding:5px 2px 7px; width:100%; outline:none;
+  }
+  .f-input:focus{border-bottom-color:var(--carbon);}
+  .f-input.dim{color:var(--ink-faint)}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:0 28px;}
+  .two-col .field{grid-template-columns:100px 1fr;}
+  .transfer-slab{
+    border:1.5px solid var(--ink); background:var(--paper-copy);
+    padding:18px 20px; font:400 13.5px/1.7 "IBM Plex Mono",monospace; color:var(--ink);
+    box-shadow: 3px 3px 0 rgba(38,36,31,.12);
+  }
+  .transfer-slab .em{color:var(--carbon); font-style:normal; font-weight:600}
+  .hint-line{font:400 11.5px/1.7 "IBM Plex Mono",monospace; color:var(--ink-faint); margin-top:10px}
+  .type-tabs{display:flex; gap:0; border:1.5px solid var(--ink); width:max-content; background:var(--paper);}
+  .type-tabs span{
+    font:600 11px/1 "IBM Plex Mono",monospace; letter-spacing:.1em; text-transform:uppercase;
+    padding:10px 16px; border-right:1.5px solid var(--ink); color:var(--ink-soft); cursor:pointer;
+  }
+  .type-tabs span:last-child{border-right:none}
+  .type-tabs span.on{background:var(--ink); color:var(--paper);}
+  .action-row{display:flex; align-items:center; gap:28px; margin-top:22px}
+  .stamp{
+    appearance:none; border:2.5px solid var(--carbon); background:transparent; color:var(--carbon);
+    font:700 13px/1 "IBM Plex Mono",monospace; letter-spacing:.14em; text-transform:uppercase;
+    padding:14px 26px; cursor:pointer; transform:rotate(-1.2deg);
+    box-shadow: 0 0 0 3px var(--paper), 0 0 0 5.5px var(--carbon);
+  }
+  .stamp:active{transform:rotate(-1.2deg) translateY(2px)}
+  .codec-note{font:500 11px/1.7 "IBM Plex Mono",monospace; color:var(--ink-soft)}
+  .codec-note b{color:var(--ink); font-weight:600}
+  .perforation{
+    height:26px; border-top:1px dashed var(--rule); margin:0 12px;
+    background:transparent; position:relative;
+  }
+  .retain-strip{
+    display:grid; grid-template-columns:1fr auto auto auto; gap:24px; align-items:center;
+    padding:16px 32px 22px; background:var(--paper-copy); border-top:2.5px solid var(--ink);
+    font:500 11px/1.5 "IBM Plex Mono",monospace; color:var(--ink-soft); letter-spacing:.02em;
+  }
+  .retain-strip .tick::before{content:"☒ "; color:var(--carbon); font-weight:600}
+  .retain-strip .cross::before{content:"☐ "; color:var(--ink-faint)}
+  .retain-strip .brand{font:700 12px/1 "IBM Plex Mono",monospace; letter-spacing:.14em; color:var(--ink); text-transform:uppercase}
+  .sel-codec{display:flex; gap:18px; align-items:baseline; flex-wrap:wrap}
+  .sel-codec .opt{font:600 11.5px/1.6 "IBM Plex Mono",monospace; color:var(--ink-faint); letter-spacing:.04em}
+  .sel-codec .opt.checked{color:var(--carbon)}
+  .sel-codec .opt.checked::before{content:"■ "}
+  .sel-codec .opt::before{content:"□ "}
+  @media (max-width: 720px){
+    .field{grid-template-columns:1fr}
+    .two-col{grid-template-columns:1fr}
+    .retain-strip{grid-template-columns:1fr 1fr}
+    .sheet{margin:16px 10px 60px}
+  }
+</style>
+</head>
+<body>
+  <!--
+    DIRECTION CONTRACT D1 — CR-39 carbonless lab slip
+    THESIS: A single-part artifact transfer document; nothing retained on the pad, the copy goes with the link.
+    OWN-WORLD: printed cream top-sheet over a blue-tinted carbon copy sheet, punched tracking bar, red carbon transfer as the one accent.
+    STORY: a captain-of-the-clipboard writes into one slab, stamps, tears the copy, and the URL IS the copy.
+    FIRST VIEWPORT: punched strip → form head (catalog) → CARBON TRANSFER slab → write-in fields → type tabs → stamp → perforated retain strip.
+    FORM: candidate 1 of 7 grounded list; seed key 5b5b8c00.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div class="sheet">
+    <div class="punch-strip"><span class="left">FORM AR·39 — ARTIFACT TRANSFER</span><span class="right">SINGLE PART · NO MASTER RETAINED</span></div>
+    <header class="form-head">
+      <div>
+        <h1 class="form-title">Artifact transfer record</h1>
+        <p class="form-sub">Zero-retention artifact viewer for AI outputs.</p>
+      </div>
+      <div class="doc-number">
+        <div class="label">TRANSFER №</div>
+        <div class="value">#e4:mKX9…q2</div>
+      </div>
+    </header>
+    <div class="carbon-bar">CARBON TRANSFER — the URL fragment <b>is</b> the carbon copy. Pad keeps nothing; static host receives nothing on request.</div>
+
+    <section class="row">
+      <div class="transfer-slab">
+        Artifact content lives in the URL fragment, so in static mode the static host does not receive artifact content on the page request. Links can still appear in browser history, screenshots, and copied messages — <span class="em">shared by transfer, not retained by us.</span>
+      </div>
+    </section>
+
+    <section class="row">
+      <div class="two-col">
+        <div class="field"><label class="f-label">Title</label><input class="f-input" value="Product brief"></div>
+        <div class="field"><label class="f-label">Filename</label><input class="f-input" value="brief.md"></div>
+      </div>
+      <div class="field" style="margin-top:6px">
+        <label class="f-label">Content</label>
+        <div class="transfer-slab" style="box-shadow:none"># Launch note
+Share one artifact at a time without uploading it anywhere.
+– Markdown stays readable
+– Code keeps its language hint
+– The link works from a static export</div>
+        <p class="hint-line">Paste markdown notes, release docs, or a spec excerpt. Max 200,000 chars decoded.</p>
+      </div>
+      <div class="field">
+        <label class="f-label">Kind</label>
+        <div class="type-tabs">
+          <span class="on">Markdown</span><span>Code</span><span>Diff</span><span>CSV</span><span>JSON</span>
+        </div>
+      </div>
+      <div class="field">
+        <label class="f-label">Codec</label>
+        <div class="sel-codec">
+          <span class="opt checked">arx4 · compressed, ledger pin</span>
+          <span class="opt">plain</span><span class="opt">lz</span><span class="opt">deflate</span><span class="opt">arx / arx2 / arx3</span>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="stamp">⟶ Transfer &amp; generate link</button>
+        <p class="codec-note">BUDGET <b>1,204 / 8,192</b> fragment chars · discord-md <b>OK ≤ 2,000</b></p>
+      </div>
+    </section>
+
+    <div class="perforation"></div>
+
+    <section class="retain-strip">
+      <span class="brand">agent-render</span>
+      <span class="tick">zero retention by host design</span>
+      <span class="tick">5 renderers · static export</span>
+      <span class="cross">nothing stored server-side</span>
+    </section>
+  </div>
+</body>
+</html>

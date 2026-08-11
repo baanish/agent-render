@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>agent-render — direction drafts</title>
+<style>
+  :root { --bg:#0e0e10; --surface:#16161a; --ink:#e8e6e3; --muted:#8b8894; --border:#26262c; --accent:#7fd4c1; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:400 15px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  main { max-width:982px; margin: 0 auto; padding: 56px 32px 120px; }
+  h1 { font-size: 2.2rem; font-weight: 700; letter-spacing:-0.02em; margin:0 0 10px; }
+  .sub { color: var(--muted); font-size: .9rem; max-width: 64ch; margin-bottom: 44px; }
+  .group-label { color: var(--accent); font-size: .72rem; letter-spacing:.18em; text-transform:uppercase; margin:36px 0 14px; }
+  ol { list-style:none; padding:0; margin:0; display:grid; gap:12px; }
+  a {
+    display:grid; grid-template-columns: 54px 1fr auto; gap:16px; align-items:baseline;
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding: 15px 18px; text-decoration:none; color:var(--ink);
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  a:hover { border-color: var(--accent); transform: translateX(4px); }
+  .num { color:var(--muted); font-size:.78rem; font-variant-numeric: tabular-nums; }
+  .name { font-weight:600; font-size: 1.02rem; color:var(--ink); }
+  .name .seed { font-size:.68rem; color: var(--accent); border:1px solid #2c3a37; padding:2px 6px; border-radius:4px; margin-left:10px; vertical-align:middle; letter-spacing:.04em}
+  .desc { grid-column: 2; color: var(--muted); font-size: .82rem; margin-top:2px; }
+  .open { color: var(--accent); font-size:.8rem; white-space:nowrap; }
+  .footer { margin-top: 48px; color: var(--muted); font-size: .78rem; border-top:1px solid var(--border); padding-top: 20px; line-height:1.7 }
+</style>
+</head>
+<body>
+<main>
+  <h1>agent-render — direction drafts</h1>
+  <p class="sub">12 drafts. Same homepage content each time ("Zero-retention artifact viewer for AI outputs." + the create-a-link form). Type, spacing, and component language are what you're picking between, not the copy. Open a few, note the spread, then tell me which one (or which fusion) earns the real build.</p>
+
+  <p class="group-label">Grounded: my seven candidates</p>
+  <ol>
+    <li><a href="d1-ncr-form.html"><span class="num">D1</span><span class="name">CR-39 carbonless lab slip</span><span class="open">open →</span><span class="desc">Single-part transfer document; red carbon as accent; the URL is the carbon copy. Cream paper, two-web feel.</span></a></li>
+    <li><a href="d2-terminal-log.html"><span class="num">D2</span><span class="name">Terminal session paper log</span><span class="open">open →</span><span class="desc">tmux capture-pane grammar. Green live dot, box-drawing hair stretches, generate = one more command. Dark terminal print.</span></a></li>
+    <li><a href="d3-broadcast-chyron.html"><span class="num">D3</span><span class="name">NTSC broadcast underline</span><span class="open">open →</span><span class="desc">Condensed program title, safe-blue lower-third, red ON AIR bug, yellow crawl along the bottom.</span></a></li>
+    <li><a href="d4-nautical-chart.html"><span class="num">D4</span><span class="name">Nautical chart marginalia</span><span class="seed">seed-assigned</span><span class="open">open →</span><span class="desc">Surveyed chart: marginalia italics, mono soundings band, watery grid ground, one deep-sea blue as working color.</span></a></li>
+    <li><a href="d5-blueprint.html"><span class="num">D5</span><span class="name">Blueprint / linen sheet</span><span class="open">open →</span><span class="desc">Cyanotype grid field, monoline annotation, dimension rules, revision strip at the foot. Amber marks for corrections.</span></a></li>
+    <li><a href="d6-cd-catalog.html"><span class="num">D6</span><span class="name">CD catalog sheet</span><span class="open">open →</span><span class="desc">Booklet page: tracklist table with catalog numbers, baskerville titles, price-blue focus accent, barcode colophon.</span></a></li>
+    <li><a href="d7-cockpit-placard.html"><span class="num">D7</span><span class="name">Cockpit QRH card</span><span class="open">open →</span><span class="desc">Placarded quick-reference: engraved caps, amber = commit, green = confirmed state. Matte panels, VFD mono.</span></a></li>
+  </ol>
+
+  <p class="group-label">Challenged: the catalog's five (one dropped)</p>
+  <ol>
+    <li><a href="c1-crt-arcade.html"><span class="num">C1</span><span class="name">CRT arcade decoding stage</span><span class="open">open →</span><span class="desc">Pixel caps, phosphor green on tube black, scanlines + bloom; generate link = insert coin. Kept literal.</span></a></li>
+    <li><a href="c2-night-sixpack.html"><span class="num">C2</span><span class="name">Night-flight six-pack</span><span class="open">open →</span><span class="desc">The fragment inspector IS the instrument cluster. Radium dials, trend arrows, amber = caution only.</span></a></li>
+    <li><a href="c3-hardware-bench.html"><span class="num">C3</span><span class="name">Creator-hardware bench</span><span class="open">open →</span><span class="desc">Bone keycaps on gunmetal chassis, amber VFD readout, one orange COMMIT key. Physical kbd world.</span></a></li>
+    <li><a href="c4-high-density.html"><span class="num">C4</span><span class="name">Japanese high-density board</span><span class="open">open →</span><span class="desc">Tight modular notice board, utility red tabs, dense stats line. Whole product above the fold.</span></a></li>
+    <li><a href="c6-rain-garden.html"><span class="num">C6</span><span class="name">Gravity-rain garden</span><span class="open">open →</span><span class="desc">Dusk garden, blue rain rising from host to client. Surreal but transport-true. Kept literal-light.</span></a></li>
+  </ol>
+
+  <p class="footer">Not built: Challenger 5 (sneaker-box wall) — consumer-fashion grammar can't carry a dev tool without faking the trash talk. Same content in every draft: headline + lede + create-a-link form, because that's the real first viewport the project ships.<br><br>Tell me the dossier(s) worth shipping and I'll rebuild the real shell around it.</p>
+</main>
+</body>
+</html>

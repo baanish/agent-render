@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>agent-render · night instruments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=B612+Mono:ital,wght@0,400;0,700;1,400&family=Chivo:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0b0e11; --panel:#11161b; --glass:#151d24;
+    --ink:#eef2e9; --ink-dim:#8fa0a8; --ink-faint:#4d5a63;
+    --radium:#b7f5c9; --radium-hot:#e0ffe9; --amber:#ffb254; --red:#ff6b5e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--night); color:var(--ink);
+    font:400 15.5px/1.55 "Chivo", system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .cockpit{max-width:1160px; margin:0 auto; padding:36px 30px 130px;}
+  .glare{
+    display:flex; align-items:center; gap:26px;
+    border-bottom:1px solid #1e262e; padding-bottom:16px;
+  }
+  .glare .plate{font:700 12px/1 "B612 Mono",monospace; letter-spacing:.3em; color:var(--ink-dim); text-transform:uppercase}
+  .glare .hdg{margin-left:auto; font:700 13px/1 "B612 Mono",monospace; color:var(--radium); letter-spacing:.12em; font-variant-numeric:tabular-nums}
+  .glare .squelch{font:400 11px/1 "B612 Mono",monospace; color:var(--ink-faint); letter-spacing:.16em}
+
+  .cross-check{margin-top:52px;}
+  .cc-mission{
+    max-width:22ch; margin:0;
+    font:300 clamp(2rem,4.8vw,3.6rem)/1.12 "Chivo",sans-serif; letter-spacing:-0.02em; text-wrap:balance;
+  }
+  .cc-mission b{color:var(--radium); font-weight:700}
+  .cc-lede{margin-top:22px; max-width:60ch; color:var(--ink-dim); font-size:16px; line-height:1.7}
+  .cc-lede .needle{color:var(--radium); font-style:italic}
+
+  .sixpack{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:54px;
+  }
+  .gauge{
+    background:var(--panel); border:1px solid #232d36; border-radius:10px; padding:20px;
+    position:relative; overflow:hidden;
+  }
+  .gauge::after{content:""; position:absolute; inset:0; background:radial-gradient(420px 200px at 30% -20%, rgba(183,245,201,.05), transparent 60%); pointer-events:none}
+  .g-face{
+    width:150px; height:150px; margin:6px auto 0; border-radius:50%;
+    border:2px solid #2a3641; background:var(--glass);
+    display:grid; place-items:center; position:relative;
+  }
+  .g-face svg{position:absolute; inset:0}
+  .g-core{text-align:center; z-index:1}
+  .g-val{font:700 26px/1 "B612 Mono",monospace; color:var(--radium); font-variant-numeric:tabular-nums; text-shadow:0 0 10px rgba(183,245,201,.35)}
+  .g-val span{font-size:13px; color:var(--ink-dim)}
+  .g-unit{font:400 9.5px/1 "B612 Mono",monospace; letter-spacing:.24em; color:var(--ink-faint); margin-top:7px; text-transform:uppercase}
+  .g-caption{
+    display:flex; justify-content:space-between; align-items:baseline; margin-top:16px;
+    font:700 10px/1 "B612 Mono",monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-dim);
+  }
+  .g-caption .trend{color:var(--radium)}
+  .g-caption .trend.amber{color:var(--amber)}
+  .g-placard{
+    margin-top:12px; font:400 11px/1.5 "B612 Mono",monospace; color:var(--ink-faint);
+    letter-spacing:.1em; text-transform:uppercase; text-align:center;
+  }
+
+  .flow-strip{
+    margin-top:46px; display:grid; grid-template-columns:auto 1fr auto; gap:30px; align-items:center;
+    background:var(--panel); border:1px solid #232d36; border-radius:8px; padding:18px 26px;
+  }
+  .flow-label{font:700 10px/1.6 "B612 Mono",monospace; letter-spacing:.26em; color:var(--ink-dim); text-transform:uppercase}
+  .flow-route{display:flex; align-items:center; gap:14px; font:700 14px/1 "B612 Mono",monospace; color:var(--radium); letter-spacing:.06em}
+  .flow-route .arr{color:var(--ink-faint); font-weight:400}
+  .flow-route span{font-variant-numeric:tabular-nums}
+  .flow-metar{font:400 11.5px/1.6 "B612 Mono",monospace; color:var(--ink-dim); text-align:right; letter-spacing:.05em}
+  .flow-metar b{color:var(--radium); font-weight:400}
+
+  .link-commute{margin-top:52px; border:1px solid #232d36; border-radius:10px; background:var(--panel); overflow:hidden}
+  .lc-head{display:flex; justify-content:space-between; align-items:baseline; padding:16px 26px; border-bottom:1px solid #1e262e;}
+  .lc-head .t{font:700 12px/1 "B612 Mono",monospace; letter-spacing:.3em; color:var(--ink); text-transform:uppercase}
+  .lc-head .r{font:400 11px/1 "B612 Mono",monospace; color:var(--ink-faint); letter-spacing:.16em}
+  .lc-body{display:grid; grid-template-columns:1fr 1fr; gap:0}
+  .lc-cell{padding:24px 26px; border-right:1px solid #1e262e}
+  .lc-cell:nth-child(2n){border-right:none}
+  .lc-cell.wide{grid-column:1/-1; border-top:1px solid #1e262e}
+  .lc-cell label{display:block; font:700 9.5px/1 "B612 Mono",monospace; letter-spacing:.26em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:12px}
+  .lc-input{width:100%; background:var(--night); border:1px solid #2a3641; border-radius:4px; color:var(--ink); font:400 14px/1.5 "B612 Mono",monospace; padding:11px 14px; outline:none}
+  .lc-input:focus{border-color:var(--radium)}
+  .lc-log{border:1px solid #2a3641; border-radius:4px; background:var(--night); padding:15px 17px; min-height:130px; font:400 13px/1.8 "B612 Mono",monospace; color:var(--ink); white-space:pre-wrap}
+  .runway-select{display:flex; gap:10px; flex-wrap:wrap}
+  .runway-select span{
+    padding:11px 15px; border:1px solid #2a3641; border-radius:4px; background:var(--night);
+    font:700 10.5px/1 "B612 Mono",monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-dim); cursor:pointer;
+  }
+  .runway-select span.on{color:var(--radium); border-color:var(--radium); background:rgba(183,245,201,.04)}
+  .lc-foot{display:flex; align-items:center; justify-content:space-between; gap:22px; padding:17px 26px; border-top:1px solid #1e262e; flex-wrap:wrap}
+  .cleared-btn{
+    background:transparent; border:1.5px solid var(--radium); color:var(--radium); cursor:pointer;
+    font:700 12px/1 "B612 Mono",monospace; letter-spacing:.24em; text-transform:uppercase; padding:14px 26px; border-radius:4px;
+  }
+  .cleared-btn:hover{background:rgba(183,245,201,.07)}
+  .lc-readout{font:400 11.5px/1.7 "B612 Mono",monospace; color:var(--ink-dim); letter-spacing:.06em}
+  .lc-readout b{color:var(--radium); font-weight:400}
+
+  .cockpit-foot{
+    margin-top:44px; border-top:1px solid #1e262e; padding-top:15px;
+    display:flex; justify-content:space-between; gap:22px; flex-wrap:wrap;
+    font:400 10px/1.7 "B612 Mono",monospace; letter-spacing:.22em; color:var(--ink-faint); text-transform:uppercase;
+  }
+  @media (max-width:900px){.sixpack{grid-template-columns:repeat(2,1fr)}.lc-body{grid-template-columns:1fr}.lc-cell{border-right:none}}
+</style>
+</head>
+<body>
+  <!--
+    DIRECTION CONTRACT C2 — night-flight instrument six-pack (fused challenger)
+    THESIS: the inspector is the instrument cluster; cross-check the gauges, then go.
+    OWN-WORLD: matte night panel, radium dials in mono, amber reserved for caution, trend arrows on every gauge; type pairs a squared aviation mono with a cool humanist sans.
+    STORY: the pilot reads attitude (payload state), confirms systems, runs the commute, and is cleared to publish.
+    FIRST VIEWPORT: glare-shield strip, mission statement with radium keyword, lede, the six-pack at real reading size.
+    FORM: challenger 2 of 6 dealt, fused with agent-render; seed key 5b5b8c00.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div class="cockpit">
+    <div class="glare">
+      <span class="plate">AGENT-RENDER · NIGHT PANEL</span>
+      <span class="squelch">STATIC CREW · CLIENT DECODE</span>
+      <span class="hdg" id="hdg">HDG 138° · 01:52Z</span>
+    </div>
+
+    <section class="cross-check">
+      <h1 class="cc-mission">Zero-retention artifact viewer for AI outputs. <b>Nothing held behind the glass.</b></h1>
+      <p class="cc-lede">Artifact content lives in the URL fragment. In static mode the host does not receive artifact content on the page request. <span class="needle">Cross-check before you file:</span> links can still appear in browser history, screenshots, and copied messages.</p>
+    </section>
+
+    <section class="sixpack">
+      <div class="gauge">
+        <div class="g-face"><svg viewBox="0 0 150 150"><g stroke="#2a3641" stroke-width="2"><line x1="75" y1="8" x2="75" y2="20"/><line x1="142" y1="75" x2="130" y2="75"/><line x1="75" y1="142" x2="75" y2="130"/><line x1="8" y1="75" x2="20" y2="75"/></g><line x1="75" y1="75" x2="118" y2="44" stroke="#b7f5c9" stroke-width="2.5"/><circle cx="75" cy="75" r="5" fill="#b7f5c9"/></svg>
+          <div class="g-core"><div class="g-val">1204<span> ch</span></div><div class="g-unit">Fragment load</div></div>
+        </div>
+        <div class="g-caption"><span>PAYLOAD</span><span class="trend">▲ 14.7% of limit</span></div>
+        <div class="g-placard">VNE 8192 · GREEN ARC TO 6000</div>
+      </div>
+      <div class="gauge">
+        <div class="g-face"><svg viewBox="0 0 150 150"><g stroke="#2a3641" stroke-width="2"><line x1="75" y1="8" x2="75" y2="20"/><line x1="142" y1="75" x2="130" y2="75"/><line x1="75" y1="142" x2="75" y2="130"/><line x1="8" y1="75" x2="20" y2="75"/></g><line x1="75" y1="75" x2="40" y2="40" stroke="#b7f5c9" stroke-width="2.5"/><circle cx="75" cy="75" r="5" fill="#b7f5c9"/></svg>
+          <div class="g-core"><div class="g-val">ARX4</div><div class="g-unit">Codec selected</div></div>
+        </div>
+        <div class="g-caption"><span>COMPRESSION</span><span class="trend">AUTO-MIXTURE</span></div>
+        <div class="g-placard">PLAIN · LZ · DEFLATE · ARX–ARX4</div>
+      </div>
+      <div class="gauge">
+        <div class="g-face"><svg viewBox="0 0 150 150"><g stroke="#2a3641" stroke-width="2"><line x1="75" y1="8" x2="75" y2="20"/><line x1="142" y1="75" x2="130" y2="75"/><line x1="75" y1="142" x2="75" y2="130"/><line x1="8" y1="75" x2="20" y2="75"/></g><line x1="75" y1="75" x2="75" y2="18" stroke="#b7f5c9" stroke-width="2.5"/><circle cx="75" cy="75" r="5" fill="#b7f5c9"/></svg>
+          <div class="g-core"><div class="g-val">0<span> b</span></div><div class="g-unit">Server retention</div></div>
+        </div>
+        <div class="g-caption"><span>STORAGE</span><span class="trend">STEADY · HOST BLIND</span></div>
+        <div class="g-placard">NONE PERMITTED IN PATTERN</div>
+      </div>
+      <div class="gauge">
+        <div class="g-face"><svg viewBox="0 0 150 150"><g stroke="#2a3641" stroke-width="2"><line x1="75" y1="8" x2="75" y2="20"/><line x1="142" y1="75" x2="130" y2="75"/><line x1="75" y1="142" x2="75" y2="130"/><line x1="8" y1="75" x2="20" y2="75"/></g><line x1="75" y1="75" x2="118" y2="106" stroke="#b7f5c9" stroke-width="2.5"/><circle cx="75" cy="75" r="5" fill="#b7f5c9"/></svg>
+          <div class="g-core"><div class="g-val">5</div><div class="g-unit">Renderers armed</div></div>
+        </div>
+        <div class="g-caption"><span>AVIONICS</span><span class="trend">ALL BUSSES NOMINAL</span></div>
+        <div class="g-placard">MD · CODE · DIFF · CSV · JSON</div>
+      </div>
+      <div class="gauge">
+        <div class="g-face"><svg viewBox="0 0 150 150"><g stroke="#2a3641" stroke-width="2"><line x1="75" y1="8" x2="75" y2="20"/><line x1="142" y1="75" x2="130" y2="75"/><line x1="75" y1="142" x2="75" y2="130"/><line x1="8" y1="75" x2="20" y2="75"/></g><line x1="75" y1="75" x2="108" y2="38" stroke="#ffb254" stroke-width="2.5"/><circle cx="75" cy="75" r="5" fill="#ffb254"/></svg>
+          <div class="g-core"><div class="g-val" style="color:var(--amber)">2000</div><div class="g-unit">Discord-md gate</div></div>
+        </div>
+        <div class="g-caption"><span>CHATTER LIMIT</span><span class="trend amber">CAUTION AIRSPACE</span></div>
+        <div class="g-placard">WARN ISSUED PAST GATE</div>
+      </div>
+      <div class="gauge">
+        <div class="g-face"><svg viewBox="0 0 150 150"><g stroke="#2a3641" stroke-width="2"><line x1="75" y1="8" x2="75" y2="20"/><line x1="142" y1="75" x2="130" y2="75"/><line x1="75" y1="142" x2="75" y2="130"/><line x1="8" y1="75" x2="20" y2="75"/></g><line x1="75" y1="75" x2="50" y2="112" stroke="#b7f5c9" stroke-width="2.5"/><circle cx="75" cy="75" r="5" fill="#b7f5c9"/></svg>
+          <div class="g-core"><div class="g-val">200k<span> ch</span></div><div class="g-unit">Decoded ceiling</div></div>
+        </div>
+        <div class="g-caption"><span>SERVICE CEILING</span><span class="trend">ABSOLUTE · NO CLIMB</span></div>
+        <div class="g-placard">REFUSE LOADS ABOVE CEILING</div>
+      </div>
+    </section>
+
+    <div class="flow-strip">
+      <span class="flow-label">EN ROUTE</span>
+      <div class="flow-route"><span>AGENT</span><span class="arr">→</span><span>#FRAGMENT</span><span class="arr">→</span><span>CLIENT DECODE</span><span class="arr">→</span><span>READER</span></div>
+      <span class="flow-metar">HOST CONTACT <b>NONE</b> · STORAGE <b>0B</b></span>
+    </div>
+
+    <section class="link-commute">
+      <div class="lc-head"><span class="t">FILE A LINK</span><span class="r">GROUND OPS · NO CLEARANCE NEEDED</span></div>
+      <div class="lc-body">
+        <div class="lc-cell"><label>Ident (title)</label><input class="lc-input" value="Product brief"></div>
+        <div class="lc-cell"><label>Skin (filename)</label><input class="lc-input" value="brief.md"></div>
+        <div class="lc-cell wide"><label>Cargo manifest (content)</label>
+          <div class="lc-log"># Launch note
+Share one artifact at a time without uploading it anywhere.
+- Markdown stays readable
+- Code keeps its language hint
+- The link works from a static export</div>
+        </div>
+        <div class="lc-cell wide"><label>Runway (kind)</label>
+          <div class="runway-select"><span class="on">Markdown</span><span>Code</span><span>Diff</span><span>CSV</span><span>JSON</span></div>
+        </div>
+      </div>
+      <div class="lc-foot">
+        <button class="cleared-btn">Cleared · generate link</button>
+        <span class="lc-readout">LOAD <b>1,204/8,192 CH</b> · CODEC <b>ARX4</b> · DISCORD GATE <b>OPEN</b></span>
+      </div>
+    </section>
+
+    <footer class="cockpit-foot">
+      <span>NIGHT OPS · ZERO RETENTION BY DESIGN</span>
+      <span>SQUAWK NORMAL · NOTHING TO TRANSPOND</span>
+      <span>agent-render · g-u-all-green</span>
+    </footer>
+  </div>
+</body>
+</html>

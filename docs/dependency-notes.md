@@ -10,7 +10,7 @@
 - `rehype-sanitize` - MIT
 - `@codemirror/*` - MIT
 - `@replit/codemirror-indentation-markers` - MIT
-- `@git-diff-view/*` - MIT
+- `@pierre/diffs` - Apache-2.0
 - `papaparse` - MIT
 - `lz-string` - MIT
 - `fflate` - MIT
@@ -30,7 +30,7 @@
 - `next` pins its nested `postcss` dependency to `8.5.14` via `package.json` overrides so Tailwind CSS v4's `postcss ^8.5.6` peer range is satisfied in the Next.js toolchain.
 - CodeMirror handles source artifacts and markdown code fences because it is excellent at read-only code presentation; JSON, markdown raw, and CSV raw views use lighter native source blocks.
 - `@replit/codemirror-indentation-markers` replaces custom indent-guide logic with a maintained CM6 extension.
-- `@git-diff-view/*` fits review-style diffs better than a generic merge editor for the current viewer. Its pure CSS file is mirrored into `public/vendor/diff-view-pure.css` with a Brotli-compressed `public/vendor/diff-view-pure.css.br` copy by `npm run assets:compress`, and loaded only by the diff renderer; `tests/diff-style-asset.test.ts` keeps those assets in sync with the package copy.
+- `@pierre/diffs` fits review-style diffs better than a generic merge editor for the current viewer. It is Shiki-based and dynamically imported only by the diff renderer, so there is no vendor stylesheet to mirror into `public/` and no `npm run assets:compress` mirroring step; `tests/components/diff-renderer.test.tsx` keeps the renderer on this contract. The previous `@git-diff-view/*` renderer and its `public/vendor/diff-view-pure.css` (+ `.br`) mirror were removed in the full rebuild.
 - `papaparse` handles CSV parsing; CSV rendering uses a native read-only table to avoid a data-grid dependency for the shipped static viewer.
 - `fflate` provides portable deflate/inflate support across iOS Safari and Android Chromium without relying on browser-specific compression streams.
 - `brotli-wasm` provides the arx/arx2/arx3 Brotli compression layer, including streaming decompression used to cap expanded output before allocating oversized decoded payloads.

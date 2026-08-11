@@ -152,7 +152,6 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
             Raw
           </button>
         </div>
-        <span className="mono-pill">read-only</span>
       </div>
       {view === "tree" ? (
         <JsonTreeBoundary key={artifact.id} fallback={<JsonRawSource content={artifact.content} />}>

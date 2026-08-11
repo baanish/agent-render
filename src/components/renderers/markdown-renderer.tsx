@@ -277,7 +277,7 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
 
   return (
     <div className="markdown-document" data-testid="renderer-markdown" data-renderer-ready={readyBlockCount >= embeddedBlockCount ? "true" : "false"}>
-      <header className="markdown-print-heading">
+      <header className="markdown-print-heading" aria-hidden="true">
         <p className="section-kicker">Markdown artifact</p>
         <h1>{heading}</h1>
         {artifact.filename ? <p>{artifact.filename}</p> : null}

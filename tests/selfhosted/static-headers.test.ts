@@ -50,10 +50,6 @@ function createExportFixture(): { root: string; outDir: string } {
     path.join(outDir, "arx-dictionary.json.br"),
     "brotli-compressed-json",
   );
-  writeFileSync(
-    path.join(outDir, "vendor", "diff-view-pure.css.br"),
-    "brotli-compressed-css",
-  );
   return { root, outDir };
 }
 
@@ -133,19 +129,6 @@ describe("selfhosted precompressed header contract", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe(
       "application/json; charset=utf-8",
-    );
-    expect(response.headers.get("content-encoding")).toBe("br");
-    expect(response.headers.get("vary")).toBe("Accept-Encoding");
-  });
-
-  it("serves *.css.br with decompressed Content-Type and Brotli headers", async () => {
-    const response = await fetch(
-      `http://127.0.0.1:${port}/vendor/diff-view-pure.css.br`,
-      { method: "HEAD" },
-    );
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toBe(
-      "text/css; charset=utf-8",
     );
     expect(response.headers.get("content-encoding")).toBe("br");
     expect(response.headers.get("vary")).toBe("Accept-Encoding");

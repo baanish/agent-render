@@ -21,8 +21,11 @@ test("renders the zero-retention homepage when no fragment is present", async ({
   await expect(page.getByText(/artifact content lives in the URL fragment/i)).toBeVisible();
   await expect(page.getByText(/the static host does not receive artifact content/i)).toBeVisible();
   await expect(page.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
-  await expect(page.getByRole("link", { name: /github/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /payload format docs/i })).toBeVisible();
+  const footerNav = page.getByRole("navigation", { name: "Site" });
+  await expect(page.getByRole("link", { name: /github/i }).first()).toBeVisible();
+  await expect(footerNav.getByRole("link", { name: /github/i })).toBeVisible();
+  await expect(footerNav.getByRole("link", { name: /payload format/i })).toBeVisible();
+  await expect(footerNav.getByRole("link", { name: /security/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /safety.*security page/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /openclaw/i })).toBeVisible();
 });
@@ -76,14 +79,14 @@ test("creates, copies, and previews a generated homepage link", async ({ page })
   await page.getByRole("button", { name: "Preview here" }).click();
   await waitForViewerState(page, "artifact");
   await expect(page.locator("[data-active-kind='code']")).toBeVisible();
-  await expect(page.getByText("Homepage snippet").first()).toBeVisible();
+  await expect(page.getByTestId("artifact-toolbar-filename")).toHaveText("snippet.ts");
 });
 
 test("renders markdown payloads and triggers print", async ({ page }) => {
   await goToHash(page, getFragmentHash("Maintainer kickoff"));
   await waitForViewerState(page, "artifact");
   await expect(page.locator("[data-active-kind='markdown']")).toBeVisible();
-  await expect(page.getByText("Sprint roadmap").first()).toBeVisible();
+  await expect(page.locator(".markdown-article").getByRole("heading", { name: "Sprint roadmap", level: 1 })).toBeVisible();
 
   await page.evaluate(() => {
     window.__printCalled = false;
@@ -158,23 +161,14 @@ test("renders multi-file diffs without mutating the payload hash", async ({ page
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(beforeHash);
 });
 
-test("loads the compressed diff stylesheet only after opening a diff artifact", async ({ page }) => {
-  await waitForViewerState(page, "empty");
-  await expect
-    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some((link) => link.getAttribute("href")?.includes("diff-view-pure.css"))))
-    .toBe(false);
-
+test("loads the rich diff renderer lazily for diff artifacts", async ({ page }) => {
   await goToHash(page, getFragmentHash("Phase 1 sample diff"));
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "diff");
   await expect(page.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "rich");
-
-  const stylesheetHrefs = await page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]'), (link) => link.getAttribute("href") ?? ""));
-  expect(stylesheetHrefs.some((href) => href.endsWith("/vendor/diff-view-pure.css.br"))).toBe(true);
-  expect(stylesheetHrefs.some((href) => href.endsWith("/vendor/diff-view-pure.css"))).toBe(false);
 });
 
-test("keeps fallback diffs off the rich diff stylesheet path", async ({ page }) => {
+test("keeps fallback diffs off the rich diff renderer path", async ({ page }) => {
   const fallbackDiffEnvelope = {
     v: 1,
     codec: "plain",
@@ -195,9 +189,6 @@ test("keeps fallback diffs off the rich diff stylesheet path", async ({ page }) 
   await expect(page.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "fallback");
   await expect(page.locator('[data-testid="viewer-shell"][data-renderer-ready="true"]')).toBeVisible();
   await expect(page.getByTestId("renderer-diff-fallback-raw")).toContainText("not a unified diff");
-  await expect
-    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some((link) => link.getAttribute("href")?.includes("diff-view-pure.css"))))
-    .toBe(false);
 });
 
 test.describe("mobile UX", () => {
@@ -221,22 +212,38 @@ test.describe("mobile UX", () => {
     await expect(page.getByRole("button", { name: "Back to unified" })).toBeVisible();
   });
 
-  test("surfaces samples before inspector on phones", async ({ page }) => {
+  test("omits the inspector in the empty state on phones", async ({ page }) => {
     await waitForViewerState(page, "empty");
 
-    const samplesBox = await page.locator(".home-samples-section").boundingBox();
-    const inspectorBox = await page.locator(".home-inspector-section").boundingBox();
-
-    expect(samplesBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(inspectorBox?.y ?? 0);
+    await expect(page.locator(".home-inspector-section")).toHaveCount(0);
+    await expect(page.locator(".home-samples-section")).toBeVisible();
     await expect(page.getByRole("link", { name: /Maintainer kickoff/i })).toBeVisible();
   });
 
-  test("keeps artifact metadata in compact two-column grids", async ({ page }) => {
+  test("keeps the spec sheet readable as stacked ledger rows on phones", async ({ page }) => {
     await goToHash(page, getFragmentHash("arx showcase"));
     await waitForViewerState(page, "artifact");
 
-    const artifactMetrics = page.getByTestId("artifact-metadata-grid");
-    await expect.poll(() => artifactMetrics.evaluate((element) => window.getComputedStyle(element).gridTemplateColumns.split(" ").length)).toBe(2);
+    const specSheet = page.getByTestId("artifact-metadata-grid");
+    await expect(specSheet.locator(".bench-ledger-row").first()).toBeVisible();
+
+    // one column on phones
+    const columns = await specSheet.evaluate(
+      (element) => window.getComputedStyle(element).gridTemplateColumns.split(" ").length,
+    );
+    expect(columns).toBe(1);
+
+    // every row label and value stays on-screen
+    const viewportWidth = page.viewportSize()?.width ?? 0;
+    const valueBoxes = await specSheet
+      .locator(".artifact-meta-value, .artifact-hash-preview-code")
+      .evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect()));
+    expect(valueBoxes.length).toBeGreaterThan(0);
+    for (const valueBox of valueBoxes) {
+      expect(valueBox.width).toBeGreaterThan(0);
+      expect(valueBox.right).toBeLessThanOrEqual(viewportWidth + 1);
+      expect(valueBox.left).toBeGreaterThanOrEqual(-1);
+    }
   });
 
   test("code artifact defaults line wrap on for narrow viewports", async ({ page }) => {

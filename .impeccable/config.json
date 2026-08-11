@@ -1,0 +1,10 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [
+      ".impeccable/drafts/",
+      ".impeccable/drafts"
+    ],
+    "ignoreValues": []
+  }
+}
