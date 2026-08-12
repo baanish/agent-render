@@ -393,24 +393,24 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                 />
               </div>
 
-              <div className="creator-result-metrics">
-                <div className="metric-card">
-                  <p className="field-label">Codec</p>
-                  <p className="metric-value">{generatedLink.codec}</p>
+              <dl className="carbon-legend">
+                <div>
+                  <dt className="field-label">Codec</dt>
+                  <dd className="metric-value">{generatedLink.codec}</dd>
                 </div>
-                <div className="metric-card">
-                  <p className="field-label">Fragment</p>
-                  <p className="metric-value">
+                <div>
+                  <dt className="field-label">Fragment</dt>
+                  <dd className="metric-value">
                     {numberFormatter.format(generatedLink.fragmentLength)} chars
-                  </p>
+                  </dd>
                 </div>
-                <div className="metric-card">
-                  <p className="field-label">Markdown length</p>
-                  <p className="metric-value">
+                <div>
+                  <dt className="field-label">Markdown length</dt>
+                  <dd className="metric-value">
                     {numberFormatter.format(generatedLink.markdownLinkLength)} chars
-                  </p>
+                  </dd>
                 </div>
-              </div>
+              </dl>
 
               {generatedLink.discordMarkdownLinkWarning ? (
                 <div className="creator-warning-state" role="status">

@@ -1,36 +1,33 @@
-import type { LucideIcon } from "lucide-react";
-import type { ArtifactKind, ArtifactPayload } from "@/lib/payload/schema";
+import type { ArtifactPayload } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
 
 type ArtifactSelectorProps = {
   artifacts: ArtifactPayload[];
   activeArtifactId: string;
   onSelect: (artifactId: string) => void;
-  kindIcons: Record<ArtifactKind, LucideIcon>;
   getHeading: (artifact: ArtifactPayload) => string;
   getSupportingLabel: (artifact: ArtifactPayload) => string;
 };
 
 /**
- * Renders artifact tabs in the viewer header so users can switch within a decoded bundle.
+ * Renders artifact keys in the viewer so operators can switch within a decoded bundle.
  * Uses `artifacts`, `activeArtifactId`, and `onSelect` to drive selection, plus heading/label formatters.
- * Keeps navigation in UI state with icon + metadata badges for each artifact kind.
+ * Filename is the visible identity; kind stays secondary metadata.
  */
 export function ArtifactSelector({
   artifacts,
   activeArtifactId,
   onSelect,
-  kindIcons,
   getHeading,
   getSupportingLabel,
 }: ArtifactSelectorProps) {
   return (
     <div className="artifact-selector-row" data-testid="artifact-selector-row">
       {artifacts.map((artifact) => {
-        const Icon = kindIcons[artifact.kind];
         const heading = getHeading(artifact);
         const supportingLabel = getSupportingLabel(artifact);
         const isCurrent = artifact.id === activeArtifactId;
+        const filename = artifact.filename?.trim() || heading;
 
         return (
           <button
@@ -41,14 +38,13 @@ export function ArtifactSelector({
             aria-pressed={isCurrent}
             aria-label={`Open artifact ${heading}`}
           >
-            <span className="artifact-switcher-icon">
-              <Icon className="h-4 w-4" />
-            </span>
             <span className="artifact-switcher-content min-w-0 flex-1 text-left">
-              <span className="artifact-switcher-title">{artifact.filename?.trim() || heading}</span>
+              <span className="artifact-switcher-title">{filename}</span>
               <span className="artifact-switcher-meta">
                 <span>{artifact.kind}</span>
-                <span className="truncate">{supportingLabel}</span>
+                {supportingLabel !== filename ? (
+                  <span className="truncate">{supportingLabel}</span>
+                ) : null}
               </span>
             </span>
           </button>

@@ -17,7 +17,6 @@ import {
   type MarkdownArtifact,
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
-import { kindIcons } from "@/components/artifact-kind-icons";
 import { ArtifactSelector } from "@/components/viewer/artifact-selector";
 import { FragmentDetailsDisclosure } from "@/components/viewer/fragment-details-disclosure";
 import { getHashPreview } from "@/components/viewer/hash-preview";
@@ -508,7 +507,6 @@ export function ArtifactStage({
             activeArtifactId={activeArtifact.id}
             getHeading={getArtifactHeading}
             getSupportingLabel={getArtifactSupportingLabel}
-            kindIcons={kindIcons}
             onSelect={onArtifactSelect}
           />
         </section>

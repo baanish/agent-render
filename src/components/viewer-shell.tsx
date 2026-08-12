@@ -98,7 +98,7 @@ function getOperatingState(parsed: ParsedPayload) {
     return {
       state: "ready" as const,
       label: "READY",
-      message: "Fragment is valid.",
+      message: "",
     };
   }
 

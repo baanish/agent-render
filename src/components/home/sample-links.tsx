@@ -39,12 +39,7 @@ export function SampleLinks({ activeHash }: SampleLinksProps) {
                       className={cn("sample-row", isActive && "is-active")}
                     >
                       <span className="sample-row-kind">{sample.kind}</span>
-                      <span>
-                        <span className="sample-row-title">{sample.title}</span>
-                        {sample.description ? (
-                          <span className="sample-row-copy">{sample.description}</span>
-                        ) : null}
-                      </span>
+                      <span className="sample-row-title">{sample.title}</span>
                       <span className="sample-row-chars">
                         {numberFormatter.format(sample.fragmentLength)}
                       </span>

@@ -1,6 +1,5 @@
 "use client";
 
-import { MoonStar, SunMedium } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useThemeController } from "@/components/theme/use-theme-controller";
 import { cn } from "@/lib/utils";
@@ -30,8 +29,8 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       className={cn("theme-rocker", className)}
       aria-label={mounted ? `Switch to ${isDark ? "light" : "dark"} theme` : "Theme toggle loading"}
     >
-      {mounted && isDark ? <SunMedium className="h-3.5 w-3.5" /> : <MoonStar className="h-3.5 w-3.5" />}
-      <span>{mounted ? (isDark ? "Lt" : "Dk") : "Theme"}</span>
+      <span className={cn("theme-rocker-side", mounted && !isDark && "is-active")}>Lt</span>
+      <span className={cn("theme-rocker-side", mounted && isDark && "is-active")}>Dk</span>
     </button>
   );
 }

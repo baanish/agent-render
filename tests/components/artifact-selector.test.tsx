@@ -1,7 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { FileCode2, FileText } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
 import { ArtifactSelector } from "@/components/viewer/artifact-selector";
 import type { ArtifactPayload } from "@/lib/payload/schema";
@@ -20,7 +19,6 @@ describe("ArtifactSelector", () => {
         activeArtifactId="roadmap"
         getHeading={(artifact) => artifact.title ?? artifact.id}
         getSupportingLabel={(artifact) => artifact.id}
-        kindIcons={{ markdown: FileText, code: FileCode2, diff: FileText, csv: FileText, json: FileText }}
         onSelect={onSelect}
       />,
     );

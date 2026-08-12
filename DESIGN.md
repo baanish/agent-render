@@ -31,8 +31,8 @@ All UI color is OKLCH. Do not introduce hex except in SVG assets that cannot use
 | `--success` | `oklch(0.44 0.11 155)` | READY lamp |
 | `--warning` | `oklch(0.62 0.13 75)` | HOLD |
 | `--danger` | `oklch(0.50 0.17 32)` | FAIL / oxide |
-| `--carbon-paper` | `oklch(0.89 0.028 255)` | Transfer slip |
-| `--carbon-ink` | `oklch(0.30 0.12 265)` | Carbon impression |
+| `--carbon-paper` | `oklch(0.88 0.042 255)` | Transfer slip |
+| `--carbon-ink` | `oklch(0.28 0.14 265)` | Carbon impression |
 
 Primary fills use near-white text (`oklch(0.98 0.01 250)`).
 
