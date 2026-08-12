@@ -568,6 +568,7 @@ select {
 
 .procedure-title {
   margin: 0 0 var(--space-3);
+  font-family: var(--font-sans), sans-serif;
   font-size: 1.125rem;
   font-weight: 600;
 }
@@ -1067,6 +1068,7 @@ select {
 
 .artifact-filename {
   margin: 0;
+  font-family: var(--font-sans), sans-serif;
   font-size: 1.25rem;
   font-weight: 600;
   line-height: 1.2;
