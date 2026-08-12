@@ -24,9 +24,8 @@ export function FragmentDetailsDisclosure({
     <details className="artifact-disclosure" data-testid="fragment-disclosure">
       <summary className="artifact-disclosure-summary">
         <span className="artifact-disclosure-summary-copy">
-          <span className="field-label">Diagnostics</span>
           <span className="artifact-disclosure-title text-sm font-medium text-[color:var(--text-primary)]">
-            Transport
+            Diagnostics
           </span>
         </span>
       </summary>

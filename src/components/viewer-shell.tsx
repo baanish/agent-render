@@ -346,20 +346,9 @@ export function ViewerShell() {
 
             <section className="home-inspector-section print-hide-on-markdown">
               <h2 className="procedure-title">Transport</h2>
-              <p className="creator-field-hint">{operating.message}</p>
-              <div className="inspector-grid mt-3">
-                <div className="inspector-cell">
-                  <p className="field-label">State</p>
-                  <p className="limit-value">{operating.label}</p>
-                </div>
-                <div className="inspector-cell">
-                  <p className="field-label">Codec</p>
-                  <p className="limit-value">{parsed.ok ? parsed.envelope.codec : "—"}</p>
-                </div>
-                <div className="artifact-hash-preview">
-                  <p className="field-label">Hash</p>
-                  <pre className="artifact-hash-preview-code">{getHashPreview(hash)}</pre>
-                </div>
+              <div className="artifact-hash-preview">
+                <p className="field-label">Hash</p>
+                <pre className="artifact-hash-preview-code">{getHashPreview(hash)}</pre>
               </div>
             </section>
           </section>

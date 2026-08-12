@@ -368,6 +368,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             <div className={cn("carbon-slip", isGeneratedLinkStale && "is-hold")}>
               <div className="carbon-slip-head">
                 <h4 className="carbon-slip-title">{transferName}</h4>
+                <span className="carbon-copy-mark">COPY</span>
               </div>
 
               <div className="creator-link-frame">

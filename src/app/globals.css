@@ -145,7 +145,7 @@ body {
   font-family: var(--font-sans), sans-serif;
   font-size: 0.9375rem;
   line-height: 1.45;
-  background: var(--page-bg);
+  background: var(--chassis);
 }
 
 a {
@@ -200,14 +200,17 @@ select {
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  background: var(--page-bg);
+  background: var(--chassis);
 }
 
 .instrument-body {
   width: 100%;
   max-width: 72rem;
   margin: 0 auto;
-  padding: var(--space-3) var(--space-3) var(--space-6);
+  padding: var(--space-3);
+  border-left: 1px solid var(--border-strong);
+  border-right: 1px solid var(--border-strong);
+  background: var(--page-bg);
 }
 
 .chassis-top {
@@ -294,9 +297,9 @@ select {
 }
 
 .chassis-rail {
-  display: grid;
-  grid-template-columns: auto minmax(10rem, 1fr) auto auto;
-  gap: var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
   align-items: center;
   min-height: 2.5rem;
   padding: var(--space-2) var(--space-3);
@@ -307,46 +310,58 @@ select {
 .status-flag {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  min-height: 1.75rem;
+  gap: 0.4rem;
+  min-height: 1.7rem;
   padding: 0 0.55rem 0 0.4rem;
   border: 1px solid var(--border-strong);
   background: var(--well);
   box-shadow: var(--well-inset);
+  color: var(--text-primary);
 }
 
 .status-flag-lamp {
-  width: 0.55rem;
-  height: 0.55rem;
-  border: 1px solid color-mix(in oklch, var(--text-primary) 35%, transparent);
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1px solid color-mix(in oklch, var(--text-primary) 40%, transparent);
   background: var(--text-soft);
 }
 
 .status-flag-label {
   font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+}
+
+.status-flag[data-state="ready"] {
+  background: var(--success);
+  border-color: color-mix(in oklch, var(--success) 70%, black);
+  color: var(--accent-ink);
 }
 
 .status-flag[data-state="ready"] .status-flag-lamp {
-  background: var(--success);
+  background: oklch(0.22 0.08 155);
+  border-color: oklch(0.16 0.06 155);
 }
 
 .status-flag[data-state="fail"] {
-  border-color: var(--danger);
-  background: color-mix(in oklch, var(--danger) 12%, var(--well));
+  background: var(--danger);
+  border-color: color-mix(in oklch, var(--danger) 70%, black);
+  color: var(--accent-ink);
 }
 
 .status-flag[data-state="fail"] .status-flag-lamp {
-  background: var(--danger);
+  background: oklch(0.28 0.1 32);
+  border-color: oklch(0.2 0.08 32);
 }
 
-.status-flag[data-state="fail"] .status-flag-label {
-  color: var(--danger);
+.status-flag[data-state="hold"] {
+  background: var(--warning);
+  border-color: color-mix(in oklch, var(--warning) 70%, black);
+  color: oklch(0.18 0.04 75);
 }
 
 .status-flag[data-state="hold"] .status-flag-lamp {
-  background: var(--warning);
+  background: oklch(0.18 0.04 75);
 }
 
 .status-flag[data-state="standby"] .status-flag-lamp {
@@ -355,14 +370,15 @@ select {
 
 .limit-cell {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.2rem 0.55rem;
+  grid-template-columns: auto auto;
+  gap: 0.15rem 0.5rem;
   align-items: baseline;
   min-width: 0;
 }
 
 .limit-cell .budget-track {
   grid-column: 1 / -1;
+  width: 8.5rem;
 }
 
 .field-label,
@@ -604,7 +620,6 @@ select {
 .creator-kind-label {
   font-size: 0.75rem;
   font-weight: 600;
-  text-transform: capitalize;
 }
 
 .creator-form-grid {
@@ -698,7 +713,7 @@ select {
 }
 
 .carbon-slot {
-  min-height: 12rem;
+  min-height: 6.5rem;
   border: 1px solid var(--border-strong);
   background: var(--well);
   box-shadow: var(--well-inset);
@@ -706,14 +721,22 @@ select {
 
 .carbon-slip {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
   min-height: 100%;
-  padding: 0.85rem 0.85rem 0.95rem;
+  padding: 1rem 0.85rem 0.85rem;
   border: 1px solid var(--carbon-rule);
   background:
-    radial-gradient(circle at 10px 0, transparent 3px, var(--carbon-paper) 3.5px) top / 20px 8px repeat-x,
+    radial-gradient(circle at 8px 6px, var(--chassis) 3px, transparent 3.2px) 0 0 / 16px 12px repeat-x,
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 21px,
+      color-mix(in oklch, var(--carbon-ink) 8%, transparent) 21px 22px
+    ),
     var(--carbon-paper);
   color: var(--carbon-ink);
+  box-shadow:
+    inset 0 8px 0 var(--chassis),
+    var(--bevel-raised);
 }
 
 .carbon-slip.is-hold {
@@ -798,10 +821,17 @@ select {
   font-size: 0.8125rem;
 }
 
+.carbon-copy-mark {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--carbon-ink);
+}
+
 .carbon-empty {
   display: grid;
   place-items: center;
-  min-height: 12rem;
+  min-height: 6.5rem;
   color: var(--text-muted);
   font-size: 0.8125rem;
 }
@@ -1606,8 +1636,9 @@ select {
 }
 
 @media (max-width: 767px) {
-  .chassis-rail {
-    grid-template-columns: auto 1fr;
+  .instrument-body {
+    border-left: none;
+    border-right: none;
   }
 
   .creator-kind-grid {
@@ -1616,6 +1647,10 @@ select {
 
   .sample-row {
     grid-template-columns: 4.75rem minmax(0, 1fr) 3.75rem;
+  }
+
+  .creator-result-metrics {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -18,7 +18,7 @@ describe("FragmentDetailsDisclosure", () => {
       />,
     );
 
-    const summary = screen.getByText(/Transport/i);
+    const summary = screen.getByText(/Diagnostics/i);
     await userEvent.click(summary);
 
     expect(screen.getByText("Decoded")).toBeVisible();
