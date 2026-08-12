@@ -18,7 +18,7 @@ describe("FragmentDetailsDisclosure", () => {
       />,
     );
 
-    const summary = screen.getByText(/Codec, budget, and hash preview/i);
+    const summary = screen.getByText(/Transport/i);
     await userEvent.click(summary);
 
     expect(screen.getByText("Decoded")).toBeVisible();

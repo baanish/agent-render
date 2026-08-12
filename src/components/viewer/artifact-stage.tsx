@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { Check, Code, Copy, Download, Eye, Link2, Printer } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { numberFormatter } from "@/lib/format";
@@ -38,10 +37,6 @@ type ArtifactStageProps = {
   };
 };
 
-const toolbarAnimationStyle: CSSProperties = { animationDelay: "80ms" };
-const selectorAnimationStyle: CSSProperties = { animationDelay: "100ms" };
-const contentAnimationStyle: CSSProperties = { animationDelay: "140ms" };
-const metadataAnimationStyle: CSSProperties = { animationDelay: "200ms" };
 
 const MarkdownRenderer = dynamic(
   () =>
@@ -96,18 +91,17 @@ function getArtifactBody(artifact: ArtifactPayload): string {
   return artifact.content;
 }
 
-function getArtifactSubtitle(artifact: ArtifactPayload): string {
-  if (artifact.kind === "markdown") return "Markdown";
-  if (artifact.kind === "code") return artifact.language ?? "Code";
-  if (artifact.kind === "diff")
-    return artifact.view ? `${artifact.view} diff` : "Diff";
-  if (artifact.kind === "json") return "JSON";
-  if (artifact.kind === "csv") return "CSV";
-  return (artifact as ArtifactPayload).kind;
-}
-
 function getArtifactHeading(artifact: ArtifactPayload): string {
   return artifact.title ?? artifact.filename ?? artifact.id;
+}
+
+function getArtifactPrimaryLabel(artifact: ArtifactPayload): string {
+  return artifact.filename?.trim() || artifact.title?.trim() || artifact.id;
+}
+
+function getArtifactSecondaryLabel(artifact: ArtifactPayload, primary: string): string | null {
+  const title = artifact.title?.trim();
+  return title && title !== primary ? title : null;
 }
 
 function getArtifactSupportingLabel(artifact: ArtifactPayload, heading = getArtifactHeading(artifact)): string {
@@ -213,10 +207,10 @@ export function ArtifactStage({
   const activeArtifactRef = useRef<ArtifactPayload | null>(activeArtifact);
   const activeArtifactBody = useMemo(() => getArtifactBody(activeArtifact), [activeArtifact]);
   const activeArtifactHeading = useMemo(() => getArtifactHeading(activeArtifact), [activeArtifact]);
-  const activeArtifactSubtitle = useMemo(() => getArtifactSubtitle(activeArtifact), [activeArtifact]);
-  const activeArtifactSupportingLabel = useMemo(
-    () => getArtifactSupportingLabel(activeArtifact, activeArtifactHeading),
-    [activeArtifact, activeArtifactHeading],
+  const activeArtifactPrimary = useMemo(() => getArtifactPrimaryLabel(activeArtifact), [activeArtifact]);
+  const activeArtifactSecondary = useMemo(
+    () => getArtifactSecondaryLabel(activeArtifact, activeArtifactPrimary),
+    [activeArtifact, activeArtifactPrimary],
   );
   const artifactDetailRows = useMemo(
     () => getArtifactDetailRows(activeArtifact, activeArtifactBody.length),
@@ -408,23 +402,12 @@ export function ArtifactStage({
 
   return (
     <section className="artifact-first-layout">
-      <div
-        className="artifact-toolbar-bar fade-up print-hide-on-markdown"
-        style={toolbarAnimationStyle}
-      >
-        <div className="artifact-toolbar-left">
-          <span
-            className="mono-pill"
-            style={{ borderColor: statusTone.color, color: statusTone.color }}
-          >
-            {statusTone.label}
-          </span>
-          <span className="font-mono text-xs text-[color:var(--text-soft)]">
-            {activeArtifactSupportingLabel}
-          </span>
-          <span className="font-mono text-xs text-[color:var(--text-soft)]">
-            {numberFormatter.format(fragmentLength)} chars
-          </span>
+      <div className="artifact-toolbar-bar print-hide-on-markdown">
+        <div className="artifact-identity">
+          <h1 className="artifact-filename">{activeArtifactPrimary}</h1>
+          {activeArtifactSecondary ? (
+            <p className="artifact-secondary-title">{activeArtifactSecondary}</p>
+          ) : null}
         </div>
         <div className="viewer-toolbar">
           <button
@@ -513,20 +496,13 @@ export function ArtifactStage({
       </div>
 
       {markdownLinkShareInfo?.discordViewerNotice ? (
-        <p
-          className="artifact-share-warning fade-up print-hide-on-markdown"
-          role="status"
-          style={toolbarAnimationStyle}
-        >
+        <p className="artifact-share-warning print-hide-on-markdown" role="status">
           {markdownLinkShareInfo.discordViewerNotice}
         </p>
       ) : null}
 
       {envelope.artifacts.length > 1 ? (
-        <section
-          className="print-hide-on-markdown fade-up"
-          style={selectorAnimationStyle}
-        >
+        <section className="print-hide-on-markdown">
           <ArtifactSelector
             artifacts={envelope.artifacts}
             activeArtifactId={activeArtifact.id}
@@ -538,20 +514,8 @@ export function ArtifactStage({
         </section>
       ) : null}
 
-      <section
-        className="artifact-content-section fade-up"
-        style={contentAnimationStyle}
-      >
-        <div className="print-hide-on-markdown">
-          <p className="section-kicker">
-            {activeArtifactSubtitle}
-          </p>
-          <h3 className="font-display mt-3 text-[2.2rem] font-bold leading-[0.96] tracking-[-0.04em] sm:mt-4 sm:text-[3rem] lg:text-[3.5rem] lg:leading-[0.94]">
-            {activeArtifactHeading}
-          </h3>
-        </div>
-
-        <div className="viewer-frame viewer-frame-primary mt-6 sm:mt-10">
+      <section className="artifact-content-section">
+        <div className="viewer-frame viewer-frame-primary">
           <div
             className={cn(
               "artifact-preview",
@@ -592,20 +556,14 @@ export function ArtifactStage({
         </div>
       </section>
 
-      <section
-        className="print-hide-on-markdown fade-up"
-        style={metadataAnimationStyle}
-      >
+      <section className="print-hide-on-markdown">
         <div
-          className="bento-grid bento-grid-compact"
+          className="inspector-grid"
           data-testid="artifact-metadata-grid"
         >
           {artifactDetailRows.map((row) => (
-            <div
-              key={row.label}
-              className="bento-card px-5 py-5 sm:px-6 sm:py-6"
-            >
-              <p className="metric-label">{row.label}</p>
+            <div key={row.label} className="inspector-cell">
+              <p className="field-label">{row.label}</p>
               <p className="artifact-meta-value">{row.value}</p>
             </div>
           ))}
