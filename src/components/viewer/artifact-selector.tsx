@@ -36,7 +36,7 @@ export function ArtifactSelector({
             className={cn("artifact-switcher", isCurrent && "is-active")}
             onClick={() => onSelect(artifact.id)}
             aria-pressed={isCurrent}
-            aria-label={`Open artifact ${heading}`}
+            aria-label={`Open artifact ${heading}${filename !== heading ? ` ${filename}` : ""}`}
           >
             <span className="artifact-switcher-content min-w-0 flex-1 text-left">
               <span className="artifact-switcher-title">{filename}</span>

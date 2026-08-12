@@ -187,7 +187,9 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   const transferName =
     generatedLink?.artifact.filename ||
     generatedLink?.artifact.title ||
-    draft.filename;
+    draft.filename.trim() ||
+    generatedLink?.envelope.title ||
+    generatedLink?.artifact.id;
 
   return (
     <section className="home-generator-section">
@@ -205,7 +207,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                   1
                 </span>
                 <div>
-                  <h3 className="step-title">Identify</h3>
+                  <h2 className="step-title">Identify</h2>
                   <div
                     className="creator-kind-grid"
                     role="group"
@@ -296,7 +298,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                   2
                 </span>
                 <div>
-                  <h3 className="step-title">Load</h3>
+                  <h2 className="step-title">Load</h2>
                   <label className="creator-field">
                     <span className="field-label">{contentFieldLabel}</span>
                     <textarea
@@ -316,7 +318,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                   3
                 </span>
                 <div>
-                  <h3 className="step-title">Encode</h3>
+                  <h2 className="step-title">Encode</h2>
                   <div className="creator-form-footer">
                     <div
                       className="creator-codec-row"
@@ -352,7 +354,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
 
         <aside className="creator-result-shell">
           <div className="procedure-head">
-            <h3 className="procedure-title">Transfer</h3>
+            <h2 className="procedure-title">Transfer</h2>
             {isGeneratedLinkStale ? (
               <StatusFlag state="hold" label="HOLD" />
             ) : generatedLink ? (
@@ -367,7 +369,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
           {generatedLink ? (
             <div className={cn("carbon-slip", isGeneratedLinkStale && "is-hold")}>
               <div className="carbon-slip-head">
-                <h4 className="carbon-slip-title">{transferName}</h4>
+                <h3 className="carbon-slip-title">{transferName}</h3>
                 <span className="carbon-copy-mark">COPY</span>
               </div>
 

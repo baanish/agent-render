@@ -88,13 +88,13 @@
   --text-primary: oklch(0.92 0.015 250);
   --text-muted: oklch(0.78 0.02 250);
   --text-soft: oklch(0.7 0.02 250);
-  --accent: oklch(0.62 0.12 250);
-  --accent-strong: oklch(0.54 0.12 250);
+  --accent: oklch(0.42 0.14 250);
+  --accent-strong: oklch(0.34 0.13 250);
   --accent-secondary: oklch(0.72 0.08 265);
   --accent-ink: oklch(0.98 0.01 250);
-  --success: oklch(0.72 0.12 155);
+  --success: oklch(0.4 0.12 155);
   --warning: oklch(0.78 0.12 75);
-  --danger: oklch(0.68 0.16 32);
+  --danger: oklch(0.42 0.16 32);
   --carbon-paper: oklch(0.29 0.05 255);
   --carbon-ink: oklch(0.84 0.09 265);
   --carbon-rule: oklch(0.48 0.06 255);
@@ -1571,6 +1571,14 @@ select {
   display: none;
 }
 
+.json-summary-icon {
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.json-node[open] > .json-summary .json-summary-icon {
+  transform: rotate(90deg);
+}
+
 .json-key {
   font-family: var(--font-mono), monospace;
   color: var(--text-soft);
@@ -1964,7 +1972,17 @@ select {
   body[data-print-mode="markdown"] .markdown-article p,
   body[data-print-mode="markdown"] .markdown-article ul,
   body[data-print-mode="markdown"] .markdown-article ol,
-  body[data-print-mode="markdown"] .markdown-article td {
+  body[data-print-mode="markdown"] .markdown-article td,
+  body[data-print-mode="markdown"] .markdown-article strong,
+  body[data-print-mode="markdown"] .markdown-article h1,
+  body[data-print-mode="markdown"] .markdown-article h2,
+  body[data-print-mode="markdown"] .markdown-article h3,
+  body[data-print-mode="markdown"] .markdown-article h4,
+  body[data-print-mode="markdown"] .markdown-article h5,
+  body[data-print-mode="markdown"] .markdown-article h6,
+  body[data-print-mode="markdown"] .markdown-table th,
+  body[data-print-mode="markdown"] .markdown-code-chip,
+  body[data-print-mode="markdown"] .markdown-code-caption {
     color: var(--print-ink) !important;
   }
 

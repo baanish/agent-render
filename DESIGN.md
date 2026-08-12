@@ -38,7 +38,7 @@ Primary fills use near-white text (`oklch(0.98 0.01 250)`).
 
 ### Dark (night ops)
 
-Same roles, darker metal, lamps more visible. `--page-bg: oklch(0.20 0.018 250)`. `--accent: oklch(0.62 0.12 250)` still takes white text. Carbon slip stays a distinct tissue, not a generic elevated card.
+Same roles, darker metal, lamps more visible. `--page-bg: oklch(0.20 0.018 250)`. Operating fills stay dark enough for white legend text: `--accent: oklch(0.42 0.14 250)`, `--success: oklch(0.40 0.12 155)`, `--danger: oklch(0.42 0.16 32)`. HOLD keeps dark ink on amber. Carbon slip stays a distinct tissue, not a generic elevated card.
 
 ## Typography
 

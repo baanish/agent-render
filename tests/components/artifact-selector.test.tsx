@@ -31,4 +31,26 @@ describe("ArtifactSelector", () => {
     await userEvent.click(inactive);
     expect(onSelect).toHaveBeenCalledWith("viewer");
   });
+
+  it("includes the visible filename in the accessible name when it differs from the heading", () => {
+    render(
+      <ArtifactSelector
+        artifacts={[
+          {
+            id: "roadmap",
+            kind: "markdown",
+            title: "Roadmap",
+            filename: "roadmap.md",
+            content: "# roadmap",
+          },
+        ]}
+        activeArtifactId="roadmap"
+        getHeading={(artifact) => artifact.title ?? artifact.id}
+        getSupportingLabel={(artifact) => artifact.id}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Open artifact Roadmap roadmap.md" })).toBeInTheDocument();
+  });
 });
