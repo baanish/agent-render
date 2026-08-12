@@ -32,18 +32,15 @@ export function SampleLinks({ activeHash }: SampleLinksProps) {
               const isActive = activeHash === sample.hash;
 
               return (
-                <tr key={sample.hash}>
-                  <td colSpan={3}>
-                    <a
-                      href={sample.hash}
-                      className={cn("sample-row", isActive && "is-active")}
-                    >
-                      <span className="sample-row-kind">{sample.kind}</span>
-                      <span className="sample-row-title">{sample.title}</span>
-                      <span className="sample-row-chars">
-                        {numberFormatter.format(sample.fragmentLength)}
-                      </span>
+                <tr key={sample.hash} className={cn("sample-row", isActive && "is-active")}>
+                  <td className="sample-row-kind">{sample.kind}</td>
+                  <td>
+                    <a href={sample.hash} className="sample-row-title">
+                      {sample.title}
                     </a>
+                  </td>
+                  <td className="sample-row-chars">
+                    {numberFormatter.format(sample.fragmentLength)}
                   </td>
                 </tr>
               );

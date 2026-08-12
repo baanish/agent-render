@@ -277,7 +277,9 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   return (
     <div className="markdown-document" data-testid="renderer-markdown" data-renderer-ready={readyBlockCount >= embeddedBlockCount ? "true" : "false"}>
       <header className="markdown-print-heading">
-        <p className="field-label">{artifact.filename ?? heading}</p>
+        {artifact.filename && artifact.filename !== heading ? (
+          <p className="field-label">{artifact.filename}</p>
+        ) : null}
         <h1>{heading}</h1>
       </header>
 

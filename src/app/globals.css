@@ -760,6 +760,7 @@ select {
 .artifact-action:focus-visible,
 .artifact-switcher:focus-visible,
 .sample-row:focus-visible,
+.sample-row-title:focus-visible,
 .patch-bundle-link:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -959,16 +960,12 @@ select {
 }
 
 .sample-table td {
-  padding: 0;
+  padding: 0.45rem 0.65rem;
   border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
 
 .sample-row {
-  display: grid;
-  grid-template-columns: 5.5rem minmax(0, 1fr) 4.5rem;
-  gap: var(--space-2);
-  padding: 0.45rem 0.65rem;
   color: inherit;
 }
 
@@ -979,15 +976,14 @@ select {
   color: var(--text-muted);
 }
 
-.sample-row-title {
-  font-weight: 600;
+.sample-row-chars {
+  text-align: right;
+  white-space: nowrap;
 }
 
-.sample-row-copy {
-  margin: 0.15rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  font-weight: 400;
+.sample-row-title {
+  font-weight: 600;
+  color: inherit;
 }
 
 .inspector-grid,
@@ -1754,10 +1750,6 @@ select {
 
   .creator-kind-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .sample-row {
-    grid-template-columns: 4.75rem minmax(0, 1fr) 3.75rem;
   }
 
   .carbon-legend {

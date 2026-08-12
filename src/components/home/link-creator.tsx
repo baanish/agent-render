@@ -185,8 +185,8 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   };
 
   const transferName =
-    generatedLink?.artifact.filename ??
-    generatedLink?.artifact.title ??
+    generatedLink?.artifact.filename ||
+    generatedLink?.artifact.title ||
     draft.filename;
 
   return (

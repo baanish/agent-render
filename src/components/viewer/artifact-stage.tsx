@@ -30,7 +30,6 @@ type ArtifactStageProps = {
   onRendererReady: (readyKey: string) => void;
   rendererReadyKey: string;
   statusTone: {
-    color: string;
     label: string;
     message: string;
   };

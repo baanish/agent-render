@@ -40,7 +40,7 @@ export function InstrumentHeader({ onGoHome }: InstrumentHeaderProps) {
   return (
     <header className="nav-bar print-hide-on-markdown">
       <a
-        href={onGoHome ? "#" : homePath}
+        href={homePath}
         onClick={
           onGoHome
             ? (event) => {

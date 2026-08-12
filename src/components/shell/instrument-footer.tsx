@@ -7,22 +7,27 @@ const plateLinks = [
   {
     href: "https://github.com/baanish/agent-render",
     label: "GitHub",
+    external: true,
   },
   {
     href: "https://github.com/baanish/agent-render/blob/main/docs/payload-format.md",
     label: "Payload format docs",
+    external: true,
   },
   {
     href: securityPath,
     label: "Safety — Security page",
+    external: false,
   },
   {
     href: urlExplainerPath,
     label: "Fragment format",
+    external: false,
   },
   {
     href: "https://openclaw.ai",
     label: "OpenClaw",
+    external: true,
   },
 ] as const;
 
@@ -50,9 +55,7 @@ export function InstrumentFooter() {
           <a
             key={link.href}
             href={link.href}
-            {...(link.href.startsWith("http")
-              ? { target: "_blank", rel: "noreferrer" }
-              : {})}
+            {...(link.external ? { target: "_blank", rel: "noreferrer" } : {})}
           >
             {link.label}
           </a>

@@ -1,8 +1,6 @@
-import { StatusFlag } from "@/components/shell/status-flag";
+import { StatusFlag, type OperatingState } from "@/components/shell/status-flag";
 import { numberFormatter } from "@/lib/format";
 import { MAX_FRAGMENT_LENGTH } from "@/lib/payload/schema";
-
-type OperatingState = "standby" | "ready" | "fail" | "hold";
 
 type ChassisRailProps = {
   state: OperatingState;

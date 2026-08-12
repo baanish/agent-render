@@ -36,7 +36,6 @@ vi.mock("next/dynamic", async () => {
 });
 
 const statusTone = {
-  color: "#000000",
   label: "Ready",
   message: "Decoded fragment.",
 };

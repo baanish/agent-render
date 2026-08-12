@@ -1,4 +1,4 @@
-type OperatingState = "standby" | "ready" | "fail" | "hold";
+export type OperatingState = "standby" | "ready" | "fail" | "hold";
 
 type StatusFlagProps = {
   state: OperatingState;

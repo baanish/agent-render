@@ -322,7 +322,6 @@ export function ViewerShell() {
             onRendererReady={markRendererReady}
             rendererReadyKey={rendererReadyKey}
             statusTone={{
-              color: "var(--success)",
               label: operating.label,
               message: operating.message,
             }}
@@ -331,15 +330,19 @@ export function ViewerShell() {
           <section className="empty-state-layout">
             {viewerState === "error" ? (
               <section className="fail-panel" role="alert">
-                <h2 className="fail-panel-title">FAIL</h2>
-                <p>{parsed.ok ? operating.message : parsed.message}</p>
+                <h1 className="fail-panel-title">FAIL</h1>
+                <p>{operating.message}</p>
                 <button type="button" className="artifact-action" onClick={handleGoHome}>
                   Clear fragment
                 </button>
               </section>
             ) : null}
 
-            <h1 className="procedure-title">Create a link</h1>
+            {viewerState === "error" ? (
+              <h2 className="procedure-title">Create a link</h2>
+            ) : (
+              <h1 className="procedure-title">Create a link</h1>
+            )}
             <LinkCreator onPreviewHash={setFragmentHash} />
 
             <SampleLinks activeHash={hash} />
