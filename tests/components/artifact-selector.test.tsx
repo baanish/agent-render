@@ -1,7 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { FileCode2, FileText } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
 import { ArtifactSelector } from "@/components/viewer/artifact-selector";
 import type { ArtifactPayload } from "@/lib/payload/schema";
@@ -20,7 +19,6 @@ describe("ArtifactSelector", () => {
         activeArtifactId="roadmap"
         getHeading={(artifact) => artifact.title ?? artifact.id}
         getSupportingLabel={(artifact) => artifact.id}
-        kindIcons={{ markdown: FileText, code: FileCode2, diff: FileText, csv: FileText, json: FileText }}
         onSelect={onSelect}
       />,
     );
@@ -32,5 +30,27 @@ describe("ArtifactSelector", () => {
 
     await userEvent.click(inactive);
     expect(onSelect).toHaveBeenCalledWith("viewer");
+  });
+
+  it("includes the visible filename in the accessible name when it differs from the heading", () => {
+    render(
+      <ArtifactSelector
+        artifacts={[
+          {
+            id: "roadmap",
+            kind: "markdown",
+            title: "Roadmap",
+            filename: "roadmap.md",
+            content: "# roadmap",
+          },
+        ]}
+        activeArtifactId="roadmap"
+        getHeading={(artifact) => artifact.title ?? artifact.id}
+        getSupportingLabel={(artifact) => artifact.id}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Open artifact Roadmap roadmap.md" })).toBeInTheDocument();
   });
 });

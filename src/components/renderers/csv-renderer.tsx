@@ -55,8 +55,8 @@ export function CsvRenderer({ artifact, onReady }: CsvRendererProps) {
   return (
     <div className="csv-renderer-shell" data-testid="renderer-csv" data-renderer-ready="true">
       <div className="csv-renderer-toolbar">
-        <span className="mono-pill">{parsed.rows.length} rows</span>
-        <span className="mono-pill">{parsed.headers.length} columns</span>
+        <span className="field-label">{parsed.rows.length} rows</span>
+        <span className="field-label">{parsed.headers.length} columns</span>
       </div>
       <div className="csv-table-wrap">
         <table className="csv-table">

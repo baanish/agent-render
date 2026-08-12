@@ -4,7 +4,7 @@
  */
 export function getHashPreview(hash: string): string {
   if (!hash) {
-    return "#d<base64url-encoded-json>";
+    return "—";
   }
 
   if (hash.length <= 220) {

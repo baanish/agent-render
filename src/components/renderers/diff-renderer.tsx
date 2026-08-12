@@ -295,8 +295,7 @@ function DiffFallback({
     >
       <div className="diff-renderer-toolbar">
         <div className="code-renderer-meta">
-          <span className="mono-pill">raw patch fallback</span>
-          <span className="section-kicker">invalid unified diff</span>
+          <span className="field-label">Fallback</span>
         </div>
         {rawPatch ? (
           <button type="button" className={`artifact-action ${copyState === "copied" ? "is-primary" : ""}`} onClick={handleCopyRawDiff}>
@@ -623,12 +622,11 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
     >
       <div className="diff-renderer-toolbar">
         <div className="code-renderer-meta">
-          <span className="mono-pill">review-style diff</span>
-          <span className="section-kicker">syntax highlighted</span>
+          <span className="field-label">{diffFiles.length} files</span>
         </div>
         {isNarrowScreen ? (
           <div className="diff-view-toggle">
-            <span className="mono-pill diff-mobile-note">Unified is the phone default</span>
+            <span className="field-label diff-mobile-note">Unified default</span>
             <button
               type="button"
               className={`artifact-action ${mode === "split" ? "" : "is-primary"}`}

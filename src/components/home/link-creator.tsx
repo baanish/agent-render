@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
-import { kindIcons } from "@/components/artifact-kind-icons";
+import { StatusFlag } from "@/components/shell/status-flag";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { numberFormatter } from "@/lib/format";
 import type {
@@ -14,14 +14,6 @@ import { cn } from "@/lib/utils";
 
 type LinkCreatorProps = {
   onPreviewHash: (hash: string) => void;
-};
-
-const fieldHints: Record<ArtifactKind, string> = {
-  markdown: "Paste markdown notes, release docs, or a spec excerpt.",
-  code: "Paste a code snippet and add a language hint when it helps.",
-  diff: "Paste a unified git patch to open the review-style diff renderer.",
-  csv: "Paste raw CSV and the table renderer will take it from there.",
-  json: "Paste formatted or compact JSON for a tree and raw source preview.",
 };
 
 const fieldPlaceholders: Record<ArtifactKind, string> = {
@@ -85,8 +77,6 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   const isGeneratedLinkStale =
     Boolean(generatedLink) && draftVersion !== generatedVersion;
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
-  const GeneratedKindIcon =
-    kindIcons[generatedLink?.artifact.kind ?? draft.kind];
 
   generatedLinkRef.current = generatedLink;
 
@@ -194,313 +184,317 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
     }
   };
 
+  const transferName =
+    generatedLink?.artifact.filename ||
+    generatedLink?.artifact.title ||
+    draft.filename.trim() ||
+    generatedLink?.envelope.title ||
+    generatedLink?.artifact.id;
+
   return (
-    <section
-      className="home-generator-section fade-up"
-      style={{ animationDelay: "120ms" }}
-    >
+    <section className="home-generator-section">
       <div className="home-generator-grid">
         <div>
-          <div className="home-generator-heading">
-            <div>
-              <p className="section-kicker">Try it now</p>
-              <h3 className="font-display mt-3 text-[2rem] font-bold leading-[0.96] tracking-[-0.04em] sm:mt-4 sm:text-[2.7rem] lg:text-[3.2rem]">
-                Create a link
-              </h3>
-            </div>
-            <p className="max-w-2xl text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
-              Paste content, pick a format, and get a shareable URL. Everything
-              encodes client-side.
-            </p>
-          </div>
-
-          <div
-            className="creator-kind-grid"
-            role="group"
-            aria-label="Artifact kind"
-          >
-            {artifactKinds.map((kind) => {
-              const Icon = kindIcons[kind];
-              const isActive = draft.kind === kind;
-
-              return (
-                <button
-                  key={kind}
-                  type="button"
-                  className={cn("creator-kind-card", isActive && "is-active")}
-                  aria-pressed={isActive}
-                  onClick={() => updateDraft("kind", kind)}
-                >
-                  <span className="creator-kind-icon">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="creator-kind-label">{kind}</span>
-                </button>
-              );
-            })}
-          </div>
-
           <form
-            className="creator-form-grid"
             onSubmit={(event) => {
               event.preventDefault();
               handleGenerate();
             }}
           >
-            <label className="creator-field">
-              <span className="metric-label">Title</span>
-              <input
-                name="title"
-                value={draft.title}
-                onChange={(event) => updateDraft("title", event.target.value)}
-                placeholder="Quarterly update"
-                className="creator-input"
-              />
-            </label>
-
-            <label className="creator-field">
-              <span className="metric-label">Filename</span>
-              <input
-                name="filename"
-                value={draft.filename}
-                onChange={(event) =>
-                  updateDraft("filename", event.target.value)
-                }
-                placeholder="update.md"
-                className="creator-input"
-              />
-            </label>
-
-            {draft.kind === "code" ? (
-              <label className="creator-field">
-                <span className="metric-label">Language</span>
-                <input
-                  name="language"
-                  value={draft.language}
-                  onChange={(event) =>
-                    updateDraft("language", event.target.value)
-                  }
-                  placeholder="tsx"
-                  className="creator-input"
-                />
-              </label>
-            ) : null}
-
-            {draft.kind === "diff" ? (
-              <label className="creator-field">
-                <span className="metric-label">Diff view</span>
-                <select
-                  name="diffView"
-                  value={draft.diffView}
-                  onChange={(event) =>
-                    updateDraft(
-                      "diffView",
-                      event.target.value as LinkCreatorDraft["diffView"],
-                    )
-                  }
-                  className="creator-input"
-                >
-                  <option value="unified">Unified</option>
-                  <option value="split">Split</option>
-                </select>
-              </label>
-            ) : null}
-
-            <label className="creator-field creator-field-full">
-              <span className="creator-field-head">
-                <span className="metric-label">{contentFieldLabel}</span>
-                <span className="creator-field-hint">
-                  {fieldHints[draft.kind]}
+            <ol className="procedure-list">
+              <li className="procedure-step">
+                <span className="step-index" aria-hidden="true">
+                  1
                 </span>
-              </span>
-              <textarea
-                name="content"
-                value={draft.content}
-                onChange={(event) => updateDraft("content", event.target.value)}
-                placeholder={fieldPlaceholders[draft.kind]}
-                className="creator-textarea"
-                rows={12}
-              />
-            </label>
-
-            <div className="creator-form-footer">
-              <button type="submit" className="artifact-action is-primary">
-                <Link2 className="h-3.5 w-3.5" />
-                Generate link
-              </button>
-              <div
-                className="creator-codec-row"
-                role="group"
-                aria-label="Compression algorithm"
-              >
-                <span className="metric-label">Compression</span>
-                {codecOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={cn(
-                      "artifact-action",
-                      (draft.codec ?? "auto") === option && "is-primary",
-                    )}
-                    aria-pressed={(draft.codec ?? "auto") === option}
-                    onClick={() => updateDraft("codec", option)}
+                <div>
+                  <h2 className="step-title">Identify</h2>
+                  <div
+                    className="creator-kind-grid"
+                    role="group"
+                    aria-label="Artifact kind"
                   >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    {artifactKinds.map((kind) => {
+                      const isActive = draft.kind === kind;
+
+                      return (
+                        <button
+                          key={kind}
+                          type="button"
+                          className={cn("creator-kind-card", isActive && "is-active")}
+                          aria-pressed={isActive}
+                          onClick={() => updateDraft("kind", kind)}
+                        >
+                          <span className="creator-kind-label">{kind}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="creator-form-grid mt-3">
+                    <label className="creator-field">
+                      <span className="field-label">Title</span>
+                      <input
+                        name="title"
+                        value={draft.title}
+                        onChange={(event) => updateDraft("title", event.target.value)}
+                        placeholder="Quarterly update"
+                        className="creator-input"
+                      />
+                    </label>
+
+                    <label className="creator-field">
+                      <span className="field-label">Filename</span>
+                      <input
+                        name="filename"
+                        value={draft.filename}
+                        onChange={(event) =>
+                          updateDraft("filename", event.target.value)
+                        }
+                        placeholder="update.md"
+                        className="creator-input"
+                      />
+                    </label>
+
+                    {draft.kind === "code" ? (
+                      <label className="creator-field">
+                        <span className="field-label">Language</span>
+                        <input
+                          name="language"
+                          value={draft.language}
+                          onChange={(event) =>
+                            updateDraft("language", event.target.value)
+                          }
+                          placeholder="tsx"
+                          className="creator-input"
+                        />
+                      </label>
+                    ) : null}
+
+                    {draft.kind === "diff" ? (
+                      <label className="creator-field">
+                        <span className="field-label">Diff view</span>
+                        <select
+                          name="diffView"
+                          value={draft.diffView}
+                          onChange={(event) =>
+                            updateDraft(
+                              "diffView",
+                              event.target.value as LinkCreatorDraft["diffView"],
+                            )
+                          }
+                          className="creator-input"
+                        >
+                          <option value="unified">Unified</option>
+                          <option value="split">Split</option>
+                        </select>
+                      </label>
+                    ) : null}
+                  </div>
+                </div>
+              </li>
+
+              <li className="procedure-step">
+                <span className="step-index" aria-hidden="true">
+                  2
+                </span>
+                <div>
+                  <h2 className="step-title">Load</h2>
+                  <label className="creator-field">
+                    <span className="field-label">{contentFieldLabel}</span>
+                    <textarea
+                      name="content"
+                      value={draft.content}
+                      onChange={(event) => updateDraft("content", event.target.value)}
+                      placeholder={fieldPlaceholders[draft.kind]}
+                      className="creator-textarea"
+                      rows={12}
+                    />
+                  </label>
+                </div>
+              </li>
+
+              <li className="procedure-step">
+                <span className="step-index" aria-hidden="true">
+                  3
+                </span>
+                <div>
+                  <h2 className="step-title">Encode</h2>
+                  <div className="creator-form-footer">
+                    <div
+                      className="creator-codec-row"
+                      role="group"
+                      aria-label="Compression algorithm"
+                    >
+                      <span className="field-label">Compression</span>
+                      {codecOptions.map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          className={cn(
+                            "artifact-action",
+                            (draft.codec ?? "auto") === option && "is-primary",
+                          )}
+                          aria-pressed={(draft.codec ?? "auto") === option}
+                          onClick={() => updateDraft("codec", option)}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                    <button type="submit" className="artifact-action is-primary">
+                      <Link2 className="h-3.5 w-3.5" />
+                      Generate link
+                    </button>
+                  </div>
+                </div>
+              </li>
+            </ol>
           </form>
         </div>
 
         <aside className="creator-result-shell">
-          <div className="creator-result-card">
-            <div className="creator-result-head">
-              <div>
-                <p className="section-kicker">Generated link</p>
-                <h4 className="mt-2 text-xl font-semibold tracking-[-0.03em]">
-                  Output
-                </h4>
-              </div>
-              <span className="mono-pill">
-                <GeneratedKindIcon className="h-3.5 w-3.5" />
-                {generatedLink?.artifact.kind ?? draft.kind}
-              </span>
-            </div>
-
-            {generatedLink ? (
-              <>
-                <div className="creator-link-frame">
-                  <p className="metric-label">URL</p>
-                  <textarea
-                    className="creator-link-output"
-                    value={generatedLink.url}
-                    readOnly
-                    aria-label="Generated agent-render link"
-                    rows={5}
-                  />
-                </div>
-
-                <div className="creator-link-frame">
-                  <p className="metric-label">Markdown link</p>
-                  <textarea
-                    className="creator-link-output"
-                    value={generatedLink.markdownLink}
-                    readOnly
-                    aria-label="Generated markdown link"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="creator-result-metrics">
-                  <div className="metric-card">
-                    <p className="metric-label">Codec</p>
-                    <p className="metric-value">{generatedLink.codec}</p>
-                  </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Fragment size</p>
-                    <p className="metric-value">
-                      {numberFormatter.format(generatedLink.fragmentLength)} chars
-                    </p>
-                  </div>
-                  <div className="metric-card">
-                    <p className="metric-label">Markdown link length</p>
-                    <p className="metric-value">
-                      {numberFormatter.format(generatedLink.markdownLinkLength)} chars
-                    </p>
-                  </div>
-                </div>
-
-                {generatedLink.discordMarkdownLinkWarning ? (
-                  <div className="creator-warning-state" role="status">
-                    {generatedLink.discordMarkdownLinkWarning}
-                  </div>
-                ) : null}
-
-                <div className="creator-result-actions">
-                  <button
-                    type="button"
-                    className={cn(
-                      "artifact-action",
-                      copyState === "copied" && "is-primary",
-                    )}
-                    onClick={handleCopy}
-                  >
-                    {copyState === "copied" ? (
-                      <Check className="h-3.5 w-3.5" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5" />
-                    )}
-                    {copyState === "copied"
-                      ? "Copied"
-                      : copyState === "failed"
-                        ? "Copy failed"
-                        : "Copy link"}
-                  </button>
-                  <button
-                    type="button"
-                    className={cn(
-                      "artifact-action",
-                      markdownLinkCopyState === "copied" && "is-primary",
-                    )}
-                    onClick={handleCopyMarkdownLink}
-                  >
-                    {markdownLinkCopyState === "copied" ? (
-                      <Check className="h-3.5 w-3.5" />
-                    ) : (
-                      <Link2 className="h-3.5 w-3.5" />
-                    )}
-                    {markdownLinkCopyState === "copied"
-                      ? "Copied"
-                      : markdownLinkCopyState === "failed"
-                        ? "Copy failed"
-                        : "Copy markdown link"}
-                  </button>
-                  <button
-                    type="button"
-                    className="artifact-action"
-                    onClick={() => onPreviewHash(generatedLink.hash)}
-                  >
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                    Preview here
-                  </button>
-                  <a
-                    href={generatedLink.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="artifact-action"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Open in new tab
-                  </a>
-                </div>
-
-                <div className="creator-result-note">
-                  <p className="metric-label">Bundle title</p>
-                  <p className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
-                    {generatedLink.envelope.title}
-                  </p>
-                  {isGeneratedLinkStale ? (
-                    <p className="creator-inline-status" role="status">
-                      Draft changed since last generation.
-                    </p>
-                  ) : null}
-                </div>
-              </>
+          <div className="procedure-head">
+            <h2 className="procedure-title">Transfer</h2>
+            {isGeneratedLinkStale ? (
+              <StatusFlag state="hold" label="HOLD" />
+            ) : generatedLink ? (
+              <StatusFlag state="ready" label="READY" />
+            ) : error ? (
+              <StatusFlag state="fail" label="FAIL" />
             ) : (
-              <div className="creator-empty-state">
-                <p className="text-sm leading-6 text-[color:var(--text-muted)]">
-                  Fill in the form and hit generate.
-                </p>
-              </div>
+              <StatusFlag state="standby" label="STANDBY" />
             )}
-
-            {error ? (
-              <div className="creator-error-state" role="alert">
-                {error}
-              </div>
-            ) : null}
           </div>
+
+          {generatedLink ? (
+            <div className={cn("carbon-slip", isGeneratedLinkStale && "is-hold")}>
+              <div className="carbon-slip-head">
+                <h3 className="carbon-slip-title">{transferName}</h3>
+                <span className="carbon-copy-mark">COPY</span>
+              </div>
+
+              <div className="creator-link-frame">
+                <p className="field-label">URL</p>
+                <textarea
+                  className="creator-link-output"
+                  value={generatedLink.url}
+                  readOnly
+                  aria-label="Generated agent-render link"
+                  rows={5}
+                />
+              </div>
+
+              <div className="creator-link-frame">
+                <p className="field-label">Markdown</p>
+                <textarea
+                  className="creator-link-output"
+                  value={generatedLink.markdownLink}
+                  readOnly
+                  aria-label="Generated markdown link"
+                  rows={3}
+                />
+              </div>
+
+              <dl className="carbon-legend">
+                <div>
+                  <dt className="field-label">Codec</dt>
+                  <dd className="metric-value">{generatedLink.codec}</dd>
+                </div>
+                <div>
+                  <dt className="field-label">Fragment</dt>
+                  <dd className="metric-value">
+                    {numberFormatter.format(generatedLink.fragmentLength)} chars
+                  </dd>
+                </div>
+                <div>
+                  <dt className="field-label">Markdown length</dt>
+                  <dd className="metric-value">
+                    {numberFormatter.format(generatedLink.markdownLinkLength)} chars
+                  </dd>
+                </div>
+              </dl>
+
+              {generatedLink.discordMarkdownLinkWarning ? (
+                <div className="creator-warning-state" role="status">
+                  {generatedLink.discordMarkdownLinkWarning}
+                </div>
+              ) : null}
+
+              <div className="creator-result-actions">
+                <button
+                  type="button"
+                  className={cn(
+                    "artifact-action",
+                    copyState === "copied" && "is-primary",
+                  )}
+                  onClick={handleCopy}
+                >
+                  {copyState === "copied" ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                  {copyState === "copied"
+                    ? "Copied"
+                    : copyState === "failed"
+                      ? "Copy failed"
+                      : "Copy link"}
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "artifact-action",
+                    markdownLinkCopyState === "copied" && "is-primary",
+                  )}
+                  onClick={handleCopyMarkdownLink}
+                >
+                  {markdownLinkCopyState === "copied" ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Link2 className="h-3.5 w-3.5" />
+                  )}
+                  {markdownLinkCopyState === "copied"
+                    ? "Copied"
+                    : markdownLinkCopyState === "failed"
+                      ? "Copy failed"
+                      : "Copy markdown link"}
+                </button>
+                <button
+                  type="button"
+                  className="artifact-action"
+                  onClick={() => onPreviewHash(generatedLink.hash)}
+                >
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                  Preview here
+                </button>
+                <a
+                  href={generatedLink.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="artifact-action"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Open in new tab
+                </a>
+              </div>
+
+              {isGeneratedLinkStale ? (
+                <p className="creator-inline-status" role="status">
+                  Draft changed since last generation.
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="carbon-slot">
+              <div className="carbon-empty">No transfer</div>
+            </div>
+          )}
+
+          {error ? (
+            <div className="creator-error-state" role="alert">
+              {error}
+            </div>
+          ) : null}
         </aside>
       </div>
     </section>

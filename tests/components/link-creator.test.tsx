@@ -115,6 +115,37 @@ describe("LinkCreator", () => {
     expect(screen.queryByText("Draft changed since last generation.")).not.toBeInTheDocument();
   });
 
+  it("uses the envelope title when generated filename and title are empty", async () => {
+    const user = userEvent.setup();
+
+    render(<LinkCreator onPreviewHash={vi.fn()} />);
+
+    await user.clear(screen.getByLabelText("Title"));
+    await user.clear(screen.getByLabelText("Filename"));
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+    await waitFor(() => expect(generationMock.pending).toHaveLength(1));
+
+    await act(async () => {
+      generationMock.pending[0].resolve({
+        ...createGeneratedLink("Untitled markdown"),
+        artifact: {
+          id: "markdown",
+          kind: "markdown",
+          content: "# Notes",
+        },
+        envelope: {
+          v: 1,
+          codec: "plain",
+          title: "Untitled markdown",
+          activeArtifactId: "markdown",
+          artifacts: [],
+        },
+      });
+    });
+
+    expect(screen.getByRole("heading", { name: "Untitled markdown" })).toBeVisible();
+  });
+
   it("marks a generated link stale after the draft changes", async () => {
     const user = userEvent.setup();
 

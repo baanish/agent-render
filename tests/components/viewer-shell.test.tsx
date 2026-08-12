@@ -12,8 +12,9 @@ describe("ViewerShell homepage", () => {
     render(<ViewerShell />);
 
     await waitFor(() => expect(screen.getByTestId("viewer-shell")).toHaveAttribute("data-viewer-state", "empty"));
+    await waitFor(() => expect(screen.getByRole("button", { name: /theme/i })).toBeVisible());
 
-    expect(screen.getByRole("heading", { name: /zero-retention artifact viewer/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /create a link/i })).toBeVisible();
     expect(screen.getByText(/artifact content lives in the URL fragment/i)).toBeVisible();
     expect(screen.getByText(/the static host does not receive artifact content/i)).toBeVisible();
     expect(screen.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
