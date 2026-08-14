@@ -8,8 +8,9 @@ import arx4PriorsJson from "../../public/arx4-priors.json";
 import arxDictionaryJson from "../../public/arx-dictionary.json";
 import { loadArx2OverlayDictionarySync, loadArxDictionarySync } from "@/lib/payload/arx-codec";
 import { loadArx4PriorsSync, type Arx4PriorId } from "@/lib/payload/arx4-codec";
-import { createGeneratedArtifactLinkAsync, type LinkCreatorDraft } from "@/lib/payload/link-creator";
+import type { LinkCreatorDraft } from "@/lib/payload/link-creator";
 import { compactTagForCodec, type PayloadEnvelope } from "@/lib/payload/schema";
+import { createNodeGeneratedArtifactLink } from "./node-generated-link";
 
 /**
  * Release gate for the arx4 wire format: a browser that codes even one bit differently from Node
@@ -26,6 +27,7 @@ import { compactTagForCodec, type PayloadEnvelope } from "@/lib/payload/schema";
  */
 
 const ARX4_TAG = compactTagForCodec("arx4");
+const ARX5_TAG = compactTagForCodec("arx5");
 
 declare global {
   interface Window {
@@ -99,7 +101,7 @@ async function fillCreatorDraft(page: Page, draft: LinkCreatorDraft) {
     await page.getByRole("textbox", { name: "Language", exact: true }).fill(draft.language);
   }
   await page.getByRole("textbox", { name: /^Content\b/ }).fill(draft.content);
-  await page.getByRole("button", { name: "arx4", exact: true }).click();
+  await page.getByRole("button", { name: draft.codec ?? "auto", exact: true }).click();
 }
 
 /** Reads the artifact body the viewer decoded, through the app's own copy action. */
@@ -202,10 +204,62 @@ test.describe("arx4 links from the shipped app bundle", () => {
         url.hash = "";
         return url.toString();
       });
-      const nodeLink = await createGeneratedArtifactLinkAsync(draft, baseUrl);
+      const nodeLink = await createNodeGeneratedArtifactLink(draft, baseUrl);
 
       expect(nodeLink.codec).toBe("arx4");
       expect(await generatedLink.inputValue()).toBe(nodeLink.url);
+
+      await page.getByRole("button", { name: "Preview here" }).click();
+      await waitForViewerState(page, "artifact");
+      await waitForRendererReady(page, draft.kind);
+
+      expect(await copyArtifactBody(page)).toBe(draft.content);
+    });
+  }
+});
+
+const arx5CreatorDrafts: LinkCreatorDraft[] = [
+  {
+    kind: "markdown",
+    title: "Release notes",
+    filename: "notes.md",
+    content: "# Release notes\n\n- Ship the arx5 codec\n- Score wires by transport length\n\n| Surface | State |\n| --- | --- |\n| viewer | ready |\n| creator | ready |\n",
+    language: "",
+    diffView: "unified",
+    codec: "arx5",
+  },
+  {
+    kind: "markdown",
+    title: "Auto notes",
+    filename: "auto.md",
+    content: "# Auto notes\n\nAuto-emit should pick arx5 with a chat-safe ASCII wire.\n",
+    language: "",
+    diffView: "unified",
+    codec: "auto",
+  },
+];
+
+test.describe("arx5 links from the shipped app bundle", () => {
+  for (const draft of arx5CreatorDrafts) {
+    test(`generates and previews the Node-identical ${draft.codec} link for a ${draft.title} draft`, async ({ page }) => {
+      await goToHash(page);
+      await waitForViewerState(page, "empty");
+      await fillCreatorDraft(page, draft);
+      await page.getByRole("button", { name: "Generate link" }).click();
+
+      const generatedLink = page.getByLabel("Generated agent-render link");
+      await expect(generatedLink).toBeVisible();
+      const baseUrl = await page.evaluate(() => {
+        const url = new URL(window.location.href);
+        url.hash = "";
+        return url.toString();
+      });
+      const nodeLink = await createNodeGeneratedArtifactLink(draft, baseUrl);
+      const generatedUrl = await generatedLink.inputValue();
+
+      expect(nodeLink.codec).toBe("arx5");
+      expect(generatedUrl).toBe(nodeLink.url);
+      expect(new URL(generatedUrl).hash).toMatch(new RegExp(`^#${ARX5_TAG}[\\x21-\\x7e]+$`));
 
       await page.getByRole("button", { name: "Preview here" }).click();
       await waitForViewerState(page, "artifact");
