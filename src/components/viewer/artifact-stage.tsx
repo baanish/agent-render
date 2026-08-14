@@ -592,45 +592,45 @@ export function ArtifactStage({
               envelope={envelope}
               onPreviewHash={onPreviewHash}
             />
-          ) : null}
-          <div
-            className={cn(
-              "artifact-preview",
-              markdownArtifact &&
-                viewMode === "rendered" &&
-                "is-markdown print-markdown-target",
-            )}
-            hidden={isEditing}
-          >
-            {markdownArtifact && viewMode === "raw" ? (
-              <RawArtifactSource
-                content={markdownArtifact.content}
-                onReady={markActiveRendererReady}
-                testId="renderer-markdown-raw"
-              />
-            ) : markdownArtifact ? (
-              <MarkdownRenderer
-                artifact={markdownArtifact}
-                onReady={markActiveRendererReady}
-              />
-            ) : codeArtifact ? (
-              <CodeRenderer artifact={codeArtifact} onReady={markActiveRendererReady} />
-            ) : diffArtifact ? (
-              <DiffRenderer artifact={diffArtifact} onReady={markActiveRendererReady} />
-            ) : csvArtifact && viewMode === "raw" ? (
-              <RawArtifactSource
-                content={csvArtifact.content}
-                onReady={markActiveRendererReady}
-                testId="renderer-csv-raw"
-              />
-            ) : csvArtifact ? (
-              <CsvRenderer artifact={csvArtifact} onReady={markActiveRendererReady} />
-            ) : jsonArtifact ? (
-              <JsonRenderer artifact={jsonArtifact} onReady={markActiveRendererReady} />
-            ) : (
-              <pre>{getPreviewText(activeArtifactBody)}</pre>
-            )}
-          </div>
+          ) : (
+            <div
+              className={cn(
+                "artifact-preview",
+                markdownArtifact &&
+                  viewMode === "rendered" &&
+                  "is-markdown print-markdown-target",
+              )}
+            >
+              {markdownArtifact && viewMode === "raw" ? (
+                <RawArtifactSource
+                  content={markdownArtifact.content}
+                  onReady={markActiveRendererReady}
+                  testId="renderer-markdown-raw"
+                />
+              ) : markdownArtifact ? (
+                <MarkdownRenderer
+                  artifact={markdownArtifact}
+                  onReady={markActiveRendererReady}
+                />
+              ) : codeArtifact ? (
+                <CodeRenderer artifact={codeArtifact} onReady={markActiveRendererReady} />
+              ) : diffArtifact ? (
+                <DiffRenderer artifact={diffArtifact} onReady={markActiveRendererReady} />
+              ) : csvArtifact && viewMode === "raw" ? (
+                <RawArtifactSource
+                  content={csvArtifact.content}
+                  onReady={markActiveRendererReady}
+                  testId="renderer-csv-raw"
+                />
+              ) : csvArtifact ? (
+                <CsvRenderer artifact={csvArtifact} onReady={markActiveRendererReady} />
+              ) : jsonArtifact ? (
+                <JsonRenderer artifact={jsonArtifact} onReady={markActiveRendererReady} />
+              ) : (
+                <pre>{getPreviewText(activeArtifactBody)}</pre>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
