@@ -1,5 +1,4 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
@@ -51,12 +50,14 @@ function loadNodeLinkEncoder(): Promise<NodeLinkEncoder> {
     format: "esm",
     platform: "node",
     target: "es2022",
-    packages: "external",
+    // Keep the encoder under the repo so leftover externals still resolve node_modules.
+    // brotli-wasm stays external: mixer codecs do not load it.
     external: ["brotli-wasm"],
     write: false,
   }).then(async (result) => {
-    const dir = mkdtempSync(path.join(tmpdir(), "agent-render-node-link-"));
-    const outFile = path.join(dir, "encoder.mjs");
+    const outDir = path.join(repositoryRoot, "test-results");
+    mkdirSync(outDir, { recursive: true });
+    const outFile = path.join(outDir, "node-generated-link-encoder.mjs");
     writeFileSync(outFile, result.outputFiles[0].text);
     return import(pathToFileURL(outFile).href) as Promise<NodeLinkEncoder>;
   });
