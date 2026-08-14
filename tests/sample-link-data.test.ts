@@ -46,18 +46,19 @@ describe("homepage sample link data", () => {
     const sample = sampleLinkCards.find((card) => card.title === "arx showcase");
 
     expect(sample?.hash?.startsWith(`#${compactTagForCodec("arx5")}`)).toBe(true);
-    expect(sample?.hash?.slice(1)).toMatch(/^[\x21-\x7e]+$/);
+    expect(sample?.hash?.slice(1)).toMatch(/^[A-Za-z0-9._~-]+$/);
     expect(sample?.fragmentLength).toBeLessThan(4000);
 
     const parsed = await decodeFragmentAsync(sample?.hash ?? "");
+    const source = sampleEnvelopes.find((envelope) => envelope.title === "arx showcase");
 
     expect(parsed.ok).toBe(true);
-    if (!parsed.ok) {
+    expect(source).toBeDefined();
+    if (!parsed.ok || !source) {
       return;
     }
 
-    expect(parsed.envelope.codec).toBe("arx5");
-    expect(parsed.envelope.title).toBe("arx showcase");
+    expect(parsed.envelope).toEqual({ ...source, codec: "arx5" });
     expect(parsed.rawLength).toBe(sample?.fragmentLength);
   });
 });
