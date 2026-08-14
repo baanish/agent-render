@@ -129,7 +129,7 @@ function buildPairDiffArtifact(draft: ArtifactEditDraft, id: string, language?: 
   const newContent = draft.newContent ?? "";
 
   if (!NON_WHITESPACE_PATTERN.test(oldContent) && !NON_WHITESPACE_PATTERN.test(newContent)) {
-    throw new Error(getEmptyContentError("diff"));
+    throw new Error("Add old or new content before generating a link.");
   }
 
   return {

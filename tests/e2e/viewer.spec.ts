@@ -135,7 +135,7 @@ test("edits an open code artifact and reshares it as a new link", async ({ page 
 
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "code");
-  await expect(page.locator(".cm-editor")).toContainText('export const value = "edited"');
+  await expect(page.locator(".cm-editor").first()).toContainText('export const value = "edited"');
   await expect.poll(() => page.evaluate(() => window.location.hash)).not.toBe(beforeHash);
 });
 

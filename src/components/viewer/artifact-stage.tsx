@@ -401,6 +401,14 @@ export function ArtifactStage({
     }, 0);
   }, [activeArtifact, activeArtifactBody]);
 
+  const handlePreviewHash = useCallback(
+    (nextHash: string) => {
+      setIsEditing(false);
+      onPreviewHash(nextHash);
+    },
+    [onPreviewHash],
+  );
+
   const handleMarkdownPrint = useCallback(() => {
     if (!markdownArtifact) {
       return;
@@ -590,7 +598,7 @@ export function ArtifactStage({
               key={activeArtifact.id}
               artifact={activeArtifact}
               envelope={envelope}
-              onPreviewHash={onPreviewHash}
+              onPreviewHash={handlePreviewHash}
             />
           ) : (
             <div

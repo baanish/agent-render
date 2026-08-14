@@ -44,6 +44,16 @@ function getShareBaseUrl() {
   return new URL(withBasePath("/"), window.location.origin).toString();
 }
 
+function normalizePageBase(value: string) {
+  return value.replace(/\/$/, "");
+}
+
+function isOnShareBase(shareBase: string) {
+  const current = new URL(window.location.href);
+  current.hash = "";
+  return normalizePageBase(current.toString()) === normalizePageBase(shareBase);
+}
+
 function getBodyFieldLabel(kind: ArtifactKind) {
   return kind === "diff" ? "Patch" : "Content";
 }
@@ -76,17 +86,17 @@ export function ArtifactEditor({
   >("idle");
   const [isGenerating, setIsGenerating] = useState(false);
   const generationRequestRef = useRef(0);
+  const copyTokenRef = useRef(0);
   const markdownCopyTokenRef = useRef(0);
-  const generatedLinkRef = useRef<GeneratedArtifactLink | null>(null);
   const resultRef = useRef<HTMLElement | null>(null);
   const isGeneratedLinkStale =
     Boolean(generatedLink) && draftVersion !== generatedVersion;
   const usesPairDiff = draft.kind === "diff" && draft.diffSource === "pair";
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
 
-  generatedLinkRef.current = generatedLink;
-
   useEffect(() => {
+    copyTokenRef.current += 1;
+    markdownCopyTokenRef.current += 1;
     setCopyState("idle");
     setMarkdownLinkCopyState("idle");
     setError(null);
@@ -128,6 +138,8 @@ export function ArtifactEditor({
 
       setGeneratedLink(nextGeneratedLink);
       setGeneratedVersion(draftVersion);
+      copyTokenRef.current += 1;
+      markdownCopyTokenRef.current += 1;
       setError(null);
       setCopyState("idle");
       setMarkdownLinkCopyState("idle");
@@ -156,32 +168,40 @@ export function ArtifactEditor({
   };
 
   const handleCopy = async () => {
-    if (!generatedLink) {
+    if (!generatedLink || isGeneratedLinkStale) {
       return;
     }
 
+    const requestToken = ++copyTokenRef.current;
+    const expectedHash = generatedLink.hash;
+
     try {
       await copyTextToClipboard(generatedLink.url);
+      if (copyTokenRef.current !== requestToken || generatedLink.hash !== expectedHash) {
+        return;
+      }
       setCopyState("copied");
     } catch {
+      if (copyTokenRef.current !== requestToken || generatedLink.hash !== expectedHash) {
+        return;
+      }
       setCopyState("failed");
     }
   };
 
   const handleCopyMarkdownLink = async () => {
-    const link = generatedLinkRef.current;
-    if (!link) {
+    if (!generatedLink || isGeneratedLinkStale) {
       return;
     }
 
     const requestToken = ++markdownCopyTokenRef.current;
-    const expectedHash = link.hash;
+    const expectedHash = generatedLink.hash;
 
     try {
-      await copyTextToClipboard(link.markdownLink);
+      await copyTextToClipboard(generatedLink.markdownLink);
       if (
         markdownCopyTokenRef.current !== requestToken ||
-        generatedLinkRef.current?.hash !== expectedHash
+        generatedLink.hash !== expectedHash
       ) {
         return;
       }
@@ -189,12 +209,26 @@ export function ArtifactEditor({
     } catch {
       if (
         markdownCopyTokenRef.current !== requestToken ||
-        generatedLinkRef.current?.hash !== expectedHash
+        generatedLink.hash !== expectedHash
       ) {
         return;
       }
       setMarkdownLinkCopyState("failed");
     }
+  };
+
+  const handlePreview = () => {
+    if (!generatedLink || isGeneratedLinkStale) {
+      return;
+    }
+
+    const shareBase = getShareBaseUrl();
+    if (shareBase && !isOnShareBase(shareBase)) {
+      window.location.assign(generatedLink.url);
+      return;
+    }
+
+    onPreviewHash(generatedLink.hash);
   };
 
   return (
@@ -414,6 +448,7 @@ export function ArtifactEditor({
                 "artifact-action",
                 copyState === "copied" && "is-primary",
               )}
+              disabled={isGeneratedLinkStale}
               onClick={() => {
                 void handleCopy();
               }}
@@ -435,6 +470,7 @@ export function ArtifactEditor({
                 "artifact-action",
                 markdownLinkCopyState === "copied" && "is-primary",
               )}
+              disabled={isGeneratedLinkStale}
               onClick={() => {
                 void handleCopyMarkdownLink();
               }}
@@ -453,16 +489,23 @@ export function ArtifactEditor({
             <button
               type="button"
               className="artifact-action is-primary"
-              onClick={() => onPreviewHash(generatedLink.hash)}
+              disabled={isGeneratedLinkStale}
+              onClick={handlePreview}
             >
               <ArrowUpRight className="h-3.5 w-3.5" />
               Preview here
             </button>
             <a
-              href={generatedLink.url}
+              href={isGeneratedLinkStale ? undefined : generatedLink.url}
               target="_blank"
               rel="noreferrer"
               className="artifact-action"
+              aria-disabled={isGeneratedLinkStale}
+              onClick={(event) => {
+                if (isGeneratedLinkStale) {
+                  event.preventDefault();
+                }
+              }}
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Open in new tab

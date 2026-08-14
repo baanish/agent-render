@@ -5,7 +5,7 @@ import {
   createArtifactEditDraft,
   createGeneratedEnvelopeLinkAsync,
 } from "@/lib/payload/link-creator";
-import type { ArtifactPayload, PayloadEnvelope } from "@/lib/payload/schema";
+import type { ArtifactPayload, DiffArtifact, PayloadEnvelope } from "@/lib/payload/schema";
 
 const markdownArtifact: ArtifactPayload = {
   id: "notes",
@@ -40,7 +40,7 @@ const jsonArtifact: ArtifactPayload = {
   content: '{"ok":true}',
 };
 
-const patchDiffArtifact: ArtifactPayload = {
+const patchDiffArtifact: DiffArtifact = {
   id: "release",
   kind: "diff",
   title: "Release patch",
@@ -51,7 +51,7 @@ const patchDiffArtifact: ArtifactPayload = {
   language: "ts",
 };
 
-const pairDiffArtifact: ArtifactPayload = {
+const pairDiffArtifact: DiffArtifact = {
   id: "pair",
   kind: "diff",
   title: "Pair diff",
@@ -172,6 +172,16 @@ describe("artifact edit drafts", () => {
       view: "split",
       language: "ts",
     });
+  });
+
+  it("rejects empty pair-diff edits with a pair-specific message", () => {
+    const draft = createArtifactEditDraft(pairDiffArtifact);
+    draft.oldContent = "   ";
+    draft.newContent = "";
+
+    expect(() => applyArtifactEditDraft(envelopeFor([pairDiffArtifact]), draft)).toThrow(
+      /old or new content/i,
+    );
   });
 
   it("rejects empty edited content", () => {

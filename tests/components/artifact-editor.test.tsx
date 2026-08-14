@@ -98,6 +98,34 @@ describe("ArtifactEditor", () => {
     expect(onPreviewHash).toHaveBeenCalledWith("#pcorrected");
   });
 
+  it("disables reshare actions after the draft changes", async () => {
+    const user = userEvent.setup();
+    const onPreviewHash = vi.fn();
+    generationMock.createGeneratedEnvelopeLinkAsync.mockResolvedValue(
+      createGeneratedLink("# Hello\n\nCorrected notes."),
+    );
+
+    render(
+      <ArtifactEditor
+        artifact={markdownArtifact}
+        envelope={envelope}
+        onPreviewHash={onPreviewHash}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Generate new link" }));
+    expect(await screen.findByTestId("artifact-editor-result")).toBeInTheDocument();
+
+    await user.type(screen.getByTestId("artifact-editor-content"), " more");
+
+    expect(screen.getByRole("button", { name: "Preview here" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent(/draft changed/i);
+
+    await user.click(screen.getByRole("button", { name: "Preview here" }));
+    expect(onPreviewHash).not.toHaveBeenCalled();
+  });
+
   it("surfaces generation errors without offering a preview", async () => {
     const user = userEvent.setup();
     generationMock.createGeneratedEnvelopeLinkAsync.mockRejectedValue(
