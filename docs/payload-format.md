@@ -14,8 +14,9 @@ Payload contents are untrusted user content. Viewers, agents, and automations sh
 #d<payload>   (deflate)
 #a<payload>   (arx)
 #b<payload>   (arx2)
-#c<payload>   (arx3)
-#e<payload>   (arx4)
+#c<payload>   (arx3, decode-only)
+#e<payload>   (arx4, decode-only)
+#f<payload>   (arx5)
 ```
 
 The compact fragment is a single codec tag char followed by the payload. The tag encodes the codec so unsupported formats fail cleanly; the compact tag does not carry a dictionary version — arx-family tags imply the build's current dictionary (the build pins the newest supported version and rejects a newer one). The legacy `#agent-render=v1.<codec>.<payload>` form (arx-family carry an extra `<dictVersion>.` segment) still decodes for back-compatibility but is no longer emitted. Fragment URLs can look long because they carry the artifact payload in the browser-only fragment instead of sending it to the host during the page request.
@@ -26,9 +27,10 @@ Supported codecs:
 - `lz` - `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate` - deflate-compressed UTF-8 JSON bytes encoded as base64url
 - `arx` - domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding. The compact `a` tag identifies the arx codec but does not carry a dictionary version — it implies the build's current pinned dictionary (the build refuses to decode a forward-incompatible newer dictionary). Four wire shapes are tried and the shortest **transport** size wins (see `computeTransportLength` in `fragment.ts` — non-ASCII Unicode may count longer after percent-encoding): **base76** (ASCII-only, 77 fragment-safe chars), **base64url** (standard RFC 4648 alphabet `A-Za-z0-9-_`, no padding, prefixed with `B.` for detection), **base1k** (Unicode, 1774 chars from U+00A1–U+07FF), and **baseBMP** (high-density Unicode, ~62k safe BMP code points from U+00A1–U+FFEF, ~15.92 bits/char). BaseBMP produces ~32% fewer characters than base1k and ~60% fewer than base76 for the same compressed bytes. BaseBMP payloads are prefixed with a U+FFF0 marker for detection. The viewer’s `arxDecompress` auto-detects the wire shape (including the rare case where a base76 length prefix is also `B.` — it tries base64url first and falls back to base76 if Brotli fails). The substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the viewer tries the `.br` file first on default loads and falls back to JSON. The arx2 overlay dictionary follows the same `.br`-then-JSON default load pattern.
-- `arx2` - tuple-envelope transport + arx2 overlay substitution + the shared arx dictionary + brotli (quality 11) + the same four binary-to-text wire shapes. The compact `b` tag identifies arx2 but does not carry a dictionary version — it implies the current pinned shared arx dictionary and arx2 overlay. Existing `arx` links remain valid; async auto-selection keeps arx2 as the conservative transport-measured tuple codec.
-- `arx3` - the same tuple envelope, overlay substitution, shared arx dictionary, and brotli bytes as arx2, with a different selection rule: baseBMP may win by decoded visible character length instead of conservative percent-encoded transport length. This is the compact visible URL mode for trusted surfaces that preserve Unicode fragments. If a platform rewrites, truncates, or previews links aggressively, prefer arx2/base64url or UUID mode instead.
-- `arx4` - the arx3 tuple/overlay/dictionary stages and the arx3 baseBMP selection rule, with brotli replaced by a deterministic integer context mixer (`arx4-codec.ts`). The payload carries one extra leading char, the prior id (`m`, `c`, `j`, `s`, or `n`), naming the priming corpus the coder ran before the payload; an unrecognized prior id is a decode error. Every prior starts from the pinned dictionary slot text, so the `e` tag implies that dictionary twice over; the `m`, `c` and `j` priors append a curated per-kind corpus from `/arx4-priors.json` (pre-compressed `/arx4-priors.json.br` tried first), which the viewer fetches lazily on the first arx4 encode or decode. The `s` id is that shared dictionary text alone, and `n` runs the mixer cold with no prior at all. If the asset is unavailable the encoder falls back to the `s` prior and emits an `s` id, so link creation never blocks; decoding a fragment that names a curated prior fails cleanly instead of coding against a different corpus than the id names. It codes ~10% smaller than arx3 on the sample corpus and is roughly 100x slower, which is why the whole arx family is async-only.
+- `arx2` - tuple-envelope transport + arx2 overlay substitution + the shared arx dictionary + brotli (quality 11) + the same four binary-to-text wire shapes. The compact `b` tag identifies arx2 but does not carry a dictionary version — it implies the current pinned shared arx dictionary and arx2 overlay. Existing `arx` links remain valid; async auto-selection keeps arx2 in the pool as the conservative Brotli tuple codec (needed for some CSV regressions).
+- `arx3` - **deprecated emit.** Same compressed bytes as arx2. The only difference was scoring baseBMP by visible character count instead of serialized URL length, so Unicode won artificially and then Discord markdown / WhatsApp percent-encoding detonated the link. Existing `#c` links still decode. Do not mint new arx3 links.
+- `arx4` - **deprecated emit.** ARX2's tuple/overlay pipeline with Brotli replaced by the deterministic context mixer, plus a prior id char, but it kept arx3's broken visible-length baseBMP policy. Existing `#e` links still decode. Do not mint new arx4 links.
+- `arx5` - ARX 4.5: the sane mixer codec. Same context mixer, priors, and wire shapes as arx4 (`arx4-codec.ts`), scored with ARX2's honest serialized transport length for every wire including baseBMP. The compact `f` tag identifies arx5. The payload still carries one extra leading char, the prior id (`m`, `c`, `j`, `s`, or `n`); `m`/`c`/`j` need `/arx4-priors.json` (pre-compressed `/arx4-priors.json.br` tried first). If the asset is unavailable the encoder falls back to `s`. Auto-selection prefers arx5, then arx2. It is roughly 100x slower than Brotli, which is why the whole arx family is async-only.
 
 The encoder now also supports a packed wire representation (`p: 1`) that shortens key names before compression. Packed mode is transport-only; decoded envelopes normalize back to the standard shape.
 
@@ -106,9 +108,9 @@ Tuple fields:
 - Supported decoded payload budget: 200,000 characters
 - Discord markdown link limit: 2,000 characters for the full formatted `[label](url)` string
 - Larger payloads should fail with a clear error before rendering
-- Compression is selected automatically across packed/non-packed candidates; arx and arx2 optimize conservative transport length, while arx3 optimizes compact visible length for its dense Unicode wire
+- Compression is selected automatically across packed/non-packed candidates. Live codecs (`arx`, `arx2`, `arx5`) optimize conservative percent-escaped transport length. Deprecated `arx3`/`arx4` still optimize compact visible length when explicitly requested
 - Default sync codec priority is `deflate -> lz -> plain`
-- Default async codec priority is `arx4 -> arx3 -> arx2 -> arx -> deflate -> lz -> plain`
+- Default async codec priority is `arx5 -> arx2 -> arx -> deflate -> lz -> plain`
 - Optional budget-aware encoding can target strict limits and returns the shortest fragment when none fit
 - `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync` return `url`, `markdownLink` (ready to paste verbatim in chat), `markdownLinkLength`, and `discordMarkdownLinkWarning` so agents do not need to reconstruct `[label](url)` themselves
 
@@ -125,7 +127,30 @@ Running `npm run bench:codecs` checks a fixed corpus across markdown, a real cod
 - `arx3` visible delta vs arx2: 60.48% fewer visible fragment characters
 - real code-bench report row: arx2 is 2,984 visible fragment characters; arx3 is 1,142
 
-The gate fails if arx2 is less than 0.5% smaller overall, if arx3 is less than 35% smaller by visible characters overall, or if any individual corpus row regresses by more than 0.5%. Use `npm run bench:codecs:update` only when intentionally refreshing the committed baseline.
+The gate fails if arx2 is less than 0.5% smaller overall, if arx3 is less than 35% smaller by visible characters overall, or if any individual corpus row regresses by more than 0.5%. The arx3 visible-character row is historical: auto-emit no longer uses that policy. Use `npm run bench:codecs:update` only when intentionally refreshing the committed baseline.
+
+### Chat-safe alphabets
+
+Auto-selection measures every live wire with `computeTransportLength` in `fragment.ts`: RFC 3986 unreserved characters plus `=` stay 1, other ASCII punctuation counts as 3 (percent-escaped), and non-ASCII counts as 6/9/12 by UTF-8 width. That is the honest Discord/WhatsApp cost.
+
+Researched surface constraints:
+
+| Surface | What survives | What detonates |
+| --- | --- | --- |
+| Discord markdown `[label](url)` | RFC 3986 unreserved `A-Za-z0-9-._~` and `=`. 2,000-character limit on the whole formatted link. | Unicode is canonicalized and percent-encoded (a BMP char becomes 9 characters). `)` closes the destination. |
+| Discord bare URL | Same unreserved set. Unicode is still percent-encoded in the client. | Dense BMP/base1k fragments explode past the message limit. |
+| WhatsApp | Bare `https://` URLs only; no `[label](url)`. Unreserved ASCII in the path/fragment is typically kept. | `*bold*`, `_italic_`, and `~strike~` are formatting markers if URL detection fails. Unicode is often mangled or dropped from the tappable range. Trailing `.,!)` is stripped by linkifiers. |
+| Browser fragment (WHATWG) | Unreserved plus most sub-delims. Fragment percent-encode set is only C0, space, `"<>\``. | Does not predict chat apps. A browser-safe Unicode fragment is not Discord-safe. |
+
+Largest alphabet that is safe on both Discord markdown and WhatsApp without mangling: **RFC 3986 unreserved `A-Za-z0-9-._~` (66 chars)**. Adding `=` (already treated as chat-safe) makes 67. That is only ~0.7–1.2% denser than base64url's 64-character `A-Za-z0-9-_`.
+
+Why a new base66/67 wire is not worth it:
+
+- base64url already uses 64 of those 66 characters and is proven in production `#bB.` / `#fB.` links
+- base76's extra punctuation (`!$*()',;:@/`) is either fatal (`)`) or 3x after chat escaping, so honest scoring already rejects it
+- base1k/baseBMP look shortest by visible character count and then explode 3–9x when a chat client percent-encodes them
+
+arx5 therefore keeps the existing four wires and lets honest transport length pick. In practice that is base64url (or base76 when its punctuation does not inflate).
 
 ## Active artifact behavior
 

@@ -31,11 +31,12 @@ character identifying the codec:
 #d<payload>   (deflate)
 #a<payload>   (arx)
 #b<payload>   (arx2)
-#c<payload>   (arx3)
-#e<payload>   (arx4)
+#c<payload>   (arx3, decode-only)
+#e<payload>   (arx4, decode-only)
+#f<payload>   (arx5)
 ```
 
-The single tag char identifies the codec; for `arx`/`arx2`/`arx3`/`arx4` it implies
+The single tag char identifies the codec; for `arx`/`arx2`/`arx3`/`arx4`/`arx5` it implies
 the current dictionary but does not carry a dictionary version. The payload follows
 immediately after it. The legacy `#agent-render=v1.<codec>.<payload>` form
 (arx-family carry an extra `<dictVersion>.` segment) still decodes, but the
@@ -46,15 +47,17 @@ Supported codecs:
 - `lz`: `lz-string` compressed JSON encoded for URL-safe transport
 - `deflate`: deflate-compressed UTF-8 JSON bytes encoded as base64url
 - `arx`: domain-dictionary substitution + brotli (quality 11) + binary-to-text encoding (~70% smaller than deflate with baseBMP). Fetch the shared dictionary from `https://agent-render.com/arx-dictionary.json` to apply substitutions locally before brotli compression. Four wire shapes: baseBMP (~62k safe BMP code points, ~15.92 bits/char, best raw density), base1k (1774 Unicode code points U+00A1–U+07FF), base64url (ASCII `A-Za-z0-9-_`, `B.` prefix — good when Unicode would be percent-encoded), and base76 (77-char ASCII). The product encoder tries all four and picks the shortest **transport** length.
-- `arx2`: tuple-envelope transport + `https://agent-render.com/arx2-dictionary.json` overlay (or pre-compressed `https://agent-render.com/arx2-dictionary.json.br`) + the shared arx dictionary + brotli (quality 11) + the same four wire shapes. Existing arx links remain valid; prefer arx2 when it is the shortest transport.
-- `arx3`: same tuple envelope, arx2 overlay, shared arx dictionary, and brotli bytes as arx2, but the dense baseBMP wire may win by decoded visible character length. Use it for trusted surfaces that preserve Unicode fragments and strict visible URL budgets. Prefer arx2/base64url or UUID mode when the target platform rewrites, truncates, or previews long links aggressively.
-- `arx4`: the same tuple envelope, arx2 overlay, shared arx dictionary and baseBMP selection rule as arx3, with brotli replaced by a deterministic integer context mixer and one extra leading payload char, the prior id (`m`, `c`, `j`, `s`, or `n`). Recognize and open `#e` links; do not hand-roll them. Reproducing the wire needs the exact frozen mixer plus `https://agent-render.com/arx4-priors.json`, so an agent encoding on its own should stop at `arx3` and let the app or library emit arx4.
+- `arx2`: tuple-envelope transport + `https://agent-render.com/arx2-dictionary.json` overlay (or pre-compressed `https://agent-render.com/arx2-dictionary.json.br`) + the shared arx dictionary + brotli (quality 11) + the same four wire shapes. Existing arx links remain valid; prefer arx2 when you encode yourself and need a chat-safe ASCII wire.
+- `arx3`: **deprecated emit.** Same bytes as arx2, but it scored baseBMP by visible character count. Discord and WhatsApp then percent-encode or mangle those Unicode fragments. Recognize and open `#c` links; do not mint new ones.
+- `arx4`: **deprecated emit.** Context mixer plus the same broken visible-length Unicode policy. Recognize and open `#e` links; do not mint new ones.
+- `arx5`: ARX 4.5 — arx4's context mixer on arx2's tuple pipeline, with every wire scored by honest serialized transport length. Compact tag `f`, same prior-id prefix as arx4 (`m`, `c`, `j`, `s`, or `n`). Recognize and open `#f` links; do not hand-roll them. Reproducing the wire needs the exact frozen mixer plus `https://agent-render.com/arx4-priors.json`, so an agent encoding on its own should stop at `arx2` (chat-safe ASCII) and let the app or library emit arx5.
 - packed wire mode (`p: 1`) may be used automatically to shorten transport keys
 
 Prefer:
-1. shortest valid fragment for the target surface
-2. codec priority `arx3 -> arx2 -> arx -> deflate -> lz -> plain` for links you encode yourself; the app itself tries `arx4` first
+1. shortest valid fragment for the target surface, measured by serialized transport length (not visible Unicode count)
+2. codec priority `arx2 -> arx -> deflate -> lz -> plain` for links you encode yourself; the app itself tries `arx5` first
 3. packed wire mode when available
+4. never emit baseBMP/base1k Unicode wires for Discord, WhatsApp, or any markdown-link destination
 
 ## Envelope shape
 
@@ -199,8 +202,9 @@ https://agent-render.com/#l<payload>   (lz)
 https://agent-render.com/#d<payload>   (deflate)
 https://agent-render.com/#a<payload>   (arx)
 https://agent-render.com/#b<payload>   (arx2)
-https://agent-render.com/#c<payload>   (arx3)
-https://agent-render.com/#e<payload>   (arx4)
+https://agent-render.com/#c<payload>   (arx3, decode-only)
+https://agent-render.com/#e<payload>   (arx4, decode-only)
+https://agent-render.com/#f<payload>   (arx5)
 ```
 
 For `plain`:
@@ -244,7 +248,7 @@ To use the dictionary for local `arx` encoding:
     - Base76 uses 77 ASCII fragment-safe characters. ~6.27 bits/char
 5. Prepend the tag `a` to form the fragment (the compact tag does not carry a dictionary version — it implies the current dictionary, so always substitute using the build's current dictionary)
 
-The dictionary includes JSON envelope boilerplate patterns, JSON-escaped Markdown syntax, and programming-language patterns that are already present in the shipped corpus. The viewer tries the pre-compressed dictionary first on default ARX/ARX2/ARX3/ARX4 encode or decode paths, falls back to the JSON file, and falls back again to its built-in table if external fetches fail.
+The dictionary includes JSON envelope boilerplate patterns, JSON-escaped Markdown syntax, and programming-language patterns that are already present in the shipped corpus. The viewer tries the pre-compressed dictionary first on default ARX-family encode or decode paths, falls back to the JSON file, and falls back again to its built-in table if external fetches fail.
 
 If the dictionary fetch fails, fall back to `deflate` codec.
 
@@ -265,9 +269,9 @@ Then apply substitutions in this order:
 4. Try baseBMP, base1k, base64url, and base76; choose the shortest transport representation
 5. Prepend the tag `b` (the compact tag does not carry a dictionary version — it implies the current shared arx dictionary and arx2 overlay)
 
-For `arx3`, use the same tuple, substitution, and brotli bytes as arx2, then try the same four wire shapes, but measure the baseBMP wire by decoded visible character length (rather than conservative transport length) and pick the shortest candidate — so the dense baseBMP wire can win on Unicode-preserving surfaces. Prepend the tag `c` (the compact tag does not carry a dictionary version — it implies the current shared arx dictionary and arx2 overlay). Do not invent a new dictionary entry unless it is backed by corpus evidence and improves the benchmark gate.
+Do not encode `arx3` or `arx4`. Those tags remain readable so already-shared links open; their visible-length Unicode wires break on Discord and WhatsApp.
 
-For `arx4`, there is no hand-rollable recipe: the payload is arithmetic-coded against a context-mixing model primed on a corpus that must match the encoder bit for bit, so encode arx4 only through the app or `encodeEnvelopeAsync`. Read the tag `e` and the prior id that follows it when parsing a link someone else produced.
+For `arx5`, there is no hand-rollable recipe: the payload is arithmetic-coded against a context-mixing model primed on a corpus that must match the encoder bit for bit, so encode arx5 only through the app or `encodeEnvelopeAsync`. Read the tag `f` and the prior id that follows it when parsing a link someone else produced. When encoding yourself, stop at `arx2` with a transport-scored ASCII wire (usually base64url).
 
 ## Practical limits
 
@@ -281,7 +285,7 @@ Before sharing on Discord, check `markdownLinkLength` or `discordMarkdownLinkWar
 When generating links programmatically via `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync`, send `markdownLink` verbatim and inspect `discordMarkdownLinkWarning`. When it is non-null, surface that warning to the caller and split the payload before sharing on Discord.
 
 If a link is getting too large:
-1. try `arx3` first for trusted Unicode-preserving surfaces; otherwise try `arx2`, then `arx`, then `deflate`, then `lz`, then `plain`
+1. try `arx2` first (chat-safe ASCII), then `arx`, then `deflate`, then `lz`, then `plain`. Let the app emit `arx5` when you can use `encodeEnvelopeAsync`
 2. allow packed wire mode
 3. trim unnecessary prose or metadata
 4. prefer a focused artifact over a bloated one
@@ -291,7 +295,7 @@ If a link is getting too large:
 
 When the caller provides a strict budget (for example 1,500 chars):
 
-1. encode using all available candidates (`arx3/arx2/arx/deflate/lz/plain`, packed and non-packed where applicable)
+1. encode using all available live candidates (`arx5/arx2/arx/deflate/lz/plain` when the library is available, otherwise `arx2/arx/deflate/lz/plain`, packed and non-packed where applicable)
 2. choose the shortest fragment that is within budget
 3. if no candidate fits, return the shortest fragment plus a clear budget failure explanation
 

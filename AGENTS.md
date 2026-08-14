@@ -23,10 +23,10 @@ Core product traits right now:
 Treat these as core constraints unless the owner explicitly changes the product direction.
 
 - The app is a single exported client-side shell, not a backend product.
-- Artifact payloads live in the URL fragment, using the compact `#<tag><payload>` form where the single tag char identifies the codec: `p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4. Legacy `#agent-render=v1.<codec>.<payload>` links (arx-family carry an extra `<dictVersion>.` segment) still decode but are no longer emitted.
+- Artifact payloads live in the URL fragment, using the compact `#<tag><payload>` form where the single tag char identifies the codec: `p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4, `f` arx5. Legacy `#agent-render=v1.<codec>.<payload>` links (arx-family carry an extra `<dictVersion>.` segment) still decode but are no longer emitted.
 - The deployed host should not receive artifact contents as part of the initial page request.
 - Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.
-- Supported codecs are `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, and `arx4`.
+- Supported codecs are `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`, and `arx5`. Auto-emit prefers `arx5`; `arx3` and `arx4` remain decodable.
 - The product is zero-retention by host design, not secret-safe in an absolute sense.
 - Links may still leak through browser history, copied URLs, screenshots, and any future client-side analytics.
 
@@ -84,10 +84,11 @@ The fragment transport is part of the product surface, not an implementation det
 
 Current rules:
 - fragment key: `agent-render` (legacy decode path only; the compact form has no key)
-- emitted format: compact `#<tag><payload>`, where the single tag char identifies the codec (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4); the compact tag does not carry a dictionary version — arx-family tags imply the build's current dictionary (the build pins the newest supported version and refuses to decode a newer one)
-- legacy format (still decodable, no longer emitted): `agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`, `agent-render=v1.arx.<dictVersion>.<payload>` for `arx`, `agent-render=v1.arx2.<dictVersion>.<payload>` for `arx2`, and `agent-render=v1.arx3.<dictVersion>.<payload>` for `arx3`
-- codecs: `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, and `arx4`
-- `arx4` payloads carry one extra leading char after the tag, the prior id (`m`, `c`, `j`, `s`, or `n`), naming the priming corpus the context mixer ran before the payload; `m`/`c`/`j` additionally need `/arx4-priors.json`, and an encoder that cannot load it emits `s` instead
+- emitted format: compact `#<tag><payload>`, where the single tag char identifies the codec (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4, `f` arx5); the compact tag does not carry a dictionary version — arx-family tags imply the build's current dictionary (the build pins the newest supported version and refuses to decode a newer one)
+- legacy format (still decodable, no longer emitted): `agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`, `agent-render=v1.arx.<dictVersion>.<payload>` for `arx`, `agent-render=v1.arx2.<dictVersion>.<payload>` for `arx2`, `agent-render=v1.arx3.<dictVersion>.<payload>` for `arx3`, `agent-render=v1.arx4.<dictVersion>.<payload>` for `arx4`, and `agent-render=v1.arx5.<dictVersion>.<payload>` for `arx5`
+- codecs: `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`, and `arx5`
+- `arx5` is the emitted mixer codec (ARX 4.5): ARX4's context mixer on ARX2's tuple/overlay pipeline, with every wire scored by honest serialized transport length. `arx3` and `arx4` stay decodable but are no longer auto-emitted because they score dense Unicode by visible character count
+- `arx4`/`arx5` payloads carry one extra leading char after the tag, the prior id (`m`, `c`, `j`, `s`, or `n`), naming the priming corpus the context mixer ran before the payload; `m`/`c`/`j` additionally need `/arx4-priors.json`, and an encoder that cannot load it emits `s` instead
 - fragment size budget: `8192` characters
 - decoded payload budget: `200000` characters
 - Discord markdown link limit: `2000` characters for the full formatted `[label](url)` string; `createGeneratedArtifactLink*` returns `discordMarkdownLinkWarning` when exceeded
@@ -124,7 +125,7 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 - `src/lib/payload/schema.ts` - type surface, limits, fragment key, supported kinds/codecs
 - `src/lib/payload/fragment.ts` - encode/decode logic and transport behavior
 - `src/lib/payload/arx-codec.ts` - arx/arx2/arx3 codecs: dictionary substitution, tuple overlay, brotli, base76/base1k/baseBMP/base64url encoding
-- `src/lib/payload/arx4-codec.ts` - arx4 codec: the arx3 stages with brotli replaced by a deterministic integer context mixer, plus the curated priors it primes on
+- `src/lib/payload/arx4-codec.ts` - arx4/arx5 mixer: the arx2 stages with brotli replaced by a deterministic integer context mixer, plus the curated priors it primes on
 - `public/arx4-priors.json` - curated per-kind arx4 priming corpora (and `.br` pre-compressed variant), regenerated by `scripts/build-arx4-priors.mjs`
 - `public/arx-dictionary.json` - shared substitution dictionary for the arx codec (served as a static endpoint)
 - `public/arx-dictionary.json.br` - pre-compressed brotli variant of the dictionary

@@ -35,6 +35,7 @@ describe("compact fragment header", () => {
       arx2: "b",
       arx3: "c",
       arx4: "e",
+      arx5: "f",
     });
   });
 
@@ -51,7 +52,7 @@ describe("compact fragment header", () => {
       expect(parsed.ok).toBe(true);
       if (parsed.ok) expect(markdownContent(parsed)).toBe(envelope.artifacts[0].kind === "markdown" ? envelope.artifacts[0].content : "");
     }
-    for (const codec of ["arx", "arx2", "arx3", "arx4"] as const) {
+    for (const codec of ["arx", "arx2", "arx3", "arx4", "arx5"] as const) {
       const parsed = await decodeFragmentAsync(`#${await encodeEnvelopeAsync(envelope, { codec })}`);
       expect(parsed.ok).toBe(true);
       if (parsed.ok) expect(markdownContent(parsed)).toBe(envelope.artifacts[0].kind === "markdown" ? envelope.artifacts[0].content : "");

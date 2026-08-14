@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { sampleLinkCards } from "@/components/home/sample-link-data";
 import { loadArx2OverlayDictionarySync, loadArxDictionarySync } from "@/lib/payload/arx-codec";
+import { loadArx4PriorsSync } from "@/lib/payload/arx4-codec";
 import { sampleEnvelopes, sampleLinks } from "@/lib/payload/examples";
 import { decodeFragmentAsync } from "@/lib/payload/fragment";
 import { compactTagForCodec } from "@/lib/payload/schema";
 import arx2DictionaryJson from "../public/arx2-dictionary.json";
+import arx4PriorsJson from "../public/arx4-priors.json";
 import arxDictionaryJson from "../public/arx-dictionary.json";
 
 describe("homepage sample link data", () => {
@@ -36,14 +38,16 @@ describe("homepage sample link data", () => {
     ).toEqual(expectedCards);
   });
 
-  it("uses a real ARX3 fragment for the homepage ARX showcase sample", async () => {
+  it("uses a real ARX5 fragment for the homepage ARX showcase sample", async () => {
     loadArxDictionarySync(arxDictionaryJson);
     loadArx2OverlayDictionarySync(arx2DictionaryJson);
+    loadArx4PriorsSync(arx4PriorsJson);
 
     const sample = sampleLinkCards.find((card) => card.title === "arx showcase");
 
-    expect(sample?.hash?.startsWith(`#${compactTagForCodec("arx3")}`)).toBe(true);
-    expect(sample?.fragmentLength).toBeLessThan(1900);
+    expect(sample?.hash?.startsWith(`#${compactTagForCodec("arx5")}`)).toBe(true);
+    expect(sample?.hash?.slice(1)).toMatch(/^[\x21-\x7e]+$/);
+    expect(sample?.fragmentLength).toBeLessThan(4000);
 
     const parsed = await decodeFragmentAsync(sample?.hash ?? "");
 
@@ -52,7 +56,7 @@ describe("homepage sample link data", () => {
       return;
     }
 
-    expect(parsed.envelope.codec).toBe("arx3");
+    expect(parsed.envelope.codec).toBe("arx5");
     expect(parsed.envelope.title).toBe("arx showcase");
     expect(parsed.rawLength).toBe(sample?.fragmentLength);
   });

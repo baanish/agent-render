@@ -9,6 +9,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Added
 
 - In-viewer edit-and-reshare: open any artifact, correct its content, and generate a new fragment link without leaving the viewer.
+- `arx5` (ARX 4.5): ARX4's context mixer on ARX2's tuple pipeline, scored by honest serialized transport length so Discord and WhatsApp no longer detonate Unicode wires.
+
+### Changed
+
+- Auto-emit no longer selects `arx3` or `arx4`. Existing `#c` and `#e` links still decode.
 
 ## [0.1.0] - 2026-05-05
 

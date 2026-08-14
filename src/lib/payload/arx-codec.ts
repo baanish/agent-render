@@ -604,7 +604,7 @@ function decodeArx2ArtifactTuple(value: unknown): ArtifactPayload {
   }
 }
 
-function envelopeFromArxTuple(value: unknown, codec: Extract<PayloadCodec, "arx2" | "arx3" | "arx4">): PayloadEnvelope {
+function envelopeFromArxTuple(value: unknown, codec: Extract<PayloadCodec, "arx2" | "arx3" | "arx4" | "arx5">): PayloadEnvelope {
   if (!Array.isArray(value)) {
     throw new Error("Invalid arx2 envelope tuple.");
   }
@@ -1381,7 +1381,7 @@ export async function arxCompressBase64url(json: string): Promise<string> {
 /**
  * The tuple-envelope pipeline's pre-entropy stage: envelope → compact tuple JSON → arx2 overlay
  * substitution → shared dictionary substitution. Every tuple codec entropy-codes exactly these
- * bytes (Brotli for arx2/arx3, the context mixer for arx4), so they all share this one derivation.
+ * bytes (Brotli for arx2/arx3, the context mixer for arx4/arx5), so they all share this one derivation.
  */
 export function substituteArxTupleText(envelope: PayloadEnvelope): string {
   // The arx2/arx3 overlay repurposes 0x7F (DEL) as a single-byte substitution
@@ -1432,7 +1432,7 @@ export async function arxDecompress(encoded: string): Promise<string> {
  */
 export function envelopeFromSubstitutedArxTupleText(
   substituted: string,
-  codec: "arx2" | "arx3" | "arx4",
+  codec: "arx2" | "arx3" | "arx4" | "arx5",
 ): PayloadEnvelope {
   const v1Decoded = dictDecode(substituted);
   assertWithinExpansionBudget(v1Decoded);

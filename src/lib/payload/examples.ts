@@ -142,7 +142,7 @@ export const sampleEnvelopes: PayloadEnvelope[] = [
 
 const sampleDescriptions: Record<string, string> = {
   "arx showcase":
-    "Tuple compression, Brotli, and visible-length Unicode encoding compress 5 rich artifacts into a single URL fragment.",
+    "Tuple compression and the context mixer, scored by honest transport length, compress 5 rich artifacts into a chat-safe URL fragment.",
 };
 
 export const sampleLinks = sampleEnvelopes.map((envelope) => {
