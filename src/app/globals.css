@@ -928,6 +928,18 @@ select {
   padding: 0.95rem;
 }
 
+.artifact-editor {
+  display: grid;
+  gap: 1.15rem;
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .artifact-editor {
+    padding: 2rem 2.5rem;
+  }
+}
+
 .viewer-toolbar {
   display: flex;
   flex-wrap: wrap;

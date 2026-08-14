@@ -415,6 +415,7 @@ export function ViewerShell() {
             fragmentLength={fragmentLength}
             hash={hash}
             onArtifactSelect={handleArtifactSelect}
+            onPreviewHash={setFragmentHash}
             onRendererReady={markRendererReady}
             rendererReadyKey={rendererReadyKey}
             statusTone={statusTone}

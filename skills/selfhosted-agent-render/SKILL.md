@@ -109,7 +109,7 @@ Returns `200 { "status": "ok" }` when the server is up and the database is reach
 
 ## Viewer links
 
-When a user visits `/{uuid}`, the server looks up the stored payload, injects it into the viewer page, and renders the same UI as the fragment-based product. All viewer features work: copy, download, print-to-PDF, diff modes, artifact switching, raw toggle.
+When a user visits `/{uuid}`, the server looks up the stored payload, injects it into the viewer page, and renders the same UI as the fragment-based product. All viewer features work: copy, download, print-to-PDF, edit-and-reshare (which emits a new fragment link), diff modes, artifact switching, raw toggle.
 
 Construct viewer links as:
 

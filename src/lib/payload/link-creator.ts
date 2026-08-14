@@ -28,6 +28,13 @@ export type LinkCreatorDraft = {
   codec?: PayloadCodec | "auto";
 };
 
+export type ArtifactEditDraft = LinkCreatorDraft & {
+  artifactId: string;
+  diffSource?: "patch" | "pair";
+  oldContent?: string;
+  newContent?: string;
+};
+
 export type GeneratedArtifactLink = {
   envelope: PayloadEnvelope;
   artifact: ArtifactPayload;
@@ -72,13 +79,18 @@ function getArtifactId(kind: ArtifactKind, title?: string, filename?: string) {
   return slugifyId(title ?? filenameStem ?? kind);
 }
 
-function buildArtifact(draft: LinkCreatorDraft): ArtifactPayload {
+function getEmptyContentError(kind: ArtifactKind) {
+  return kind === "diff"
+    ? "Paste a diff patch before generating a link."
+    : "Paste some content before generating a link.";
+}
+
+function buildArtifact(draft: LinkCreatorDraft, id = getArtifactId(draft.kind, normalizeOptionalField(draft.title), normalizeOptionalField(draft.filename))): ArtifactPayload {
   const title = normalizeOptionalField(draft.title);
   const filename = normalizeOptionalField(draft.filename);
-  const id = getArtifactId(draft.kind, title, filename);
 
   if (!NON_WHITESPACE_PATTERN.test(draft.content)) {
-    throw new Error(draft.kind === "diff" ? "Paste a diff patch before generating a link." : "Paste some content before generating a link.");
+    throw new Error(getEmptyContentError(draft.kind));
   }
 
   if (draft.kind === "diff") {
@@ -109,6 +121,167 @@ function buildArtifact(draft: LinkCreatorDraft): ArtifactPayload {
     title,
     filename,
     content: draft.content,
+  };
+}
+
+function buildPairDiffArtifact(draft: ArtifactEditDraft, id: string, language?: string): DiffArtifact {
+  const oldContent = draft.oldContent ?? "";
+  const newContent = draft.newContent ?? "";
+
+  if (!NON_WHITESPACE_PATTERN.test(oldContent) && !NON_WHITESPACE_PATTERN.test(newContent)) {
+    throw new Error(getEmptyContentError("diff"));
+  }
+
+  return {
+    id,
+    kind: "diff",
+    title: normalizeOptionalField(draft.title),
+    filename: normalizeOptionalField(draft.filename),
+    oldContent,
+    newContent,
+    view: draft.diffView,
+    language: normalizeOptionalField(language ?? draft.language),
+  };
+}
+
+/**
+ * Builds a link-creator draft from an already-decoded artifact so the viewer can edit and reshare it.
+ *
+ * Diff artifacts that only have `oldContent`/`newContent` keep that pair shape. Diffs with a `patch`
+ * stay on the patch field. The optional `codec` is the encoder preference for the next generated link.
+ */
+export function createArtifactEditDraft(
+  artifact: ArtifactPayload,
+  codec: PayloadCodec | "auto" = "auto",
+): ArtifactEditDraft {
+  const title = artifact.title ?? "";
+  const filename = artifact.filename ?? "";
+
+  switch (artifact.kind) {
+    case "markdown":
+    case "csv":
+    case "json":
+      return {
+        artifactId: artifact.id,
+        kind: artifact.kind,
+        title,
+        filename,
+        content: artifact.content,
+        language: "",
+        diffView: "unified",
+        codec,
+      };
+    case "code":
+      return {
+        artifactId: artifact.id,
+        kind: "code",
+        title,
+        filename,
+        content: artifact.content,
+        language: artifact.language ?? "",
+        diffView: "unified",
+        codec,
+      };
+    case "diff": {
+      const language = artifact.language ?? "";
+      const diffView = artifact.view ?? "unified";
+
+      if (typeof artifact.patch === "string" && artifact.patch.length > 0) {
+        return {
+          artifactId: artifact.id,
+          kind: "diff",
+          title,
+          filename,
+          content: artifact.patch,
+          language,
+          diffView,
+          codec,
+          diffSource: "patch",
+        };
+      }
+
+      return {
+        artifactId: artifact.id,
+        kind: "diff",
+        title,
+        filename,
+        content: "",
+        language,
+        diffView,
+        codec,
+        diffSource: "pair",
+        oldContent: artifact.oldContent ?? "",
+        newContent: artifact.newContent ?? "",
+      };
+    }
+    default: {
+      const _exhaustive: never = artifact;
+      throw new Error(`Unsupported artifact kind: ${(_exhaustive as ArtifactPayload).kind}`);
+    }
+  }
+}
+
+function getEditedEnvelopeTitle(
+  envelope: PayloadEnvelope,
+  previous: ArtifactPayload,
+  nextArtifact: ArtifactPayload,
+) {
+  const nextHeading = getDraftHeading(nextArtifact.kind, nextArtifact.title, nextArtifact.filename);
+
+  if (envelope.artifacts.length === 1) {
+    return nextHeading;
+  }
+
+  if (
+    envelope.title &&
+    (envelope.title === previous.title ||
+      envelope.title === previous.filename ||
+      envelope.title === getDraftHeading(previous.kind, previous.title, previous.filename))
+  ) {
+    return nextHeading;
+  }
+
+  return envelope.title;
+}
+
+/**
+ * Replaces one artifact in an existing envelope with an edited draft, keeping the original artifact id.
+ *
+ * Other artifacts in a bundle stay unchanged. Single-artifact envelopes update `title` to match the
+ * edited heading. Throws when the target id is missing, the draft kind does not match, or the body
+ * is empty.
+ */
+export function applyArtifactEditDraft(
+  envelope: PayloadEnvelope,
+  draft: ArtifactEditDraft,
+): PayloadEnvelope {
+  const previous = envelope.artifacts.find((artifact) => artifact.id === draft.artifactId);
+
+  if (!previous) {
+    throw new Error(`Artifact "${draft.artifactId}" is not in this bundle.`);
+  }
+
+  if (previous.kind !== draft.kind) {
+    throw new Error("Artifact kind cannot change while editing.");
+  }
+
+  const nextArtifact =
+    draft.kind === "diff" && draft.diffSource === "pair"
+      ? buildPairDiffArtifact(draft, previous.id, previous.kind === "diff" ? previous.language : undefined)
+      : previous.kind === "diff"
+        ? {
+            ...buildArtifact(draft, previous.id),
+            language: previous.language,
+          }
+        : buildArtifact(draft, previous.id);
+
+  return {
+    ...envelope,
+    title: getEditedEnvelopeTitle(envelope, previous, nextArtifact),
+    activeArtifactId: previous.id,
+    artifacts: envelope.artifacts.map((artifact) =>
+      artifact.id === previous.id ? nextArtifact : artifact,
+    ),
   };
 }
 
@@ -202,6 +375,34 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
 }
 
 /**
+ * Encodes an existing payload envelope into a shareable fragment link.
+ *
+ * Used by the viewer edit flow after {@link applyArtifactEditDraft} so multi-artifact bundles can
+ * be reshared without collapsing back to a single artifact. Throws when normalization fails or the
+ * generated fragment exceeds `MAX_FRAGMENT_LENGTH`.
+ */
+export async function createGeneratedEnvelopeLinkAsync(
+  envelope: PayloadEnvelope,
+  baseUrl?: string,
+  codec?: PayloadCodec | "auto",
+): Promise<GeneratedArtifactLink> {
+  const normalized = normalizeEnvelope(envelope);
+
+  if (!normalized.ok) {
+    throw new Error(normalized.message);
+  }
+
+  const encodeOptions = codec && codec !== "auto" ? { codec } : {};
+  const surfaces = await encodeEnvelopeSurfacesAsync(normalized.envelope, encodeOptions);
+  return assembleGeneratedLink(
+    normalized.envelope,
+    surfaces.fragmentBody,
+    surfaces.transportFragmentBody,
+    baseUrl,
+  );
+}
+
+/**
  * Assemble a {@link GeneratedArtifactLink} from an already-encoded fragment body. The sync and async
  * creators differ only in how `fragmentBody` is produced; everything downstream (budget check, URL,
  * share info, result shape) lives here once.
@@ -254,10 +455,12 @@ function assembleGeneratedLink(
   const url = toFragmentUrl(fragmentBody, baseUrl);
   const markdownUrl = toFragmentUrl(selectMarkdownFragment(fragmentBody, transportFragmentBody), baseUrl);
   const shareInfo = buildGeneratedLinkShareInfo(envelope, markdownUrl);
+  const artifact =
+    envelope.artifacts.find((item) => item.id === envelope.activeArtifactId) ?? envelope.artifacts[0];
 
   return {
     envelope,
-    artifact: envelope.artifacts[0],
+    artifact,
     codec: getFragmentCodec(fragmentBody),
     hash,
     url,
