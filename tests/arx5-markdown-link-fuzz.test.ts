@@ -1,4 +1,5 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import arx2DictionaryJson from "../public/arx2-dictionary.json";
 import arx4PriorsJson from "../public/arx4-priors.json";
@@ -39,7 +40,7 @@ function markdownFragment(link: GeneratedArtifactLink): string {
 }
 
 function isChatSafeAsciiFragment(fragment: string): boolean {
-  return /^[\x21-\x7e]+$/.test(fragment) && !fragment.includes("%");
+  return /^[A-Za-z0-9._~-]+$/.test(fragment);
 }
 
 function percentEncodedPasteLength(link: GeneratedArtifactLink): number {
@@ -171,9 +172,6 @@ afterAll(() => {
     rows,
   };
 
-  mkdirSync("/opt/cursor/artifacts", { recursive: true });
-  writeFileSync("/opt/cursor/artifacts/arx5_markdown_link_fuzz.json", `${JSON.stringify(summary, null, 2)}\n`);
-
   const table = [
     "# arx5 markdown-link fuzz",
     "",
@@ -190,5 +188,21 @@ afterAll(() => {
     ),
     "",
   ].join("\n");
-  writeFileSync("/opt/cursor/artifacts/arx5_markdown_link_fuzz.md", table);
+
+  const reportDirs = ["test-results"];
+  if (process.env.CURSOR_ARTIFACTS_DIR) {
+    reportDirs.push(process.env.CURSOR_ARTIFACTS_DIR);
+  } else if (existsSync("/opt/cursor")) {
+    reportDirs.push("/opt/cursor/artifacts");
+  }
+
+  for (const dir of reportDirs) {
+    try {
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(path.join(dir, "arx5_markdown_link_fuzz.json"), `${JSON.stringify(summary, null, 2)}\n`);
+      writeFileSync(path.join(dir, "arx5_markdown_link_fuzz.md"), table);
+    } catch {
+      // Diagnostic output must not fail the suite.
+    }
+  }
 });

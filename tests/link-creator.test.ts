@@ -140,7 +140,7 @@ describe("link creator payloads", () => {
     expect(generatedLink.codec).toBe("arx5");
     expect(generatedLink.hash.startsWith(`#${compactTagForCodec("arx5")}`)).toBe(true);
     expect(generatedLink.url).toContain(`#${compactTagForCodec("arx5")}`);
-    expect(generatedLink.hash.slice(1)).toMatch(/^[\x21-\x7e]+$/);
+    expect(generatedLink.hash.slice(1)).toMatch(/^[A-Za-z0-9._~-]+$/);
     expect(generatedLink.fragmentLength).toBeLessThan(MAX_FRAGMENT_LENGTH);
     expect(parsed.ok).toBe(true);
   });

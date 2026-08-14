@@ -57,7 +57,7 @@ function loadNodeLinkEncoder(): Promise<NodeLinkEncoder> {
   }).then(async (result) => {
     const outDir = path.join(repositoryRoot, "test-results");
     mkdirSync(outDir, { recursive: true });
-    const outFile = path.join(outDir, "node-generated-link-encoder.mjs");
+    const outFile = path.join(outDir, `node-generated-link-encoder-${process.pid}.mjs`);
     writeFileSync(outFile, result.outputFiles[0].text);
     return import(pathToFileURL(outFile).href) as Promise<NodeLinkEncoder>;
   });
