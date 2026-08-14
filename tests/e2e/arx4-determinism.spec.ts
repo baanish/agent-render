@@ -9,7 +9,7 @@ import arxDictionaryJson from "../../public/arx-dictionary.json";
 import { loadArx2OverlayDictionarySync, loadArxDictionarySync } from "@/lib/payload/arx-codec";
 import { loadArx4PriorsSync, type Arx4PriorId } from "@/lib/payload/arx4-codec";
 import type { LinkCreatorDraft } from "@/lib/payload/link-creator";
-import { compactTagForCodec, type PayloadEnvelope } from "@/lib/payload/schema";
+import { codecPickerLabel, compactTagForCodec, type PayloadEnvelope } from "@/lib/payload/schema";
 import { createNodeGeneratedArtifactLink } from "./node-generated-link";
 
 /**
@@ -101,7 +101,7 @@ async function fillCreatorDraft(page: Page, draft: LinkCreatorDraft) {
     await page.getByRole("textbox", { name: "Language", exact: true }).fill(draft.language);
   }
   await page.getByRole("textbox", { name: /^Content\b/ }).fill(draft.content);
-  await page.getByRole("button", { name: draft.codec ?? "auto", exact: true }).click();
+  await page.getByRole("button", { name: codecPickerLabel(draft.codec ?? "auto"), exact: true }).click();
 }
 
 /** Reads the artifact body the viewer decoded, through the app's own copy action. */

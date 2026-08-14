@@ -32,6 +32,16 @@ export function isArxMixerCodec(codec: PayloadCodec): codec is ArxMixerCodec {
   return codec === "arx4" || codec === "arx5";
 }
 
+/** True when a codec still decodes but must not be newly emitted. */
+export function isDeprecatedEmitCodec(codec: string): codec is "arx3" | "arx4" {
+  return codec === "arx3" || codec === "arx4";
+}
+
+/** Picker label for a codec option. Deprecated emit codecs are marked do-not-use. */
+export function codecPickerLabel(option: PayloadCodec | "auto"): string {
+  return isDeprecatedEmitCodec(option) ? `${option} (do not use)` : option;
+}
+
 // Compact fragment header: a single URL-unreserved tag char replaces the legacy
 // `agent-render=v1.<codec>.<dictVersion>.` prefix. The tag encodes wire version 1 and codec; it
 // does not carry a dictionary version — arx-family tags imply the build's current pinned dictionary

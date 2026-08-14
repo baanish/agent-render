@@ -978,6 +978,10 @@ select {
   outline-offset: 2px;
 }
 
+.artifact-action.is-deprecated {
+  color: var(--text-muted);
+}
+
 .artifact-action.is-primary {
   border-color: transparent;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));

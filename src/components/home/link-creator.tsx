@@ -9,7 +9,7 @@ import type {
   GeneratedArtifactLink,
   LinkCreatorDraft,
 } from "@/lib/payload/link-creator";
-import { artifactKinds, codecs, type ArtifactKind } from "@/lib/payload/schema";
+import { artifactKinds, codecPickerLabel, codecs, isDeprecatedEmitCodec, type ArtifactKind } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
 
 type LinkCreatorProps = {
@@ -341,11 +341,17 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                     className={cn(
                       "artifact-action",
                       (draft.codec ?? "auto") === option && "is-primary",
+                      isDeprecatedEmitCodec(option) && "is-deprecated",
                     )}
                     aria-pressed={(draft.codec ?? "auto") === option}
+                    title={
+                      isDeprecatedEmitCodec(option)
+                        ? "Deprecated: Discord and WhatsApp detonate these Unicode wires. Use auto or arx5."
+                        : undefined
+                    }
                     onClick={() => updateDraft("codec", option)}
                   >
-                    {option}
+                    {codecPickerLabel(option)}
                   </button>
                 ))}
               </div>
