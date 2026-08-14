@@ -21,8 +21,8 @@ The tag char identifies the codec:
 #d<payload>   (deflate)
 #a<payload>   (arx)
 #b<payload>   (arx2)
-#c<payload>   (arx3, decode-only)
-#e<payload>   (arx4, decode-only)
+#c<payload>   (arx3, deprecated emit)
+#e<payload>   (arx4, deprecated emit)
 #f<payload>   (arx5)
 ```
 

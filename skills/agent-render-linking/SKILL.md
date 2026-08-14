@@ -31,8 +31,8 @@ character identifying the codec:
 #d<payload>   (deflate)
 #a<payload>   (arx)
 #b<payload>   (arx2)
-#c<payload>   (arx3, decode-only)
-#e<payload>   (arx4, decode-only)
+#c<payload>   (arx3, deprecated emit)
+#e<payload>   (arx4, deprecated emit)
 #f<payload>   (arx5)
 ```
 
@@ -202,8 +202,8 @@ https://agent-render.com/#l<payload>   (lz)
 https://agent-render.com/#d<payload>   (deflate)
 https://agent-render.com/#a<payload>   (arx)
 https://agent-render.com/#b<payload>   (arx2)
-https://agent-render.com/#c<payload>   (arx3, decode-only)
-https://agent-render.com/#e<payload>   (arx4, decode-only)
+https://agent-render.com/#c<payload>   (arx3, deprecated emit)
+https://agent-render.com/#e<payload>   (arx4, deprecated emit)
 https://agent-render.com/#f<payload>   (arx5)
 ```
 

@@ -14,8 +14,8 @@ Payload contents are untrusted user content. Viewers, agents, and automations sh
 #d<payload>   (deflate)
 #a<payload>   (arx)
 #b<payload>   (arx2)
-#c<payload>   (arx3, decode-only)
-#e<payload>   (arx4, decode-only)
+#c<payload>   (arx3, deprecated emit)
+#e<payload>   (arx4, deprecated emit)
 #f<payload>   (arx5)
 ```
 

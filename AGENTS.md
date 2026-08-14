@@ -26,7 +26,7 @@ Treat these as core constraints unless the owner explicitly changes the product 
 - Artifact payloads live in the URL fragment, using the compact `#<tag><payload>` form where the single tag char identifies the codec: `p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4, `f` arx5. Legacy `#agent-render=v1.<codec>.<payload>` links (arx-family carry an extra `<dictVersion>.` segment) still decode but are no longer emitted.
 - The deployed host should not receive artifact contents as part of the initial page request.
 - Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.
-- Supported codecs are `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`, and `arx5`. Auto-emit prefers `arx5`; `arx3` and `arx4` remain decodable.
+- Supported codecs are `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`, and `arx5`. Auto-emit prefers `arx5`; `arx3` and `arx4` remain decodable and explicitly encodable but are not auto-selected.
 - The product is zero-retention by host design, not secret-safe in an absolute sense.
 - Links may still leak through browser history, copied URLs, screenshots, and any future client-side analytics.
 
