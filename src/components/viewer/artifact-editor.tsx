@@ -132,7 +132,7 @@ export function ArtifactEditor({
       setCopyState("idle");
       setMarkdownLinkCopyState("idle");
       window.requestAnimationFrame(() => {
-        resultRef.current?.scrollIntoView({ block: "nearest" });
+        resultRef.current?.scrollIntoView?.({ block: "nearest" });
       });
     } catch (generationError) {
       if (generationRequestRef.current !== requestId) {

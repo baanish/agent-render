@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ArtifactEditor } from "@/components/viewer/artifact-editor";
 import { buildMarkdownLinkShareInfo } from "@/lib/markdown-link";
 import type { GeneratedArtifactLink } from "@/lib/payload/link-creator";
-import type { ArtifactPayload, PayloadEnvelope } from "@/lib/payload/schema";
+import type { MarkdownArtifact, PayloadEnvelope } from "@/lib/payload/schema";
 
 const generationMock = vi.hoisted(() => ({
   createGeneratedEnvelopeLinkAsync: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock("@/lib/payload/link-creator", async () => {
   };
 });
 
-const markdownArtifact: ArtifactPayload = {
+const markdownArtifact: MarkdownArtifact = {
   id: "notes",
   kind: "markdown",
   title: "Team notes",
