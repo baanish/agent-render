@@ -310,30 +310,10 @@ export async function buildArx2Candidates(
 
 /**
  * Builds deferred `arx3` codec fragment candidates.
- * ARX3 reuses the ARX2 tuple/overlay bytes; the only difference is how the dense baseBMP wire is
- * budgeted.
- *
- * POLICY (deliberate, owned decision — not an incidental mechanism): the arx3 baseBMP candidate is
- * budgeted by VISIBLE URL length (`value.length`), not by percent-escaped transport length, because
- * the fragment surface preserves Unicode and the visible characters are what a human actually copies
- * from the URL bar. Every other candidate in the shared pool — including arx2's byte-identical
- * baseBMP payload — is measured with `computeTransportLength`, which inflates BMP characters ~9x for
- * their UTF-8 percent-escaped size.
- *
- * CONSEQUENCE: because `selectCandidate` (fragment.ts) picks the global minimum transportLength,
- * arx3 baseBMP is therefore selected ahead of arx2's escaped-byte measurement for the same payload.
- * This is intended — it is how report-like artifacts stay human-copyable — and it means the arx3
- * baseBMP wire essentially always wins over arx2 by the metric, not by a real byte-size difference.
- *
- * CHANGING THIS REQUIRES A MAINTAINER DECISION: switching the arx3 baseBMP budget back to transport
- * length would make arx2 and arx3 measure the same payload identically and would change which wire
- * wins auto-selection. Do not flip the metric to "fix" the divergence without owning that trade-off.
- *
- * PER-SURFACE EXCEPTION: every candidate also carries `urlSerializedLength`, which measures the same
- * baseBMP wire by transport length, for surfaces that URL-serialize the fragment (markdown links
- * percent-encode baseBMP to ~9x). Selecting on that field is an additional surface-specific
- * selection, not a reversal of the default policy above: the primary copy-paste URL keeps the
- * visible-length budget.
+ * ARX3 reuses the ARX2 tuple/overlay bytes. Deprecated for auto-emit: it still budgets baseBMP by
+ * visible character count so explicit `{ codec: "arx3" }` stays bit-identical to already-shared `#c`
+ * links. Discord and WhatsApp percent-encode or mangle those Unicode wires. New auto links use
+ * {@link buildArx5Candidates}.
  */
 export async function buildArx3Candidates(
   envelope: PayloadEnvelope,
