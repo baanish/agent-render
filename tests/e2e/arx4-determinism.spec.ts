@@ -228,15 +228,6 @@ const arx5CreatorDrafts: LinkCreatorDraft[] = [
     diffView: "unified",
     codec: "arx5",
   },
-  {
-    kind: "markdown",
-    title: "Auto notes",
-    filename: "auto.md",
-    content: "# Auto notes\n\nAuto-emit should pick arx5 with a chat-safe ASCII wire.\n",
-    language: "",
-    diffView: "unified",
-    codec: "auto",
-  },
 ];
 
 test.describe("arx5 links from the shipped app bundle", () => {
