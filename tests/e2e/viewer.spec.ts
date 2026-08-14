@@ -96,6 +96,94 @@ test("renders markdown payloads and triggers print", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => Boolean(window.__printCalled))).toBe(true);
 });
 
+test("edits an open markdown artifact and reshares it as a new link", async ({ page }) => {
+  const beforeHash = getFragmentHash("Maintainer kickoff");
+  await goToHash(page, beforeHash);
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "markdown");
+
+  await page.getByRole("button", { name: "Edit" }).click();
+  const editor = page.getByTestId("artifact-editor-content");
+  await expect(editor).toBeVisible();
+  const current = await editor.inputValue();
+  await editor.fill(`${current}\n\nEdited in the viewer.`);
+  await page.getByRole("button", { name: "plain", exact: true }).click();
+
+  await page.getByRole("button", { name: "Generate new link" }).click();
+  await expect(page.getByTestId("artifact-editor-result")).toBeVisible();
+  await page.getByRole("button", { name: "Preview here" }).click();
+
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "markdown");
+  await expect(page.getByText("Edited in the viewer.")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.location.hash)).not.toBe(beforeHash);
+});
+
+test("edits an open code artifact and reshares it as a new link", async ({ page }) => {
+  const beforeHash = getFragmentHash("Viewer bootstrap");
+  await goToHash(page, beforeHash);
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "code");
+
+  await page.getByRole("button", { name: "Edit" }).click();
+  await expect(page.getByTestId("artifact-editor-content")).toBeVisible();
+  await page.getByTestId("artifact-editor-content").fill('export const value = "edited";\n');
+  await page.getByRole("button", { name: "plain", exact: true }).click();
+  await page.getByRole("button", { name: "Generate new link" }).click();
+  await expect(page.getByTestId("artifact-editor-result")).toBeVisible();
+  await page.getByRole("button", { name: "Preview here" }).click();
+
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "code");
+  await expect(page.locator(".cm-editor").first()).toContainText('export const value = "edited"');
+  await expect.poll(() => page.evaluate(() => window.location.hash)).not.toBe(beforeHash);
+});
+
+test("keeps other bundle artifacts when resharing an edited one", async ({ page }) => {
+  const bundle = {
+    v: 1,
+    codec: "plain",
+    title: "Edit bundle",
+    activeArtifactId: "notes",
+    artifacts: [
+      {
+        id: "notes",
+        kind: "markdown",
+        title: "Notes",
+        filename: "notes.md",
+        content: "# Notes\n\nOriginal bundle notes.",
+      },
+      {
+        id: "manifest",
+        kind: "json",
+        title: "Manifest",
+        filename: "manifest.json",
+        content: '{\n  "kept": true\n}',
+      },
+    ],
+  } satisfies PayloadEnvelope;
+
+  await goToHash(page, `#${encodeEnvelope(bundle)}`);
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "markdown");
+
+  await page.getByRole("button", { name: "Edit" }).click();
+  await page.getByTestId("artifact-editor-content").fill("# Notes\n\nCorrected bundle notes.");
+  await page.getByRole("button", { name: "plain", exact: true }).click();
+  await page.getByRole("button", { name: "Generate new link" }).click();
+  await expect(page.getByTestId("artifact-editor-result")).toBeVisible();
+  await page.getByRole("button", { name: "Preview here" }).click();
+
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "markdown");
+  await expect(page.getByText("Corrected bundle notes.")).toBeVisible();
+
+  await page.getByRole("button", { name: /Open artifact Manifest/i }).click();
+  await expect(page.locator("[data-active-kind='json']")).toBeVisible();
+  await waitForRendererReady(page, "json");
+  await expect(page.locator(".json-tree-shell")).toContainText("kept");
+});
+
 test("renders markdown raw view without mounting CodeMirror", async ({ page }) => {
   const plainMarkdownEnvelope = {
     v: 1,

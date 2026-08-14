@@ -29,7 +29,7 @@ The static export also emits `sitemap.xml` at the site root (and under `NEXT_PUB
 
 The viewer shell now routes all five artifact kinds through dynamically imported client-only renderers so the landing shell stays light and static-host friendly.
 
-When a valid fragment is present, the shell switches into a viewer-first layout with bundle navigation beside the active artifact. The active artifact header includes copy, download, and markdown print actions. The landing/samples experience is only the empty state.
+When a valid fragment is present, the shell switches into a viewer-first layout with bundle navigation beside the active artifact. The active artifact header includes copy, download, markdown print, and edit-and-reshare actions. Edit regenerates a new fragment link from the current artifact (or the current artifact inside a bundle) without writing anything to a server. The landing/samples experience is only the empty state.
 
 Diff file navigation is intentionally internal UI state now. The URL fragment remains reserved for payload transport and active-artifact selection instead of being reused as an in-page file anchor system.
 
