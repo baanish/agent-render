@@ -63,9 +63,12 @@ describe("LinkCreator", () => {
   it("offers every registered codec in the compression selector", () => {
     render(<LinkCreator onPreviewHash={vi.fn()} />);
 
-    for (const option of ["auto", "plain", "lz", "deflate", "arx", "arx2", "arx3", "arx4"]) {
+    for (const option of ["auto", "plain", "lz", "deflate", "arx", "arx2", "arx5"]) {
       expect(screen.getByRole("button", { name: option })).toBeInTheDocument();
     }
+
+    expect(screen.getByRole("button", { name: "arx3 (do not use)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "arx4 (do not use)" })).toBeInTheDocument();
   });
 
   it("keeps the newest generated link when async requests resolve out of order", async () => {

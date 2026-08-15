@@ -14,11 +14,11 @@ import { decodeFragmentAsync, encodeEnvelopeAsync } from "@/lib/payload/fragment
 import { Arx4DictionarySkewError, decodeArxFragmentPayload } from "@/lib/payload/fragment-arx";
 import { compactTagForCodec, type PayloadEnvelope } from "@/lib/payload/schema";
 
-// arx4 codes with the dictionary text twice over (substitution stage plus the context-mixer prior) and
-// the compact `e` tag carries no dictionary version, so a fragment coded against anything but the
-// pinned dictionaries is a link no healthy viewer can decode. Unlike arx/arx2/arx3, which tolerate the
-// built-in fallback dictionary, arx4 has to hold out for the exact pinned pair on both sides: encode
-// drops out of the candidate pool, decode refuses.
+// arx4/arx5 code with the dictionary text twice over (substitution stage plus the context-mixer prior)
+// and the compact `e`/`f` tags carry no dictionary version, so a fragment coded against anything but
+// the pinned dictionaries is a link no healthy viewer can decode. Unlike arx/arx2/arx3, which tolerate
+// the built-in fallback dictionary, the mixer codecs hold out for the exact pinned pair on both sides:
+// encode drops out of the candidate pool, decode refuses.
 const ARX4_TAG = compactTagForCodec("arx4");
 const envelope: PayloadEnvelope = {
   v: 1,
@@ -47,6 +47,7 @@ describe("arx4 dictionary pin guard", () => {
 
     expect(getActiveDictVersion()).toBe(0);
     expect(fragment.startsWith(ARX4_TAG)).toBe(false);
+    expect(fragment.startsWith(compactTagForCodec("arx5"))).toBe(false);
 
     // The rest of the pool still serves the link, and what it emits decodes.
     expect((await decodeFragmentAsync(`#${fragment}`, { skipFragmentBudget: true })).ok).toBe(true);

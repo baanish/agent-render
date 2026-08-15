@@ -12,7 +12,9 @@ import {
   type GeneratedArtifactLink,
 } from "@/lib/payload/link-creator";
 import {
+  codecPickerLabel,
   codecs,
+  isDeprecatedEmitCodec,
   type ArtifactKind,
   type ArtifactPayload,
   type PayloadEnvelope,
@@ -373,11 +375,17 @@ export function ArtifactEditor({
                 className={cn(
                   "artifact-action",
                   (draft.codec ?? "auto") === option && "is-primary",
+                  isDeprecatedEmitCodec(option) && "is-deprecated",
                 )}
                 aria-pressed={(draft.codec ?? "auto") === option}
+                title={
+                  isDeprecatedEmitCodec(option)
+                    ? "Deprecated: Discord and WhatsApp detonate these Unicode wires. Use auto or arx5."
+                    : undefined
+                }
                 onClick={() => updateDraft("codec", option)}
               >
-                {option}
+                {codecPickerLabel(option)}
               </button>
             ))}
           </div>

@@ -24,7 +24,7 @@ type EncodeOptions = {
   targetMaxFragmentLength?: number;
   codecPriority?: PayloadCodec[];
   /**
-   * Budget every candidate (including arx3/arx4 baseBMP) by percent-escaped transport length.
+   * Budget every candidate (including deprecated arx3/arx4 baseBMP) by percent-escaped transport length.
    * For surfaces that URL-serialize the fragment, e.g. markdown link destinations.
    */
   budgetByTransport?: boolean;
@@ -35,7 +35,7 @@ type BudgetPolicy = "default" | "urlSerialized";
 
 const BINARY_STRING_CHUNK_SIZE = 0x8000;
 const DEFAULT_SYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["deflate", "lz", "plain"];
-const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx4", "arx3", "arx2", "arx", "deflate", "lz", "plain"];
+const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx5", "arx2", "arx", "deflate", "lz", "plain"];
 const PACKED_WIRE_MODES: readonly boolean[] = [true, false];
 const UNPACKED_ONLY_WIRE_MODES: readonly boolean[] = [false];
 const supportedCodecSet = new Set<string>(codecs);
@@ -93,8 +93,8 @@ export function getFragmentTransportLength(fragmentBody: string): number {
 
 /**
  * Returns the decoded visible length of a fragment body or hash.
- * Browsers may expose Unicode fragments as percent-escaped text, while arx3/arx4 budget by the
- * visible characters a user copies from the URL bar.
+ * Browsers may expose Unicode fragments as percent-escaped text. Deprecated arx3/arx4 still budget
+ * by the visible characters a user copies from the URL bar; live codecs use transport length.
  */
 export function getVisibleFragmentLength(fragment: string): number {
   const fragmentBody = fragment.startsWith("#") ? fragment.slice(1) : fragment;
@@ -146,7 +146,12 @@ function encodePayload(json: string, codec: PayloadCodec): string {
     case "arx2":
     case "arx3":
     case "arx4":
+    case "arx5":
       throw new Error("arx codec requires async encoding — use encodeEnvelopeAsync instead.");
+    default: {
+      const _exhaustive: never = codec;
+      throw new Error(`Unsupported codec: ${_exhaustive}`);
+    }
   }
 }
 
@@ -182,7 +187,12 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
     case "arx2":
     case "arx3":
     case "arx4":
+    case "arx5":
       throw new Error("arx codec requires async decoding — use decodeFragmentAsync instead.");
+    default: {
+      const _exhaustive: never = codec;
+      throw new Error(`Unsupported codec: ${_exhaustive}`);
+    }
   }
 }
 
@@ -274,12 +284,22 @@ async function buildArx4Candidates(envelope: PayloadEnvelope): Promise<Candidate
   return buildDeferredArx4Candidates(envelope, computeTransportLength);
 }
 
+async function buildArx5Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
+  const { buildArx5Candidates: buildDeferredArx5Candidates } = await import("@/lib/payload/fragment-arx");
+  return buildDeferredArx5Candidates(envelope, computeTransportLength);
+}
+
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {
   const codecsToTry = getAsyncCandidateCodecs(options);
   const wireModes = options.preferPacked === false ? UNPACKED_ONLY_WIRE_MODES : PACKED_WIRE_MODES;
   const candidates: CandidateFragment[] = [];
 
   for (const codec of codecsToTry) {
+    if (codec === "arx5") {
+      candidates.push(...await buildArx5Candidates(envelope));
+      continue;
+    }
+
     if (codec === "arx4") {
       candidates.push(...await buildArx4Candidates(envelope));
       continue;
@@ -366,7 +386,7 @@ export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions
  * Async variant of {@link encodeEnvelope} that also supports ARX candidates.
  *
  * Returns the compact fragment body expected after `#`: a single codec tag char followed by the
- * payload (e.g. `c<payload>` for arx3). The legacy `agent-render=v1.<codec>.<payload>` form is still
+ * payload (e.g. `f<payload>` for arx5). The legacy `agent-render=v1.<codec>.<payload>` form is still
  * accepted on decode for back-compat.
  *
  * Like the sync version, candidate encodings are generated across enabled codecs and packed
@@ -390,10 +410,12 @@ export type EncodedEnvelopeSurfaces = {
 /**
  * Encodes an envelope once and returns both surface winners.
  *
- * A link needs two selections over the same candidates: the copy-paste URL keeps the arx3/arx4
- * visible-length budget, while a markdown destination is measured percent-escaped. Running
- * {@link encodeEnvelopeAsync} twice would recompress the payload, which for arx4 means running the
- * context mixer a second time (~770 ms per 60 KB artifact) for two selections over identical bytes.
+ * A link needs two selections over the same candidates: the copy-paste URL uses each codec's default
+ * budget (honest transport length for live codecs; visible-length for deprecated arx3/arx4 baseBMP),
+ * while a markdown destination is always measured percent-escaped. Running
+ * {@link encodeEnvelopeAsync} twice would recompress the payload, which for the mixer codecs means
+ * running the context mixer a second time (~770 ms per 60 KB artifact) for two selections over
+ * identical bytes.
  */
 export async function encodeEnvelopeSurfacesAsync(
   envelope: PayloadEnvelope,
