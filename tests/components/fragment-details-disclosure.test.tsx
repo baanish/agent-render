@@ -13,20 +13,17 @@ describe("FragmentDetailsDisclosure", () => {
         fragmentLength="120"
         hashPreview="#agent-render=v1.lz.abc"
         maxLength={String(MAX_FRAGMENT_LENGTH)}
-        statusLabel="READY"
-        statusMessage="Fragment verified and ready to render."
       />,
     );
 
     const disclosure = screen.getByTestId("fragment-disclosure");
-    const summary = screen.getByText("Fragment");
+    const summary = screen.getByText("Fragment details");
 
     expect(disclosure).toHaveAttribute("open");
     await userEvent.click(summary);
     expect(disclosure).not.toHaveAttribute("open");
     await userEvent.click(summary);
     expect(disclosure).toHaveAttribute("open");
-    expect(screen.getByText("READY")).toBeVisible();
     expect(screen.getByText("lz")).toBeVisible();
     expect(screen.getByText(/#agent-render=v1.lz.abc/i)).toBeVisible();
   });

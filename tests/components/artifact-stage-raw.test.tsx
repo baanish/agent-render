@@ -35,12 +35,6 @@ vi.mock("next/dynamic", async () => {
   };
 });
 
-const statusTone = {
-  color: "#000000",
-  label: "Ready",
-  message: "Decoded fragment.",
-};
-
 function renderStage(activeArtifact: ArtifactPayload) {
   const envelope: PayloadEnvelope = {
     v: 1,
@@ -58,7 +52,6 @@ function renderStage(activeArtifact: ArtifactPayload) {
       onArtifactSelect={vi.fn()}
       onRendererReady={vi.fn()}
       rendererReadyKey="ready"
-      statusTone={statusTone}
     />,
   );
 }

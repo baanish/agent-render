@@ -13,19 +13,19 @@ Homepage link creation and fragment-driven artifact viewing. Operate mode.
 
 ## Audience and Job
 
-Developers and AI-agent users need to create a portable artifact link, verify its transport state, and read or export the decoded artifact quickly across desktop and mobile chat workflows.
+Developers and AI-agent users need to create a portable artifact link, verify its size and codec, and read or export the decoded artifact quickly across desktop and mobile chat workflows.
 
 ## Task and Content
 
-The homepage begins with one five-step link procedure, followed by indexed samples, operating limits, and a chassis footer. The viewer prioritizes filename, state, actions, limits, artifact content, and fragment diagnostics in that order.
+The homepage begins with one five-step link procedure, followed by indexed samples, operating limits, and a chassis footer. The viewer prioritizes filename, actions, limits, artifact content, and fragment details in that order.
 
 ## Direction
 
-“Bench Instrument x Carbon Transfer”: airplane QRH supplies procedure grammar; Japanese dense interfaces supply topology; functional skeuomorphism supplies material. Bone keycaps sit on a charcoal chassis, inputs are recessed, and carbon-transfer paper appears only after successful generation.
+“Bench Instrument x Carbon Transfer”: airplane QRH supplies procedure grammar; Japanese dense interfaces supply topology; functional skeuomorphism supplies material. Charcoal keycaps use ivory labels and burnt-orange selected edges on a darker chassis, inputs are recessed, and carbon-transfer paper appears only after successful generation.
 
 ## Memorable Moment
 
-Generating a link changes the final operation from READY standby into a perforated carbon-transfer output with a physical approval stamp, without moving the user into a separate result page.
+Generating a link feeds a perforated carbon-transfer output with a physical approval stamp into the final operation, without moving the user into a separate result page.
 
 ## Constraints
 

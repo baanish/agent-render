@@ -31,8 +31,11 @@ colors:
   alert-edge: "#713126"
   amber-readout: "#d59a43"
   paper: "#f0eadf"
-  paper-dark: "#dcd5c5"
+  paper-dark: "#1a1713"
   paper-ink: "#28221b"
+  paper-ink-dark: "#ece4d6"
+  paper-body: "#4d453a"
+  paper-body-dark: "#c9c0b0"
   carbon-paper: "#d9d0bd"
   carbon-paper-dark: "#d2c8b3"
   carbon-ink: "#41392f"
@@ -40,6 +43,18 @@ colors:
   renderer: "#1c1915"
   renderer-raised: "#27221c"
   renderer-text: "#e1d9ca"
+  control-face: "#26221d"
+  control-face-lift: "#2e2923"
+  control-face-pressed: "#1a1713"
+  control-text: "#ece4d6"
+  control-accent: "#b74d18"
+  control-accent-dark: "#cf7a1c"
+  control-accent-ink: "#fff7ee"
+  control-accent-ink-dark: "#1a0e08"
+  control-success: "#3a7d5c"
+  control-success-dark: "#50a877"
+  control-success-ink: "#edf8f2"
+  control-success-ink-dark: "#102218"
   key-ink: "#241f19"
   confirmation-ink: "#111a15"
 typography:
@@ -84,22 +99,22 @@ spacing:
   shell: "12px"
 components:
   button-primary:
-    backgroundColor: "{colors.action-orange}"
-    textColor: "{colors.chassis-deep}"
+    backgroundColor: "{colors.control-accent}"
+    textColor: "{colors.control-accent-ink}"
     typography: "{typography.label}"
     rounded: "{rounded.instrument}"
     padding: "7px 10px"
     height: "38px"
   button-secondary:
-    backgroundColor: "{colors.bone-key}"
-    textColor: "{colors.key-ink}"
+    backgroundColor: "{colors.control-face}"
+    textColor: "{colors.control-text}"
     typography: "{typography.label}"
     rounded: "{rounded.instrument}"
     padding: "7px 10px"
     height: "38px"
   button-confirmed:
-    backgroundColor: "{colors.confirmation-mint}"
-    textColor: "{colors.confirmation-ink}"
+    backgroundColor: "{colors.control-success}"
+    textColor: "{colors.control-success-ink}"
     typography: "{typography.label}"
     rounded: "{rounded.instrument}"
     padding: "7px 10px"
@@ -116,8 +131,8 @@ components:
     rounded: "{rounded.instrument}"
     padding: "12px"
   artifact-switcher:
-    backgroundColor: "{colors.bone-key}"
-    textColor: "{colors.key-ink}"
+    backgroundColor: "{colors.control-face}"
+    textColor: "{colors.control-text}"
     rounded: "{rounded.instrument}"
     padding: "7px 9px"
     height: "50px"
@@ -134,7 +149,7 @@ components:
 
 **Creative North Star: "Bench Instrument x Carbon Transfer"**
 
-agent-render is an operating surface, not a promotional page. Airplane QRH supplies the procedural grammar first: numbered operations, revision placards, status lamps, limits, cautions, and explicit commit actions. Japanese high-density interface practice comes second, keeping metadata compact, aligned, and continuously visible. Functional skeuomorphic material comes third through bone keycaps, a charcoal chassis, recessed wells, engraved hairlines, and a carbon-transfer result that appears only after generation.
+agent-render is an operating surface, not a promotional page. Airplane QRH supplies the procedural grammar first: numbered operations, limits, cautions, and explicit commit actions. Japanese high-density interface practice comes second, keeping metadata compact, aligned, and continuously visible. Functional skeuomorphic material comes third through charcoal keycaps, a darker chassis, recessed wells, engraved hairlines, and a carbon-transfer result that appears only after generation.
 
 The hierarchy is intentionally “QRH first, Japanese density second, marketing page never.” Every surface should help an operator format, identify, load, compress, generate, inspect, or export an artifact. Decoration is permitted only when it makes state, structure, or physical interaction easier to understand.
 
@@ -142,15 +157,15 @@ The hierarchy is intentionally “QRH first, Japanese density second, marketing 
 
 **Key Characteristics:**
 
-- Compact procedural sequencing with visible numbering and revision language
-- Bone controls mounted on a charcoal instrument chassis
+- Compact procedural sequencing with visible numbering
+- Charcoal controls with ivory labels and burnt-orange selected edges
 - Dense monospace metadata paired with direct, readable headings
 - Carbon paper reserved for successfully generated output
-- Artifact-first viewing with transport limits and diagnostics kept visible
+- Artifact-first viewing with limits and fragment details kept visible
 
 ## Colors
 
-The palette is warm, low-gloss, and material-led: bone and paper sit against carbon-brown chassis tones, with three scarce semantic signals.
+The palette is warm, low-gloss, and material-led: paper and dark charcoal controls sit against carbon-brown chassis tones, with three scarce semantic signals.
 
 ### Primary
 
@@ -167,9 +182,10 @@ The palette is warm, low-gloss, and material-led: bone and paper sit against car
 
 ### Neutral
 
-- **Aged Bone:** Raised controls and keycaps, with lift, pressed, and edge tones establishing tactile state. In the dark shell, keycaps deliberately lift toward the implemented light aged-bone values rather than shifting into taupe.
+- **Aged Bone:** Reserved for paper-adjacent surfaces and the identity mark rather than interactive controls.
+- **Charcoal Controls:** Raised keys use a #26221d face, ivory labels, and darker pressed wells in both themes. A one-pixel burnt-orange edge marks persistent selection without turning the whole key into an accent.
 - **Charcoal Chassis:** The structural shell for procedures, toolbars, panels, and diagnostics.
-- **Instrument Paper:** A readable warm field for rendered markdown.
+- **Instrument Paper:** Rendered markdown uses warm paper in light mode and a charcoal document field with ivory text in dark mode.
 - **Carbon Transfer Stock:** A distinct generated-output material with its own ink and perforation lines.
 - **Renderer Carbon:** Code, diff, CSV, JSON, raw source, and technical preview surfaces remain dark in both themes.
 
@@ -185,7 +201,7 @@ The palette is warm, low-gloss, and material-led: bone and paper sit against car
 
 **Label/Mono Font:** Spline Sans Mono (monospace fallback)
 
-**Character:** Manrope makes headings compact and unmistakable without becoming editorial. SUSE carries readable operational prose, while Spline Sans Mono turns labels, metrics, revision marks, filenames, and readouts into instrument notation.
+**Character:** Manrope makes headings compact and unmistakable without becoming editorial. SUSE carries readable operational prose, while Spline Sans Mono turns labels, metrics, filenames, and readouts into instrument notation.
 
 ### Hierarchy
 
@@ -193,7 +209,7 @@ The palette is warm, low-gloss, and material-led: bone and paper sit against car
 - **Headline** (760, responsive 21–29px, 1.05): Procedure and workbench headings.
 - **Title** (760, 18px, 1.05): Panel, limits, and inspector headings.
 - **Body** (400, 15px, 1.7): Rendered prose; markdown reading width is capped at 76ch.
-- **Label** (650, 9px, 0.085em tracking): Uppercase procedure labels, metrics, and revision placards.
+- **Label** (650, 9px, 0.085em tracking): Uppercase procedure labels, field names, and metrics.
 
 **The Instrument Type Rule.** Use Manrope for identity and hierarchy, SUSE for explanations and content, and Spline Sans Mono for anything measured, indexed, encoded, or stateful.
 
@@ -207,11 +223,11 @@ Responsive behavior preserves order and density. At 760px, toolbars wrap, two-co
 
 ## Elevation & Depth
 
-Depth is structural rather than atmospheric. Chassis panels use hairline borders and a faint inner top shine. Bone controls sit two pixels above their edge color and physically depress by two pixels when active. Inputs, hash wells, and renderer diagnostics use inset shadows to read as recessed. There are no floating ambient card shadows, blurred glows, or decorative elevation layers.
+Depth is structural rather than atmospheric. Chassis panels use hairline borders and a faint inner top shine. Charcoal controls sit two pixels above a near-black foot and physically depress by two pixels when active. Inputs, hash wells, and renderer diagnostics use inset shadows to read as recessed. There are no floating ambient card shadows, blurred glows, or decorative elevation layers.
 
 ### Shadow Vocabulary
 
-- **Raised key:** A fine top shine plus a hard 2px lower edge; use on clickable bone controls.
+- **Raised key:** A fine top shine plus a hard 2px lower edge; use on clickable charcoal controls.
 - **Pressed key:** A compact inset shadow paired with a 2px downward translation.
 - **Recessed well:** A 2–5px dark inset shadow for editable fields, hashes, and raw technical readouts.
 - **Chassis hairline:** A nearly transparent 1px inset highlight for large dark instrument panels.
@@ -220,7 +236,7 @@ Depth is structural rather than atmospheric. Chassis panels use hairline borders
 
 ## Shapes
 
-The form language is nearly square. Controls, panels, fields, frames, and placards share a 2px corner radius. Carbon-transfer output and its readout fields use square corners. One-pixel borders and internal rules provide most silhouettes. Circular geometry is limited to status lamps and file-status dots.
+The form language is nearly square. Controls, panels, fields, and frames share a 2px corner radius. Carbon-transfer output and its readout fields use square corners. One-pixel borders and internal rules provide most silhouettes. Circular geometry is limited to file-status dots.
 
 **The Two-Pixel Rule.** Use 2px corners for the instrument system, 0 for carbon paper, and circles only for indicator lights; do not introduce soft card radii.
 
@@ -230,16 +246,16 @@ Components should feel manufactured, compact, and legible under pressure. Their 
 
 ### Buttons
 
-- **Shape:** Shallow instrument key with 2px corners and a hard lower edge.
-- **Primary:** Commit orange with dark chassis text, compact padding, and a 38px minimum height.
-- **Hover / Focus:** Hover lifts the bone value slightly; keyboard focus uses a 2px solid ring with a 2px offset; active and selected controls move down 2px into an inset state.
-- **Secondary:** Aged-bone key with dark ink; the pressed state uses the mid-bone surface.
-- **Confirmed:** Mint replaces the key face only after a successful action.
+- **Shape:** Shallow charcoal instrument key with 2px corners and a hard near-black lower edge.
+- **Primary:** Solid burnt orange belongs to the Generate action, with compact padding and a 38px minimum height.
+- **Hover / Focus:** Hover lifts the charcoal value slightly; keyboard focus uses a 2px orange ring with a 2px offset; active and selected controls move down 2px into an inset state.
+- **Secondary:** Charcoal face with ivory ink. Persistent selection keeps the dark pressed face and adds one burnt-orange inset edge.
+- **Confirmed:** Deep mint replaces the key face only after a successful action.
 
 ### Cards / Containers
 
 - **Corner Style:** Instrument corners (2px), never soft rounded cards.
-- **Background:** Chassis for procedural groups; paper only for readable markdown; carbon stock only for generated links.
+- **Background:** Chassis for procedural groups; theme-aware document fields only for readable markdown; carbon stock only for generated links.
 - **Shadow Strategy:** Hairline mounting shine for chassis and physical raised/recessed shadows for controls and wells.
 - **Border:** One-pixel structural rules divide headings, rails, steps, cells, and bodies.
 - **Internal Padding:** Dense 8–12px spacing, increasing only for readable artifact content.
@@ -252,7 +268,7 @@ Components should feel manufactured, compact, and legible under pressure. Their 
 
 ### Navigation
 
-The sticky shell header uses bone key controls on the chassis. Artifact navigation uses horizontally scrollable raised switchers with a clearly depressed active item. On narrow screens, hide only secondary global navigation and preserve task controls.
+The sticky shell header uses charcoal key controls on the chassis. Artifact navigation uses horizontally scrollable raised switchers with a clearly depressed active item and one burnt-orange inset edge. On narrow screens, hide only secondary global navigation and preserve task controls.
 
 ### Procedure Steps
 
@@ -260,7 +276,7 @@ Each operation pairs a fixed indexed rail with a flexible work area. The numbere
 
 ### Status and Callouts
 
-Status combines a small circular lamp with a terse uppercase readout. QRH callouts use explicit NOTE, CAUTION, WARN, or FAULT labels and a matching border; semantic color never replaces the text label.
+Errors use direct headings and recovery copy instead of simulated telemetry. Safety callouts use explicit NOTE, CAUTION, or WARN labels and a matching border; semantic color never replaces the text label.
 
 ### Carbon Transfer Output
 

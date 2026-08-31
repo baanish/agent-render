@@ -62,7 +62,6 @@ export default function SecurityPage() {
         <a href={homePath} className="shell-home-link">
           <span className="shell-wordmark">agent-render</span>
         </a>
-        <span className="revision-placard">PROC SEC-01 / REV C</span>
       </header>
 
       <div className="support-page">

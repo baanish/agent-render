@@ -30,11 +30,6 @@ type ArtifactStageProps = {
   onArtifactSelect: (artifactId: string) => void;
   onRendererReady: (readyKey: string) => void;
   rendererReadyKey: string;
-  statusTone: {
-    color: string;
-    label: string;
-    message: string;
-  };
 };
 
 const MarkdownRenderer = dynamic(
@@ -184,7 +179,6 @@ export function ArtifactStage({
   onArtifactSelect,
   onRendererReady,
   rendererReadyKey,
-  statusTone,
 }: ArtifactStageProps) {
   const [artifactCopyState, setArtifactCopyState] = useState<
     "idle" | "copied" | "failed"
@@ -390,10 +384,6 @@ export function ArtifactStage({
     <section className="artifact-first-layout">
       <div className="artifact-toolbar-bar print-hide-on-markdown">
         <div className="artifact-toolbar-left">
-          <span className="status-readout" style={{ color: statusTone.color }}>
-            <span className="status-led" style={{ backgroundColor: statusTone.color }} />
-            {statusTone.label}
-          </span>
           {activeArtifactFilename ? (
             <h2 className="artifact-toolbar-filename">{activeArtifactFilename}</h2>
           ) : null}
@@ -475,7 +465,7 @@ export function ArtifactStage({
           ) : null}
           <button
             type="button"
-            className="artifact-action is-commit"
+            className="artifact-action"
             onClick={handleArtifactDownload}
           >
             <Download className="h-3.5 w-3.5" />
@@ -508,8 +498,7 @@ export function ArtifactStage({
 
       <section className="artifact-limits-panel print-hide-on-markdown">
         <header className="artifact-limits-heading">
-          <h3>Limits</h3>
-          <span className="revision-placard">PROC VIEW-01 / REV C</span>
+          <h3>Artifact details</h3>
         </header>
         <div
           className="artifact-metadata-grid"
@@ -532,7 +521,6 @@ export function ArtifactStage({
           <h3 className="artifact-document-title">
             {activeArtifactHeading}
           </h3>
-          <span className="revision-placard">VIEW-01 / {numberFormatter.format(fragmentLength)} CH</span>
         </div>
 
         <div className="viewer-frame viewer-frame-primary">
@@ -582,8 +570,6 @@ export function ArtifactStage({
           fragmentLength={numberFormatter.format(fragmentLength)}
           hashPreview={getHashPreview(hash)}
           maxLength={numberFormatter.format(MAX_FRAGMENT_LENGTH)}
-          statusLabel={statusTone.label}
-          statusMessage={statusTone.message}
         />
       </section>
     </section>

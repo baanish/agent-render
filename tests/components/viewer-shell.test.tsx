@@ -16,7 +16,7 @@ describe("ViewerShell homepage", () => {
     expect(
       await screen.findByRole(
         "heading",
-        { name: /zero-retention artifact viewer/i },
+        { name: /create a link/i },
         { timeout: 8000 },
       ),
     ).toBeVisible();

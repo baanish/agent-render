@@ -129,30 +129,6 @@ function getEmptyParsedPayload(): ParsedPayload {
   };
 }
 
-function getStatusTone(parsed: ParsedPayload) {
-  if (parsed.ok) {
-    return {
-      label: "READY",
-      color: "var(--confirmation)",
-      message: "Fragment verified and ready to render.",
-    };
-  }
-
-  if (parsed.code === "empty") {
-    return {
-      label: "READY",
-      color: "var(--confirmation)",
-      message: "Ready for local input.",
-    };
-  }
-
-  return {
-    label: "FAULT",
-    color: "var(--alert)",
-    message: parsed.message,
-  };
-}
-
 /**
  * Render the main viewer shell for decoding and displaying artifact fragments from the URL hash.
  *
@@ -255,7 +231,6 @@ export function ViewerShell() {
     document.title = title ? `${title} — agent-render` : "agent-render";
   }, [envelope, activeArtifact]);
 
-  const statusTone = getStatusTone(parsed);
   const viewerState =
     activeArtifact && envelope
       ? "artifact"
@@ -382,7 +357,6 @@ export function ViewerShell() {
             onArtifactSelect={handleArtifactSelect}
             onRendererReady={markRendererReady}
             rendererReadyKey={rendererReadyKey}
-            statusTone={statusTone}
           />
         ) : (
           <section className="empty-state-layout">
@@ -390,13 +364,9 @@ export function ViewerShell() {
               <section className="home-inspector-section fault-placard" role="alert">
                 <header className="instrument-heading">
                   <div>
-                    <h2>Fragment fault</h2>
-                    <p>{statusTone.message}</p>
+                    <h2>Invalid fragment</h2>
+                    <p>{parsed.message}</p>
                   </div>
-                  <span className="status-readout" style={{ color: statusTone.color }}>
-                    <span className="status-led" style={{ backgroundColor: statusTone.color }} />
-                    {statusTone.label}
-                  </span>
                 </header>
                 <div className="fault-hash-readout">
                   <span>HASH</span>
@@ -412,17 +382,7 @@ export function ViewerShell() {
 
             <section className="home-inspector-section home-operating-limits">
               <header className="instrument-heading">
-                <div>
-                  <h2>Operating limits</h2>
-                  <p>Static fragment transport / browser-side decode</p>
-                </div>
-                <div className="instrument-heading-meta">
-                  <span className="revision-placard">PROC LNK-01 / REV C</span>
-                  <span className="status-readout" style={{ color: statusTone.color }}>
-                    <span className="status-led" style={{ backgroundColor: statusTone.color }} />
-                    {statusTone.label}
-                  </span>
-                </div>
+                <h2>Operating limits</h2>
               </header>
 
               <dl className="limits-table">
@@ -474,7 +434,6 @@ export function ViewerShell() {
           </div>
           <div className="footer-spec-strip">
             <span>open source · self-hostable · no database</span>
-            <span>PROC SYS-00 / REV C</span>
           </div>
         </footer>
       </div>

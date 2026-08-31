@@ -30,7 +30,6 @@ export default function UrlExplainerPage() {
           </span>
           <span className="shell-wordmark">agent-render</span>
         </a>
-        <span className="revision-placard">PROC URL-01 / REV C</span>
       </header>
 
       <article className="support-page">
@@ -49,7 +48,6 @@ export default function UrlExplainerPage() {
         <section className="url-anatomy-panel">
           <header className="instrument-heading">
             <h2>Fragment anatomy</h2>
-            <span className="revision-placard">LIMITS URL-01</span>
           </header>
           <div className="url-fragment-readout">
             <span>ADDRESS</span>

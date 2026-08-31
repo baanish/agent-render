@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 
 test("renders the zero-retention homepage when no fragment is present", async ({ page }) => {
   await waitForViewerState(page, "empty");
-  await expect(page.getByRole("heading", { name: /zero-retention artifact viewer/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /create a link/i })).toBeVisible();
   await expect(page.getByText(/artifact content lives in the URL fragment/i)).toBeVisible();
   await expect(page.getByText(/the static host does not receive artifact content/i)).toBeVisible();
   await expect(page.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
@@ -340,7 +340,7 @@ test("header icon and name navigate to homepage", async ({ page }) => {
 
   await page.getByRole("link", { name: "Go to homepage" }).click();
   await waitForViewerState(page, "empty");
-  await expect(page.getByRole("heading", { name: /zero-retention artifact viewer/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /create a link/i })).toBeVisible();
 });
 
 test("theme switching works", async ({ page }) => {

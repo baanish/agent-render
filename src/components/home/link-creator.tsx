@@ -84,8 +84,6 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   const isGeneratedLinkStale =
     Boolean(generatedLink) && draftVersion !== generatedVersion;
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
-  const creatorStatusLabel = error ? "FAULT" : "READY";
-  const creatorStatusColor = error ? "var(--alert)" : "var(--confirmation)";
 
   generatedLinkRef.current = generatedLink;
 
@@ -196,20 +194,8 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   return (
     <section className="home-generator-section operations-card">
       <header className="operations-heading">
-        <div>
-          <h2>Zero-retention artifact viewer</h2>
-          <p>Create one shareable fragment link through the five-step procedure.</p>
-        </div>
-        <span className="revision-placard">PROC LNK-01 / REV C</span>
+        <h2>Create a link</h2>
       </header>
-
-      <div className="operations-status-rail">
-        <span className="status-readout" style={{ color: creatorStatusColor }}>
-          <span className="status-led" style={{ backgroundColor: creatorStatusColor }} />
-          {creatorStatusLabel}
-        </span>
-        <span>LOCAL ENCODE / NO UPLOAD</span>
-      </div>
 
       <form
         className="creator-form-grid"
@@ -363,10 +349,6 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             <h3>Generate link</h3>
           </header>
           <div className="operation-commit-row">
-            <p className="qrh-callout is-caution">
-              <span>CAUTION</span>
-              Review the body for secrets before committing it to a shareable URL.
-            </p>
             <button type="submit" className="artifact-action is-commit">
               <Link2 className="h-3.5 w-3.5" />
               Generate link
