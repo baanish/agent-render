@@ -2,8 +2,9 @@
  * arx4 codec: the context-mixing entropy stage for the arx tuple pipeline.
  *
  * Pipeline: envelope → compact tuple JSON → overlay + shared dictionary substitution →
- * context-mixing arithmetic coder → binary-to-text wire encoding. arx4 replaces only arx3's Brotli
- * stage; the tuple and substitution stages are the same functions arx2/arx3 call.
+ * context-mixing arithmetic coder → binary-to-text wire encoding. arx4/arx5 replace only Brotli
+ * in the arx2 tuple pipeline; the tuple and substitution stages are the same functions arx2/arx3 call.
+ * arx5 is the emitted mixer codec (honest transport-length scoring). arx4 stays decodable.
  *
  * Fragment shape: `<tag><priorId><wirePayload>`. The prior id names the priming corpus the coder ran
  * before the payload, because a decoder has to reproduce the encoder's model state exactly. The
@@ -1008,4 +1009,19 @@ export function arx4DecompressEnvelope(encoded: string): PayloadEnvelope {
     new TextDecoder().decode(decodeCm(bytes, primeBytes))
   ));
   return envelopeFromSubstitutedArxTupleText(substituted, "arx4");
+}
+
+/**
+ * Compresses a payload envelope with the arx5 pipeline. Same mixer bytes as {@link arx4CompressEnvelope};
+ * the protocol difference is the compact `f` tag and honest transport-length wire selection.
+ */
+export function arx5CompressEnvelope(envelope: PayloadEnvelope, priorId?: Arx4PriorId): ArxWirePayloads {
+  return arx4CompressEnvelope(envelope, priorId);
+}
+
+/**
+ * Decompresses an arx5 payload (prior id char + wire payload) and rebuilds the envelope stamped `arx5`.
+ */
+export function arx5DecompressEnvelope(encoded: string): PayloadEnvelope {
+  return { ...arx4DecompressEnvelope(encoded), codec: "arx5" };
 }

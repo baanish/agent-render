@@ -17,6 +17,8 @@ import {
 import {
   arx4CompressEnvelope,
   arx4DecompressEnvelope,
+  arx5CompressEnvelope,
+  arx5DecompressEnvelope,
   CURATED_PRIOR_IDS,
   EXPECTED_ARX4_PRIORS_VERSION,
   getActiveArx4PriorsVersion,
@@ -25,6 +27,7 @@ import {
 import { packEnvelope } from "@/lib/payload/wire-format";
 import {
   compactTagForCodec,
+  isArxMixerCodec,
   type ArxCodec,
   type PayloadCodec,
   type PayloadEnvelope,
@@ -38,7 +41,7 @@ export type CandidateFragment = {
   value: string;
   codec: PayloadCodec;
   packed: boolean;
-  /** Default budget: percent-escaped transport length, except the arx3/arx4 baseBMP wire. */
+  /** Default budget: percent-escaped transport length, except the deprecated arx3/arx4 baseBMP wire. */
   transportLength: number;
   /** Budget for surfaces that URL-serialize the fragment: every wire percent-escaped. */
   urlSerializedLength: number;
@@ -54,9 +57,10 @@ const WIRE_ORDER = ["base76", "base1k", "baseBMP", "base64url"] as const satisfi
  * which previously each re-spelled the tag prefix + transport-length + four-candidate list.
  *
  * `bmpUsesVisibleLength` gives the dense baseBMP wire its DEFAULT budget in visible URL characters
- * instead of percent-escaped transport length — see the POLICY note on buildArx3Candidates for why
- * arx3 and arx4 do this. `urlSerializedLength` is unaffected, so the caller can still budget that
- * same candidate by transport length for a URL-serializing surface.
+ * instead of percent-escaped transport length — the deprecated arx3/arx4 builders still do this so
+ * existing explicit encodes stay bit-identical. arx5 and the other live codecs leave it false.
+ * `urlSerializedLength` is unaffected, so the caller can still budget that same candidate by
+ * transport length for a URL-serializing surface.
  */
 function wirePayloadsToCandidates(
   codec: ArxCodec,
@@ -84,7 +88,7 @@ let arxDictionaryLoadPromise: Promise<void> | null = null;
 let arx2OverlayDictionaryLoadPromise: Promise<void> | null = null;
 let arx4PriorsLoadPromise: Promise<void> | null = null;
 
-// Compact ARX fragments (tags `a`/`b`/`c`/`e`) do NOT carry a dictionary version — the tag implies
+// Compact ARX fragments (tags `a`/`b`/`c`/`e`/`f`) do NOT carry a dictionary version — the tag implies
 // the CURRENT dictionary, which keeps links short. The safety cost is that a build must not decode
 // with a dictionary NEWER than it was built for (a CDN/asset split serving a future dictionary, or a
 // version bump), because it would lack the new slots and could produce a structurally-valid-but-
@@ -92,7 +96,7 @@ let arx4PriorsLoadPromise: Promise<void> | null = null;
 // instead of mis-decoding. The built-in fallback dictionary (version 0) and the current external
 // dictionary (version 1) are both <= this and remain usable. Bumping a dictionary version is
 // therefore a wire change that also requires new compact tags and updating
-// tests/arx-dictionary-pin.test.ts. arx4 depends on the same pin twice over, since its context-mixer
+// tests/arx-dictionary-pin.test.ts. arx4/arx5 depend on the same pin twice over, since the context-mixer
 // prior is derived from the dictionary slot text as well as its substitution stage.
 const EXPECTED_ARX_DICTIONARY_VERSION = 1;
 const EXPECTED_ARX2_OVERLAY_VERSION = 1;
@@ -101,11 +105,11 @@ const EXPECTED_ARX2_OVERLAY_VERSION = 1;
 // corpus this build's fragments were never coded against. That pin lives on the codec that codes with
 // it (EXPECTED_ARX4_PRIORS_VERSION in arx4-codec.ts); this module only drives the loader toward it.
 //
-// arx4 holds its DICTIONARIES to that same exact standard, which is where it parts ways with
+// arx4/arx5 hold their DICTIONARIES to that same exact standard, which is where they part ways with
 // arx/arx2/arx3. They tolerate the built-in fallback (version 0) because substitution alone degrades
-// predictably; arx4 also primes its context mixer on the dictionary slot text, so a fragment coded
-// against any other dictionary is one that healthy viewers cannot decode at all. Both sides therefore
-// hold out for the pinned pair: encode leaves the candidate pool, decode refuses.
+// predictably; the mixer also primes on the dictionary slot text, so a fragment coded against any
+// other dictionary is one that healthy viewers cannot decode at all. Both sides therefore hold out
+// for the pinned pair: encode leaves the candidate pool, decode refuses.
 
 /**
  * Thrown when an arx4 fragment reaches the decoder while the active dictionaries are not the exact
@@ -122,7 +126,7 @@ export class Arx4DictionarySkewError extends Error {
   }
 }
 
-/** True when both active dictionaries are exactly the versions arx4 codes against. */
+/** True when both active dictionaries are exactly the versions the mixer codecs code against. */
 function arx4DictionariesMatchPins(): boolean {
   return (
     getActiveDictVersion() === EXPECTED_ARX_DICTIONARY_VERSION &&
@@ -255,6 +259,12 @@ async function decodeArxAttempt(
       return await arx3DecompressEnvelope(encodedPayload);
     case "arx4":
       return arx4DecompressEnvelope(encodedPayload);
+    case "arx5":
+      return arx5DecompressEnvelope(encodedPayload);
+    default: {
+      const _exhaustive: never = codec;
+      throw new Error(`Unsupported arx codec: ${_exhaustive}`);
+    }
   }
 }
 
@@ -300,30 +310,10 @@ export async function buildArx2Candidates(
 
 /**
  * Builds deferred `arx3` codec fragment candidates.
- * ARX3 reuses the ARX2 tuple/overlay bytes; the only difference is how the dense baseBMP wire is
- * budgeted.
- *
- * POLICY (deliberate, owned decision — not an incidental mechanism): the arx3 baseBMP candidate is
- * budgeted by VISIBLE URL length (`value.length`), not by percent-escaped transport length, because
- * the fragment surface preserves Unicode and the visible characters are what a human actually copies
- * from the URL bar. Every other candidate in the shared pool — including arx2's byte-identical
- * baseBMP payload — is measured with `computeTransportLength`, which inflates BMP characters ~9x for
- * their UTF-8 percent-escaped size.
- *
- * CONSEQUENCE: because `selectCandidate` (fragment.ts) picks the global minimum transportLength,
- * arx3 baseBMP is therefore selected ahead of arx2's escaped-byte measurement for the same payload.
- * This is intended — it is how report-like artifacts stay human-copyable — and it means the arx3
- * baseBMP wire essentially always wins over arx2 by the metric, not by a real byte-size difference.
- *
- * CHANGING THIS REQUIRES A MAINTAINER DECISION: switching the arx3 baseBMP budget back to transport
- * length would make arx2 and arx3 measure the same payload identically and would change which wire
- * wins auto-selection. Do not flip the metric to "fix" the divergence without owning that trade-off.
- *
- * PER-SURFACE EXCEPTION: every candidate also carries `urlSerializedLength`, which measures the same
- * baseBMP wire by transport length, for surfaces that URL-serialize the fragment (markdown links
- * percent-encode baseBMP to ~9x). Selecting on that field is an additional surface-specific
- * selection, not a reversal of the default policy above: the primary copy-paste URL keeps the
- * visible-length budget.
+ * ARX3 reuses the ARX2 tuple/overlay bytes. Deprecated for auto-emit: it still budgets baseBMP by
+ * visible character count so explicit `{ codec: "arx3" }` stays bit-identical to already-shared `#c`
+ * links. Discord and WhatsApp percent-encode or mangle those Unicode wires. New auto links use
+ * {@link buildArx5Candidates}.
  */
 export async function buildArx3Candidates(
   envelope: PayloadEnvelope,
@@ -342,6 +332,10 @@ export async function buildArx3Candidates(
  * ARX4 reuses the ARX3 tuple/overlay stages and its baseBMP budgeting policy; it swaps Brotli for the
  * context mixer in arx4-codec.ts and puts a prior id char in front of the wire payload, so a
  * candidate reads `<tag><priorId><wirePayload>`.
+ *
+ * Deprecated for auto-emit: the visible-length baseBMP budget is the same Discord/Markdown
+ * detonation as arx3. Explicit `{ codec: "arx4" }` still produces those wires so existing tests and
+ * already-shared `#e` links stay reproducible. New auto links use {@link buildArx5Candidates}.
  */
 export async function buildArx4Candidates(
   envelope: PayloadEnvelope,
@@ -366,6 +360,28 @@ export async function buildArx4Candidates(
 }
 
 /**
+ * Builds deferred `arx5` codec fragment candidates.
+ *
+ * ARX 4.5: ARX4's context mixer on ARX2's tuple/overlay pipeline, scored with ARX2's honest
+ * serialized transport length. Every wire — including baseBMP — is measured percent-escaped, so
+ * Unicode cannot win the pool and then explode in Discord markdown or WhatsApp. Existing `#e`
+ * (arx4) links remain decodable; arx2 stays in the auto pool for CSV regressions.
+ */
+export async function buildArx5Candidates(
+  envelope: PayloadEnvelope,
+  computeTransportLength: TransportLengthCalculator,
+): Promise<CandidateFragment[]> {
+  await ensureArx2DictionariesLoaded();
+  if (!arx4DictionariesMatchPins()) return [];
+
+  await loadArx4PriorsOnce();
+
+  const payloadEnvelope = { ...envelope, codec: "arx5" as PayloadCodec };
+  const payloads = arx5CompressEnvelope(payloadEnvelope);
+  return wirePayloadsToCandidates("arx5", false, payloads, computeTransportLength);
+}
+
+/**
  * Decodes an ARX fragment remainder with the same versioned-payload fallback behavior as the main decoder.
  */
 export async function decodeArxFragmentPayload(
@@ -378,7 +394,7 @@ export async function decodeArxFragmentPayload(
     await ensureArx2DictionariesLoaded();
   }
 
-  if (codec === "arx4" && !arx4DictionariesMatchPins()) {
+  if (isArxMixerCodec(codec) && !arx4DictionariesMatchPins()) {
     throw new Arx4DictionarySkewError(getActiveDictVersion(), getActiveArx2OverlayVersion());
   }
 
@@ -395,7 +411,7 @@ export async function decodeArxFragmentPayload(
   // re-encoding proxy or a handcrafted fragment can deliver `%6d` where the app writes `m`, and routing
   // on the raw char would leave that fragment asking for an asset nothing ever fetches.
   const priorIdChar = decodedPayload.charAt(0);
-  if (codec === "arx4" && CURATED_PRIOR_IDS.some((priorId) => priorId === priorIdChar)) {
+  if (isArxMixerCodec(codec) && CURATED_PRIOR_IDS.some((priorId) => priorId === priorIdChar)) {
     await loadArx4PriorsOnce();
   }
 

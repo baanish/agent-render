@@ -665,6 +665,10 @@ button:disabled {
   color: var(--control-success-ink);
 }
 
+.artifact-action.is-deprecated {
+  color: var(--control-text-muted);
+}
+
 .artifact-action.is-code {
   border-color: var(--surface-code-is-code-border);
   background: var(--surface-code-is-code-bg);
@@ -1309,6 +1313,26 @@ button:disabled {
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.artifact-editor {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  background: var(--chassis);
+  color: var(--on-chassis);
+}
+
+.artifact-editor .creator-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.artifact-editor .creator-form-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 9px;
 }
 
 .artifact-instrument-stack {
@@ -2475,8 +2499,14 @@ button:disabled {
     gap: 6px;
   }
 
-  .creator-identify-grid {
+  .creator-identify-grid,
+  .artifact-editor .creator-form-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .artifact-editor .creator-form-footer {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .creator-field-head {

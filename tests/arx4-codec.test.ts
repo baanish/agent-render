@@ -198,14 +198,14 @@ describe("arx4 codec", () => {
   });
 
   describe("selection", () => {
-    it("wins auto selection against arx3 on the report fixture", async () => {
-      const autoFragment = await encodeEnvelopeAsync(reportEnvelope);
+    it("still wins an explicit arx4 encode against arx3 on the report fixture", async () => {
+      const arx4Fragment = await encodeEnvelopeAsync(reportEnvelope, { codec: "arx4" });
       const arx3Fragment = await encodeEnvelopeAsync(reportEnvelope, { codec: "arx3" });
 
-      expect(autoFragment.startsWith(ARX4_TAG)).toBe(true);
-      expect(autoFragment.length).toBeLessThan(arx3Fragment.length);
+      expect(arx4Fragment.startsWith(ARX4_TAG)).toBe(true);
+      expect(arx4Fragment.length).toBeLessThan(arx3Fragment.length);
 
-      const parsed = await decodeFragmentAsync(`#${autoFragment}`);
+      const parsed = await decodeFragmentAsync(`#${arx4Fragment}`);
       expect(parsed.ok).toBe(true);
       if (!parsed.ok) return;
       expect(parsed.envelope).toEqual({ ...reportEnvelope, codec: "arx4" });

@@ -243,13 +243,16 @@ export function ViewerShell() {
   useEffect(() => {
     rendererReadyKeyRef.current = rendererReadyKey;
 
-    if (!activeArtifact) {
+    if (!rendererReadyKey) {
       setRendererReady(true);
       return;
     }
 
+    // Reset only when the hash/artifact-id key changes. A later decode that only
+    // replaces artifact contents (same id, new fragment) must not clear a ready
+    // signal the remounted renderer already reported for that key.
     setRendererReady(false);
-  }, [activeArtifact, rendererReadyKey]);
+  }, [rendererReadyKey]);
 
   const markRendererReady = useCallback((readyKey: string) => {
     if (rendererReadyKeyRef.current === readyKey) {
@@ -355,6 +358,7 @@ export function ViewerShell() {
             fragmentLength={fragmentLength}
             hash={hash}
             onArtifactSelect={handleArtifactSelect}
+            onPreviewHash={setFragmentHash}
             onRendererReady={markRendererReady}
             rendererReadyKey={rendererReadyKey}
           />

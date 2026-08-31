@@ -29,9 +29,9 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 ## Status
 
 - Markdown, code, diff, CSV, and JSON all render in the static shell
-- Fragment transport supports `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, and `arx4`, with automatic shortest-fragment selection across available wire formats
-- The `arx` substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json` with a pre-compressed `/arx2-dictionary.json.br` variant; `arx3` reuses those proven bytes and optimizes for compact visible Unicode fragments; `arx4` adds the curated context-mixer priors at `/arx4-priors.json` with a pre-compressed `/arx4-priors.json.br` variant
-- The viewer toolbar copies artifact bodies to the clipboard, downloads them as files, and (for markdown) supports browser print-to-PDF
+- Fragment transport supports `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`, and `arx5`, with automatic shortest-fragment selection across available wire formats. Auto-emit prefers `arx5`; `arx3` and `arx4` remain decodable but are no longer selected
+- The `arx` substitution dictionary is served at `/arx-dictionary.json` with a pre-compressed `/arx-dictionary.json.br` variant; the `arx2` tuple-envelope overlay is served at `/arx2-dictionary.json` with a pre-compressed `/arx2-dictionary.json.br` variant; `arx5` (ARX 4.5) applies the context mixer from `arx4` on top of the `arx2` tuple pipeline and scores every wire by honest serialized transport length; `arx3`/`arx4` stay decodable and explicitly encodable but are not auto-selected, because their visible-length Unicode scoring detonates on Discord and WhatsApp. Mixer priors live at `/arx4-priors.json` with a pre-compressed `/arx4-priors.json.br` variant
+- The viewer toolbar copies artifact bodies to the clipboard, downloads them as files, (for markdown) supports browser print-to-PDF, and can edit the open artifact then reshare it as a new fragment link
 - Deployment target: static hosting, including Cloudflare Pages
 
 ## Included Renderers

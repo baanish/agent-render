@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Code, Copy, Download, Eye, Link2, Printer } from "lucide-react";
+import { Check, Code, Copy, Download, Eye, Link2, Pencil, Printer, X } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { numberFormatter } from "@/lib/format";
 import { buildMarkdownLinkShareInfo, getDiscordMarkdownLinkViewerNotice } from "@/lib/markdown-link";
@@ -28,6 +28,7 @@ type ArtifactStageProps = {
   fragmentLength: number;
   hash: string;
   onArtifactSelect: (artifactId: string) => void;
+  onPreviewHash: (hash: string) => void;
   onRendererReady: (readyKey: string) => void;
   rendererReadyKey: string;
 };
@@ -70,6 +71,13 @@ const JsonRenderer = dynamic(
   () =>
     import("@/components/renderers/json-renderer").then(
       (module) => module.JsonRenderer,
+    ),
+  { ssr: false },
+);
+const ArtifactEditor = dynamic(
+  () =>
+    import("@/components/viewer/artifact-editor").then(
+      (module) => module.ArtifactEditor,
     ),
   { ssr: false },
 );
@@ -168,8 +176,8 @@ function RawArtifactSource({
 /**
  * Renders the artifact-first viewer branch after the shell has decoded a valid fragment.
  *
- * Keeps toolbar actions, artifact switching, metadata, and heavy renderer wrappers out of the
- * empty-state shell chunk while preserving the same viewer behavior for decoded payloads.
+ * Keeps toolbar actions, artifact switching, metadata, edit-and-reshare, and heavy renderer
+ * wrappers out of the empty-state shell chunk while preserving decoded artifact behavior.
  */
 export function ArtifactStage({
   activeArtifact,
@@ -177,6 +185,7 @@ export function ArtifactStage({
   fragmentLength,
   hash,
   onArtifactSelect,
+  onPreviewHash,
   onRendererReady,
   rendererReadyKey,
 }: ArtifactStageProps) {
@@ -188,6 +197,7 @@ export function ArtifactStage({
   >("idle");
   const [pageHref, setPageHref] = useState("");
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
+  const [isEditing, setIsEditing] = useState(false);
   const activeArtifactRef = useRef<ArtifactPayload | null>(activeArtifact);
   const activeArtifactBody = useMemo(() => getArtifactBody(activeArtifact), [activeArtifact]);
   const activeArtifactHeading = useMemo(() => getArtifactHeading(activeArtifact), [activeArtifact]);
@@ -222,7 +232,8 @@ export function ArtifactStage({
     setArtifactCopyState("idle");
     setMarkdownLinkCopyState("idle");
     setViewMode("rendered");
-  }, [activeArtifact.id]);
+    setIsEditing(false);
+  }, [activeArtifact.id, hash]);
 
   useEffect(() => {
     if (artifactCopyState !== "copied" && artifactCopyState !== "failed") {
@@ -363,6 +374,14 @@ export function ArtifactStage({
     }, 0);
   }, [activeArtifact, activeArtifactBody]);
 
+  const handlePreviewHash = useCallback(
+    (nextHash: string) => {
+      setIsEditing(false);
+      onPreviewHash(nextHash);
+    },
+    [onPreviewHash],
+  );
+
   const handleMarkdownPrint = useCallback(() => {
     if (!markdownArtifact) {
       return;
@@ -381,7 +400,7 @@ export function ArtifactStage({
   }, [markdownArtifact]);
 
   return (
-    <section className="artifact-first-layout">
+    <section className="artifact-first-layout" data-editing={isEditing ? "true" : "false"}>
       <div className="artifact-toolbar-bar print-hide-on-markdown">
         <div className="artifact-toolbar-left">
           {activeArtifactFilename ? (
@@ -389,88 +408,109 @@ export function ArtifactStage({
           ) : null}
         </div>
         <div className="viewer-toolbar">
-          <button
-            type="button"
-            className={cn(
-              "artifact-action",
-              artifactCopyState === "copied" && "is-confirmed",
-            )}
-            onClick={handleArtifactCopy}
-          >
-            {artifactCopyState === "copied" ? (
-              <Check className="h-3.5 w-3.5" />
-            ) : (
-              <Copy className="h-3.5 w-3.5" />
-            )}
-            {artifactCopyState === "copied"
-              ? "Copied"
-              : artifactCopyState === "failed"
-                ? "Copy failed"
-                : "Copy"}
-          </button>
-          <button
-            type="button"
-            className={cn(
-              "artifact-action",
-              markdownLinkCopyState === "copied" && "is-confirmed",
-            )}
-            onClick={handleCopyMarkdownLink}
-          >
-            {markdownLinkCopyState === "copied" ? (
-              <Check className="h-3.5 w-3.5" />
-            ) : (
-              <Link2 className="h-3.5 w-3.5" />
-            )}
-            {markdownLinkCopyState === "copied"
-              ? "Copied"
-              : markdownLinkCopyState === "failed"
-                ? "Copy failed"
-                : "Markdown link"}
-          </button>
-          {markdownArtifact && viewMode === "rendered" ? (
+          {isEditing ? (
             <button
               type="button"
               className="artifact-action"
-              onClick={handleMarkdownPrint}
+              onClick={() => setIsEditing(false)}
             >
-              <Printer className="h-3.5 w-3.5" />
-              Print
+              <X className="h-3.5 w-3.5" />
+              Cancel
             </button>
-          ) : null}
-          {hasRawToggle ? (
-            <div className="diff-view-toggle">
+          ) : (
+            <>
               <button
                 type="button"
                 className={cn(
                   "artifact-action",
-                  viewMode === "rendered" && "is-depressed",
+                  artifactCopyState === "copied" && "is-confirmed",
                 )}
-                onClick={() => setViewMode("rendered")}
+                onClick={handleArtifactCopy}
               >
-                <Eye className="h-3.5 w-3.5" />
-                Rendered
+                {artifactCopyState === "copied" ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+                {artifactCopyState === "copied"
+                  ? "Copied"
+                  : artifactCopyState === "failed"
+                    ? "Copy failed"
+                    : "Copy"}
               </button>
               <button
                 type="button"
                 className={cn(
                   "artifact-action",
-                  viewMode === "raw" && "is-depressed",
+                  markdownLinkCopyState === "copied" && "is-confirmed",
                 )}
-                onClick={() => setViewMode("raw")}
+                onClick={handleCopyMarkdownLink}
               >
-                <Code className="h-3.5 w-3.5" />
-                Raw
+                {markdownLinkCopyState === "copied" ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <Link2 className="h-3.5 w-3.5" />
+                )}
+                {markdownLinkCopyState === "copied"
+                  ? "Copied"
+                  : markdownLinkCopyState === "failed"
+                    ? "Copy failed"
+                    : "Markdown link"}
               </button>
-            </div>
-          ) : null}
-          <button
-            type="button"
-            className="artifact-action"
-            onClick={handleArtifactDownload}
-          >
-            <Download className="h-3.5 w-3.5" />
-            Download
-          </button>
+              {markdownArtifact && viewMode === "rendered" ? (
+                <button
+                  type="button"
+                  className="artifact-action"
+                  onClick={handleMarkdownPrint}
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  Print
+                </button>
+              ) : null}
+              {hasRawToggle ? (
+                <div className="diff-view-toggle">
+                  <button
+                    type="button"
+                    className={cn(
+                      "artifact-action",
+                      viewMode === "rendered" && "is-depressed",
+                    )}
+                    onClick={() => setViewMode("rendered")}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    Rendered
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      "artifact-action",
+                      viewMode === "raw" && "is-depressed",
+                    )}
+                    onClick={() => setViewMode("raw")}
+                  >
+                    <Code className="h-3.5 w-3.5" />
+                    Raw
+                  </button>
+                </div>
+              ) : null}
+              <button
+                type="button"
+                className="artifact-action"
+                onClick={() => setIsEditing(true)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
+              <button
+                type="button"
+                className="artifact-action"
+                onClick={handleArtifactDownload}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -524,43 +564,52 @@ export function ArtifactStage({
         </div>
 
         <div className="viewer-frame viewer-frame-primary">
-          <div
-            className={cn(
-              "artifact-preview",
-              markdownArtifact &&
-                viewMode === "rendered" &&
-                "is-markdown print-markdown-target",
-            )}
-          >
-            {markdownArtifact && viewMode === "raw" ? (
-              <RawArtifactSource
-                content={markdownArtifact.content}
-                onReady={markActiveRendererReady}
-                testId="renderer-markdown-raw"
-              />
-            ) : markdownArtifact ? (
-              <MarkdownRenderer
-                artifact={markdownArtifact}
-                onReady={markActiveRendererReady}
-              />
-            ) : codeArtifact ? (
-              <CodeRenderer artifact={codeArtifact} onReady={markActiveRendererReady} />
-            ) : diffArtifact ? (
-              <DiffRenderer artifact={diffArtifact} onReady={markActiveRendererReady} />
-            ) : csvArtifact && viewMode === "raw" ? (
-              <RawArtifactSource
-                content={csvArtifact.content}
-                onReady={markActiveRendererReady}
-                testId="renderer-csv-raw"
-              />
-            ) : csvArtifact ? (
-              <CsvRenderer artifact={csvArtifact} onReady={markActiveRendererReady} />
-            ) : jsonArtifact ? (
-              <JsonRenderer artifact={jsonArtifact} onReady={markActiveRendererReady} />
-            ) : (
-              <pre>{getPreviewText(activeArtifactBody)}</pre>
-            )}
-          </div>
+          {isEditing ? (
+            <ArtifactEditor
+              key={activeArtifact.id}
+              artifact={activeArtifact}
+              envelope={envelope}
+              onPreviewHash={handlePreviewHash}
+            />
+          ) : (
+            <div
+              className={cn(
+                "artifact-preview",
+                markdownArtifact &&
+                  viewMode === "rendered" &&
+                  "is-markdown print-markdown-target",
+              )}
+            >
+              {markdownArtifact && viewMode === "raw" ? (
+                <RawArtifactSource
+                  content={markdownArtifact.content}
+                  onReady={markActiveRendererReady}
+                  testId="renderer-markdown-raw"
+                />
+              ) : markdownArtifact ? (
+                <MarkdownRenderer
+                  artifact={markdownArtifact}
+                  onReady={markActiveRendererReady}
+                />
+              ) : codeArtifact ? (
+                <CodeRenderer artifact={codeArtifact} onReady={markActiveRendererReady} />
+              ) : diffArtifact ? (
+                <DiffRenderer artifact={diffArtifact} onReady={markActiveRendererReady} />
+              ) : csvArtifact && viewMode === "raw" ? (
+                <RawArtifactSource
+                  content={csvArtifact.content}
+                  onReady={markActiveRendererReady}
+                  testId="renderer-csv-raw"
+                />
+              ) : csvArtifact ? (
+                <CsvRenderer artifact={csvArtifact} onReady={markActiveRendererReady} />
+              ) : jsonArtifact ? (
+                <JsonRenderer artifact={jsonArtifact} onReady={markActiveRendererReady} />
+              ) : (
+                <pre>{getPreviewText(activeArtifactBody)}</pre>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

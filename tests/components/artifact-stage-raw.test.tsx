@@ -50,6 +50,7 @@ function renderStage(activeArtifact: ArtifactPayload) {
       fragmentLength={42}
       hash="#agent-render=v1.plain.sample"
       onArtifactSelect={vi.fn()}
+      onPreviewHash={vi.fn()}
       onRendererReady={vi.fn()}
       rendererReadyKey="ready"
     />,
@@ -91,5 +92,22 @@ describe("ArtifactStage raw view", () => {
       "name,status",
     );
     expect(document.querySelector(".cm-editor")).not.toBeInTheDocument();
+  });
+
+  it("opens the in-viewer editor with the current artifact body", async () => {
+    renderStage({
+      id: "markdown-artifact",
+      kind: "markdown",
+      title: "Notes",
+      content: "# Heading\n\nraw markdown body",
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+
+    expect(await screen.findByTestId("artifact-editor")).toBeInTheDocument();
+    expect(screen.getByTestId("artifact-editor-content")).toHaveValue(
+      "# Heading\n\nraw markdown body",
+    );
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 });
