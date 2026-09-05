@@ -1,13 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Component, type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Columns2, Copy, Rows3 } from "lucide-react";
-import { FileTree, useFileTree } from "@pierre/trees/react";
 import { PatchDiff, MultiFileDiff, type FileDiffProps } from "@/lib/diff/pierre-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { detectCodeLanguage } from "@/lib/code/language";
 import { parseGitPatchBundle } from "@/lib/diff/git-patch";
 import type { DiffArtifact } from "@/lib/payload/schema";
+
+// The Trees runtime only mounts for multi-file patches, so it loads behind its own
+// boundary rather than inflating every diff render.
+const PatchFileTree = dynamic(
+  () => import("@/components/patch-file-tree").then((module) => module.PatchFileTree),
+  { ssr: false },
+);
 
 type DiffRendererProps = {
   artifact: DiffArtifact;
@@ -247,51 +254,6 @@ function DiffFallback({
   );
 }
 
-function DiffFileTree({
-  files,
-  activeFileId,
-  onSelect,
-}: {
-  files: RenderablePatchFile[];
-  activeFileId: string | null;
-  onSelect: (fileId: string) => void;
-}) {
-  const fileIdByPath = useMemo(
-    () => new Map(files.map(({ meta }) => [meta.displayPath, meta.id])),
-    [files],
-  );
-  const paths = useMemo(() => Array.from(fileIdByPath.keys()), [fileIdByPath]);
-  const selectedPath = files.find(({ meta }) => meta.id === activeFileId)?.meta.displayPath;
-  const onSelectRef = useRef(onSelect);
-  onSelectRef.current = onSelect;
-  const { model } = useFileTree({
-    density: "compact",
-    flattenEmptyDirectories: true,
-    initialExpansion: "open",
-    initialSelectedPaths: selectedPath ? [selectedPath] : [],
-    onSelectionChange(selectedPaths) {
-      const path = selectedPaths.at(-1);
-      const fileId = path ? fileIdByPath.get(path) : undefined;
-      if (fileId) {
-        onSelectRef.current(fileId);
-      }
-    },
-    paths,
-    search: paths.length >= 8,
-  });
-  const rowCount = Math.min(12, Math.max(4, paths.length + (paths.length >= 8 ? 2 : 1)));
-
-  return (
-    <nav className="patch-file-tree-nav" aria-label="Changed files">
-      <FileTree
-        className="patch-file-tree"
-        model={model}
-        style={{ height: `${rowCount * 24}px` }}
-      />
-    </nav>
-  );
-}
-
 function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
   const onReadyRef = useRef(onReady);
   const [mounted, setMounted] = useState(false);
@@ -373,6 +335,22 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
     setIsReady(false);
     setActiveFileId(renderedDiff.kind === "rich-patch" ? renderedDiff.patchFiles[0]?.meta.id ?? null : null);
   }, [renderedDiff]);
+
+  const patchFileTree = useMemo(() => {
+    if (renderedDiff.kind !== "rich-patch" || renderedDiff.patchFiles.length <= 1) {
+      return null;
+    }
+
+    const fileIdByPath = new Map<string, string>();
+    const paths: string[] = [];
+    for (const { meta } of renderedDiff.patchFiles) {
+      fileIdByPath.set(meta.displayPath, meta.id);
+      paths.push(meta.displayPath);
+    }
+    const selectedPath = renderedDiff.patchFiles.find(({ meta }) => meta.id === activeFileId)?.meta.displayPath;
+
+    return { fileIdByPath, paths, selectedPath };
+  }, [renderedDiff, activeFileId]);
 
   useEffect(() => {
     if (!mounted || renderedDiff.kind === "fallback") {
@@ -467,13 +445,18 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
               </div>
             </div>
           ) : (
-            <div className={renderedDiff.patchFiles.length > 1 ? "patch-bundle-shell" : "patch-bundle-shell is-single-file"}>
-              {renderedDiff.patchFiles.length > 1 ? (
-                <DiffFileTree
-                  key={renderedDiff.patchFiles.map(({ meta }) => meta.id).join("::")}
-                  files={renderedDiff.patchFiles}
-                  activeFileId={activeFileId}
-                  onSelect={handleFileSelect}
+            <div className={patchFileTree ? "patch-bundle-shell" : "patch-bundle-shell is-single-file"}>
+              {patchFileTree ? (
+                <PatchFileTree
+                  key={patchFileTree.paths.join("::")}
+                  paths={patchFileTree.paths}
+                  selectedPath={patchFileTree.selectedPath}
+                  onSelectPath={(path) => {
+                    const fileId = patchFileTree.fileIdByPath.get(path);
+                    if (fileId) {
+                      handleFileSelect(fileId);
+                    }
+                  }}
                 />
               ) : null}
               <div className="patch-bundle-files">

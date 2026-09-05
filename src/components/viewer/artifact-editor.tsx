@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { numberFormatter } from "@/lib/format";
+import { parseGitPatchBundle, type ParsedPatchFile } from "@/lib/diff/git-patch";
 import {
   applyArtifactEditDraft,
   createArtifactEditDraft,
@@ -22,11 +24,47 @@ import {
 import { withBasePath } from "@/lib/site/base-path";
 import { cn } from "@/lib/utils";
 
+// The Trees runtime is only worth loading when the open diff artifact is a multi-file patch.
+const PatchFileTree = dynamic(
+  () => import("@/components/patch-file-tree").then((module) => module.PatchFileTree),
+  { ssr: false },
+);
+
 type ArtifactEditorProps = {
   artifact: ArtifactPayload;
   envelope: PayloadEnvelope;
   onPreviewHash: (hash: string) => void;
 };
+
+const EMPTY_PATCH_FILES: ParsedPatchFile[] = [];
+const PATCH_SECTION_HEADER_PATTERN = /^diff --git /gm;
+
+// Maps each parsed file to its byte offset inside the raw patch text so tree
+// selection can move the textarea caret. The parser trims/normalizes sections,
+// so offsets are recovered from the `diff --git` header positions instead of
+// indexOf on the (mutated) section text. A leading preamble section has no
+// header and always sits at offset 0.
+function getPatchFileOffsets(content: string, files: ParsedPatchFile[]): Map<string, number> {
+  const headerOffsets: number[] = [];
+  PATCH_SECTION_HEADER_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = PATCH_SECTION_HEADER_PATTERN.exec(content)) !== null) {
+    headerOffsets.push(match.index);
+  }
+
+  const offsets = new Map<string, number>();
+  let headerIndex = 0;
+  for (const file of files) {
+    if (file.patch.startsWith("diff --git")) {
+      offsets.set(file.id, headerOffsets[headerIndex] ?? 0);
+      headerIndex += 1;
+    } else {
+      offsets.set(file.id, 0);
+    }
+  }
+
+  return offsets;
+}
 
 const fieldHints: Record<ArtifactKind, string> = {
   markdown: "Edit the markdown, then generate a new shareable link.",
@@ -95,6 +133,46 @@ export function ArtifactEditor({
     Boolean(generatedLink) && draftVersion !== generatedVersion;
   const usesPairDiff = draft.kind === "diff" && draft.diffSource === "pair";
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
+  const patchTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const patchFiles = useMemo(() => {
+    if (draft.kind !== "diff" || draft.diffSource !== "patch") {
+      return EMPTY_PATCH_FILES;
+    }
+
+    try {
+      return parseGitPatchBundle(draft.content);
+    } catch {
+      // The patch mid-edit may be malformed; the tree hides until it parses again.
+      return EMPTY_PATCH_FILES;
+    }
+  }, [draft.kind, draft.diffSource, draft.content]);
+  const patchFilePaths = useMemo(() => patchFiles.map((file) => file.displayPath), [patchFiles]);
+  const patchFileByPath = useMemo(
+    () => new Map(patchFiles.map((file) => [file.displayPath, file])),
+    [patchFiles],
+  );
+  const patchFileOffsets = useMemo(
+    () => getPatchFileOffsets(draft.content, patchFiles),
+    [draft.content, patchFiles],
+  );
+  const showPatchFileTree = patchFiles.length > 1;
+
+  const handlePatchFileSelect = (path: string) => {
+    const file = patchFileByPath.get(path);
+    const textarea = patchTextareaRef.current;
+    if (!file || !textarea) {
+      return;
+    }
+
+    const offset = patchFileOffsets.get(file.id) ?? 0;
+    const lineIndex = draft.content.slice(0, offset).split("\n").length - 1;
+    const measuredLineHeight = Number.parseFloat(window.getComputedStyle(textarea).lineHeight);
+    const lineHeight = Number.isFinite(measuredLineHeight) ? measuredLineHeight : 18;
+
+    textarea.focus();
+    textarea.setSelectionRange(offset, offset);
+    textarea.scrollTop = Math.max(0, (lineIndex - 1) * lineHeight);
+  };
 
   useEffect(() => {
     copyTokenRef.current += 1;
@@ -329,23 +407,48 @@ export function ArtifactEditor({
             </label>
           </>
         ) : (
-          <label className="creator-field creator-field-full">
+          <div className="creator-field creator-field-full">
             <span className="creator-field-head">
-              <span className="metric-label">{contentFieldLabel}</span>
+              <label className="metric-label" htmlFor="artifact-editor-content">
+                {contentFieldLabel}
+              </label>
               <span className="creator-field-hint">
                 {fieldHints[draft.kind]}
               </span>
             </span>
-            <textarea
-              name="content"
-              value={draft.content}
-              onChange={(event) => updateDraft("content", event.target.value)}
-              className="creator-textarea"
-              rows={14}
-              autoFocus
-              data-testid="artifact-editor-content"
-            />
-          </label>
+            {showPatchFileTree ? (
+              <div className="patch-editor-shell" data-testid="artifact-editor-patch-nav">
+                <PatchFileTree
+                  key={patchFilePaths.join("::")}
+                  paths={patchFilePaths}
+                  onSelectPath={handlePatchFileSelect}
+                />
+                <textarea
+                  id="artifact-editor-content"
+                  ref={patchTextareaRef}
+                  name="content"
+                  value={draft.content}
+                  onChange={(event) => updateDraft("content", event.target.value)}
+                  className="creator-textarea"
+                  rows={14}
+                  autoFocus
+                  data-testid="artifact-editor-content"
+                />
+              </div>
+            ) : (
+              <textarea
+                id="artifact-editor-content"
+                ref={patchTextareaRef}
+                name="content"
+                value={draft.content}
+                onChange={(event) => updateDraft("content", event.target.value)}
+                className="creator-textarea"
+                rows={14}
+                autoFocus
+                data-testid="artifact-editor-content"
+              />
+            )}
+          </div>
         )}
 
         <div className="creator-form-footer creator-field-full">

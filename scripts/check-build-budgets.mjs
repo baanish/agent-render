@@ -47,12 +47,21 @@ export const budgets = [
     type: "loadable",
   },
   {
-    // Guards the deferred Pierre diff stack. Diffs, Trees, and their rendering
-    // runtimes stay outside the initial shell and load only for diff artifacts.
-    // A jump here means a version bump grew that isolated review surface.
+    // Guards the deferred @pierre/diffs stack. The review renderer stays outside
+    // the initial shell and loads only for diff artifacts. A jump here means a
+    // version bump grew that isolated review surface.
     importKeyParts: ["components/viewer/artifact-stage", "diff-renderer"],
-    maxBytes: 220 * 1024,
+    maxBytes: 160 * 1024,
     name: "rich diff library deferred JS",
+    type: "loadable",
+  },
+  {
+    // Guards the @pierre/trees file navigator. It sits behind its own dynamic
+    // boundary inside the diff renderer and the artifact editor, so single-file
+    // diffs and non-diff edits never pay for it. Both importers share one chunk.
+    importKeyParts: ["patch-file-tree"],
+    maxBytes: 80 * 1024,
+    name: "patch file tree deferred JS",
     type: "loadable",
   },
 ];

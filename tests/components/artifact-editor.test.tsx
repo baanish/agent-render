@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ArtifactEditor } from "@/components/viewer/artifact-editor";
 import { buildMarkdownLinkShareInfo } from "@/lib/markdown-link";
 import type { GeneratedArtifactLink } from "@/lib/payload/link-creator";
-import type { MarkdownArtifact, PayloadEnvelope } from "@/lib/payload/schema";
+import type { DiffArtifact, MarkdownArtifact, PayloadEnvelope } from "@/lib/payload/schema";
 
 const generationMock = vi.hoisted(() => ({
   createGeneratedEnvelopeLinkAsync: vi.fn(),
@@ -21,6 +21,24 @@ vi.mock("@/lib/payload/link-creator", async () => {
       generationMock.createGeneratedEnvelopeLinkAsync(...args),
   };
 });
+
+vi.mock("@/components/patch-file-tree", () => ({
+  PatchFileTree: ({
+    paths,
+    onSelectPath,
+  }: {
+    paths: readonly string[];
+    onSelectPath: (path: string) => void;
+  }) => (
+    <div data-testid="mock-patch-file-tree">
+      {paths.map((path) => (
+        <button key={path} type="button" onClick={() => onSelectPath(path)}>
+          {path}
+        </button>
+      ))}
+    </div>
+  ),
+}));
 
 const markdownArtifact: MarkdownArtifact = {
   id: "notes",
@@ -144,5 +162,100 @@ describe("ArtifactEditor", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/8,192 character limit/i);
     expect(screen.queryByTestId("artifact-editor-result")).not.toBeInTheDocument();
+  });
+
+  const multiFilePatch = `diff --git a/src/hello.ts b/src/hello.ts
+index 1111111..2222222 100644
+--- a/src/hello.ts
++++ b/src/hello.ts
+@@ -1 +1 @@
+-export const hello = "old";
++export const hello = "new";
+diff --git a/src/second.ts b/src/second.ts
+index 3333333..4444444 100644
+--- a/src/second.ts
++++ b/src/second.ts
+@@ -1 +1 @@
+-export const second = "old";
++export const second = "new";
+`;
+
+  const diffArtifact: DiffArtifact = {
+    id: "diff-artifact",
+    kind: "diff",
+    title: "release.patch",
+    filename: "release.patch",
+    patch: multiFilePatch,
+  };
+
+  const diffEnvelope: PayloadEnvelope = {
+    v: 1,
+    codec: "plain",
+    title: "release.patch",
+    activeArtifactId: "diff-artifact",
+    artifacts: [diffArtifact],
+  };
+
+  it("shows a file tree for multi-file patches and moves the caret on selection", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ArtifactEditor
+        artifact={diffArtifact}
+        envelope={diffEnvelope}
+        onPreviewHash={vi.fn()}
+      />,
+    );
+
+    const tree = await screen.findByTestId("mock-patch-file-tree");
+    expect(tree).toHaveTextContent("src/hello.ts");
+    expect(tree).toHaveTextContent("src/second.ts");
+    expect(screen.getByTestId("artifact-editor-patch-nav")).toBeInTheDocument();
+
+    const textarea = screen.getByTestId<HTMLTextAreaElement>("artifact-editor-content");
+    await user.click(screen.getByRole("button", { name: "src/second.ts" }));
+
+    const expectedOffset = multiFilePatch.indexOf("diff --git a/src/second.ts");
+    expect(textarea.selectionStart).toBe(expectedOffset);
+    expect(document.activeElement).toBe(textarea);
+  });
+
+  it("keeps the plain patch field for a single-file diff", () => {
+    const singleFileArtifact: DiffArtifact = {
+      ...diffArtifact,
+      patch: multiFilePatch.slice(0, multiFilePatch.indexOf("diff --git a/src/second.ts")),
+    };
+
+    render(
+      <ArtifactEditor
+        artifact={singleFileArtifact}
+        envelope={diffEnvelope}
+        onPreviewHash={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("artifact-editor-content")).toBeInTheDocument();
+    expect(screen.queryByTestId("artifact-editor-patch-nav")).not.toBeInTheDocument();
+  });
+
+  it("keeps the pair editor for old/new content diffs", () => {
+    const pairArtifact: DiffArtifact = {
+      ...diffArtifact,
+      patch: undefined,
+      oldContent: "old\n",
+      newContent: "new\n",
+    };
+
+    render(
+      <ArtifactEditor
+        artifact={pairArtifact}
+        envelope={diffEnvelope}
+        onPreviewHash={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("artifact-editor-old-content")).toBeInTheDocument();
+    expect(screen.getByTestId("artifact-editor-new-content")).toBeInTheDocument();
+    expect(screen.queryByTestId("artifact-editor-patch-nav")).not.toBeInTheDocument();
   });
 });

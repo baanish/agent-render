@@ -1833,6 +1833,34 @@ button:disabled {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.patch-editor-shell {
+  display: grid;
+  grid-template-columns: minmax(170px, 220px) minmax(0, 1fr);
+  min-width: 0;
+  border: 1px solid var(--line-dark);
+  border-radius: 2px;
+  background: var(--chassis-deep);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.38), inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.patch-editor-shell .patch-file-tree-nav {
+  align-self: start;
+}
+
+.patch-editor-shell .creator-textarea {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.patch-editor-shell .creator-textarea:focus {
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.44);
+}
+
+.patch-editor-shell:focus-within {
+  border-color: var(--bone-edge);
+}
+
 .patch-file-tree-nav {
   min-width: 0;
   padding: 6px;
@@ -2354,7 +2382,8 @@ button:disabled {
     align-items: flex-start;
   }
 
-  .patch-bundle-shell {
+  .patch-bundle-shell,
+  .patch-editor-shell {
     grid-template-columns: minmax(0, 1fr);
   }
 
