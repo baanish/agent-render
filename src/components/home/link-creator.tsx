@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
+import { CODE_LANGUAGE_CHOICES } from "@/lib/code/language";
 import { numberFormatter } from "@/lib/format";
 import type {
   GeneratedArtifactLink,
@@ -269,13 +270,18 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             {draft.kind === "code" ? (
               <label className="creator-field">
                 <span className="metric-label">Language</span>
-                <input
+                <select
                   name="language"
                   value={draft.language}
                   onChange={(event) => updateDraft("language", event.target.value)}
-                  placeholder="tsx"
                   className="creator-input"
-                />
+                >
+                  {CODE_LANGUAGE_CHOICES.map((choice) => (
+                    <option key={choice.value || "auto"} value={choice.value}>
+                      {choice.label}
+                    </option>
+                  ))}
+                </select>
               </label>
             ) : null}
 

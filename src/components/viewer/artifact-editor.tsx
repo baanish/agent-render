@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
+import { CODE_LANGUAGE_CHOICES } from "@/lib/code/language";
 import { numberFormatter } from "@/lib/format";
 import { parseGitPatchBundle, type ParsedPatchFile } from "@/lib/diff/git-patch";
 import type { CodeViewHandle, Editor } from "@/lib/diff/pierre-edit";
@@ -219,6 +220,15 @@ export function ArtifactEditor({
     () => getPatchFileOffsets(draft.content, patchFiles),
     [draft.content, patchFiles],
   );
+
+  // The picker keeps an opened artifact's out-of-list language selectable instead of
+  // silently clearing it, since payloads can carry any language hint.
+  const languageChoices = useMemo(() => {
+    if (!draft.language || CODE_LANGUAGE_CHOICES.some((choice) => choice.value === draft.language)) {
+      return CODE_LANGUAGE_CHOICES;
+    }
+    return [...CODE_LANGUAGE_CHOICES, { value: draft.language, label: draft.language }];
+  }, [draft.language]);
 
   const artifactLabels = useMemo(() => {
     const labels = new Map<string, string>();
@@ -490,13 +500,18 @@ export function ArtifactEditor({
         {draft.kind === "code" ? (
           <label className="creator-field">
             <span className="metric-label">Language</span>
-            <input
+            <select
               name="language"
               value={draft.language}
               onChange={(event) => updateDraft("language", event.target.value)}
-              placeholder="tsx"
               className="creator-input"
-            />
+            >
+              {languageChoices.map((choice) => (
+                <option key={choice.value || "auto"} value={choice.value}>
+                  {choice.label}
+                </option>
+              ))}
+            </select>
           </label>
         ) : null}
 

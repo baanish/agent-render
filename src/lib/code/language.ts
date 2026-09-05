@@ -2,6 +2,34 @@ import type { SupportedLanguages } from "@pierre/diffs";
 import { bundledLanguages } from "shiki";
 
 /**
+ * Options for the language pickers in the link creator and artifact editor.
+ * `auto` stores an empty language hint so detection falls back to the filename.
+ * Values are `detectCodeLanguage` keys; `toPierreLanguage` resolves them to
+ * Shiki grammars and degrades unknown ones to `text`.
+ */
+export const CODE_LANGUAGE_CHOICES: readonly { value: string; label: string }[] = [
+  { value: "", label: "auto" },
+  { value: "tsx", label: "tsx" },
+  { value: "ts", label: "ts" },
+  { value: "jsx", label: "jsx" },
+  { value: "js", label: "js" },
+  { value: "python", label: "python" },
+  { value: "json", label: "json" },
+  { value: "html", label: "html" },
+  { value: "css", label: "css" },
+  { value: "markdown", label: "markdown" },
+  { value: "yaml", label: "yaml" },
+  { value: "shell", label: "shell" },
+  { value: "rust", label: "rust" },
+  { value: "go", label: "go" },
+  { value: "java", label: "java" },
+  { value: "c", label: "c" },
+  { value: "cpp", label: "cpp" },
+  { value: "sql", label: "sql" },
+  { value: "text", label: "text" },
+];
+
+/**
  * Determines the code language token used by the viewer.
  *
  * Explicit language wins first (trimmed and lowercased); when absent, language is inferred from
