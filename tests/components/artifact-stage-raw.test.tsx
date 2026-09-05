@@ -7,6 +7,27 @@ import type {
   PayloadEnvelope,
 } from "@/lib/payload/schema";
 
+vi.mock("@/components/viewer/artifact-body-editor", () => ({
+  ArtifactBodyEditor: ({
+    documents,
+    onDocumentChange,
+  }: {
+    documents: readonly { id: string; contents: string }[];
+    onDocumentChange: (id: string, contents: string) => void;
+  }) => (
+    <div data-testid="mock-body-editor">
+      {documents.map((doc) => (
+        <textarea
+          key={doc.id}
+          data-testid="artifact-editor-content"
+          defaultValue={doc.contents}
+          onChange={(event) => onDocumentChange(doc.id, event.target.value)}
+        />
+      ))}
+    </div>
+  ),
+}));
+
 vi.mock("next/dynamic", async () => {
   const React = await vi.importActual<typeof import("react")>("react");
 

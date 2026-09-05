@@ -1847,8 +1847,32 @@ button:disabled {
   align-self: start;
 }
 
+.artifact-editor-frame.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .artifact-editor-frame .creator-form-grid {
   padding: 10px;
+}
+
+.artifact-body-editor-frame {
+  min-width: 0;
+  height: 340px;
+  border: 1px solid var(--line-dark);
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--chassis-deep);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.38), inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.artifact-body-editor-frame:focus-within {
+  border-color: var(--bone-edge);
+}
+
+.artifact-body-editor {
+  display: block;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .patch-file-tree-nav {

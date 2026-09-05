@@ -64,6 +64,15 @@ export const budgets = [
     name: "patch file tree deferred JS",
     type: "loadable",
   },
+  {
+    // Guards the editable document surface: Pierre's CodeView plus the Editor
+    // runtime from @pierre/diffs/edit. It loads only while the artifact editor
+    // is open and shares its core with the diff viewer's chunk.
+    importKeyParts: ["artifact-editor", "artifact-body-editor"],
+    maxBytes: 240 * 1024,
+    name: "artifact body editor deferred JS",
+    type: "loadable",
+  },
 ];
 
 /**

@@ -105,10 +105,17 @@ test("edits an open markdown artifact and reshares it as a new link", async ({ p
   await waitForRendererReady(page, "markdown");
 
   await page.getByRole("button", { name: "Edit" }).click();
-  const editor = page.getByTestId("artifact-editor-content");
+  // The edit surface is a Pierre CodeView contenteditable inside shadow DOM.
+  const editor = page
+    .getByTestId("artifact-editor-body")
+    .locator("[contenteditable='true']")
+    .first();
   await expect(editor).toBeVisible();
-  const current = await editor.inputValue();
-  await editor.fill(`${current}\n\nEdited in the viewer.`);
+  await editor.click();
+  await page.keyboard.press("Control+A");
+  await editor.pressSequentially("# Maintainer kickoff\n\nEdited in the viewer.", {
+    delay: 30,
+  });
   await page.getByRole("button", { name: "plain", exact: true }).click();
 
   await page.getByRole("button", { name: "Generate new link" }).click();
@@ -128,8 +135,15 @@ test("edits an open code artifact and reshares it as a new link", async ({ page 
   await waitForRendererReady(page, "code");
 
   await page.getByRole("button", { name: "Edit" }).click();
-  await expect(page.getByTestId("artifact-editor-content")).toBeVisible();
-  await page.getByTestId("artifact-editor-content").fill('export const value = "edited";\n');
+  const codeEditor = page
+    .getByTestId("artifact-editor-body")
+    .locator("[contenteditable='true']")
+    .first();
+  await expect(codeEditor).toBeVisible();
+  // Pierre re-renders the editable surface per change, so keystrokes need spacing to stay aligned.
+  await codeEditor.click();
+  await page.keyboard.press("Control+A");
+  await codeEditor.pressSequentially('export const value = "edited";', { delay: 30 });
   await page.getByRole("button", { name: "plain", exact: true }).click();
   await page.getByRole("button", { name: "Generate new link" }).click();
   await expect(page.getByTestId("artifact-editor-result")).toBeVisible();
@@ -170,7 +184,14 @@ test("keeps other bundle artifacts when resharing an edited one", async ({ page 
   await waitForRendererReady(page, "markdown");
 
   await page.getByRole("button", { name: "Edit" }).click();
-  await page.getByTestId("artifact-editor-content").fill("# Notes\n\nCorrected bundle notes.");
+  const bundleEditor = page
+    .getByTestId("artifact-editor-body")
+    .locator("[contenteditable='true']")
+    .first();
+  await expect(bundleEditor).toBeVisible();
+  await bundleEditor.click();
+  await page.keyboard.press("Control+A");
+  await bundleEditor.pressSequentially("# Notes\n\nCorrected bundle notes.", { delay: 30 });
   await page.getByRole("button", { name: "plain", exact: true }).click();
   await page.getByRole("button", { name: "Generate new link" }).click();
   await expect(page.getByTestId("artifact-editor-result")).toBeVisible();
@@ -266,7 +287,7 @@ test("renders multi-file diffs without mutating the payload hash", async ({ page
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(beforeHash);
 });
 
-test("shows the editable-files tree inside the editor and moves the diff caret", async ({ page }) => {
+test("shows the editable-files tree inside the editor and focuses the selected file", async ({ page }) => {
   await goToHash(page, getFragmentHash("Phase 1 sample diff"));
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "diff");
@@ -274,9 +295,9 @@ test("shows the editable-files tree inside the editor and moves the diff caret",
   await page.getByRole("button", { name: "Edit" }).click();
   const editor = page.getByTestId("artifact-editor");
   await expect(editor).toBeVisible();
-  const editorFrame = page.getByTestId("artifact-editor-frame");
-  await expect(editorFrame).toBeVisible();
-  const editorTree = editorFrame.locator(".patch-file-tree");
+  const editorBody = page.getByTestId("artifact-editor-body");
+  await expect(editorBody).toBeVisible();
+  const editorTree = page.getByTestId("artifact-editor-frame").locator(".patch-file-tree");
   await expect
     .poll(() =>
       editorTree.evaluate(
@@ -287,16 +308,50 @@ test("shows the editable-files tree inside the editor and moves the diff caret",
     )
     .toBe(true);
 
-  const editorTextarea = page.getByTestId("artifact-editor-content");
-  const firstSelection = await editorTextarea.evaluate((element: HTMLTextAreaElement) => element.selectionStart);
+  // Wait for the deferred Pierre editor chunk to finish mounting the editable element.
+  await expect
+    .poll(() =>
+      editorBody.evaluate((frame) => {
+        let found = false;
+        const visit = (root: ParentNode) => {
+          for (const el of Array.from(root.children)) {
+            if (el.getAttribute("contenteditable") === "true") {
+              found = true;
+            }
+            visit(el);
+            if (el.shadowRoot) {
+              visit(el.shadowRoot);
+            }
+          }
+        };
+        visit(frame);
+        return found;
+      }),
+    )
+    .toBe(true);
+
   await editorTree.evaluate((tree) => {
     tree.shadowRoot
       ?.querySelector<HTMLButtonElement>('button[data-type="item"][data-item-path="src/version.ts"]')
       ?.click();
   });
+  // The patch caret nav scrolls the CodeView (`.artifact-body-editor` is its scroll root) to
+  // the file's `diff --git` section and lands focus on the editable surface inside it.
   await expect
-    .poll(() => editorTextarea.evaluate((element: HTMLTextAreaElement) => element.selectionStart))
-    .toBeGreaterThan(firstSelection);
+    .poll(() =>
+      page.evaluate(
+        () => document.querySelector<HTMLElement>(".artifact-body-editor")?.scrollTop ?? 0,
+      ),
+    )
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const frame = document.querySelector('[data-testid="artifact-editor-body"]');
+        return frame?.contains(document.activeElement) ?? false;
+      }),
+    )
+    .toBe(true);
 });
 
 test("renders rich diffs in shadow DOM without an external stylesheet", async ({ page }) => {

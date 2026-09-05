@@ -40,6 +40,50 @@ vi.mock("@/components/file-tree-nav", () => ({
   ),
 }));
 
+const bodyEditorMock = vi.hoisted(() => ({
+  scrollTo: vi.fn(),
+  setSelections: vi.fn(),
+}));
+
+vi.mock("@/components/viewer/artifact-body-editor", () => ({
+  ArtifactBodyEditor: ({
+    documents,
+    onDocumentChange,
+    codeViewRef,
+  }: {
+    documents: readonly { id: string; name: string; contents: string }[];
+    onDocumentChange: (id: string, contents: string) => void;
+    codeViewRef?: { current: unknown };
+  }) => {
+    if (codeViewRef) {
+      codeViewRef.current = {
+        scrollTo: bodyEditorMock.scrollTo,
+        getEditor: () => ({
+          setSelections: bodyEditorMock.setSelections,
+        }),
+      };
+    }
+    return (
+      <div data-testid="mock-body-editor">
+        {documents.map((doc) => (
+          <textarea
+            key={doc.id}
+            data-testid={
+              doc.id === "old"
+                ? "artifact-editor-old-content"
+                : doc.id === "new"
+                  ? "artifact-editor-new-content"
+                  : "artifact-editor-content"
+            }
+            defaultValue={doc.contents}
+            onChange={(event) => onDocumentChange(doc.id, event.target.value)}
+          />
+        ))}
+      </div>
+    );
+  },
+}));
+
 const markdownArtifact: MarkdownArtifact = {
   id: "notes",
   kind: "markdown",
@@ -83,6 +127,8 @@ function createGeneratedLink(content: string): GeneratedArtifactLink {
 afterEach(() => {
   cleanup();
   generationMock.createGeneratedEnvelopeLinkAsync.mockReset();
+  bodyEditorMock.scrollTo.mockReset();
+  bodyEditorMock.setSelections.mockReset();
   vi.restoreAllMocks();
 });
 
@@ -102,7 +148,7 @@ describe("ArtifactEditor", () => {
       />,
     );
 
-    const content = screen.getByTestId("artifact-editor-content");
+    const content = await screen.findByTestId("artifact-editor-content");
     expect(content).toHaveValue("# Hello\n\nOriginal notes.");
 
     await user.clear(content);
@@ -196,7 +242,7 @@ index 3333333..4444444 100644
     artifacts: [diffArtifact],
   };
 
-  it("lists the edited artifact in the tree for a single-file patch", async () => {
+  it("hides the tree rail for a single-file single-artifact patch", async () => {
     const singleFileArtifact: DiffArtifact = {
       ...diffArtifact,
       patch: multiFilePatch.slice(0, multiFilePatch.indexOf("diff --git a/src/second.ts")),
@@ -214,13 +260,11 @@ index 3333333..4444444 100644
       />,
     );
 
-    const tree = await screen.findByTestId("mock-patch-file-tree");
-    expect(tree).toHaveTextContent("release.patch");
-    expect(tree).not.toHaveTextContent("src/hello.ts");
-    expect(screen.getByTestId("artifact-editor-content")).toBeInTheDocument();
+    await screen.findByTestId("mock-body-editor");
+    expect(screen.queryByTestId("mock-patch-file-tree")).not.toBeInTheDocument();
   });
 
-  it("adds patch files to the tree and moves the caret on selection", async () => {
+  it("adds patch files to the tree and scrolls the editor on selection", async () => {
     const user = userEvent.setup();
 
     render(
@@ -236,12 +280,24 @@ index 3333333..4444444 100644
     expect(tree).toHaveTextContent("src/hello.ts");
     expect(tree).toHaveTextContent("src/second.ts");
 
-    const textarea = screen.getByTestId<HTMLTextAreaElement>("artifact-editor-content");
     await user.click(screen.getByRole("button", { name: "src/second.ts" }));
 
-    const expectedOffset = multiFilePatch.indexOf("diff --git a/src/second.ts");
-    expect(textarea.selectionStart).toBe(expectedOffset);
-    expect(document.activeElement).toBe(textarea);
+    const expectedLine = multiFilePatch
+      .slice(0, multiFilePatch.indexOf("diff --git a/src/second.ts"))
+      .split("\n").length;
+    expect(bodyEditorMock.scrollTo).toHaveBeenCalledWith({
+      type: "line",
+      id: "content",
+      lineNumber: expectedLine,
+      align: "center",
+    });
+    expect(bodyEditorMock.setSelections).toHaveBeenCalledWith([
+      {
+        start: { line: expectedLine - 1, character: 0 },
+        end: { line: expectedLine - 1, character: 0 },
+        direction: "none",
+      },
+    ]);
   });
 
   it("switches the edit target through the tree without losing drafts", async () => {
