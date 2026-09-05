@@ -266,7 +266,7 @@ test("renders multi-file diffs without mutating the payload hash", async ({ page
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(beforeHash);
 });
 
-test("shows a patch file tree inside the diff editor and moves the caret", async ({ page }) => {
+test("shows the editable-files tree inside the editor and moves the diff caret", async ({ page }) => {
   await goToHash(page, getFragmentHash("Phase 1 sample diff"));
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "diff");
@@ -274,21 +274,25 @@ test("shows a patch file tree inside the diff editor and moves the caret", async
   await page.getByRole("button", { name: "Edit" }).click();
   const editor = page.getByTestId("artifact-editor");
   await expect(editor).toBeVisible();
-  const patchNav = page.getByTestId("artifact-editor-patch-nav");
-  await expect(patchNav).toBeVisible();
+  const editorFrame = page.getByTestId("artifact-editor-frame");
+  await expect(editorFrame).toBeVisible();
+  const editorTree = editorFrame.locator(".patch-file-tree");
   await expect
     .poll(() =>
-      patchNav
-        .locator(".patch-file-tree")
-        .evaluate((tree) => tree.shadowRoot?.querySelectorAll('button[data-type="item"][data-item-type="file"]').length ?? 0),
+      editorTree.evaluate(
+        (tree) =>
+          tree.shadowRoot?.querySelector('button[data-type="item"][data-item-path="src/version.ts"]') instanceof
+          HTMLButtonElement,
+      ),
     )
-    .toBe(2);
+    .toBe(true);
 
   const editorTextarea = page.getByTestId("artifact-editor-content");
   const firstSelection = await editorTextarea.evaluate((element: HTMLTextAreaElement) => element.selectionStart);
-  await patchNav.locator(".patch-file-tree").evaluate((tree) => {
-    const items = tree.shadowRoot?.querySelectorAll<HTMLButtonElement>('button[data-type="item"][data-item-type="file"]');
-    items?.item(items.length - 1).click();
+  await editorTree.evaluate((tree) => {
+    tree.shadowRoot
+      ?.querySelector<HTMLButtonElement>('button[data-type="item"][data-item-path="src/version.ts"]')
+      ?.click();
   });
   await expect
     .poll(() => editorTextarea.evaluate((element: HTMLTextAreaElement) => element.selectionStart))

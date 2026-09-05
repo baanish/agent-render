@@ -8,22 +8,23 @@ const TREE_MIN_ROWS = 4;
 const TREE_MAX_ROWS = 12;
 const TREE_SEARCH_THRESHOLD = 8;
 
-type PatchFileTreeProps = {
+type FileTreeNavProps = {
   paths: readonly string[];
   selectedPath?: string;
   onSelectPath: (path: string) => void;
+  ariaLabel?: string;
 };
 
 /**
- * Renders the file paths of a multi-file patch as a compact, keyboard-navigable tree.
+ * Renders a list of paths as a compact, keyboard-navigable file tree.
  *
- * `paths` contains file-level display paths only; directory rows are synthesized by the tree and
- * are filtered out of selection events, so `onSelectPath` always receives a real file path.
- * `useFileTree` builds its model once per mount (later option changes are ignored), so callers
- * must remount via `key` when the path set changes. Load this module through `next/dynamic`:
- * it carries the @pierre/trees runtime, which only multi-file patch surfaces should pay for.
+ * `paths` contains leaf entries only; directory rows are synthesized by the tree and are filtered
+ * out of selection events, so `onSelectPath` always receives a real listed path. `useFileTree`
+ * builds its model once per mount (later option changes are ignored), so callers must remount via
+ * `key` when the path set changes. Load this module through `next/dynamic`: it carries the
+ * @pierre/trees runtime, which should stay out of surfaces that never show a tree.
  */
-export function PatchFileTree({ paths, selectedPath, onSelectPath }: PatchFileTreeProps) {
+export function FileTreeNav({ paths, selectedPath, onSelectPath, ariaLabel = "Files" }: FileTreeNavProps) {
   const onSelectRef = useRef(onSelectPath);
   onSelectRef.current = onSelectPath;
   const filePathSet = useMemo(() => new Set(paths), [paths]);
@@ -47,7 +48,7 @@ export function PatchFileTree({ paths, selectedPath, onSelectPath }: PatchFileTr
   );
 
   return (
-    <nav className="patch-file-tree-nav" aria-label="Changed files">
+    <nav className="patch-file-tree-nav" aria-label={ariaLabel}>
       <FileTree
         className="patch-file-tree"
         model={model}

@@ -22,8 +22,8 @@ vi.mock("@/lib/payload/link-creator", async () => {
   };
 });
 
-vi.mock("@/components/patch-file-tree", () => ({
-  PatchFileTree: ({
+vi.mock("@/components/file-tree-nav", () => ({
+  FileTreeNav: ({
     paths,
     onSelectPath,
   }: {
@@ -196,7 +196,31 @@ index 3333333..4444444 100644
     artifacts: [diffArtifact],
   };
 
-  it("shows a file tree for multi-file patches and moves the caret on selection", async () => {
+  it("lists the edited artifact in the tree for a single-file patch", async () => {
+    const singleFileArtifact: DiffArtifact = {
+      ...diffArtifact,
+      patch: multiFilePatch.slice(0, multiFilePatch.indexOf("diff --git a/src/second.ts")),
+    };
+    const singleFileEnvelope: PayloadEnvelope = {
+      ...diffEnvelope,
+      artifacts: [singleFileArtifact],
+    };
+
+    render(
+      <ArtifactEditor
+        artifact={singleFileArtifact}
+        envelope={singleFileEnvelope}
+        onPreviewHash={vi.fn()}
+      />,
+    );
+
+    const tree = await screen.findByTestId("mock-patch-file-tree");
+    expect(tree).toHaveTextContent("release.patch");
+    expect(tree).not.toHaveTextContent("src/hello.ts");
+    expect(screen.getByTestId("artifact-editor-content")).toBeInTheDocument();
+  });
+
+  it("adds patch files to the tree and moves the caret on selection", async () => {
     const user = userEvent.setup();
 
     render(
@@ -208,9 +232,9 @@ index 3333333..4444444 100644
     );
 
     const tree = await screen.findByTestId("mock-patch-file-tree");
+    expect(tree).toHaveTextContent("release.patch");
     expect(tree).toHaveTextContent("src/hello.ts");
     expect(tree).toHaveTextContent("src/second.ts");
-    expect(screen.getByTestId("artifact-editor-patch-nav")).toBeInTheDocument();
 
     const textarea = screen.getByTestId<HTMLTextAreaElement>("artifact-editor-content");
     await user.click(screen.getByRole("button", { name: "src/second.ts" }));
@@ -220,22 +244,42 @@ index 3333333..4444444 100644
     expect(document.activeElement).toBe(textarea);
   });
 
-  it("keeps the plain patch field for a single-file diff", () => {
-    const singleFileArtifact: DiffArtifact = {
-      ...diffArtifact,
-      patch: multiFilePatch.slice(0, multiFilePatch.indexOf("diff --git a/src/second.ts")),
+  it("switches the edit target through the tree without losing drafts", async () => {
+    const user = userEvent.setup();
+    const bundleEnvelope: PayloadEnvelope = {
+      v: 1,
+      codec: "plain",
+      title: "Release bundle",
+      activeArtifactId: "notes",
+      artifacts: [markdownArtifact, diffArtifact],
     };
 
     render(
       <ArtifactEditor
-        artifact={singleFileArtifact}
-        envelope={diffEnvelope}
+        artifact={markdownArtifact}
+        envelope={bundleEnvelope}
         onPreviewHash={vi.fn()}
       />,
     );
 
-    expect(screen.getByTestId("artifact-editor-content")).toBeInTheDocument();
-    expect(screen.queryByTestId("artifact-editor-patch-nav")).not.toBeInTheDocument();
+    const tree = await screen.findByTestId("mock-patch-file-tree");
+    expect(tree).toHaveTextContent("notes.md");
+    expect(tree).toHaveTextContent("release.patch");
+
+    const content = screen.getByTestId<HTMLTextAreaElement>("artifact-editor-content");
+    await user.clear(content);
+    await user.type(content, "# Edited notes");
+
+    await user.click(screen.getByRole("button", { name: "release.patch" }));
+    expect(screen.getByTestId<HTMLTextAreaElement>("artifact-editor-content")).toHaveValue(
+      multiFilePatch,
+    );
+    expect(screen.getByLabelText("Diff view")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "notes.md" }));
+    expect(screen.getByTestId<HTMLTextAreaElement>("artifact-editor-content")).toHaveValue(
+      "# Edited notes",
+    );
   });
 
   it("keeps the pair editor for old/new content diffs", () => {
@@ -245,17 +289,21 @@ index 3333333..4444444 100644
       oldContent: "old\n",
       newContent: "new\n",
     };
+    const pairEnvelope: PayloadEnvelope = {
+      ...diffEnvelope,
+      artifacts: [pairArtifact],
+    };
 
     render(
       <ArtifactEditor
         artifact={pairArtifact}
-        envelope={diffEnvelope}
+        envelope={pairEnvelope}
         onPreviewHash={vi.fn()}
       />,
     );
 
     expect(screen.getByTestId("artifact-editor-old-content")).toBeInTheDocument();
     expect(screen.getByTestId("artifact-editor-new-content")).toBeInTheDocument();
-    expect(screen.queryByTestId("artifact-editor-patch-nav")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("artifact-editor-content")).not.toBeInTheDocument();
   });
 });

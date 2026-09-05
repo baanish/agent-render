@@ -24,9 +24,10 @@ import {
 import { withBasePath } from "@/lib/site/base-path";
 import { cn } from "@/lib/utils";
 
-// The Trees runtime is only worth loading when the open diff artifact is a multi-file patch.
-const PatchFileTree = dynamic(
-  () => import("@/components/patch-file-tree").then((module) => module.PatchFileTree),
+// The Trees runtime stays behind its own chunk; the editor always shows the rail, so this is a
+// progressive load rather than a conditional one.
+const FileTreeNav = dynamic(
+  () => import("@/components/file-tree-nav").then((module) => module.FileTreeNav),
   { ssr: false },
 );
 
@@ -105,15 +106,25 @@ function getBodyFieldLabel(kind: ArtifactKind) {
  * fragment link without writing anything back to a server. Preview replaces the current hash so the
  * edited artifact renders immediately.
  */
+function getArtifactTreeLabel(artifact: ArtifactPayload) {
+  return artifact.filename?.trim() || artifact.title?.trim() || artifact.id;
+}
+
 export function ArtifactEditor({
   artifact,
   envelope,
   onPreviewHash,
 }: ArtifactEditorProps) {
-  const [{ draft, version: draftVersion }, setDraftState] = useState(() => ({
-    draft: createArtifactEditDraft(artifact),
+  const [editingArtifactId, setEditingArtifactId] = useState(artifact.id);
+  const [draftState, setDraftState] = useState(() => ({
+    drafts: new Map<string, ArtifactEditDraft>(),
     version: 0,
   }));
+  const editingArtifact =
+    envelope.artifacts.find((entry) => entry.id === editingArtifactId) ?? artifact;
+  const draft =
+    draftState.drafts.get(editingArtifactId) ?? createArtifactEditDraft(editingArtifact);
+  const draftVersion = draftState.version;
   const [generatedLink, setGeneratedLink] =
     useState<GeneratedArtifactLink | null>(null);
   const [generatedVersion, setGeneratedVersion] = useState(-1);
@@ -155,7 +166,34 @@ export function ArtifactEditor({
     () => getPatchFileOffsets(draft.content, patchFiles),
     [draft.content, patchFiles],
   );
-  const showPatchFileTree = patchFiles.length > 1;
+
+  const artifactLabels = useMemo(() => {
+    const labels = new Map<string, string>();
+    const used = new Set<string>();
+    for (const entry of envelope.artifacts) {
+      const base = getArtifactTreeLabel(entry);
+      let label = base;
+      let suffix = 2;
+      while (used.has(label)) {
+        label = `${base} (${suffix})`;
+        suffix += 1;
+      }
+      used.add(label);
+      labels.set(entry.id, label);
+    }
+    return labels;
+  }, [envelope.artifacts]);
+  const artifactIdByLabel = useMemo(
+    () => new Map(Array.from(artifactLabels, ([id, label]) => [label, id])),
+    [artifactLabels],
+  );
+  // The rail lists every artifact in the envelope; a multi-file patch being edited also lists its
+  // files so tree selection can move the patch caret without leaving the editor.
+  const treePaths = useMemo(
+    () => [...artifactLabels.values(), ...(patchFiles.length > 1 ? patchFilePaths : [])],
+    [artifactLabels, patchFiles.length, patchFilePaths],
+  );
+  const selectedTreePath = artifactLabels.get(editingArtifactId);
 
   const handlePatchFileSelect = (path: string) => {
     const file = patchFileByPath.get(path);
@@ -174,6 +212,18 @@ export function ArtifactEditor({
     textarea.scrollTop = Math.max(0, (lineIndex - 1) * lineHeight);
   };
 
+  const handleTreeSelect = (path: string) => {
+    if (patchFileByPath.has(path)) {
+      handlePatchFileSelect(path);
+      return;
+    }
+
+    const targetId = artifactIdByLabel.get(path);
+    if (targetId && targetId !== editingArtifactId) {
+      setEditingArtifactId(targetId);
+    }
+  };
+
   useEffect(() => {
     copyTokenRef.current += 1;
     markdownCopyTokenRef.current += 1;
@@ -187,17 +237,15 @@ export function ArtifactEditor({
     value: ArtifactEditDraft[K],
   ) => {
     setDraftState((current) => {
-      if (Object.is(current.draft[field], value)) {
+      const base =
+        current.drafts.get(editingArtifactId) ?? createArtifactEditDraft(editingArtifact);
+      if (Object.is(base[field], value)) {
         return current;
       }
 
-      return {
-        draft: {
-          ...current.draft,
-          [field]: value,
-        },
-        version: current.version + 1,
-      };
+      const drafts = new Map(current.drafts);
+      drafts.set(editingArtifactId, { ...base, [field]: value });
+      return { drafts, version: current.version + 1 };
     });
   };
 
@@ -207,8 +255,18 @@ export function ArtifactEditor({
     setIsGenerating(true);
 
     try {
+      // Apply every edited artifact, then the active one last so the generated
+      // link opens on the artifact currently on screen.
+      let nextEnvelope = envelope;
+      for (const [artifactId, editedDraft] of draftState.drafts) {
+        if (artifactId !== editingArtifactId) {
+          nextEnvelope = applyArtifactEditDraft(nextEnvelope, editedDraft);
+        }
+      }
+      nextEnvelope = applyArtifactEditDraft(nextEnvelope, draft);
+
       const nextGeneratedLink = await createGeneratedEnvelopeLinkAsync(
-        applyArtifactEditDraft(envelope, draft),
+        nextEnvelope,
         getShareBaseUrl(),
         draft.codec,
       );
@@ -313,13 +371,21 @@ export function ArtifactEditor({
 
   return (
     <div className="artifact-editor" data-testid="artifact-editor">
-      <form
-        className="creator-form-grid"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleGenerate();
-        }}
-      >
+      <div className="artifact-editor-frame" data-testid="artifact-editor-frame">
+        <FileTreeNav
+          key={treePaths.join("::")}
+          paths={treePaths}
+          selectedPath={selectedTreePath}
+          ariaLabel="Editable files"
+          onSelectPath={handleTreeSelect}
+        />
+        <form
+          className="creator-form-grid"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleGenerate();
+          }}
+        >
         <label className="creator-field">
           <span className="metric-label">Title</span>
           <input
@@ -407,48 +473,24 @@ export function ArtifactEditor({
             </label>
           </>
         ) : (
-          <div className="creator-field creator-field-full">
+          <label className="creator-field creator-field-full">
             <span className="creator-field-head">
-              <label className="metric-label" htmlFor="artifact-editor-content">
-                {contentFieldLabel}
-              </label>
+              <span className="metric-label">{contentFieldLabel}</span>
               <span className="creator-field-hint">
                 {fieldHints[draft.kind]}
               </span>
             </span>
-            {showPatchFileTree ? (
-              <div className="patch-editor-shell" data-testid="artifact-editor-patch-nav">
-                <PatchFileTree
-                  key={patchFilePaths.join("::")}
-                  paths={patchFilePaths}
-                  onSelectPath={handlePatchFileSelect}
-                />
-                <textarea
-                  id="artifact-editor-content"
-                  ref={patchTextareaRef}
-                  name="content"
-                  value={draft.content}
-                  onChange={(event) => updateDraft("content", event.target.value)}
-                  className="creator-textarea"
-                  rows={14}
-                  autoFocus
-                  data-testid="artifact-editor-content"
-                />
-              </div>
-            ) : (
-              <textarea
-                id="artifact-editor-content"
-                ref={patchTextareaRef}
-                name="content"
-                value={draft.content}
-                onChange={(event) => updateDraft("content", event.target.value)}
-                className="creator-textarea"
-                rows={14}
-                autoFocus
-                data-testid="artifact-editor-content"
-              />
-            )}
-          </div>
+            <textarea
+              ref={patchTextareaRef}
+              name="content"
+              value={draft.content}
+              onChange={(event) => updateDraft("content", event.target.value)}
+              className="creator-textarea"
+              rows={14}
+              autoFocus
+              data-testid="artifact-editor-content"
+            />
+          </label>
         )}
 
         <div className="creator-form-footer creator-field-full">
@@ -488,7 +530,8 @@ export function ArtifactEditor({
             ))}
           </div>
         </div>
-      </form>
+        </form>
+      </div>
 
       {generatedLink ? (
         <aside

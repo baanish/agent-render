@@ -11,8 +11,8 @@ import type { DiffArtifact } from "@/lib/payload/schema";
 
 // The Trees runtime only mounts for multi-file patches, so it loads behind its own
 // boundary rather than inflating every diff render.
-const PatchFileTree = dynamic(
-  () => import("@/components/patch-file-tree").then((module) => module.PatchFileTree),
+const FileTreeNav = dynamic(
+  () => import("@/components/file-tree-nav").then((module) => module.FileTreeNav),
   { ssr: false },
 );
 
@@ -447,10 +447,11 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
           ) : (
             <div className={patchFileTree ? "patch-bundle-shell" : "patch-bundle-shell is-single-file"}>
               {patchFileTree ? (
-                <PatchFileTree
+                <FileTreeNav
                   key={patchFileTree.paths.join("::")}
                   paths={patchFileTree.paths}
                   selectedPath={patchFileTree.selectedPath}
+                  ariaLabel="Changed files"
                   onSelectPath={(path) => {
                     const fileId = patchFileTree.fileIdByPath.get(path);
                     if (fileId) {
