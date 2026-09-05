@@ -1779,8 +1779,7 @@ button:disabled {
 .diff-renderer-frame,
 .csv-table-wrap,
 .json-tree-shell,
-.artifact-raw-source,
-.json-raw-source {
+.artifact-raw-source {
   border: 1px solid var(--surface-code-chrome-border);
   border-radius: 2px;
   background: var(--surface-code);
@@ -1789,6 +1788,39 @@ button:disabled {
 .diff-renderer-frame {
   min-width: 0;
   overflow: auto;
+  color-scheme: dark;
+  color: var(--surface-code-text);
+  --diffs-font-family: var(--font-mono), monospace;
+  --diffs-header-font-family: var(--font-mono), monospace;
+  --diffs-font-size: 0.74rem;
+  --diffs-bg: var(--surface-code);
+  --diffs-fg: var(--surface-code-text);
+  --diffs-foreground: var(--surface-code-text);
+  --diffs-background: var(--surface-code);
+  --diffs-token-keyword: var(--rb-0);
+  --diffs-token-function: var(--rb-4);
+  --diffs-token-string: var(--rb-3);
+  --diffs-token-string-expression: var(--rb-3);
+  --diffs-token-constant: var(--rb-1);
+  --diffs-token-parameter: var(--rb-2);
+  --diffs-token-link: var(--rb-2);
+  --diffs-token-comment: #8b8271;
+  --diffs-token-punctuation: #b0a794;
+  --diffs-token-inserted: #9ccfae;
+  --diffs-token-deleted: #d96a5c;
+  --diffs-token-changed: var(--rb-1);
+  --diffs-bg-context-override: var(--surface-code-raised);
+  --diffs-bg-separator-override: var(--chassis-deep);
+  --diffs-bg-hover-override: var(--surface-code-raised);
+  --diffs-fg-number-override: #8b8271;
+  --diffs-addition-color-override: #9ccfae;
+  --diffs-deletion-color-override: #d96a5c;
+  --diffs-bg-addition-override: #1e2f24;
+  --diffs-bg-addition-number-override: #22352b;
+  --diffs-bg-addition-emphasis-override: #2c4a38;
+  --diffs-bg-deletion-override: #3a201b;
+  --diffs-bg-deletion-number-override: #41231e;
+  --diffs-bg-deletion-emphasis-override: #57271f;
 }
 
 .patch-bundle-shell {
@@ -1797,37 +1829,40 @@ button:disabled {
   min-width: 0;
 }
 
-.patch-bundle-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+.patch-bundle-shell.is-single-file {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.patch-file-tree-nav {
   min-width: 0;
-  padding: 0;
+  padding: 6px;
   border-right: 1px solid var(--line-dark);
   background: var(--chassis-deep);
 }
 
-.patch-bundle-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-width: 0;
-  padding: 8px;
-  border: 0;
-  border-bottom: 1px solid var(--line-dark);
-  background: transparent;
-  color: var(--surface-code-text);
-  text-align: left;
-}
-
-.patch-bundle-link:hover,
-.patch-bundle-link.is-active {
-  background: var(--chassis-raised);
-}
-
-.patch-bundle-link.is-active {
-  box-shadow: inset 2px 0 0 var(--bone-edge);
+.patch-file-tree {
+  display: block;
+  width: 100%;
+  color-scheme: dark;
+  background: var(--chassis-deep);
+  --trees-accent: var(--control-accent);
+  --trees-bg-override: var(--chassis-deep);
+  --trees-bg-muted-override: var(--chassis-raised);
+  --trees-border-color-override: var(--line-dark);
+  --trees-border-radius-override: 2px;
+  --trees-fg-override: var(--surface-code-text);
+  --trees-fg-muted-override: var(--surface-code-gutter-fg);
+  --trees-focus-ring-color-override: var(--control-accent);
+  --trees-font-family-override: var(--font-mono), monospace;
+  --trees-font-size-override: 11px;
+  --trees-indent-guide-bg-override: var(--line-dark);
+  --trees-input-bg-override: var(--surface-code);
+  --trees-scrollbar-thumb-override: var(--line-strong);
+  --trees-search-bg-override: var(--surface-code);
+  --trees-search-fg-override: var(--surface-code-text);
+  --trees-selected-bg-override: var(--chassis-raised);
+  --trees-selected-fg-override: var(--surface-code-text);
+  --trees-selected-focused-border-color-override: var(--control-accent);
 }
 
 .patch-bundle-files {
@@ -1855,13 +1890,6 @@ button:disabled {
   background: var(--surface-code-raised);
 }
 
-.patch-file-ident {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
-}
-
 .patch-file-header h4 {
   overflow: hidden;
   margin: 0;
@@ -1872,60 +1900,6 @@ button:disabled {
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.patch-file-status {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 5px;
-  color: var(--surface-code-gutter-fg);
-  font-family: var(--font-mono), monospace;
-  font-size: 9px;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.patch-file-status::before {
-  width: 6px;
-  height: 6px;
-  flex: 0 0 6px;
-  border: 1px solid var(--surface-code-gutter-border);
-  border-radius: 50%;
-  background: var(--surface-code-gutter-fg);
-  content: "";
-}
-
-.diff-renderer-frame .diff-tailwindcss-wrapper[data-theme] .diff-style-root {
-  --diff-border--: #51493e;
-  --diff-add-content--: #1f3027;
-  --diff-del-content--: #34201d;
-  --diff-add-lineNumber--: #294638;
-  --diff-del-lineNumber--: #553029;
-  --diff-plain-content--: #1c1915;
-  --diff-expand-content--: #27221c;
-  --diff-plain-lineNumber--: #27221c;
-  --diff-expand-lineNumber--: #27221c;
-  --diff-plain-lineNumber-color--: #9d9382;
-  --diff-expand-lineNumber-color--: #9d9382;
-  --diff-hunk-content--: #2a2720;
-  --diff-hunk-lineNumber--: #373126;
-  --diff-hunk-lineNumber-hover--: #b8ae9c;
-  --diff-add-content-highlight--: #356247;
-  --diff-del-content-highlight--: #6d392f;
-  --diff-add-widget--: #559174;
-  --diff-add-widget-color--: #14110d;
-  --diff-empty-content--: #27221c;
-  --diff-hunk-content-color--: #b8ae9c;
-  color: var(--surface-code-text);
-}
-
-.diff-renderer-frame .diff-tailwindcss-wrapper[data-theme] .diff-line-syntax-raw * {
-  --diff-view-light: #e1d9ca;
-  --diff-view-dark: #e1d9ca;
-  color: inherit;
 }
 
 .csv-table-wrap {
@@ -1986,8 +1960,7 @@ button:disabled {
   padding: 6px 0;
 }
 
-.artifact-raw-source,
-.json-raw-source {
+.artifact-raw-source {
   max-height: min(68vh, 42rem);
   overflow: auto;
   margin: 0;
@@ -1997,6 +1970,11 @@ button:disabled {
   font-size: 11px;
   line-height: 1.55;
   white-space: pre;
+}
+
+.json-raw-source {
+  max-height: min(68vh, 42rem);
+  overflow: auto;
 }
 
 .json-node {
@@ -2380,19 +2358,9 @@ button:disabled {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .patch-bundle-nav {
-    flex-direction: row;
-    overflow-x: auto;
+  .patch-file-tree-nav {
     border-right: 0;
     border-bottom: 1px solid var(--line-dark);
-    scroll-snap-type: x proximity;
-  }
-
-  .patch-bundle-link {
-    flex: 0 0 min(210px, calc(100vw - 40px));
-    border-right: 1px solid var(--line-dark);
-    border-bottom: 0;
-    scroll-snap-align: start;
   }
 
   .diff-renderer-shell[data-mobile-layout="true"] .diff-renderer-frame {
@@ -2403,41 +2371,8 @@ button:disabled {
     overflow-x: auto;
   }
 
-  .diff-renderer-shell[data-mobile-layout="true"] .diff-tailwindcss-wrapper {
-    font-size: 12px;
-    line-height: 1.4;
-  }
-
-  .diff-renderer-shell[data-mobile-layout="true"][data-diff-mode="unified"] .diff-tailwindcss-wrapper table {
-    width: 100%;
-    table-layout: fixed;
-  }
-
-  .diff-renderer-shell[data-mobile-layout="true"][data-diff-mode="split"] .diff-tailwindcss-wrapper table {
-    min-width: 42rem;
-  }
-
-  .diff-renderer-shell[data-mobile-layout="true"] .diff-tailwindcss-wrapper td {
-    vertical-align: top;
-  }
-
-  .diff-renderer-shell[data-mobile-layout="true"] .diff-tailwindcss-wrapper .diff-line-old-num,
-  .diff-renderer-shell[data-mobile-layout="true"] .diff-tailwindcss-wrapper .diff-line-new-num,
-  .diff-renderer-shell[data-mobile-layout="true"] .diff-tailwindcss-wrapper .diff-line-num {
-    width: 34px;
-    min-width: 34px;
-    padding: 2px 4px;
-    color: var(--surface-code-gutter-fg);
-    font-size: 10px;
-  }
-
-  .diff-renderer-shell[data-mobile-layout="true"][data-diff-mode="unified"] .diff-tailwindcss-wrapper .diff-line-syntax-raw pre code.hljs {
-    padding: 2px 4px;
-    overflow-x: visible;
-    line-height: 1.4;
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
-    word-break: break-word;
+  .diff-renderer-shell[data-mobile-layout="true"] .diff-renderer-frame {
+    --diffs-font-size: 0.68rem;
   }
 
   .code-renderer-toolbar,

@@ -10,7 +10,7 @@
 - `rehype-sanitize` - MIT
 - `@codemirror/*` - MIT
 - `@replit/codemirror-indentation-markers` - MIT
-- `@git-diff-view/*` - MIT
+- `@pierre/diffs` and `@pierre/trees` - Apache-2.0
 - `papaparse` - MIT
 - `lz-string` - MIT
 - `fflate` - MIT
@@ -28,9 +28,9 @@
 
 - `react-markdown` plus `remark-gfm` plus `rehype-sanitize` covers the markdown path without introducing unsafe raw HTML by default.
 - `next` pins its nested `postcss` dependency to `8.5.14` via `package.json` overrides so Tailwind CSS v4's `postcss ^8.5.6` peer range is satisfied in the Next.js toolchain.
-- CodeMirror handles source artifacts and markdown code fences because it is excellent at read-only code presentation; JSON, markdown raw, and CSV raw views use lighter native source blocks.
-- `@replit/codemirror-indentation-markers` replaces custom indent-guide logic with a maintained CM6 extension.
-- `@git-diff-view/*` fits review-style diffs better than a generic merge editor for the current viewer. Its pure CSS file is mirrored into `public/vendor/diff-view-pure.css` with a Brotli-compressed `public/vendor/diff-view-pure.css.br` copy by `npm run assets:compress`, and loaded only by the diff renderer; `tests/diff-style-asset.test.ts` keeps those assets in sync with the package copy.
+- CodeMirror handles source artifacts, syntax-highlighted JSON raw views, and markdown code fences because it is excellent at read-only code presentation; markdown and CSV raw views use lighter native source blocks.
+- `@replit/codemirror-indentation-markers` adds structure to standalone code artifacts. Compact markdown and JSON source blocks omit indentation markers, active-line chrome, and wrapping so they preserve source whitespace.
+- `@pierre/diffs` renders review-style patches and before/after content through Shiki-backed shadow DOM. `@pierre/trees` adds path-aware navigation only when a patch contains multiple files. Both stay inside the deferred diff renderer path.
 - `papaparse` handles CSV parsing; CSV rendering uses a native read-only table to avoid a data-grid dependency for the shipped static viewer.
 - `fflate` provides portable deflate/inflate support across iOS Safari and Android Chromium without relying on browser-specific compression streams.
 - `brotli-wasm` provides the arx/arx2/arx3 Brotli compression layer, including streaming decompression used to cap expanded output before allocating oversized decoded payloads. arx4/arx5 use the integer context mixer instead.

@@ -47,7 +47,7 @@ The suite is intentionally split by responsibility:
 - visual tests protect empty state, artifact views, theme presentation, and compact-content spacing
 - component tests protect selector/disclosure UI contracts
 - unit tests protect transport codecs, envelope validation, diff parsing, and language inference
-- `npm run assets:compress` regenerates minified/precompressed public assets, including the ARX dictionaries and mirrored diff-view stylesheet
+- `npm run assets:compress` regenerates the minified and precompressed ARX dictionary assets
 - `npm run bench:codecs` protects arx/arx2 compressed-byte ratios and the historical arx3 visible-character row against the committed `scripts/bench-baseline.json`; its corpus is fixed in `scripts/bench-codecs.mjs` so unrelated source, docs, or package metadata edits do not create false codec regressions. Auto-emit no longer uses the arx3 visible-length policy.
 - `npm run check:build-budgets` reads the generated `.next` manifests after `npm run build` and fails if the homepage shell or key deferred renderer chunks exceed their gzip budgets
 

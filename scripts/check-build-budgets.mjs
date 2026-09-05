@@ -47,12 +47,11 @@ export const budgets = [
     type: "loadable",
   },
   {
-    // Guards the rich diff library (@git-diff-view/react), the heaviest deferred
-    // chunk. 340 KiB gzipped is intentionally generous because the library is
-    // large but always lazy-loaded. A jump here means a version bump pulled in
-    // more — confirm the upgrade is wanted before raising.
-    importKeyParts: ["components/renderers/diff-renderer", "@git-diff-view/react"],
-    maxBytes: 340 * 1024,
+    // Guards the deferred Pierre diff stack. Diffs, Trees, and their rendering
+    // runtimes stay outside the initial shell and load only for diff artifacts.
+    // A jump here means a version bump grew that isolated review surface.
+    importKeyParts: ["components/viewer/artifact-stage", "diff-renderer"],
+    maxBytes: 220 * 1024,
     name: "rich diff library deferred JS",
     type: "loadable",
   },
@@ -126,9 +125,10 @@ function getLoadableFiles(reactLoadableManifest, keyParts) {
   let hasMatch = false;
 
   for (const key in reactLoadableManifest) {
+    const normalizedKey = key.replaceAll("\\", "/");
     let isMatch = true;
     for (const part of keyParts) {
-      if (!key.includes(part)) {
+      if (!normalizedKey.includes(part)) {
         isMatch = false;
         break;
       }

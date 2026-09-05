@@ -44,13 +44,15 @@ describe("JsonRenderer", () => {
     expect(secondReady).not.toHaveBeenCalled();
   });
 
-  it("switches to a native raw source view without mounting CodeMirror", async () => {
+  it("switches to a syntax-highlighted raw source view", async () => {
     render(<JsonRenderer artifact={createArtifact()} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Raw" }));
 
-    expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent('"name": "agent-render"');
-    expect(document.querySelector(".cm-editor")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent('"name": "agent-render"');
+      expect(document.querySelector(".cm-editor")).toBeInTheDocument();
+    });
   });
 
   it("renders array nodes with numeric child labels", () => {
@@ -63,11 +65,14 @@ describe("JsonRenderer", () => {
     expect(screen.getByText("beta")).toBeVisible();
   });
 
-  it("shows invalid JSON as raw source with the parse error", () => {
+  it("shows invalid JSON as highlighted raw source with the parse error", async () => {
     render(<JsonRenderer artifact={createArtifact({ content: "{ nope" })} />);
 
     expect(screen.getByText(/expected property name/i)).toBeVisible();
-    expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent("{ nope");
+    await waitFor(() => {
+      expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent("{ nope");
+      expect(document.querySelector(".cm-editor")).toBeInTheDocument();
+    });
   });
 
   it("renders deeply nested JSON without overflowing the render stack", () => {

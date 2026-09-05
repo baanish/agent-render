@@ -54,12 +54,12 @@ Describe and preserve what is already true in the repo today.
 ### Renderer behavior
 
 - `markdown` renders as sanitized GFM and supports download plus browser print-to-PDF.
-- Markdown code fences reuse the CodeMirror viewer approach instead of a second highlighting stack.
+- Markdown code fences reuse the CodeMirror viewer approach instead of a second highlighting stack. Compact fences preserve whitespace without line wrapping, active-line chrome, or indentation guides.
 - Markdown ` ```mermaid ` fenced code blocks render as interactive diagrams via the dynamically imported `mermaid` library with theme-aware rendering and strict security.
 - `code` uses a read-only CodeMirror surface with language-aware loading.
-- `diff` uses a review-style git patch viewer with unified and split modes.
+- `diff` uses `@pierre/diffs` for Shiki-backed unified and split review views. Multi-file patches add path-aware navigation through `@pierre/trees`; single-file diffs skip the tree.
 - `csv` renders as a readable table/grid.
-- `json` renders as a lightweight structured tree plus raw fallback behavior.
+- `json` renders as a lightweight structured tree plus a syntax-highlighted compact CodeMirror raw view.
 
 ### Performance and bundling
 

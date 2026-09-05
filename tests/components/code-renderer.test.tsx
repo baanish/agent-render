@@ -15,6 +15,10 @@ const codeRendererMock = vi.hoisted(() => ({
     language: string;
     resolve: (extension: unknown) => void;
   }>,
+  activeLineExtension: { kind: "active-line" },
+  indentationExtension: { kind: "indentation-markers" },
+  lineNumbersExtension: { kind: "line-numbers" },
+  lineWrappingExtension: { kind: "line-wrapping" },
   rainbowPlugin: { kind: "rainbow-brackets" },
 }));
 
@@ -23,15 +27,15 @@ vi.mock("@codemirror/view", () => ({
     static theme() {
       return {};
     }
-    static lineWrapping = {};
+    static lineWrapping = codeRendererMock.lineWrappingExtension;
     static editable = { of: () => ({}) };
     constructor({ state }: { state: MockEditorStateConfig }) {
       codeRendererMock.editorStates.push(state);
     }
     destroy() {}
   },
-  highlightActiveLine: () => ({}),
-  lineNumbers: () => ({}),
+  highlightActiveLine: () => codeRendererMock.activeLineExtension,
+  lineNumbers: () => codeRendererMock.lineNumbersExtension,
   ViewPlugin: { fromClass: () => codeRendererMock.rainbowPlugin },
   Decoration: { mark: () => ({}), none: { kind: "no-decorations" } },
 }));
@@ -52,7 +56,7 @@ vi.mock("@codemirror/language", () => ({
 }));
 
 vi.mock("@replit/codemirror-indentation-markers", () => ({
-  indentationMarkers: () => ({}),
+  indentationMarkers: () => codeRendererMock.indentationExtension,
 }));
 
 vi.mock("@/lib/code/language", () => ({
@@ -218,11 +222,19 @@ describe("CodeRenderer", () => {
   });
 
   describe("compact mode", () => {
-    it("does not render a toolbar in compact mode", () => {
+    it("preserves source whitespace without editor-only chrome", async () => {
       createControllableMatchMedia(false);
       render(<CodeRenderer artifact={createArtifact()} compact />);
 
       expect(screen.queryByRole("button", { name: /wrap/i })).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(codeRendererMock.editorStates.length).toBeGreaterThan(0);
+      });
+      const extensions = codeRendererMock.editorStates.at(-1)?.extensions;
+      expect(extensions).toContain(codeRendererMock.lineNumbersExtension);
+      expect(extensions).not.toContain(codeRendererMock.lineWrappingExtension);
+      expect(extensions).not.toContain(codeRendererMock.activeLineExtension);
+      expect(extensions).not.toContain(codeRendererMock.indentationExtension);
     });
   });
 

@@ -25,7 +25,7 @@ The static export also emits `sitemap.xml` at the site root (and under `NEXT_PUB
 - `code` - read-only CodeMirror view with syntax-aware rendering and code affordances
 - `diff` - review-style diff view with unified and split modes
 - `csv` - table-focused data grid built from parsed rows and dynamic columns
-- `json` - lightweight read-only tree view plus a native raw source view
+- `json` - lightweight read-only tree view plus a syntax-highlighted raw source view
 
 The viewer shell now routes all five artifact kinds through dynamically imported client-only renderers so the landing shell stays light and static-host friendly.
 
@@ -53,31 +53,32 @@ Markdown artifacts render ` ```mermaid ` fenced code blocks as interactive diagr
 The raw code viewer now keeps CodeMirror, but the architecture is cleaner:
 
 - language modules load on demand instead of being statically imported together
-- indentation guides come from the maintained `@replit/codemirror-indentation-markers` extension
+- standalone code artifacts use the maintained `@replit/codemirror-indentation-markers` extension, while compact embedded source preserves whitespace without editor-only guides
 - rainbow brackets stay custom, but now operate as a syntax-tree-aware decoration pass instead of naive quote tracking
 
 That keeps the viewer static-hosting friendly while removing the brittle parts of the earlier implementation.
 
 ## Bundle tradeoffs
 
-The largest remaining deferred cost is still the diff renderer stack, primarily `@git-diff-view/*` and its highlighting internals. Its vendor stylesheet is served from `public/vendor/diff-view-pure.css` with a precompressed `.css.br` variant and injected only when a rich diff mounts, so the empty shell and non-diff artifacts do not pay that CSS cost. The stack remains because it still provides the best review-style UX for multi-file git patches, split/unified modes, and syntax-aware rendering with less product code than a bespoke replacement.
+The largest remaining deferred cost is the Pierre review stack. `@pierre/diffs` renders patches through Shiki-backed shadow DOM, and `@pierre/trees` mounts only for multi-file patch navigation. Both stay behind the diff renderer import, so the empty shell and non-diff artifacts do not pay that JavaScript cost.
 
 The JSON and markdown paths are now substantially lighter because:
 
 - `vanilla-jsoneditor` was removed in favor of a lighter read-only tree view
 - `rehype-highlight` and its Highlight.js stack were removed
 - raw markdown and CSV views use native source blocks instead of mounting CodeMirror
+- raw JSON uses the compact CodeMirror path for syntax highlighting without wrapping, active-line chrome, or indentation guides
 - CodeMirror language support now loads on demand per active language
 
 ## Diff choice
 
-`agent-render` uses `@git-diff-view/react` plus git-diff `DiffFile` instances instead of `@codemirror/merge`.
+`agent-render` uses `@pierre/diffs` and `@pierre/trees` instead of `@codemirror/merge`.
 
-- `@git-diff-view/*` matches the product goal better because it is already shaped like a GitHub-style review surface
-- split and unified views are built in
-- syntax highlighting and diff affordances are stronger out of the box for artifact viewing
-- individual file patches can be rendered as a sequence while preserving filenames and boundaries
-- CodeMirror remains the better fit for full source artifacts and markdown code fences
+- `@pierre/diffs` renders unified and split review views from both patches and before/after content
+- Shiki syntax highlighting and component styles stay encapsulated in shadow DOM
+- `@pierre/trees` provides path-aware, keyboard-accessible navigation when a patch contains multiple files
+- single-file diffs skip the tree and render directly
+- CodeMirror remains the better fit for full source artifacts, JSON raw views, and markdown code fences
 
 `@codemirror/merge` stays a reasonable future option if the project ever needs a more editor-centric comparison workflow, but it is not the best default for shareable review artifacts.
 

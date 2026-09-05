@@ -179,7 +179,7 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
   const hostRef = useRef<HTMLDivElement | null>(null);
   const onReadyRef = useRef(onReady);
   const wrapPreferenceRef = useRef<WrapPreference>("auto");
-  const [wrapLines, setWrapLines] = useState(compact);
+  const [wrapLines, setWrapLines] = useState(false);
   const [languageSupport, setLanguageSupport] = useState<{
     extension: LoadedLanguageExtension;
     language: string;
@@ -202,11 +202,11 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
 
   // Runs before paint so the first CodeMirror mount matches the viewport (call sites use dynamic(..., { ssr: false })).
   // Preference stays on wrapPreferenceRef (not state) so the matchMedia listener closure stays correct without
-  // re-subscribing each render. compact=true resets to "auto"; compact is static at all call sites today.
+  // re-subscribing each render. Compact blocks preserve source whitespace and scroll horizontally.
   useLayoutEffect(() => {
     if (compact) {
-      setWrapLines(true);
-      wrapPreferenceRef.current = "auto";
+      setWrapLines(false);
+      wrapPreferenceRef.current = "off";
       return;
     }
 
@@ -271,25 +271,33 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
 
     const extensions = [
       lineNumbers(),
-      highlightActiveLine(),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
       bracketMatching(),
-      indentationMarkers({
-        markerType: "codeOnly",
-        thickness: 2,
-        hideFirstIndent: true,
-        highlightActiveBlock: false,
-        colors: {
-          light: "rgba(70, 92, 129, 0.14)",
-          dark: "rgba(239, 243, 247, 0.08)",
-          activeLight: "rgba(105, 209, 221, 0.18)",
-          activeDark: "rgba(105, 209, 221, 0.22)",
-        },
-      }),
       EditorState.readOnly.of(true),
       EditorView.editable.of(false),
       editorTheme,
     ];
+
+    if (!compact) {
+      extensions.push(highlightActiveLine());
+    }
+
+    if (!compact && language !== "text") {
+      extensions.push(
+        indentationMarkers({
+          markerType: "codeOnly",
+          thickness: 2,
+          hideFirstIndent: true,
+          highlightActiveBlock: false,
+          colors: {
+            light: "rgba(70, 92, 129, 0.14)",
+            dark: "rgba(239, 243, 247, 0.08)",
+            activeLight: "rgba(105, 209, 221, 0.18)",
+            activeDark: "rgba(105, 209, 221, 0.22)",
+          },
+        }),
+      );
+    }
 
     if (wrapLines) {
       extensions.push(EditorView.lineWrapping);
@@ -324,7 +332,7 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
       window.cancelAnimationFrame(animationFrame);
       view.destroy();
     };
-  }, [artifact.content, editorTheme, languageExtension, wrapLines]);
+  }, [artifact.content, compact, editorTheme, language, languageExtension, wrapLines]);
 
   return (
     <div

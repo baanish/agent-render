@@ -15,7 +15,7 @@ describe("build budget policy", () => {
       { name: "homepage route JS", maxBytes: 115 * 1024 },
       { name: "code renderer deferred JS", maxBytes: 100 * 1024 },
       { name: "markdown renderer deferred JS", maxBytes: 52 * 1024 },
-      { name: "rich diff library deferred JS", maxBytes: 340 * 1024 },
+      { name: "rich diff library deferred JS", maxBytes: 220 * 1024 },
     ]);
   });
 });

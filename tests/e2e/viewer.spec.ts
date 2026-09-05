@@ -84,6 +84,8 @@ test("renders markdown payloads and triggers print", async ({ page }) => {
   await waitForViewerState(page, "artifact");
   await expect(page.locator("[data-active-kind='markdown']")).toBeVisible();
   await expect(page.getByText("Sprint roadmap").first()).toBeVisible();
+  await expect(page.locator(".markdown-code-frame .cm-indent-markers")).toHaveCount(0);
+  await expect(page.locator(".markdown-code-frame .cm-content").first()).not.toHaveClass(/cm-lineWrapping/);
 
   await page.evaluate(() => {
     window.__printCalled = false;
@@ -242,27 +244,42 @@ test("renders multi-file diffs without mutating the payload hash", async ({ page
   await waitForViewerState(page, "artifact");
   const beforeHash = await page.evaluate(() => window.location.hash);
   await expect(page.locator(".patch-file-section")).toHaveCount(2);
-  await page.locator("button.patch-bundle-link").nth(1).click();
+  await expect
+    .poll(() =>
+      page
+        .locator(".patch-file-tree")
+        .evaluate((tree) => tree.shadowRoot?.querySelectorAll('button[data-type="item"][data-item-type="file"]').length ?? 0),
+    )
+    .toBe(2);
+  await page.locator(".patch-file-tree").evaluate((tree) => {
+    const items = tree.shadowRoot?.querySelectorAll<HTMLButtonElement>('button[data-type="item"][data-item-type="file"]');
+    items?.item(items.length - 1).click();
+  });
+  await expect
+    .poll(() =>
+      page.locator(".patch-file-tree").evaluate((tree) => {
+        const items = tree.shadowRoot?.querySelectorAll<HTMLButtonElement>('button[data-type="item"][data-item-type="file"]');
+        return items?.item(items.length - 1).hasAttribute("data-item-selected") ?? false;
+      }),
+    )
+    .toBe(true);
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(beforeHash);
 });
 
-test("loads the compressed diff stylesheet only after opening a diff artifact", async ({ page }) => {
-  await waitForViewerState(page, "empty");
-  await expect
-    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some((link) => link.getAttribute("href")?.includes("diff-view-pure.css"))))
-    .toBe(false);
-
+test("renders rich diffs in shadow DOM without an external stylesheet", async ({ page }) => {
   await goToHash(page, getFragmentHash("Phase 1 sample diff"));
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "diff");
   await expect(page.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "rich");
+  await expect
+    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll(".patch-file-section *")).some((element) => element.shadowRoot !== null)))
+    .toBe(true);
 
   const stylesheetHrefs = await page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]'), (link) => link.getAttribute("href") ?? ""));
-  expect(stylesheetHrefs.some((href) => href.endsWith("/vendor/diff-view-pure.css.br"))).toBe(true);
-  expect(stylesheetHrefs.some((href) => href.endsWith("/vendor/diff-view-pure.css"))).toBe(false);
+  expect(stylesheetHrefs.some((href) => href.includes("diff-view"))).toBe(false);
 });
 
-test("keeps fallback diffs off the rich diff stylesheet path", async ({ page }) => {
+test("shows the raw patch fallback for invalid unified diffs", async ({ page }) => {
   const fallbackDiffEnvelope = {
     v: 1,
     codec: "plain",
@@ -283,9 +300,6 @@ test("keeps fallback diffs off the rich diff stylesheet path", async ({ page }) 
   await expect(page.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "fallback");
   await expect(page.locator('[data-testid="viewer-shell"][data-renderer-ready="true"]')).toBeVisible();
   await expect(page.getByTestId("renderer-diff-fallback-raw")).toContainText("not a unified diff");
-  await expect
-    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some((link) => link.getAttribute("href")?.includes("diff-view-pure.css"))))
-    .toBe(false);
 });
 
 test.describe("mobile UX", () => {
@@ -297,12 +311,12 @@ test.describe("mobile UX", () => {
     await waitForRendererReady(page, "diff");
 
     const diffRenderer = page.getByTestId("renderer-diff");
-    const patchNav = page.locator(".patch-bundle-nav");
+    const patchTree = page.locator(".patch-file-tree");
     await expect(diffRenderer).toHaveAttribute("data-mobile-layout", "true");
     await expect(diffRenderer).toHaveAttribute("data-diff-mode", "unified");
     await expect(page.getByRole("button", { name: "Open split columns" })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Split$/ })).toHaveCount(0);
-    await expect.poll(() => patchNav.evaluate((element) => window.getComputedStyle(element).flexDirection)).toBe("row");
+    await expect(patchTree).toBeVisible();
 
     await page.getByRole("button", { name: "Open split columns" }).click();
     await expect(diffRenderer).toHaveAttribute("data-diff-mode", "split");
@@ -409,7 +423,7 @@ test("renders JSON tree and raw views", async ({ page }) => {
   await expect(page.locator(".json-tree-shell")).toBeVisible();
   await page.getByRole("button", { name: "Raw" }).click();
   await expect(page.getByTestId("renderer-json-raw")).toBeVisible();
-  await expect(page.locator(".json-renderer-shell .cm-editor")).toHaveCount(0);
+  await expect(page.locator(".json-renderer-shell .cm-editor")).toHaveCount(1);
 });
 
 test("switches artifacts within a bundle", async ({ page }) => {
