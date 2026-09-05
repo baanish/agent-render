@@ -194,3 +194,45 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
 export function parseGitPatchBundle(patch: string): ParsedPatchFile[] {
   return parsePatchSections(patch);
 }
+
+const GIT_SECTION_PREFIX = "diff --git ";
+
+/**
+ * Sections that render as files. The parser keeps leading format-patch email
+ * preambles as their own section for fidelity, but a section without a
+ * `diff --git` header is not a file and must not reach PatchDiff or the file
+ * tree. Bundles with no git header at all (plain `---/+++` patches) keep
+ * every section.
+ *
+ * @param files - Sections from `parseGitPatchBundle`.
+ * @returns The subset that carries real diff headers, or all sections when none do.
+ */
+export function getRenderablePatchFiles(files: readonly ParsedPatchFile[]): ParsedPatchFile[] {
+  const hasGitSection = files.some((file) => file.patch.startsWith(GIT_SECTION_PREFIX));
+  return hasGitSection ? files.filter((file) => file.patch.startsWith(GIT_SECTION_PREFIX)) : [...files];
+}
+
+/**
+ * Unique display labels for parsed sections. Repeated `displayPath` values
+ * (concatenated changes to the same path) gain a ` (n)` suffix so every
+ * section stays reachable through tree navigation, which keys rows by path.
+ *
+ * @param files - Sections from `parseGitPatchBundle`.
+ * @returns A map from section `id` to its unique label.
+ */
+export function getPatchFileLabels(files: readonly ParsedPatchFile[]): Map<string, string> {
+  const labels = new Map<string, string>();
+  const used = new Set<string>();
+  for (const file of files) {
+    const base = file.displayPath;
+    let label = base;
+    let suffix = 2;
+    while (used.has(label)) {
+      label = `${base} (${suffix})`;
+      suffix += 1;
+    }
+    used.add(label);
+    labels.set(file.id, label);
+  }
+  return labels;
+}

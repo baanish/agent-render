@@ -217,7 +217,7 @@ The palette is warm, low-gloss, and material-led: dark mode runs charcoal keys o
 
 The shell is a centered single-column instrument bay capped at 1500px, with a compact 54px sticky header and 12px outer rhythm. Structural groups use dense 1px dividers and small internal gaps rather than isolated floating cards. The homepage procedure remains the dominant full-width block; samples and operating limits form a 12-column secondary region from 880px upward, with the samples index occupying three columns and staying visible below the header.
 
-Responsive behavior preserves order and density. At 760px, toolbars wrap, two-column metric and result grids collapse, and patch navigation becomes horizontal. At 520px, nonessential header navigation disappears, identification fields become single-column, commit controls span the available width, and result actions stack. At 360px, the narrowest toggles and fragment metrics become single-column. Artifact selectors and patch files scroll horizontally rather than truncating their operating choices.
+Responsive behavior preserves order and density. At 760px, toolbars wrap, two-column metric and result grids collapse, and patch navigation stacks above the file surface. At 520px, nonessential header navigation disappears, identification fields become single-column, commit controls span the available width, and result actions stack. At 360px, the narrowest toggles and fragment metrics become single-column. Artifact selectors and patch files scroll horizontally rather than truncating their operating choices.
 
 **The Continuous-Chassis Rule.** Prefer divided grids and shared rails over detached card collections; adjacent information should read as one machine assembly.
 

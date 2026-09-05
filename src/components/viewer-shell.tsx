@@ -145,6 +145,7 @@ export function ViewerShell() {
   const artifactSelectionRequestRef = useRef(0);
   /** True when the current hash originated from a server-injected payload (self-hosted UUID mode). */
   const injectedPayloadRef = useRef(false);
+  const [isServerBacked, setIsServerBacked] = useState(false);
 
   useEffect(() => {
     // Self-hosted UUID mode: the server injects the payload string into the page.
@@ -156,11 +157,13 @@ export function ViewerShell() {
       delete (window as unknown as Record<string, unknown>)
         .__AGENT_RENDER_PAYLOAD__;
       injectedPayloadRef.current = true;
+      setIsServerBacked(true);
       setHash(`#${injected}`);
     }
 
     const syncHash = () => {
       injectedPayloadRef.current = false;
+      setIsServerBacked(false);
       setHash(window.location.hash);
     };
 
@@ -437,7 +440,13 @@ export function ViewerShell() {
             </nav>
           </div>
           <div className="footer-spec-strip">
-            <span>open source · self-hostable · no database</span>
+            {/* The self-hosted UUID variant persists payloads in SQLite; the
+                no-database claim only holds for the static fragment mode. */}
+            <span>
+              {isServerBacked
+                ? "open source · self-hostable"
+                : "open source · self-hostable · no database"}
+            </span>
           </div>
         </footer>
       </div>

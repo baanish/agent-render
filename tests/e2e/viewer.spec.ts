@@ -58,7 +58,7 @@ test("creates, copies, and previews a generated homepage link", async ({ page })
   await page.getByRole("button", { name: "code" }).click();
   await page.getByLabel("Title").fill("Homepage snippet");
   await page.getByLabel("Filename").fill("snippet.ts");
-  await page.getByRole("textbox", { name: "Language", exact: true }).fill("ts");
+  await page.getByRole("combobox", { name: "Language", exact: true }).selectOption("ts");
   await page.getByRole("textbox", { name: /^Content\b/ }).fill("export const value = 42;\n");
   await page.getByRole("button", { name: "Generate link" }).click();
 
@@ -112,7 +112,7 @@ test("edits an open markdown artifact and reshares it as a new link", async ({ p
     .first();
   await expect(editor).toBeVisible();
   await editor.click();
-  await page.keyboard.press("Control+A");
+  await page.keyboard.press("ControlOrMeta+A");
   await editor.pressSequentially("# Maintainer kickoff\n\nEdited in the viewer.", {
     delay: 30,
   });
@@ -142,7 +142,7 @@ test("edits an open code artifact and reshares it as a new link", async ({ page 
   await expect(codeEditor).toBeVisible();
   // Pierre re-renders the editable surface per change, so keystrokes need spacing to stay aligned.
   await codeEditor.click();
-  await page.keyboard.press("Control+A");
+  await page.keyboard.press("ControlOrMeta+A");
   await codeEditor.pressSequentially('export const value = "edited";', { delay: 30 });
   await page.getByRole("button", { name: "plain", exact: true }).click();
   await page.getByRole("button", { name: "Generate new link" }).click();
@@ -190,7 +190,7 @@ test("keeps other bundle artifacts when resharing an edited one", async ({ page 
     .first();
   await expect(bundleEditor).toBeVisible();
   await bundleEditor.click();
-  await page.keyboard.press("Control+A");
+  await page.keyboard.press("ControlOrMeta+A");
   await bundleEditor.pressSequentially("# Notes\n\nCorrected bundle notes.", { delay: 30 });
   await page.getByRole("button", { name: "plain", exact: true }).click();
   await page.getByRole("button", { name: "Generate new link" }).click();
@@ -283,7 +283,9 @@ test("renders multi-file diffs without mutating the payload hash", async ({ page
     .poll(() =>
       page.locator(".patch-file-tree").evaluate((tree) => {
         const items = tree.shadowRoot?.querySelectorAll<HTMLButtonElement>('button[data-type="item"][data-item-type="file"]');
-        return items?.item(items.length - 1).hasAttribute("data-item-selected") ?? false;
+        return items && items.length > 0
+          ? items.item(items.length - 1).hasAttribute("data-item-selected")
+          : false;
       }),
     )
     .toBe(true);

@@ -43,6 +43,7 @@ vi.mock("@/components/file-tree-nav", () => ({
 const bodyEditorMock = vi.hoisted(() => ({
   scrollTo: vi.fn(),
   setSelections: vi.fn(),
+  updateItem: vi.fn(),
 }));
 
 vi.mock("@/components/viewer/artifact-body-editor", () => ({
@@ -58,6 +59,8 @@ vi.mock("@/components/viewer/artifact-body-editor", () => ({
     if (codeViewRef) {
       codeViewRef.current = {
         scrollTo: bodyEditorMock.scrollTo,
+        getItem: () => undefined,
+        updateItem: bodyEditorMock.updateItem,
         getEditor: () => ({
           setSelections: bodyEditorMock.setSelections,
         }),

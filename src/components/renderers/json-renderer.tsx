@@ -85,11 +85,12 @@ function JsonNode({ label, value, level = 0 }: { label?: string; value: JsonValu
   );
 }
 
-function JsonRawSource({ artifact }: { artifact: JsonArtifact }) {
+function JsonRawSource({ artifact, onReady }: { artifact: JsonArtifact; onReady?: () => void }) {
   return (
     <div className="json-raw-source" data-testid="renderer-json-raw">
       <RawCodeRenderer
         compact
+        onReady={onReady}
         artifact={{
           id: `${artifact.id}-raw`,
           kind: "code",
@@ -145,15 +146,20 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
     onReadyRef.current = onReady;
   }, [onReady]);
 
+  // Only the tree view reports ready here; in the raw view (and the invalid-JSON
+  // fallback) readiness belongs to the deferred code surface, which fires its own
+  // onReady once the highlighted document has actually mounted.
   useEffect(() => {
-    onReadyRef.current?.();
+    if (parsed.ok && view === "tree") {
+      onReadyRef.current?.();
+    }
   }, [artifact.id, parsed.ok, view]);
 
   if (!parsed.ok) {
     return (
       <div className="json-renderer-shell" data-testid="renderer-json" data-renderer-ready="true">
         <div className="artifact-empty-state">{parsed.message}</div>
-        <JsonRawSource artifact={artifact} />
+        <JsonRawSource artifact={artifact} onReady={onReady} />
       </div>
     );
   }
@@ -173,13 +179,13 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
         </div>
       </div>
       {view === "tree" ? (
-        <JsonTreeBoundary key={artifact.id} fallback={<JsonRawSource artifact={artifact} />}>
+        <JsonTreeBoundary key={artifact.id} fallback={<JsonRawSource artifact={artifact} onReady={onReady} />}>
           <div className="json-tree-shell">
             <JsonNode value={parsed.json} />
           </div>
         </JsonTreeBoundary>
       ) : (
-        <JsonRawSource artifact={artifact} />
+        <JsonRawSource artifact={artifact} onReady={onReady} />
       )}
     </div>
   );

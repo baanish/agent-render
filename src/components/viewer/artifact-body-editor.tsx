@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, type Ref } from "react";
+import { useLayoutEffect, useMemo, useRef, type Ref } from "react";
 import { useResolvedTheme } from "@/components/theme/use-theme-controller";
 import {
   CodeView,
@@ -37,7 +37,9 @@ export function ArtifactBodyEditor({
   codeViewRef,
 }: ArtifactBodyEditorProps) {
   const onChangeRef = useRef(onDocumentChange);
-  onChangeRef.current = onDocumentChange;
+  useLayoutEffect(() => {
+    onChangeRef.current = onDocumentChange;
+  }, [onDocumentChange]);
   const initialItems = useMemo<readonly CodeViewItem[]>(
     () =>
       documents.map((doc) => ({

@@ -6,7 +6,7 @@ import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { CODE_LANGUAGE_CHOICES } from "@/lib/code/language";
 import { numberFormatter } from "@/lib/format";
-import { parseGitPatchBundle, type ParsedPatchFile } from "@/lib/diff/git-patch";
+import { getPatchFileLabels, getRenderablePatchFiles, parseGitPatchBundle, type ParsedPatchFile } from "@/lib/diff/git-patch";
 import type { CodeViewHandle, Editor } from "@/lib/diff/pierre-edit";
 import type { ArtifactBodyDocument } from "@/components/viewer/artifact-body-editor";
 import {
@@ -69,7 +69,7 @@ function getPatchFileOffsets(content: string, files: ParsedPatchFile[]): Map<str
   const offsets = new Map<string, number>();
   let headerIndex = 0;
   for (const file of files) {
-    if (file.patch.startsWith("diff --git")) {
+    if (file.patch.startsWith("diff --git ")) {
       offsets.set(file.id, headerOffsets[headerIndex] ?? 0);
       headerIndex += 1;
     } else {
@@ -205,16 +205,20 @@ export function ArtifactEditor({
     }
 
     try {
-      return parseGitPatchBundle(draft.content);
+      return getRenderablePatchFiles(parseGitPatchBundle(draft.content));
     } catch {
       // The patch mid-edit may be malformed; the tree hides until it parses again.
       return EMPTY_PATCH_FILES;
     }
   }, [draft.kind, draft.diffSource, draft.content]);
-  const patchFilePaths = useMemo(() => patchFiles.map((file) => file.displayPath), [patchFiles]);
+  const patchFileLabels = useMemo(() => getPatchFileLabels(patchFiles), [patchFiles]);
+  const patchFilePaths = useMemo(
+    () => patchFiles.map((file) => patchFileLabels.get(file.id) ?? file.displayPath),
+    [patchFiles, patchFileLabels],
+  );
   const patchFileByPath = useMemo(
-    () => new Map(patchFiles.map((file) => [file.displayPath, file])),
-    [patchFiles],
+    () => new Map(patchFiles.map((file) => [patchFileLabels.get(file.id) ?? file.displayPath, file])),
+    [patchFiles, patchFileLabels],
   );
   const patchFileOffsets = useMemo(
     () => getPatchFileOffsets(draft.content, patchFiles),
@@ -232,7 +236,9 @@ export function ArtifactEditor({
 
   const artifactLabels = useMemo(() => {
     const labels = new Map<string, string>();
-    const used = new Set<string>();
+    // Patch file paths share the tree namespace with artifact labels; reserve them so a
+    // filename-shaped artifact label can never shadow a patch row under handleTreeSelect.
+    const used = new Set(patchFiles.length > 1 ? patchFilePaths : []);
     for (const entry of envelope.artifacts) {
       const base = getArtifactTreeLabel(entry);
       let label = base;
@@ -245,7 +251,7 @@ export function ArtifactEditor({
       labels.set(entry.id, label);
     }
     return labels;
-  }, [envelope.artifacts]);
+  }, [envelope.artifacts, patchFiles.length, patchFilePaths]);
   const artifactIdByLabel = useMemo(
     () => new Map(Array.from(artifactLabels, ([id, label]) => [label, id])),
     [artifactLabels],
@@ -301,6 +307,10 @@ export function ArtifactEditor({
     }
 
     setEditingArtifactId(targetId);
+    // A link generated for the previous artifact does not describe this one; drop it
+    // so Copy/Preview cannot hand out the wrong link while the other draft is open.
+    setGeneratedLink(null);
+    setGeneratedVersion(-1);
     setBodyDocuments(
       buildBodyDocuments(draftState.drafts.get(targetId) ?? createArtifactEditDraft(target)),
     );
@@ -317,6 +327,25 @@ export function ArtifactEditor({
     setMarkdownLinkCopyState("idle");
     setError(null);
   }, [draftVersion]);
+
+  // Renaming a file mid-edit re-labels the mounted document too: the file header and
+  // language inference read the item's name, while contents and cacheKey stay untouched.
+  useEffect(() => {
+    const codeView = bodyEditorRef.current;
+    if (!codeView) {
+      return;
+    }
+    const name = draft.filename.trim() || "content";
+    const targets = usesPairDiff
+      ? ([["old", `a/${name}`], ["new", `b/${name}`]] as const)
+      : ([["content", name]] as const);
+    for (const [id, fileName] of targets) {
+      const item = codeView.getItem(id);
+      if (item?.type === "file" && item.file.name !== fileName) {
+        codeView.updateItem({ ...item, file: { ...item.file, name: fileName } });
+      }
+    }
+  }, [draft.filename, usesPairDiff]);
 
   const updateDraft = <K extends keyof ArtifactEditDraft>(
     field: K,
@@ -346,7 +375,15 @@ export function ArtifactEditor({
       let nextEnvelope = envelope;
       for (const [artifactId, editedDraft] of draftState.drafts) {
         if (artifactId !== editingArtifactId) {
-          nextEnvelope = applyArtifactEditDraft(nextEnvelope, editedDraft);
+          try {
+            nextEnvelope = applyArtifactEditDraft(nextEnvelope, editedDraft);
+          } catch (applyError) {
+            const source = envelope.artifacts.find((entry) => entry.id === artifactId);
+            const label = source?.filename ?? source?.title ?? artifactId;
+            throw new Error(
+              `${label}: ${applyError instanceof Error ? applyError.message : String(applyError)}`,
+            );
+          }
         }
       }
       nextEnvelope = applyArtifactEditDraft(nextEnvelope, draft);
@@ -463,7 +500,9 @@ export function ArtifactEditor({
       >
         {showTreeRail ? (
           <FileTreeNav
-            key={treePaths.join("::")}
+            // useFileTree applies initialSelectedPaths only on mount; carrying the
+            // selection in the key keeps the highlighted row in sync after a switch.
+            key={`${treePaths.join("::")}::${selectedTreePath ?? ""}`}
             paths={treePaths}
             selectedPath={selectedTreePath}
             ariaLabel="Editable files"
@@ -541,7 +580,9 @@ export function ArtifactEditor({
               {usesPairDiff ? "Old and new content" : contentFieldLabel}
             </span>
             <span className="creator-field-hint">
-              {fieldHints[draft.kind]}
+              {usesPairDiff
+                ? "Edit the old and new content, then generate a new shareable link."
+                : fieldHints[draft.kind]}
             </span>
           </span>
           <div
@@ -607,7 +648,7 @@ export function ArtifactEditor({
           <header className="creator-result-head">
             <div>
               <h3>Generated link</h3>
-              <p>{generatedLink.artifact.filename ?? generatedLink.artifact.title ?? ""}</p>
+              <p>{generatedLink.artifact.filename?.trim() || generatedLink.artifact.title || ""}</p>
             </div>
             <span className="carbon-stamp">TRANSFER OK</span>
           </header>

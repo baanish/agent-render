@@ -7,7 +7,7 @@ import { PatchDiff, MultiFileDiff, type FileDiffProps } from "@/lib/diff/pierre-
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { detectCodeLanguage, toPierreLanguage } from "@/lib/code/language";
 import { useResolvedTheme } from "@/components/theme/use-theme-controller";
-import { parseGitPatchBundle } from "@/lib/diff/git-patch";
+import { getPatchFileLabels, getRenderablePatchFiles, parseGitPatchBundle } from "@/lib/diff/git-patch";
 import type { DiffArtifact } from "@/lib/payload/schema";
 
 // The Trees runtime only mounts for multi-file patches, so it loads behind its own
@@ -304,7 +304,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       }
 
       try {
-        const patchFiles = parseGitPatchBundle(artifact.patch);
+        const patchFiles = getRenderablePatchFiles(parseGitPatchBundle(artifact.patch));
         return {
           kind: "rich-patch",
           patchFiles: patchFiles.map((meta) => ({ meta })),
@@ -343,13 +343,16 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       return null;
     }
 
+    const labels = getPatchFileLabels(renderedDiff.patchFiles.map((file) => file.meta));
     const fileIdByPath = new Map<string, string>();
     const paths: string[] = [];
     for (const { meta } of renderedDiff.patchFiles) {
-      fileIdByPath.set(meta.displayPath, meta.id);
-      paths.push(meta.displayPath);
+      const label = labels.get(meta.id) ?? meta.displayPath;
+      fileIdByPath.set(label, meta.id);
+      paths.push(label);
     }
-    const selectedPath = renderedDiff.patchFiles.find(({ meta }) => meta.id === activeFileId)?.meta.displayPath;
+    const selectedId = renderedDiff.patchFiles.find(({ meta }) => meta.id === activeFileId)?.meta.id;
+    const selectedPath = selectedId ? labels.get(selectedId) : undefined;
 
     return { fileIdByPath, paths, selectedPath };
   }, [renderedDiff, activeFileId]);
@@ -428,7 +431,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       <div className="diff-renderer-frame">
         {mounted ? (
           renderedDiff.kind === "rich-contents" ? (
-            <div className="patch-bundle-shell">
+            <div className="patch-bundle-shell is-single-file">
               <div className="patch-bundle-files">
                 <section id={`patch-file-${artifact.id}`} className="patch-file-section">
                   <header className="patch-file-header">
@@ -450,7 +453,10 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
             <div className={patchFileTree ? "patch-bundle-shell" : "patch-bundle-shell is-single-file"}>
               {patchFileTree ? (
                 <FileTreeNav
-                  key={patchFileTree.paths.join("::")}
+                  // useFileTree applies initialSelectedPaths only on mount, so the
+                  // selection rides in the key: a new file or a reset remounts the
+                  // rail with the active row selected instead of a stale highlight.
+                  key={`${patchFileTree.paths.join("::")}::${patchFileTree.selectedPath ?? ""}`}
                   paths={patchFileTree.paths}
                   selectedPath={patchFileTree.selectedPath}
                   ariaLabel="Changed files"

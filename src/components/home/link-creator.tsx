@@ -361,7 +361,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
           </div>
         </section>
 
-        <section className="operation-step operation-commit-step">
+        <section className="operation-step">
           <header className="operation-step-head">
             <span className="operation-number">05</span>
             <h3>Generate link</h3>

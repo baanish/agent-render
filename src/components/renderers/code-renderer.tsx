@@ -54,9 +54,9 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
   // instance and emits "update" rather than "mount" on that path, so the flag must drop and
   // be re-raised by the next render. Render-time adjustment (not an effect) so it lands
   // before File's layout-effect re-render emits that "update".
-  const previousFileRef = useRef(file);
-  if (previousFileRef.current !== file) {
-    previousFileRef.current = file;
+  const [previousFile, setPreviousFile] = useState(file);
+  if (previousFile !== file) {
+    setPreviousFile(file);
     setIsReady(false);
   }
 
