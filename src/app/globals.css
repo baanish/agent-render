@@ -9,19 +9,19 @@
   --bone-lift: #f2ede3;
   --bone-mid: #d2cab9;
   --bone-edge: #958a79;
-  --chassis: #211d18;
-  --chassis-deep: #14110d;
-  --chassis-raised: #2b2620;
-  --on-chassis: #e3dccd;
-  --on-chassis-muted: #b8ae9c;
-  --control-face: #26221d;
-  --control-face-lift: #2e2923;
-  --control-face-pressed: #1a1713;
-  --control-edge: rgba(237, 231, 218, 0.22);
-  --control-edge-strong: rgba(237, 231, 218, 0.3);
-  --control-foot: #0f0d0a;
-  --control-text: #ece4d6;
-  --control-text-muted: #b0a694;
+  --chassis: #f2ecdf;
+  --chassis-deep: #e2dac8;
+  --chassis-raised: #faf6ea;
+  --on-chassis: #2b2620;
+  --on-chassis-muted: #6f6554;
+  --control-face: #f8f4ea;
+  --control-face-lift: #fdfaf1;
+  --control-face-pressed: #e3d9c4;
+  --control-edge: rgba(43, 38, 32, 0.24);
+  --control-edge-strong: rgba(43, 38, 32, 0.34);
+  --control-foot: #b8ab91;
+  --control-text: #2b2620;
+  --control-text-muted: #6f6554;
   --control-accent: #b74d18;
   --control-accent-strong: #93400f;
   --control-accent-ink: #fff7ee;
@@ -52,13 +52,13 @@
   --carbon-paper: #d9d0bd;
   --carbon-ink: #41392f;
   --carbon-line: #776d5e;
-  --surface-code: #1c1915;
-  --surface-code-raised: #27221c;
-  --surface-code-text: #e1d9ca;
-  --surface-code-chrome-border: #51493e;
-  --surface-code-toolbar-shine: rgba(255, 255, 255, 0.035);
-  --surface-code-gutter-fg: #938979;
-  --surface-code-gutter-border: #484137;
+  --surface-code: #f6f1e4;
+  --surface-code-raised: #e9e2cf;
+  --surface-code-text: #2f2a20;
+  --surface-code-chrome-border: #c7bba3;
+  --surface-code-toolbar-shine: rgba(43, 38, 32, 0.05);
+  --surface-code-gutter-fg: #a89b82;
+  --surface-code-gutter-border: #ddd3bd;
   --surface-code-is-code-border: var(--control-edge);
   --surface-code-is-code-bg: var(--control-face);
   --surface-code-is-code-fg: var(--control-text);
@@ -79,12 +79,12 @@
   --radius-md: 2px;
   --radius-sm: 2px;
   --duration-base: 140ms;
-  --rb-0: #d38b58;
-  --rb-1: #c7a85c;
-  --rb-2: #74a886;
-  --rb-3: #9aa67b;
-  --rb-4: #b8ae9c;
-  --rb-5: #c18472;
+  --rb-0: #a8491c;
+  --rb-1: #8a6a14;
+  --rb-2: #357f8f;
+  --rb-3: #4e7d3a;
+  --rb-4: #4a6aa5;
+  --rb-5: #9c5545;
   --print-paper: #ffffff;
   --print-ink: #211d18;
   --print-muted: #5f584d;
@@ -100,6 +100,14 @@
   --bone-lift: #dcd5c5;
   --bone-mid: #b8ae9c;
   --bone-edge: #756b5b;
+  --control-face: #26221d;
+  --control-face-lift: #2e2923;
+  --control-face-pressed: #1a1713;
+  --control-edge: rgba(237, 231, 218, 0.22);
+  --control-edge-strong: rgba(237, 231, 218, 0.3);
+  --control-foot: #0f0d0a;
+  --control-text: #ece4d6;
+  --control-text-muted: #b0a694;
   --chassis: #1c1915;
   --chassis-deep: #0f0d0a;
   --chassis-raised: #27221c;
@@ -151,6 +159,12 @@
   --surface-code-is-code-border: var(--control-edge);
   --surface-code-is-code-bg: var(--control-face);
   --surface-code-is-code-fg: var(--control-text);
+  --rb-0: #d38b58;
+  --rb-1: #c7a85c;
+  --rb-2: #74a886;
+  --rb-3: #9aa67b;
+  --rb-4: #b8ae9c;
+  --rb-5: #c18472;
 }
 
 * {
@@ -1797,7 +1811,6 @@ button:disabled {
 .diff-renderer-frame,
 .artifact-body-editor-frame,
 .code-renderer-shell {
-  color-scheme: dark;
   color: var(--surface-code-text);
   --diffs-font-family: var(--font-mono), monospace;
   --diffs-header-font-family: var(--font-mono), monospace;
@@ -1813,14 +1826,32 @@ button:disabled {
   --diffs-token-constant: var(--rb-1);
   --diffs-token-parameter: var(--rb-2);
   --diffs-token-link: var(--rb-2);
-  --diffs-token-comment: #8b8271;
-  --diffs-token-punctuation: #b0a794;
-  --diffs-token-inserted: #9ccfae;
-  --diffs-token-deleted: #d96a5c;
+  --diffs-token-comment: #8d826d;
+  --diffs-token-punctuation: #7d7461;
+  --diffs-token-inserted: #2e7d52;
+  --diffs-token-deleted: #b0412f;
   --diffs-token-changed: var(--rb-1);
   --diffs-bg-context-override: var(--surface-code-raised);
   --diffs-bg-separator-override: var(--chassis-deep);
   --diffs-bg-hover-override: var(--surface-code-raised);
+  --diffs-fg-number-override: #a89b82;
+  --diffs-addition-color-override: #2e7d52;
+  --diffs-deletion-color-override: #b0412f;
+  --diffs-bg-addition-override: #dce9d4;
+  --diffs-bg-addition-number-override: #cfe0c5;
+  --diffs-bg-addition-emphasis-override: #bdd3ae;
+  --diffs-bg-deletion-override: #eed7ce;
+  --diffs-bg-deletion-number-override: #e8ccbf;
+  --diffs-bg-deletion-emphasis-override: #e3bda9;
+}
+
+.dark .diff-renderer-frame,
+.dark .artifact-body-editor-frame,
+.dark .code-renderer-shell {
+  --diffs-token-comment: #8b8271;
+  --diffs-token-punctuation: #b0a794;
+  --diffs-token-inserted: #9ccfae;
+  --diffs-token-deleted: #d96a5c;
   --diffs-fg-number-override: #8b8271;
   --diffs-addition-color-override: #9ccfae;
   --diffs-deletion-color-override: #d96a5c;
@@ -1894,7 +1925,6 @@ button:disabled {
 .patch-file-tree {
   display: block;
   width: 100%;
-  color-scheme: dark;
   background: var(--chassis-deep);
   --trees-accent: var(--control-accent);
   --trees-bg-override: var(--chassis-deep);

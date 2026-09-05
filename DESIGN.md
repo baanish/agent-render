@@ -158,14 +158,14 @@ The hierarchy is intentionally “QRH first, Japanese density second, marketing 
 **Key Characteristics:**
 
 - Compact procedural sequencing with visible numbering
-- Charcoal controls with ivory labels and burnt-orange selected edges
+- Raised instrument controls (charcoal keys in dark mode, bone keys in light) with burnt-orange selected edges
 - Dense monospace metadata paired with direct, readable headings
 - Carbon paper reserved for successfully generated output
 - Artifact-first viewing with limits and fragment details kept visible
 
 ## Colors
 
-The palette is warm, low-gloss, and material-led: paper and dark charcoal controls sit against carbon-brown chassis tones, with three scarce semantic signals.
+The palette is warm, low-gloss, and material-led: dark mode runs charcoal keys on a carbon-brown chassis, light mode runs bone keys on a paper chassis, and three scarce semantic signals stay constant across both.
 
 ### Primary
 
@@ -183,15 +183,15 @@ The palette is warm, low-gloss, and material-led: paper and dark charcoal contro
 ### Neutral
 
 - **Aged Bone:** Reserved for paper-adjacent surfaces and the identity mark rather than interactive controls.
-- **Charcoal Controls:** Raised keys use a #26221d face, ivory labels, and darker pressed wells in both themes. A one-pixel burnt-orange edge marks persistent selection without turning the whole key into an accent.
-- **Charcoal Chassis:** The structural shell for procedures, toolbars, panels, and diagnostics.
+- **Instrument Controls:** Raised keys keep the same physical grammar in both themes: a lifted face, a hard lower foot, and a darker pressed well. Dark mode uses a #26221d charcoal face with ivory labels; light mode uses a bone face with ink labels. A one-pixel burnt-orange edge marks persistent selection without turning the whole key into an accent.
+- **Instrument Chassis:** The structural shell for procedures, toolbars, panels, and diagnostics. Charcoal in dark mode, warm bone in light mode.
 - **Instrument Paper:** Rendered markdown uses warm paper in light mode and a charcoal document field with ivory text in dark mode.
 - **Carbon Transfer Stock:** A distinct generated-output material with its own ink and perforation lines.
-- **Renderer Carbon:** Code, diff, CSV, JSON, raw source, and technical preview surfaces remain dark in both themes.
+- **Renderer Surface:** Code, diff, CSV, JSON, raw source, and technical preview surfaces follow the shell theme: paper stock with ink text in light mode, charcoal with ivory text in dark mode.
 
 **The Three-Signal Rule.** Orange commits, mint confirms, and brick alerts; never interchange these roles or add a competing accent.
 
-**The Dark-Renderer Rule.** Code-oriented artifacts stay on the renderer carbon palette in light and dark themes; theme switching changes the shell, not the content-body contract.
+**The Theme-Follow Rule.** Every surface follows the shell theme, including renderer bodies; light mode is a full light instrument, not a dark chassis on a light page.
 
 ## Typography
 

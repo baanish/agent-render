@@ -6,6 +6,7 @@ import { Check, Columns2, Copy, Rows3 } from "lucide-react";
 import { PatchDiff, MultiFileDiff, type FileDiffProps } from "@/lib/diff/pierre-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { detectCodeLanguage, toPierreLanguage } from "@/lib/code/language";
+import { useResolvedTheme } from "@/components/theme/use-theme-controller";
 import { parseGitPatchBundle } from "@/lib/diff/git-patch";
 import type { DiffArtifact } from "@/lib/payload/schema";
 
@@ -81,14 +82,14 @@ function getDefaultMode(view: DiffArtifact["view"], isNarrowScreen: boolean) {
   return view === "split" && !isNarrowScreen ? "split" : "unified";
 }
 
-// The diff bodies stay on the dark charcoal chassis in BOTH app themes (design
-// contract), so the Shiki theme is pinned dark; chrome colors come from the
-// --diffs-* custom properties set in globals.css, which pierce the shadow DOM.
-function getDiffOptions(mode: DiffViewMode): DiffOptions {
+// The Shiki theme is the same CSS-variable theme in both app modes; colors come
+// from the --diffs-* custom properties in globals.css, which pierce the shadow
+// DOM and flip under .dark. themeType only sets Pierre's light/dark semantics.
+function getDiffOptions(mode: DiffViewMode, themeType: "light" | "dark"): DiffOptions {
   return {
     diffStyle: mode,
     theme: "agent-render",
-    themeType: "dark",
+    themeType,
     overflow: "wrap",
     disableFileHeader: true,
     diffIndicators: "classic",
@@ -255,6 +256,7 @@ function DiffFallback({
 }
 
 function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
+  const resolvedTheme = useResolvedTheme();
   const onReadyRef = useRef(onReady);
   const [mounted, setMounted] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -371,7 +373,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
     return <DiffFallback artifact={artifact} message={renderedDiff.message} detail={renderedDiff.detail} onReady={onReady} />;
   }
 
-  const diffOptions = getDiffOptions(mode);
+  const diffOptions = getDiffOptions(mode, resolvedTheme);
 
   const handleFileSelect = (fileId: string) => {
     setActiveFileId(fileId);

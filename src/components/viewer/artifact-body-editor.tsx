@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, type Ref } from "react";
+import { useResolvedTheme } from "@/components/theme/use-theme-controller";
 import {
   CodeView,
   EditProvider,
@@ -47,9 +48,10 @@ export function ArtifactBodyEditor({
       })),
     [documents],
   );
+  const resolvedTheme = useResolvedTheme();
   const codeViewOptions = useMemo(
-    () => ({ theme: "agent-render", themeType: "dark" as const }),
-    [],
+    () => ({ theme: "agent-render", themeType: resolvedTheme }),
+    [resolvedTheme],
   );
 
   return (

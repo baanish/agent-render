@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { WrapText } from "lucide-react";
 import { File as PierreFile, type FileOptions } from "@/lib/diff/pierre-react";
 import { detectCodeLanguage, toPierreLanguage } from "@/lib/code/language";
+import { useResolvedTheme } from "@/components/theme/use-theme-controller";
 import type { CodeArtifact } from "@/lib/payload/schema";
 
 const MOBILE_CODE_MEDIA_QUERY = "(max-width: 640px)";
@@ -27,6 +28,7 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
   const wrapPreferenceRef = useRef<WrapPreference>("auto");
   const [wrapLines, setWrapLines] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const resolvedTheme = useResolvedTheme();
   const language = useMemo(
     () => detectCodeLanguage(artifact.filename, artifact.language),
     [artifact.filename, artifact.language],
@@ -102,8 +104,9 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
   const options = useMemo<FileOptions<undefined>>(
     () => ({
       theme: "agent-render",
-      // The code surface is always the dark charcoal document, in both shell themes.
-      themeType: "dark",
+      // themeType carries Pierre's light/dark semantics; the palette itself comes
+      // from the --diffs-* vars, which flip under .dark.
+      themeType: resolvedTheme,
       overflow: wrapLines ? "wrap" : "scroll",
       disableFileHeader: compact,
       onPostRender: (_node, _instance, phase) => {
@@ -116,7 +119,7 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
         onReadyRef.current?.();
       },
     }),
-    [wrapLines, compact],
+    [wrapLines, compact, resolvedTheme],
   );
 
   return (
