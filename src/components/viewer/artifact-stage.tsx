@@ -143,33 +143,41 @@ function getDownloadFilename(artifact: ArtifactPayload): string {
 
 
 /**
- * Renders the 'Raw' view of markdown/CSV as un-highlighted plain text — by design.
+ * Renders the 'Raw' view of markdown/CSV on the same Pierre `File` surface as code.
  *
- * Deliberate decision: the raw path renders a plain <pre> instead of routing through
- * CodeRenderer (Pierre `File`). This keeps the raw view free of the syntax-highlighting
- * bundle, so toggling to Raw never pulls that heavy chunk into the page. Consequence: raw
- * output is intentionally not syntax-highlighted. Changing this back to a highlighted view
- * would re-introduce the dependency on the raw path and must be an owner decision.
- *
- * React escapes the text child, so rendering untrusted artifact content here is XSS-safe.
+ * Owner decision: raw source viewing uses the highlighted file surface for every
+ * text body rather than a bare <pre>, since the highlighting chunk is already part
+ * of the viewer contract. The artifact is synthesized as a `code` payload so the
+ * existing CodeRenderer handles it, with the language hint pointing at the source
+ * format (`markdown` fences stay legible; `csv` degrades to `text`).
  */
-function RawArtifactSource({
-  content,
+function RawArtifactView({
+  artifact,
+  language,
   onReady,
   testId,
 }: {
-  content: string;
+  artifact: ArtifactPayload;
+  language: string;
   onReady: () => void;
   testId: string;
 }) {
-  useEffect(() => {
-    onReady();
-  }, [onReady]);
+  const rawArtifact = useMemo<CodeArtifact>(
+    () => ({
+      id: artifact.id,
+      kind: "code",
+      title: artifact.title,
+      filename: artifact.filename,
+      content: getArtifactBody(artifact),
+      language,
+    }),
+    [artifact, language],
+  );
 
   return (
-    <pre className="artifact-raw-source" data-testid={testId}>
-      {content}
-    </pre>
+    <div className="artifact-raw-view" data-testid={testId}>
+      <CodeRenderer artifact={rawArtifact} onReady={onReady} />
+    </div>
   );
 }
 
@@ -581,8 +589,9 @@ export function ArtifactStage({
               )}
             >
               {markdownArtifact && viewMode === "raw" ? (
-                <RawArtifactSource
-                  content={markdownArtifact.content}
+                <RawArtifactView
+                  artifact={markdownArtifact}
+                  language="markdown"
                   onReady={markActiveRendererReady}
                   testId="renderer-markdown-raw"
                 />
@@ -596,8 +605,9 @@ export function ArtifactStage({
               ) : diffArtifact ? (
                 <DiffRenderer artifact={diffArtifact} onReady={markActiveRendererReady} />
               ) : csvArtifact && viewMode === "raw" ? (
-                <RawArtifactSource
-                  content={csvArtifact.content}
+                <RawArtifactView
+                  artifact={csvArtifact}
+                  language="csv"
                   onReady={markActiveRendererReady}
                   testId="renderer-csv-raw"
                 />

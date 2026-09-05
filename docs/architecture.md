@@ -60,7 +60,7 @@ The JSON and markdown paths are now substantially lighter because:
 - `vanilla-jsoneditor` was removed in favor of a lighter read-only tree view
 - `rehype-highlight` and its Highlight.js stack were removed
 - `@codemirror/*` and `@replit/codemirror-indentation-markers` were removed once every highlighted surface moved to Pierre
-- raw markdown and CSV views use native source blocks instead of mounting the code renderer
+- raw markdown and CSV views render on the same Pierre `File` surface as code artifacts, synthesized as `code` payloads with the source format as the language hint
 - raw JSON uses the compact code path for syntax highlighting without wrapping or a file header
 
 ## Diff choice

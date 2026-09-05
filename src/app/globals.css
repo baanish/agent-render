@@ -1794,8 +1794,7 @@ button:disabled {
 
 .diff-renderer-frame,
 .csv-table-wrap,
-.json-tree-shell,
-.artifact-raw-source {
+.json-tree-shell {
   border: 1px solid var(--surface-code-chrome-border);
   border-radius: 2px;
   background: var(--surface-code);
@@ -2039,18 +2038,6 @@ button:disabled {
   max-height: min(68vh, 42rem);
   overflow: auto;
   padding: 6px 0;
-}
-
-.artifact-raw-source {
-  max-height: min(68vh, 42rem);
-  overflow: auto;
-  margin: 0;
-  padding: 10px;
-  color: var(--surface-code-text);
-  font-family: var(--font-mono), monospace;
-  font-size: 11px;
-  line-height: 1.55;
-  white-space: pre;
 }
 
 .json-raw-source {

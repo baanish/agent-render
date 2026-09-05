@@ -7,6 +7,22 @@ import type {
   PayloadEnvelope,
 } from "@/lib/payload/schema";
 
+vi.mock("@/components/renderers/code-renderer", () => ({
+  CodeRenderer: ({
+    artifact,
+  }: {
+    artifact: { content: string; language?: string; filename?: string };
+  }) => (
+    <pre
+      className="code-renderer-shell"
+      data-testid="renderer-code"
+      data-language={artifact.language}
+    >
+      {artifact.content}
+    </pre>
+  ),
+}));
+
 vi.mock("@/components/viewer/artifact-body-editor", () => ({
   ArtifactBodyEditor: ({
     documents,
@@ -83,7 +99,7 @@ afterEach(() => {
 });
 
 describe("ArtifactStage raw view", () => {
-  it("renders markdown raw mode as un-highlighted plain text without mounting the code renderer", async () => {
+  it("renders markdown raw mode on the highlighted file surface with a markdown hint", async () => {
     renderStage({
       id: "markdown-artifact",
       kind: "markdown",
@@ -93,13 +109,14 @@ describe("ArtifactStage raw view", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Raw" }));
 
-    expect(screen.getByTestId("renderer-markdown-raw")).toHaveTextContent(
-      "raw markdown body",
-    );
-    expect(document.querySelector(".code-renderer-shell")).not.toBeInTheDocument();
+    const rawView = screen.getByTestId("renderer-markdown-raw");
+    expect(rawView).toHaveTextContent("raw markdown body");
+    const surface = await screen.findByTestId("renderer-code");
+    expect(rawView).toContainElement(surface);
+    expect(surface).toHaveAttribute("data-language", "markdown");
   });
 
-  it("renders csv raw mode as un-highlighted plain text without mounting the code renderer", async () => {
+  it("renders csv raw mode on the highlighted file surface with a csv hint", async () => {
     renderStage({
       id: "csv-artifact",
       kind: "csv",
@@ -109,10 +126,11 @@ describe("ArtifactStage raw view", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Raw" }));
 
-    expect(screen.getByTestId("renderer-csv-raw")).toHaveTextContent(
-      "name,status",
-    );
-    expect(document.querySelector(".code-renderer-shell")).not.toBeInTheDocument();
+    const rawView = screen.getByTestId("renderer-csv-raw");
+    expect(rawView).toHaveTextContent("name,status");
+    const surface = await screen.findByTestId("renderer-code");
+    expect(rawView).toContainElement(surface);
+    expect(surface).toHaveAttribute("data-language", "csv");
   });
 
   it("opens the in-viewer editor with the current artifact body", async () => {

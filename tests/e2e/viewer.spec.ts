@@ -207,7 +207,7 @@ test("keeps other bundle artifacts when resharing an edited one", async ({ page 
   await expect(page.locator(".json-tree-shell")).toContainText("kept");
 });
 
-test("renders markdown raw view without mounting the code renderer", async ({ page }) => {
+test("renders markdown raw view on the highlighted file surface", async ({ page }) => {
   const plainMarkdownEnvelope = {
     v: 1,
     codec: "plain",
@@ -229,8 +229,9 @@ test("renders markdown raw view without mounting the code renderer", async ({ pa
 
   await page.getByRole("button", { name: /^Raw$/ }).click();
 
-  await expect(page.getByTestId("renderer-markdown-raw")).toContainText("No fenced code here.");
-  await expect(page.locator(".code-renderer-shell")).toHaveCount(0);
+  const rawView = page.getByTestId("renderer-markdown-raw");
+  await expect(rawView).toContainText("No fenced code here.");
+  await expect(rawView.locator("[data-testid='renderer-code'][data-renderer-ready='true']")).toHaveCount(1);
 });
 
 test("renders code payloads", async ({ page }) => {
@@ -494,15 +495,16 @@ test("renders compact CSV payloads without giant whitespace", async ({ page }) =
   await expect(page.locator("table.csv-table")).toBeVisible();
 });
 
-test("renders CSV raw view without mounting the code renderer", async ({ page }) => {
+test("renders CSV raw view on the highlighted file surface", async ({ page }) => {
   await goToHash(page, getFragmentHash("Data export preview"));
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "csv");
 
   await page.getByRole("button", { name: /^Raw$/ }).click();
 
-  await expect(page.getByTestId("renderer-csv-raw")).toContainText("artifact,kind,summary");
-  await expect(page.locator(".code-renderer-shell")).toHaveCount(0);
+  const rawView = page.getByTestId("renderer-csv-raw");
+  await expect(rawView).toContainText("artifact,kind,summary");
+  await expect(rawView.locator("[data-testid='renderer-code'][data-renderer-ready='true']")).toHaveCount(1);
 });
 
 test("renders JSON tree and raw views", async ({ page }) => {
