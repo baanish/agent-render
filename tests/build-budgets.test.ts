@@ -13,9 +13,9 @@ describe("build budget policy", () => {
 
     expect(table).toEqual([
       { name: "homepage route JS", maxBytes: 115 * 1024 },
-      { name: "code renderer deferred JS", maxBytes: 100 * 1024 },
+      { name: "code renderer deferred JS", maxBytes: 170 * 1024 },
       { name: "markdown renderer deferred JS", maxBytes: 52 * 1024 },
-      { name: "rich diff library deferred JS", maxBytes: 160 * 1024 },
+      { name: "rich diff library deferred JS", maxBytes: 165 * 1024 },
       { name: "patch file tree deferred JS", maxBytes: 80 * 1024 },
       { name: "artifact body editor deferred JS", maxBytes: 240 * 1024 },
     ]);

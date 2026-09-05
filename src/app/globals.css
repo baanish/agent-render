@@ -59,12 +59,9 @@
   --surface-code-toolbar-shine: rgba(255, 255, 255, 0.035);
   --surface-code-gutter-fg: #938979;
   --surface-code-gutter-border: #484137;
-  --surface-code-active-line: rgba(227, 220, 205, 0.055);
-  --surface-code-active-gutter: rgba(227, 220, 205, 0.08);
   --surface-code-is-code-border: var(--control-edge);
   --surface-code-is-code-bg: var(--control-face);
   --surface-code-is-code-fg: var(--control-text);
-  --surface-code-selection-bg: rgba(198, 90, 30, 0.28);
   --surface: var(--bone);
   --surface-strong: var(--bone-lift);
   --surface-muted: var(--bone-mid);
@@ -151,8 +148,6 @@
   --surface-code-toolbar-shine: rgba(255, 255, 255, 0.035);
   --surface-code-gutter-fg: #9d9382;
   --surface-code-gutter-border: #484137;
-  --surface-code-active-line: rgba(227, 220, 205, 0.055);
-  --surface-code-active-gutter: rgba(227, 220, 205, 0.08);
   --surface-code-is-code-border: var(--control-edge);
   --surface-code-is-code-bg: var(--control-face);
   --surface-code-is-code-fg: var(--control-text);
@@ -1751,11 +1746,18 @@ button:disabled {
   min-height: 0;
 }
 
-.code-renderer-shell:not(.is-compact) .cm-scroller {
+/* Pierre renders into a `diffs-container` custom element that is the scroll root for its
+   own virtualization, so it needs the overflow contract rather than an inner scroller. */
+.code-renderer-pierre {
+  display: block;
+  overflow: auto;
+}
+
+.code-renderer-shell:not(.is-compact) .code-renderer-pierre {
   max-height: min(72vh, 54rem);
 }
 
-.code-renderer-shell.is-compact .cm-scroller {
+.code-renderer-shell.is-compact .code-renderer-pierre {
   max-height: 34rem;
 }
 
@@ -1788,6 +1790,13 @@ button:disabled {
 .diff-renderer-frame {
   min-width: 0;
   overflow: auto;
+}
+
+/* Shared Pierre surface contract: every `diffs-container` host (diff viewer, artifact
+   body editor, standalone code renderer) inherits these through the shadow boundary. */
+.diff-renderer-frame,
+.artifact-body-editor-frame,
+.code-renderer-shell {
   color-scheme: dark;
   color: var(--surface-code-text);
   --diffs-font-family: var(--font-mono), monospace;

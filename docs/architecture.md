@@ -22,7 +22,7 @@ The static export also emits `sitemap.xml` at the site root (and under `NEXT_PUB
 ## Renderer implementation
 
 - `markdown` - formatted document view with shell copy, download, and print-to-PDF flows plus embedded premium code fences and inline mermaid diagram rendering
-- `code` - read-only CodeMirror view with syntax-aware rendering and code affordances
+- `code` - read-only Pierre `File` view with Shiki syntax highlighting, line numbers, and a wrap toggle
 - `diff` - review-style diff view with unified and split modes
 - `csv` - table-focused data grid built from parsed rows and dynamic columns
 - `json` - lightweight read-only tree view plus a syntax-highlighted raw source view
@@ -35,14 +35,7 @@ Diff file navigation is intentionally internal UI state now. The URL fragment re
 
 ## Markdown fence choice
 
-This round explicitly evaluated Shiki and rejected it for now.
-
-- Shiki is MIT and technically viable in a fully static app.
-- The current app already ships a premium read-only CodeMirror stack for source viewing.
-- Reusing that stack for markdown fences keeps them visually strong while avoiding a second async highlighting system and an additional code/theme/language runtime.
-- That choice also removes the weaker `rehype-highlight` plus `highlight.js` path instead of carrying both.
-
-If markdown fence fidelity becomes a repeated product problem after these bundle reductions, Shiki remains the next serious candidate, but it should replace rather than supplement the current fence path.
+Markdown fences mount the same compact Pierre `File` surface as standalone code artifacts, so diffs, code views, JSON raw views, the artifact editor, and fences all share one Shiki-backed highlighting stack. The earlier `rehype-highlight`/`highlight.js` path and the CodeMirror stack are both gone.
 
 ## Mermaid diagram support
 
@@ -50,25 +43,25 @@ Markdown artifacts render ` ```mermaid ` fenced code blocks as interactive diagr
 
 ## Raw code renderer choice
 
-The raw code viewer now keeps CodeMirror, but the architecture is cleaner:
+The code viewer uses Pierre's read-only `File` component from `@pierre/diffs`:
 
-- language modules load on demand instead of being statically imported together
-- standalone code artifacts use the maintained `@replit/codemirror-indentation-markers` extension, while compact embedded source preserves whitespace without editor-only guides
-- rainbow brackets stay custom, but now operate as a syntax-tree-aware decoration pass instead of naive quote tracking
+- the same `agent-render` Shiki theme and `--diffs-*` surface variables serve the viewer, the diff renderer, and the artifact editor
+- the wrap toggle maps to Pierre's `overflow` option, so it re-renders in place instead of remounting
+- `detectCodeLanguage` keys pass through `toPierreLanguage`, which maps any detection tokens that are not Shiki grammar ids
 
-That keeps the viewer static-hosting friendly while removing the brittle parts of the earlier implementation.
+The previous CodeMirror renderer (custom theme, rainbow brackets, indentation markers, per-language lazy loading) was removed in favor of the single Pierre surface.
 
 ## Bundle tradeoffs
 
-The largest remaining deferred cost is the Pierre review stack. `@pierre/diffs` renders patches through Shiki-backed shadow DOM, and `@pierre/trees` mounts only for multi-file patch navigation. Both stay behind the diff renderer import, so the empty shell and non-diff artifacts do not pay that JavaScript cost.
+The largest deferred cost is the Pierre stack. `@pierre/diffs` renders patches, code artifacts, JSON raw views, markdown fences, and the artifact editor through Shiki-backed shadow DOM, and `@pierre/trees` mounts only for multi-file navigation. Every Pierre surface stays behind dynamically imported renderers, so the empty shell does not pay that JavaScript cost.
 
 The JSON and markdown paths are now substantially lighter because:
 
 - `vanilla-jsoneditor` was removed in favor of a lighter read-only tree view
 - `rehype-highlight` and its Highlight.js stack were removed
-- raw markdown and CSV views use native source blocks instead of mounting CodeMirror
-- raw JSON uses the compact CodeMirror path for syntax highlighting without wrapping, active-line chrome, or indentation guides
-- CodeMirror language support now loads on demand per active language
+- `@codemirror/*` and `@replit/codemirror-indentation-markers` were removed once every highlighted surface moved to Pierre
+- raw markdown and CSV views use native source blocks instead of mounting the code renderer
+- raw JSON uses the compact code path for syntax highlighting without wrapping or a file header
 
 ## Diff choice
 
@@ -78,9 +71,9 @@ The JSON and markdown paths are now substantially lighter because:
 - Shiki syntax highlighting and component styles stay encapsulated in shadow DOM
 - `@pierre/trees` provides path-aware, keyboard-accessible navigation when a patch contains multiple files
 - single-file diffs skip the tree and render directly
-- CodeMirror remains the better fit for full source artifacts, JSON raw views, and markdown code fences
+- Pierre's `File`/`CodeView` surfaces also back full source artifacts, JSON raw views, markdown code fences, and the artifact editor, so one highlighting stack covers the app
 
-`@codemirror/merge` stays a reasonable future option if the project ever needs a more editor-centric comparison workflow, but it is not the best default for shareable review artifacts.
+An editor-centric comparison workflow (for example `@codemirror/merge`) stays a reasonable future option, but it is not the best default for shareable review artifacts.
 
 ## Security posture
 

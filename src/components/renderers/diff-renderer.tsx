@@ -5,7 +5,7 @@ import { Component, type CSSProperties, type ReactNode, useEffect, useMemo, useR
 import { Check, Columns2, Copy, Rows3 } from "lucide-react";
 import { PatchDiff, MultiFileDiff, type FileDiffProps } from "@/lib/diff/pierre-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
-import { detectCodeLanguage } from "@/lib/code/language";
+import { detectCodeLanguage, toPierreLanguage } from "@/lib/code/language";
 import { parseGitPatchBundle } from "@/lib/diff/git-patch";
 import type { DiffArtifact } from "@/lib/payload/schema";
 
@@ -321,7 +321,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       return {
         kind: "rich-contents",
         fileName,
-        language: detectCodeLanguage(fileName, artifact.language),
+        language: toPierreLanguage(detectCodeLanguage(fileName, artifact.language)),
       };
     }
 

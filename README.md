@@ -36,8 +36,8 @@ Built for the OpenClaw ecosystem, `agent-render` focuses on fragment-based shari
 
 ## Included Renderers
 
-- `markdown` - GFM rendering with safe sanitization, copy/download/print flows from the shell, and syntax-highlighted CodeMirror fences that preserve source whitespace
-- `code` - read-only CodeMirror view with line numbers, wrap toggle, syntax-tree-aware rainbow brackets, and maintained indentation markers
+- `markdown` - GFM rendering with safe sanitization, copy/download/print flows from the shell, and syntax-highlighted code fences that preserve source whitespace
+- `code` - read-only code view with line numbers, a wrap toggle, and Shiki syntax highlighting via `@pierre/diffs`
 - `diff` - Shiki-backed `@pierre/diffs` review views with unified/split modes and `@pierre/trees` navigation for multi-file patches
 - `csv` - parsed table view with sticky headers and horizontal overflow handling
 - `json` - lightweight read-only tree view plus syntax-highlighted raw source, with graceful malformed JSON fallback

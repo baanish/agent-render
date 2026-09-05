@@ -83,7 +83,7 @@ afterEach(() => {
 });
 
 describe("ArtifactStage raw view", () => {
-  it("renders markdown raw mode as un-highlighted plain text without mounting CodeMirror", async () => {
+  it("renders markdown raw mode as un-highlighted plain text without mounting the code renderer", async () => {
     renderStage({
       id: "markdown-artifact",
       kind: "markdown",
@@ -96,10 +96,10 @@ describe("ArtifactStage raw view", () => {
     expect(screen.getByTestId("renderer-markdown-raw")).toHaveTextContent(
       "raw markdown body",
     );
-    expect(document.querySelector(".cm-editor")).not.toBeInTheDocument();
+    expect(document.querySelector(".code-renderer-shell")).not.toBeInTheDocument();
   });
 
-  it("renders csv raw mode as un-highlighted plain text without mounting CodeMirror", async () => {
+  it("renders csv raw mode as un-highlighted plain text without mounting the code renderer", async () => {
     renderStage({
       id: "csv-artifact",
       kind: "csv",
@@ -112,7 +112,7 @@ describe("ArtifactStage raw view", () => {
     expect(screen.getByTestId("renderer-csv-raw")).toHaveTextContent(
       "name,status",
     );
-    expect(document.querySelector(".cm-editor")).not.toBeInTheDocument();
+    expect(document.querySelector(".code-renderer-shell")).not.toBeInTheDocument();
   });
 
   it("opens the in-viewer editor with the current artifact body", async () => {
@@ -126,7 +126,7 @@ describe("ArtifactStage raw view", () => {
     await userEvent.click(screen.getByRole("button", { name: "Edit" }));
 
     expect(await screen.findByTestId("artifact-editor")).toBeInTheDocument();
-    expect(screen.getByTestId("artifact-editor-content")).toHaveValue(
+    expect(await screen.findByTestId("artifact-editor-content")).toHaveValue(
       "# Heading\n\nraw markdown body",
     );
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();

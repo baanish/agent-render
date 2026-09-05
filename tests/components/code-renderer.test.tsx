@@ -4,68 +4,41 @@ import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { CodeRenderer } from "@/components/renderers/code-renderer";
 import type { CodeArtifact } from "@/lib/payload/schema";
 
-type MockEditorStateConfig = {
-  doc?: string;
-  extensions?: unknown[];
+type MockFileProps = {
+  file: { name: string; contents: string; lang?: string };
+  options?: {
+    overflow?: "scroll" | "wrap";
+    disableFileHeader?: boolean;
+    onPostRender?: (node: HTMLElement, instance: unknown, phase: string) => void;
+  };
 };
 
 const codeRendererMock = vi.hoisted(() => ({
-  editorStates: [] as MockEditorStateConfig[],
-  pendingLanguageLoads: [] as Array<{
-    language: string;
-    resolve: (extension: unknown) => void;
-  }>,
-  activeLineExtension: { kind: "active-line" },
-  indentationExtension: { kind: "indentation-markers" },
-  lineNumbersExtension: { kind: "line-numbers" },
-  lineWrappingExtension: { kind: "line-wrapping" },
-  rainbowPlugin: { kind: "rainbow-brackets" },
+  renders: [] as MockFileProps[],
 }));
 
-vi.mock("@codemirror/view", () => ({
-  EditorView: class MockEditorView {
-    static theme() {
-      return {};
-    }
-    static lineWrapping = codeRendererMock.lineWrappingExtension;
-    static editable = { of: () => ({}) };
-    constructor({ state }: { state: MockEditorStateConfig }) {
-      codeRendererMock.editorStates.push(state);
-    }
-    destroy() {}
-  },
-  highlightActiveLine: () => codeRendererMock.activeLineExtension,
-  lineNumbers: () => codeRendererMock.lineNumbersExtension,
-  ViewPlugin: { fromClass: () => codeRendererMock.rainbowPlugin },
-  Decoration: { mark: () => ({}), none: { kind: "no-decorations" } },
-}));
+vi.mock("@/lib/diff/pierre-react", async () => {
+  const React = await vi.importActual<typeof import("react")>("react");
 
-vi.mock("@codemirror/state", () => ({
-  EditorState: {
-    create: (config: MockEditorStateConfig) => config,
-    readOnly: { of: () => ({}) },
-  },
-  RangeSetBuilder: class {},
-}));
-
-vi.mock("@codemirror/language", () => ({
-  bracketMatching: () => ({}),
-  defaultHighlightStyle: {},
-  syntaxTree: () => ({ iterate: () => {} }),
-  syntaxHighlighting: () => ({}),
-}));
-
-vi.mock("@replit/codemirror-indentation-markers", () => ({
-  indentationMarkers: () => codeRendererMock.indentationExtension,
-}));
+  return {
+    File: (props: MockFileProps) => {
+      codeRendererMock.renders.push(props);
+      const onPostRender = props.options?.onPostRender;
+      React.useEffect(() => {
+        onPostRender?.(document.createElement("div"), {}, "mount");
+      }, [onPostRender]);
+      return React.createElement(
+        "pre",
+        { "data-testid": "mock-pierre-file" },
+        props.file.contents,
+      );
+    },
+  };
+});
 
 vi.mock("@/lib/code/language", () => ({
   detectCodeLanguage: (_filename?: string, language?: string) => language || "text",
-  loadLanguageSupport: vi.fn((language: string) => {
-    return new Promise((resolve: (extension: unknown) => void) => {
-      codeRendererMock.pendingLanguageLoads.push({ language, resolve });
-    });
-  }),
+  toPierreLanguage: (language: string) => language,
 }));
 
 /** Shared controllable matchMedia for tests that need resize / change events. */
@@ -122,6 +95,10 @@ function createArtifact(overrides: Partial<CodeArtifact> = {}): CodeArtifact {
   };
 }
 
+function lastFileProps() {
+  return codeRendererMock.renders.at(-1);
+}
+
 const originalMatchMedia = window.matchMedia;
 
 afterAll(() => {
@@ -139,8 +116,7 @@ afterEach(() => {
     configurable: true,
     value: originalMatchMedia,
   });
-  codeRendererMock.editorStates.length = 0;
-  codeRendererMock.pendingLanguageLoads.length = 0;
+  codeRendererMock.renders.length = 0;
   vi.restoreAllMocks();
 });
 
@@ -153,9 +129,10 @@ describe("CodeRenderer", () => {
       await waitFor(() => {
         expect(screen.getByRole("button", { name: /enable wrap/i })).toBeVisible();
       });
+      expect(lastFileProps()?.options?.overflow).toBe("scroll");
     });
 
-    it("toggling wrap changes the button label", async () => {
+    it("toggling wrap changes the button label and Pierre overflow", async () => {
       createControllableMatchMedia(false);
       render(<CodeRenderer artifact={createArtifact()} />);
 
@@ -163,6 +140,9 @@ describe("CodeRenderer", () => {
       await userEvent.click(btn);
 
       expect(screen.getByRole("button", { name: /disable wrap/i })).toBeVisible();
+      await waitFor(() => {
+        expect(lastFileProps()?.options?.overflow).toBe("wrap");
+      });
     });
 
     it("enables wrap when the viewport crosses to narrow without a prior manual toggle", async () => {
@@ -186,6 +166,9 @@ describe("CodeRenderer", () => {
 
       await waitFor(() => {
         expect(screen.getByRole("button", { name: /disable wrap/i })).toBeVisible();
+      });
+      await waitFor(() => {
+        expect(lastFileProps()?.options?.overflow).toBe("wrap");
       });
     });
 
@@ -222,83 +205,52 @@ describe("CodeRenderer", () => {
   });
 
   describe("compact mode", () => {
-    it("preserves source whitespace without editor-only chrome", async () => {
+    it("hides the wrap toolbar and file header", async () => {
       createControllableMatchMedia(false);
       render(<CodeRenderer artifact={createArtifact()} compact />);
 
       expect(screen.queryByRole("button", { name: /wrap/i })).not.toBeInTheDocument();
       await waitFor(() => {
-        expect(codeRendererMock.editorStates.length).toBeGreaterThan(0);
+        expect(lastFileProps()?.options?.disableFileHeader).toBe(true);
+        expect(lastFileProps()?.options?.overflow).toBe("scroll");
       });
-      const extensions = codeRendererMock.editorStates.at(-1)?.extensions;
-      expect(extensions).toContain(codeRendererMock.lineNumbersExtension);
-      expect(extensions).not.toContain(codeRendererMock.lineWrappingExtension);
-      expect(extensions).not.toContain(codeRendererMock.activeLineExtension);
-      expect(extensions).not.toContain(codeRendererMock.indentationExtension);
     });
   });
 
-  describe("language loading", () => {
-    it("does not rebuild the editor when only the ready callback changes", async () => {
+  describe("pierre file surface", () => {
+    it("passes the artifact through to the File item and reports ready on mount", async () => {
+      createControllableMatchMedia(false);
+      const onReady = vi.fn();
+      render(<CodeRenderer artifact={createArtifact()} onReady={onReady} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("renderer-code")).toHaveAttribute(
+          "data-renderer-ready",
+          "true",
+        );
+      });
+      expect(onReady).toHaveBeenCalled();
+      expect(lastFileProps()?.file).toMatchObject({
+        name: "hello.ts",
+        contents: 'export const hello = "world";',
+        lang: "text",
+      });
+    });
+
+    it("does not report readiness again when only the callback identity changes", async () => {
       createControllableMatchMedia(false);
       const artifact = createArtifact({ language: "text" });
-      const { rerender } = render(<CodeRenderer artifact={artifact} onReady={vi.fn()} />);
+      const firstReady = vi.fn();
+      const secondReady = vi.fn();
+      const { rerender } = render(<CodeRenderer artifact={artifact} onReady={firstReady} />);
 
-      await waitFor(() => {
-        expect(codeRendererMock.editorStates.length).toBeGreaterThan(0);
-      });
-      const editorStateCount = codeRendererMock.editorStates.length;
+      await waitFor(() => expect(firstReady).toHaveBeenCalledTimes(1));
 
-      rerender(<CodeRenderer artifact={artifact} onReady={vi.fn()} />);
+      rerender(<CodeRenderer artifact={artifact} onReady={secondReady} />);
       await act(async () => {});
 
-      expect(codeRendererMock.editorStates).toHaveLength(editorStateCount);
-    });
-
-    it("does not reuse a previous language extension while the next language loads", async () => {
-      createControllableMatchMedia(false);
-      const tsExtension = { language: "ts" };
-      const { rerender } = render(<CodeRenderer artifact={createArtifact({ language: "ts" })} />);
-
-      await waitFor(() => {
-        expect(codeRendererMock.pendingLanguageLoads.map((load) => load.language)).toContain("ts");
-      });
-      await act(async () => {
-        codeRendererMock.pendingLanguageLoads[0].resolve(tsExtension);
-      });
-      await waitFor(() => {
-        expect(codeRendererMock.editorStates.some((state) => state.extensions?.includes(tsExtension))).toBe(true);
-      });
-
-      codeRendererMock.editorStates.length = 0;
-      rerender(<CodeRenderer artifact={createArtifact({ content: "{}", filename: "data.json", language: "json" })} />);
-
-      await waitFor(() => {
-        expect(codeRendererMock.pendingLanguageLoads.map((load) => load.language)).toContain("json");
-        expect(codeRendererMock.editorStates.length).toBeGreaterThan(0);
-      });
-      expect(codeRendererMock.editorStates.at(-1)?.extensions).not.toContain(tsExtension);
-    });
-  });
-
-  describe("rainbow bracket plugin", () => {
-    it("skips the bracket decoration plugin when content has no bracket tokens", async () => {
-      createControllableMatchMedia(false);
-      render(<CodeRenderer artifact={createArtifact({ content: "plain text without paired punctuation" })} />);
-
-      await waitFor(() => {
-        expect(codeRendererMock.editorStates.length).toBeGreaterThan(0);
-      });
-      expect(codeRendererMock.editorStates.at(-1)?.extensions).not.toContain(codeRendererMock.rainbowPlugin);
-    });
-
-    it("keeps the bracket decoration plugin when content contains brackets", async () => {
-      createControllableMatchMedia(false);
-      render(<CodeRenderer artifact={createArtifact({ content: "const data = { value: [1, 2, 3] };" })} />);
-
-      await waitFor(() => {
-        expect(codeRendererMock.editorStates.at(-1)?.extensions).toContain(codeRendererMock.rainbowPlugin);
-      });
+      expect(secondReady).not.toHaveBeenCalled();
+      expect(firstReady).toHaveBeenCalledTimes(1);
     });
   });
 });

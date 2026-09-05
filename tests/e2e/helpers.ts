@@ -33,7 +33,7 @@ export async function waitForRendererReady(page: Page, kind: "markdown" | "code"
 
   const readinessSelectorByKind: Record<typeof kind, string> = {
     markdown: "[data-testid='renderer-markdown'][data-renderer-ready='true'] .markdown-article",
-    code: "[data-testid='renderer-code'][data-renderer-ready='true'] .cm-editor",
+    code: "[data-testid='renderer-code'][data-renderer-ready='true'] diffs-container",
     diff: "[data-testid='renderer-diff'][data-renderer-ready='true'] .patch-file-section",
     csv: "[data-testid='renderer-csv'][data-renderer-ready='true'] table.csv-table tbody tr",
     json: "[data-testid='renderer-json'][data-renderer-ready='true'] .json-tree-shell",

@@ -84,8 +84,8 @@ test("renders markdown payloads and triggers print", async ({ page }) => {
   await waitForViewerState(page, "artifact");
   await expect(page.locator("[data-active-kind='markdown']")).toBeVisible();
   await expect(page.getByText("Sprint roadmap").first()).toBeVisible();
-  await expect(page.locator(".markdown-code-frame .cm-indent-markers")).toHaveCount(0);
-  await expect(page.locator(".markdown-code-frame .cm-content").first()).not.toHaveClass(/cm-lineWrapping/);
+  // Compact fences mount the Pierre file surface without wrapping.
+  await expect(page.locator(".markdown-code-frame .code-renderer-shell.is-compact diffs-container").first()).toBeVisible();
 
   await page.evaluate(() => {
     window.__printCalled = false;
@@ -151,7 +151,7 @@ test("edits an open code artifact and reshares it as a new link", async ({ page 
 
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "code");
-  await expect(page.locator(".cm-editor").first()).toContainText('export const value = "edited"');
+  await expect(page.getByTestId("renderer-code")).toContainText('export const value = "edited"');
   await expect.poll(() => page.evaluate(() => window.location.hash)).not.toBe(beforeHash);
 });
 
@@ -207,7 +207,7 @@ test("keeps other bundle artifacts when resharing an edited one", async ({ page 
   await expect(page.locator(".json-tree-shell")).toContainText("kept");
 });
 
-test("renders markdown raw view without mounting CodeMirror", async ({ page }) => {
+test("renders markdown raw view without mounting the code renderer", async ({ page }) => {
   const plainMarkdownEnvelope = {
     v: 1,
     codec: "plain",
@@ -230,14 +230,16 @@ test("renders markdown raw view without mounting CodeMirror", async ({ page }) =
   await page.getByRole("button", { name: /^Raw$/ }).click();
 
   await expect(page.getByTestId("renderer-markdown-raw")).toContainText("No fenced code here.");
-  await expect(page.locator(".cm-editor")).toHaveCount(0);
+  await expect(page.locator(".code-renderer-shell")).toHaveCount(0);
 });
 
 test("renders code payloads", async ({ page }) => {
   await goToHash(page, getFragmentHash("Viewer bootstrap"));
   await waitForViewerState(page, "artifact");
   await expect(page.locator("[data-active-kind='code']")).toBeVisible();
-  await expect(page.locator(".cm-editor").first()).toBeVisible();
+  await expect(
+    page.locator("[data-testid='renderer-code'] diffs-container").first(),
+  ).toBeVisible();
 });
 
 test("renders arx2 fragments through the viewer", async ({ page }) => {
@@ -492,7 +494,7 @@ test("renders compact CSV payloads without giant whitespace", async ({ page }) =
   await expect(page.locator("table.csv-table")).toBeVisible();
 });
 
-test("renders CSV raw view without mounting CodeMirror", async ({ page }) => {
+test("renders CSV raw view without mounting the code renderer", async ({ page }) => {
   await goToHash(page, getFragmentHash("Data export preview"));
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "csv");
@@ -500,7 +502,7 @@ test("renders CSV raw view without mounting CodeMirror", async ({ page }) => {
   await page.getByRole("button", { name: /^Raw$/ }).click();
 
   await expect(page.getByTestId("renderer-csv-raw")).toContainText("artifact,kind,summary");
-  await expect(page.locator(".cm-editor")).toHaveCount(0);
+  await expect(page.locator(".code-renderer-shell")).toHaveCount(0);
 });
 
 test("renders JSON tree and raw views", async ({ page }) => {
@@ -511,7 +513,7 @@ test("renders JSON tree and raw views", async ({ page }) => {
   await expect(page.locator(".json-tree-shell")).toBeVisible();
   await page.getByRole("button", { name: "Raw" }).click();
   await expect(page.getByTestId("renderer-json-raw")).toBeVisible();
-  await expect(page.locator(".json-renderer-shell .cm-editor")).toHaveCount(1);
+  await expect(page.locator(".json-renderer-shell diffs-container")).toHaveCount(1);
 });
 
 test("switches artifacts within a bundle", async ({ page }) => {

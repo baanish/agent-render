@@ -2,20 +2,8 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { WrapText } from "lucide-react";
-import { EditorState, RangeSetBuilder } from "@codemirror/state";
-import { indentationMarkers } from "@replit/codemirror-indentation-markers";
-import {
-  Decoration,
-  type DecorationSet,
-  EditorView,
-  ViewPlugin,
-  type ViewUpdate,
-  highlightActiveLine,
-  lineNumbers,
-} from "@codemirror/view";
-import { bracketMatching, defaultHighlightStyle, syntaxTree, syntaxHighlighting } from "@codemirror/language";
-import { useResolvedTheme } from "@/components/theme/use-theme-controller";
-import { detectCodeLanguage, loadLanguageSupport } from "@/lib/code/language";
+import { File as PierreFile, type FileOptions } from "@/lib/diff/pierre-react";
+import { detectCodeLanguage, toPierreLanguage } from "@/lib/code/language";
 import type { CodeArtifact } from "@/lib/payload/schema";
 
 const MOBILE_CODE_MEDIA_QUERY = "(max-width: 640px)";
@@ -28,181 +16,51 @@ type CodeRendererProps = {
   onReady?: () => void;
 };
 
-type LoadedLanguageExtension = Awaited<ReturnType<typeof loadLanguageSupport>>;
-
-const MAX_DECORATED_CONTENT_LENGTH = 120000;
-const RAINBOW_BRACKET_LEVELS = 6;
-const BRACKET_DECORATION_PATTERN = /[()[\]{}]/;
-const rainbowBracketThemeRules: Record<string, { color: string }> = {};
-
-for (let index = 0; index < RAINBOW_BRACKET_LEVELS; index += 1) {
-  rainbowBracketThemeRules[`.cm-rb-${index}`] = {
-    color: `var(--rb-${index}) !important`,
-  };
-}
-
 /**
- * Builds the read-only CodeMirror theme. Passes `dark` so CodeMirror’s theme facet
- * matches the app (indentation markers and other plugins use it, not CSS alone).
- */
-function createEditorTheme(isDark: boolean) {
-  return EditorView.theme(
-    {
-      "&": {
-        height: "100%",
-        color: "var(--surface-code-text)",
-        backgroundColor: "var(--surface-code)",
-        fontFamily: "var(--font-mono), monospace",
-        fontSize: "13px",
-      },
-      ".cm-scroller": {
-        overflow: "auto",
-        lineHeight: "1.65",
-      },
-      ".cm-content": {
-        padding: "0.9rem 0 1.1rem 0",
-        caretColor: "var(--surface-code-text)",
-      },
-      ".cm-gutters": {
-        backgroundColor: "var(--surface-code-raised)",
-        color: "var(--surface-code-gutter-fg)",
-        borderRight: "1px solid var(--surface-code-gutter-border)",
-        minWidth: "3.3rem",
-      },
-      ".cm-gutterElement": {
-        padding: "0 0.9rem 0 0.7rem",
-        textAlign: "right",
-      },
-      ".cm-activeLine": {
-        backgroundColor: "var(--surface-code-active-line)",
-      },
-      ".cm-activeLineGutter": {
-        backgroundColor: "var(--surface-code-active-gutter)",
-      },
-      ".cm-selectionBackground": {
-        backgroundColor: "var(--surface-code-selection-bg) !important",
-      },
-      ".cm-rainbow-bracket": {
-        fontWeight: "700",
-      },
-      ...rainbowBracketThemeRules,
-    },
-    { dark: isDark },
-  );
-}
-
-function buildIgnoredRanges(state: EditorState) {
-  const ignored: Array<{ from: number; to: number }> = [];
-  let previousFrom = -1;
-  let needsSort = false;
-
-  syntaxTree(state).iterate({
-    enter(node) {
-      if (/(Comment|String|Template|RegExp)/i.test(node.name)) {
-        if (node.from < previousFrom) {
-          needsSort = true;
-        }
-        previousFrom = node.from;
-        ignored.push({ from: node.from, to: node.to });
-      }
-    },
-  });
-
-  return needsSort ? ignored.sort((left, right) => left.from - right.from) : ignored;
-}
-
-function buildRainbowDecorations(state: EditorState): DecorationSet {
-  const text = state.doc.toString();
-
-  if (!BRACKET_DECORATION_PATTERN.test(text)) {
-    return Decoration.none;
-  }
-
-  const builder = new RangeSetBuilder<Decoration>();
-  const ignored = buildIgnoredRanges(state);
-
-  let ignoredIndex = 0;
-  const stack: number[] = [];
-
-  for (let index = 0; index < text.length; index += 1) {
-    while (ignoredIndex < ignored.length && index >= ignored[ignoredIndex]!.to) {
-      ignoredIndex += 1;
-    }
-
-    const currentIgnored = ignored[ignoredIndex];
-    if (currentIgnored && index >= currentIgnored.from && index < currentIgnored.to) {
-      continue;
-    }
-
-    const char = text[index];
-    if (char === "{" || char === "[" || char === "(") {
-      const level = stack.length % RAINBOW_BRACKET_LEVELS;
-      stack.push(level);
-      builder.add(index, index + 1, Decoration.mark({ class: `cm-rainbow-bracket cm-rb-${level}` }));
-      continue;
-    }
-
-    if (char === "}" || char === "]" || char === ")") {
-      const level = stack.length > 0 ? (stack.pop() ?? 0) : 0;
-      builder.add(index, index + 1, Decoration.mark({ class: `cm-rainbow-bracket cm-rb-${level}` }));
-    }
-  }
-
-  return builder.finish();
-}
-
-const rainbowBrackets = ViewPlugin.fromClass(
-  class {
-    decorations: DecorationSet;
-
-    constructor(view: EditorView) {
-      this.decorations = buildRainbowDecorations(view.state);
-    }
-
-    update(update: ViewUpdate) {
-      if (update.docChanged) {
-        this.decorations = buildRainbowDecorations(update.state);
-      }
-    }
-  },
-  {
-    decorations: (instance) => instance.decorations,
-  },
-);
-
-/**
- * Presents code artifacts in a read-only CodeMirror surface for standalone and embedded renderer flows.
- * Accepts `artifact`, optional `compact`, and `onReady` to notify parent renderers when mount is complete.
- * Lazily loads language support, offers optional line wrapping, and falls back to baseline highlighting when needed.
+ * Presents code artifacts in a read-only Pierre `File` surface for standalone and embedded
+ * renderer flows. Accepts `artifact`, optional `compact` (markdown fences, JSON raw), and
+ * `onReady` to notify parent renderers when the first render mounts. The wrap toggle maps to
+ * Pierre's `overflow` option, so toggling re-renders in place instead of remounting.
  */
 export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendererProps) {
-  const hostRef = useRef<HTMLDivElement | null>(null);
   const onReadyRef = useRef(onReady);
   const wrapPreferenceRef = useRef<WrapPreference>("auto");
   const [wrapLines, setWrapLines] = useState(false);
-  const [languageSupport, setLanguageSupport] = useState<{
-    extension: LoadedLanguageExtension;
-    language: string;
-  }>({ extension: null, language: "" });
   const [isReady, setIsReady] = useState(false);
-  const resolvedTheme = useResolvedTheme();
-  /**
-   * CodeMirror’s `dark` facet (syntax + indentation markers) follows the resolved shell theme.
-   */
-  const isCmDark = useMemo(() => {
-    return resolvedTheme === "dark";
-  }, [resolvedTheme]);
-  const editorTheme = useMemo(() => createEditorTheme(isCmDark), [isCmDark]);
-  const language = useMemo(() => detectCodeLanguage(artifact.filename, artifact.language), [artifact.filename, artifact.language]);
-  const languageExtension = languageSupport.language === language ? languageSupport.extension : null;
+  const language = useMemo(
+    () => detectCodeLanguage(artifact.filename, artifact.language),
+    [artifact.filename, artifact.language],
+  );
 
   useEffect(() => {
     onReadyRef.current = onReady;
   }, [onReady]);
 
-  // Runs before paint so the first CodeMirror mount matches the viewport (call sites use dynamic(..., { ssr: false })).
-  // Preference stays on wrapPreferenceRef (not state) so the matchMedia listener closure stays correct without
-  // re-subscribing each render. Compact blocks preserve source whitespace and scroll horizontally.
+  const file = useMemo(
+    () => ({
+      name: artifact.filename ?? `${artifact.id}.txt`,
+      contents: artifact.content,
+      lang: toPierreLanguage(language),
+      // No cacheKey: Pierre treats matching cacheKeys as the same document without
+      // comparing contents, so an in-place artifact swap (edit -> preview) would reuse
+      // a stale line cache and crash with a line-count mismatch.
+    }),
+    [artifact.filename, artifact.id, artifact.content, language],
+  );
+
+  // The stage resets its ready flag when the artifact identity changes; File keeps the same
+  // instance and emits "update" rather than "mount" on that path, so the flag must drop and
+  // be re-raised by the next render. Render-time adjustment (not an effect) so it lands
+  // before File's layout-effect re-render emits that "update".
+  const previousFileRef = useRef(file);
+  if (previousFileRef.current !== file) {
+    previousFileRef.current = file;
+    setIsReady(false);
+  }
+
+  // Runs before paint so the first mount matches the viewport (call sites use
+  // dynamic(..., { ssr: false })). Compact blocks preserve source whitespace and scroll
+  // horizontally.
   useLayoutEffect(() => {
     if (compact) {
       setWrapLines(false);
@@ -241,98 +99,25 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
     };
   }, [compact]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void loadLanguageSupport(language)
-      .then((extension) => {
-        if (!cancelled) {
-          setLanguageSupport({ extension, language });
+  const options = useMemo<FileOptions<undefined>>(
+    () => ({
+      theme: "agent-render",
+      // The code surface is always the dark charcoal document, in both shell themes.
+      themeType: "dark",
+      overflow: wrapLines ? "wrap" : "scroll",
+      disableFileHeader: compact,
+      onPostRender: (_node, _instance, phase) => {
+        // "mount" fires on first hydrate and "update" on every later render, including the
+        // in-place artifact swap the stage waits on. "unmount" is the only non-ready phase.
+        if (phase === "unmount") {
+          return;
         }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLanguageSupport({ extension: null, language });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [language]);
-
-  useEffect(() => {
-    if (!hostRef.current) {
-      return;
-    }
-
-    setIsReady(false);
-    hostRef.current.replaceChildren();
-
-    const extensions = [
-      lineNumbers(),
-      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-      bracketMatching(),
-      EditorState.readOnly.of(true),
-      EditorView.editable.of(false),
-      editorTheme,
-    ];
-
-    if (!compact) {
-      extensions.push(highlightActiveLine());
-    }
-
-    if (!compact && language !== "text") {
-      extensions.push(
-        indentationMarkers({
-          markerType: "codeOnly",
-          thickness: 2,
-          hideFirstIndent: true,
-          highlightActiveBlock: false,
-          colors: {
-            light: "rgba(70, 92, 129, 0.14)",
-            dark: "rgba(239, 243, 247, 0.08)",
-            activeLight: "rgba(105, 209, 221, 0.18)",
-            activeDark: "rgba(105, 209, 221, 0.22)",
-          },
-        }),
-      );
-    }
-
-    if (wrapLines) {
-      extensions.push(EditorView.lineWrapping);
-    }
-
-    if (languageExtension) {
-      extensions.push(languageExtension);
-    }
-
-    if (artifact.content.length <= MAX_DECORATED_CONTENT_LENGTH && BRACKET_DECORATION_PATTERN.test(artifact.content)) {
-      extensions.push(rainbowBrackets);
-    }
-
-    const view = new EditorView({
-      state: EditorState.create({
-        doc: artifact.content,
-        extensions,
-      }),
-      parent: hostRef.current,
-    });
-
-    let cancelled = false;
-    const animationFrame = window.requestAnimationFrame(() => {
-      if (!cancelled) {
         setIsReady(true);
         onReadyRef.current?.();
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      window.cancelAnimationFrame(animationFrame);
-      view.destroy();
-    };
-  }, [artifact.content, compact, editorTheme, language, languageExtension, wrapLines]);
+      },
+    }),
+    [wrapLines, compact],
+  );
 
   return (
     <div
@@ -356,7 +141,14 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
           </button>
         </div>
       )}
-      <div ref={hostRef} className="code-renderer-host" />
+      <div className="code-renderer-host">
+        <PierreFile
+          file={file}
+          options={options}
+          className="code-renderer-pierre"
+          disableWorkerPool
+        />
+      </div>
     </div>
   );
 }
