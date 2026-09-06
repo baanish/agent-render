@@ -2692,10 +2692,16 @@ button:disabled {
     box-shadow: none !important;
   }
 
-  /* The Pierre surface reads the --diffs-* vars through the shadow boundary, so
-     printing a document has to relight the surface tokens, not just the frame. */
   body[data-print-mode="markdown"] .markdown-code-frame {
     border-color: var(--print-border) !important;
+    background: var(--print-paper) !important;
+    color: var(--print-ink) !important;
+  }
+
+  /* The Pierre surface reads the --diffs-* vars through the shadow boundary, and
+     .code-renderer-shell re-declares them on itself in the shared block above —
+     so the print overrides must land on that element, not on the outer frame. */
+  body[data-print-mode="markdown"] .markdown-code-frame .code-renderer-shell {
     background: var(--print-paper) !important;
     color: var(--print-ink) !important;
     --diffs-bg: var(--print-paper);
@@ -2706,11 +2712,6 @@ button:disabled {
     --diffs-bg-context-override: var(--print-paper);
     --diffs-bg-separator-override: var(--print-border);
     --diffs-bg-hover-override: var(--print-paper);
-  }
-
-  body[data-print-mode="markdown"] .markdown-code-frame .code-renderer-shell {
-    background: var(--print-paper) !important;
-    color: var(--print-ink) !important;
   }
 
   body[data-print-mode="markdown"] .markdown-inline-code {

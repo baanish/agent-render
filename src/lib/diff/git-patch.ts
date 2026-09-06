@@ -196,20 +196,23 @@ export function parseGitPatchBundle(patch: string): ParsedPatchFile[] {
 }
 
 const GIT_SECTION_PREFIX = "diff --git ";
+const SECTION_HUNK_RE = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/m;
 
 /**
  * Sections that render as files. The parser keeps leading format-patch email
- * preambles as their own section for fidelity, but a section without a
- * `diff --git` header is not a file and must not reach PatchDiff or the file
- * tree. Bundles with no git header at all (plain `---/+++` patches) keep
- * every section.
+ * preambles as their own section for fidelity, but a section that is neither a
+ * git diff header nor a traditional `---/+++`/`@@` hunk is not a file and must
+ * not reach PatchDiff or the file tree. Traditional sections mixed into a git
+ * bundle stay renderable; bundles with no git header at all keep every section.
  *
  * @param files - Sections from `parseGitPatchBundle`.
- * @returns The subset that carries real diff headers, or all sections when none do.
+ * @returns The subset that carries diff content, or all sections when none do.
  */
 export function getRenderablePatchFiles(files: readonly ParsedPatchFile[]): ParsedPatchFile[] {
+  const isDiffSection = (file: ParsedPatchFile) =>
+    file.patch.startsWith(GIT_SECTION_PREFIX) || SECTION_HUNK_RE.test(file.patch);
   const hasGitSection = files.some((file) => file.patch.startsWith(GIT_SECTION_PREFIX));
-  return hasGitSection ? files.filter((file) => file.patch.startsWith(GIT_SECTION_PREFIX)) : [...files];
+  return hasGitSection ? files.filter(isDiffSection) : [...files];
 }
 
 /**

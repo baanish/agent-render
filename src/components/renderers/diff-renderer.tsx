@@ -333,10 +333,15 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
     );
   }, [artifact]);
 
-  useEffect(() => {
+  // Render-time adjustment (replay-safe): a new renderedDiff resets readiness and
+  // restores the first-file selection before the tree mounts, so the rail's
+  // initialSelectedPaths lands on mount instead of one render late.
+  const [previousRenderedDiff, setPreviousRenderedDiff] = useState(renderedDiff);
+  if (previousRenderedDiff !== renderedDiff) {
+    setPreviousRenderedDiff(renderedDiff);
     setIsReady(false);
     setActiveFileId(renderedDiff.kind === "rich-patch" ? renderedDiff.patchFiles[0]?.meta.id ?? null : null);
-  }, [renderedDiff]);
+  }
 
   const patchFileTree = useMemo(() => {
     if (renderedDiff.kind !== "rich-patch" || renderedDiff.patchFiles.length <= 1) {
@@ -351,32 +356,45 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       fileIdByPath.set(label, meta.id);
       paths.push(label);
     }
-    const selectedId = renderedDiff.patchFiles.find(({ meta }) => meta.id === activeFileId)?.meta.id;
+    const selectedId =
+      renderedDiff.patchFiles.find(({ meta }) => meta.id === activeFileId)?.meta.id ??
+      renderedDiff.patchFiles[0]?.meta.id;
     const selectedPath = selectedId ? labels.get(selectedId) : undefined;
 
     return { fileIdByPath, paths, selectedPath };
   }, [renderedDiff, activeFileId]);
 
+  const readyTimerRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!mounted || renderedDiff.kind === "fallback") {
-      return;
-    }
-
-    const animationFrame = window.requestAnimationFrame(() => {
-      setIsReady(true);
-      onReadyRef.current?.();
-    });
-
     return () => {
-      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(readyTimerRef.current ?? undefined);
     };
-  }, [mounted, renderedDiff]);
+  }, []);
+
+  // A bare frame after mount races the highlighter: Shiki can resolve a cold
+  // engine after the first render pass, and Pierre re-emits an "update"
+  // post-render once the tokens land. Readiness waits for a quiet window after
+  // the last emit instead of a fixed delay.
+  const diffOptions = useMemo<DiffOptions>(
+    () => ({
+      ...getDiffOptions(mode, resolvedTheme),
+      onPostRender: (_node, _instance, phase) => {
+        if (phase === "unmount") {
+          return;
+        }
+        window.clearTimeout(readyTimerRef.current ?? undefined);
+        readyTimerRef.current = window.setTimeout(() => {
+          setIsReady(true);
+          onReadyRef.current?.();
+        }, 200);
+      },
+    }),
+    [mode, resolvedTheme],
+  );
 
   if (renderedDiff.kind === "fallback") {
     return <DiffFallback artifact={artifact} message={renderedDiff.message} detail={renderedDiff.detail} onReady={onReady} />;
   }
-
-  const diffOptions = getDiffOptions(mode, resolvedTheme);
 
   const handleFileSelect = (fileId: string) => {
     setActiveFileId(fileId);
@@ -399,7 +417,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
           <div className="diff-view-toggle">
             <button
               type="button"
-              className={`artifact-action ${mode === "split" ? "" : "is-depressed"}`}
+              className={`artifact-action ${mode === "split" ? "is-depressed" : ""}`}
               onClick={() => setMode(mode === "split" ? "unified" : "split")}
               aria-pressed={mode === "split"}
             >
@@ -453,10 +471,11 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
             <div className={patchFileTree ? "patch-bundle-shell" : "patch-bundle-shell is-single-file"}>
               {patchFileTree ? (
                 <FileTreeNav
-                  // useFileTree applies initialSelectedPaths only on mount, so the
-                  // selection rides in the key: a new file or a reset remounts the
-                  // rail with the active row selected instead of a stale highlight.
-                  key={`${patchFileTree.paths.join("::")}::${patchFileTree.selectedPath ?? ""}`}
+                  // useFileTree applies initialSelectedPaths only on mount; remount on
+                  // artifact or path-set changes so the initial row lands selected.
+                  // Clicks self-select inside the tree, so selection is not keyed here
+                  // (keying it would discard the rail's search/scroll state per click).
+                  key={`${artifact.id}::${patchFileTree.paths.join("::")}`}
                   paths={patchFileTree.paths}
                   selectedPath={patchFileTree.selectedPath}
                   ariaLabel="Changed files"

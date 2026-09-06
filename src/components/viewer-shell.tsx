@@ -145,6 +145,9 @@ export function ViewerShell() {
   const artifactSelectionRequestRef = useRef(0);
   /** True when the current hash originated from a server-injected payload (self-hosted UUID mode). */
   const injectedPayloadRef = useRef(false);
+  // A deployment fact, not a per-hash one: once a server-injected page is seen the
+  // session is on the self-hosted variant, so the flag latches and the footer never
+  // flips back to the "no database" claim while navigating within that host.
   const [isServerBacked, setIsServerBacked] = useState(false);
 
   useEffect(() => {
@@ -163,7 +166,6 @@ export function ViewerShell() {
 
     const syncHash = () => {
       injectedPayloadRef.current = false;
-      setIsServerBacked(false);
       setHash(window.location.hash);
     };
 

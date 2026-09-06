@@ -51,29 +51,28 @@ type ArtifactEditorProps = {
 };
 
 const EMPTY_PATCH_FILES: ParsedPatchFile[] = [];
-const PATCH_SECTION_HEADER_PATTERN = /^diff --git /gm;
+
 
 // Maps each parsed file to its byte offset inside the raw patch text so tree
-// selection can move the textarea caret. The parser trims/normalizes sections,
-// so offsets are recovered from the `diff --git` header positions instead of
-// indexOf on the (mutated) section text. A leading preamble section has no
-// header and always sits at offset 0.
+// selection can move the textarea caret. Sections are ordered, so each file's
+// offset is found by locating its own `diff --git a/… b/…` first line from the
+// cursor forward — stray `diff --git`-prefixed text mid-edit (a bare or
+// partially typed header that the parser treats as preamble) cannot consume a
+// slot and shift every later file.
 function getPatchFileOffsets(content: string, files: ParsedPatchFile[]): Map<string, number> {
-  const headerOffsets: number[] = [];
-  PATCH_SECTION_HEADER_PATTERN.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = PATCH_SECTION_HEADER_PATTERN.exec(content)) !== null) {
-    headerOffsets.push(match.index);
-  }
-
   const offsets = new Map<string, number>();
-  let headerIndex = 0;
+  let cursor = 0;
   for (const file of files) {
-    if (file.patch.startsWith("diff --git ")) {
-      offsets.set(file.id, headerOffsets[headerIndex] ?? 0);
-      headerIndex += 1;
-    } else {
+    if (!file.patch.startsWith("diff --git ")) {
       offsets.set(file.id, 0);
+      continue;
+    }
+    const newlineIndex = file.patch.indexOf("\n");
+    const firstLine = newlineIndex === -1 ? file.patch : file.patch.slice(0, newlineIndex);
+    const at = content.indexOf(firstLine, cursor);
+    offsets.set(file.id, at === -1 ? 0 : at);
+    if (at !== -1) {
+      cursor = at + firstLine.length;
     }
   }
 
@@ -291,7 +290,10 @@ export function ArtifactEditor({
   };
 
   const handleTreeSelect = (path: string) => {
-    if (patchFileByPath.has(path)) {
+    // Patch rows only exist in the rail when the patch has more than one file; the
+    // lookup is gated the same way so a hidden single-file row cannot shadow an
+    // artifact label that shares its path.
+    if (patchFiles.length > 1 && patchFileByPath.has(path)) {
       handlePatchFileSelect(path);
       return;
     }
@@ -379,7 +381,7 @@ export function ArtifactEditor({
             nextEnvelope = applyArtifactEditDraft(nextEnvelope, editedDraft);
           } catch (applyError) {
             const source = envelope.artifacts.find((entry) => entry.id === artifactId);
-            const label = source?.filename ?? source?.title ?? artifactId;
+            const label = source ? getArtifactTreeLabel(source) : artifactId;
             throw new Error(
               `${label}: ${applyError instanceof Error ? applyError.message : String(applyError)}`,
             );
@@ -500,9 +502,11 @@ export function ArtifactEditor({
       >
         {showTreeRail ? (
           <FileTreeNav
-            // useFileTree applies initialSelectedPaths only on mount; carrying the
-            // selection in the key keeps the highlighted row in sync after a switch.
-            key={`${treePaths.join("::")}::${selectedTreePath ?? ""}`}
+            // useFileTree applies initialSelectedPaths only on mount; remount when the
+            // edit target or path set changes so the new row lands selected. Clicks
+            // self-select inside the tree, so the selection is not keyed (keying it
+            // would discard the rail's search/scroll state on every click).
+            key={`${treePaths.join("::")}::${editingArtifactId}`}
             paths={treePaths}
             selectedPath={selectedTreePath}
             ariaLabel="Editable files"

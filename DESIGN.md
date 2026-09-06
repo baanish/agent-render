@@ -182,7 +182,7 @@ The palette is warm, low-gloss, and material-led: dark mode runs charcoal keys o
 
 ### Neutral
 
-- **Aged Bone:** Reserved for paper-adjacent surfaces and the identity mark rather than interactive controls.
+- **Aged Bone:** Paper-adjacent surfaces, the identity mark, and the light-mode control faces; the charcoal key face stays the dark-mode control material.
 - **Instrument Controls:** Raised keys keep the same physical grammar in both themes: a lifted face, a hard lower foot, and a darker pressed well. Dark mode uses a #26221d charcoal face with ivory labels; light mode uses a bone face with ink labels. A one-pixel burnt-orange edge marks persistent selection without turning the whole key into an accent.
 - **Instrument Chassis:** The structural shell for procedures, toolbars, panels, and diagnostics. Charcoal in dark mode, warm bone in light mode.
 - **Instrument Paper:** Rendered markdown uses warm paper in light mode and a charcoal document field with ivory text in dark mode.
@@ -291,7 +291,7 @@ Generated links emerge as square carbon stock with a perforated top strip, dashe
 - **Do** lead task surfaces with a numbered procedure, visible state, and operating constraints.
 - **Do** keep metadata compact, aligned, and readable in Spline Sans Mono.
 - **Do** use 1px dividers, 2px corners, and structural depth to assemble dense information.
-- **Do** preserve dark renderer bodies across light and dark shell themes.
+- **Do** let renderer bodies follow the shell theme: paper stock in light mode, charcoal in dark mode.
 - **Do** keep touch targets usable while allowing labels and metadata to stay visually dense.
 
 ### Don't:

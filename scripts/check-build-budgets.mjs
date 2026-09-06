@@ -59,8 +59,9 @@ export const budgets = [
   },
   {
     // Guards the @pierre/trees file navigator. It sits behind its own dynamic
-    // boundary inside the diff renderer and the artifact editor, so single-file
-    // diffs and single-artifact edits never pay for it. Both importers share one chunk.
+    // boundary inside the diff renderer and the artifact editor, so flows whose
+    // rail would hold a single row (one file, one artifact) never pay for it.
+    // Both importers share one chunk.
     importKeyParts: ["file-tree-nav"],
     maxBytes: 80 * 1024,
     name: "patch file tree deferred JS",
