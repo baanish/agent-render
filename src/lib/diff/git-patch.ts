@@ -197,6 +197,8 @@ export function parseGitPatchBundle(patch: string): ParsedPatchFile[] {
 
 const GIT_SECTION_PREFIX = "diff --git ";
 const SECTION_HUNK_RE = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/m;
+const SECTION_OLD_FILE_RE = /^--- \S/m;
+const SECTION_NEW_FILE_RE = /^\+\+\+ \S/m;
 
 /**
  * Sections that render as files. The parser keeps leading format-patch email
@@ -209,8 +211,13 @@ const SECTION_HUNK_RE = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/m;
  * @returns The subset that carries diff content, or all sections when none do.
  */
 export function getRenderablePatchFiles(files: readonly ParsedPatchFile[]): ParsedPatchFile[] {
+  // A traditional section needs all three markers; a bare line-start @@ in an
+  // email preamble (a quoted hunk snippet) is not a file.
   const isDiffSection = (file: ParsedPatchFile) =>
-    file.patch.startsWith(GIT_SECTION_PREFIX) || SECTION_HUNK_RE.test(file.patch);
+    file.patch.startsWith(GIT_SECTION_PREFIX) ||
+    (SECTION_HUNK_RE.test(file.patch) &&
+      SECTION_OLD_FILE_RE.test(file.patch) &&
+      SECTION_NEW_FILE_RE.test(file.patch));
   const hasGitSection = files.some((file) => file.patch.startsWith(GIT_SECTION_PREFIX));
   return hasGitSection ? files.filter(isDiffSection) : [...files];
 }

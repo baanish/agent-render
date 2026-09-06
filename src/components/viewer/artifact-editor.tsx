@@ -69,7 +69,12 @@ function getPatchFileOffsets(content: string, files: ParsedPatchFile[]): Map<str
     }
     const newlineIndex = file.patch.indexOf("\n");
     const firstLine = newlineIndex === -1 ? file.patch : file.patch.slice(0, newlineIndex);
-    const at = content.indexOf(firstLine, cursor);
+    // Anchor the search to a line start: a patch that adds a patch file can
+    // carry the same "diff --git a/… b/…" text inside a `+` line mid-section.
+    let at = content.indexOf(firstLine, cursor);
+    while (at > 0 && content.charCodeAt(at - 1) !== 10) {
+      at = content.indexOf(firstLine, at + 1);
+    }
     offsets.set(file.id, at === -1 ? 0 : at);
     if (at !== -1) {
       cursor = at + firstLine.length;

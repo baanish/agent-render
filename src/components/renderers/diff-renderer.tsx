@@ -333,12 +333,18 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
     );
   }, [artifact]);
 
+  const readyTimerRef = useRef<number | null>(null);
+
   // Render-time adjustment (replay-safe): a new renderedDiff resets readiness and
   // restores the first-file selection before the tree mounts, so the rail's
-  // initialSelectedPaths lands on mount instead of one render late.
+  // initialSelectedPaths lands on mount instead of one render late. The pending
+  // readiness timer is cleared too, so a quiet window measured against the old
+  // diff cannot mark the new one ready early.
   const [previousRenderedDiff, setPreviousRenderedDiff] = useState(renderedDiff);
   if (previousRenderedDiff !== renderedDiff) {
     setPreviousRenderedDiff(renderedDiff);
+    window.clearTimeout(readyTimerRef.current ?? undefined);
+    readyTimerRef.current = null;
     setIsReady(false);
     setActiveFileId(renderedDiff.kind === "rich-patch" ? renderedDiff.patchFiles[0]?.meta.id ?? null : null);
   }
@@ -364,7 +370,6 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
     return { fileIdByPath, paths, selectedPath };
   }, [renderedDiff, activeFileId]);
 
-  const readyTimerRef = useRef<number | null>(null);
   useEffect(() => {
     return () => {
       window.clearTimeout(readyTimerRef.current ?? undefined);

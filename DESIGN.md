@@ -223,11 +223,11 @@ Responsive behavior preserves order and density. At 760px, toolbars wrap, two-co
 
 ## Elevation & Depth
 
-Depth is structural rather than atmospheric. Chassis panels use hairline borders and a faint inner top shine. Charcoal controls sit two pixels above a near-black foot and physically depress by two pixels when active. Inputs, hash wells, and renderer diagnostics use inset shadows to read as recessed. There are no floating ambient card shadows, blurred glows, or decorative elevation layers.
+Depth is structural rather than atmospheric. Chassis panels use hairline borders and a faint inner top shine. Key controls sit two pixels above a darker foot and physically depress by two pixels when active. Inputs, hash wells, and renderer diagnostics use inset shadows to read as recessed. There are no floating ambient card shadows, blurred glows, or decorative elevation layers.
 
 ### Shadow Vocabulary
 
-- **Raised key:** A fine top shine plus a hard 2px lower edge; use on clickable charcoal controls.
+- **Raised key:** A fine top shine plus a hard 2px lower edge; use on clickable key controls (charcoal in dark mode, bone in light mode).
 - **Pressed key:** A compact inset shadow paired with a 2px downward translation.
 - **Recessed well:** A 2–5px dark inset shadow for editable fields, hashes, and raw technical readouts.
 - **Chassis hairline:** A nearly transparent 1px inset highlight for large dark instrument panels.
@@ -246,10 +246,10 @@ Components should feel manufactured, compact, and legible under pressure. Their 
 
 ### Buttons
 
-- **Shape:** Shallow charcoal instrument key with 2px corners and a hard near-black lower edge.
+- **Shape:** Shallow instrument key with 2px corners and a hard lower edge; charcoal face in dark mode, bone face in light mode.
 - **Primary:** Solid burnt orange belongs to the Generate action, with compact padding and a 38px minimum height.
-- **Hover / Focus:** Hover lifts the charcoal value slightly; keyboard focus uses a 2px orange ring with a 2px offset; active and selected controls move down 2px into an inset state.
-- **Secondary:** Charcoal face with ivory ink. Persistent selection keeps the dark pressed face and adds one burnt-orange inset edge.
+- **Hover / Focus:** Hover lifts the key face value slightly; keyboard focus uses a 2px orange ring with a 2px offset; active and selected controls move down 2px into an inset state.
+- **Secondary:** Charcoal face with ivory ink in dark mode, bone face with ink labels in light mode. Persistent selection keeps the pressed face and adds one burnt-orange inset edge.
 - **Confirmed:** Deep mint replaces the key face only after a successful action.
 
 ### Cards / Containers
@@ -262,13 +262,13 @@ Components should feel manufactured, compact, and legible under pressure. Their 
 
 ### Inputs / Fields
 
-- **Style:** Dark recessed field, 2px corners, 1px structural border, 40px minimum height; multiline source input uses the monospace face.
+- **Style:** Recessed field, 2px corners, 1px structural border, 40px minimum height (dark inset in dark mode, light inset in light mode); multiline source input uses the monospace face.
 - **Focus:** Strengthen the edge and add a single-pixel outer ring while keeping the recessed inset.
 - **Error / Disabled:** Brick identifies faults; disabled controls reduce opacity but retain their physical shape.
 
 ### Navigation
 
-The sticky shell header uses charcoal key controls on the chassis. Artifact navigation uses horizontally scrollable raised switchers with a clearly depressed active item and one burnt-orange inset edge. On narrow screens, hide only secondary global navigation and preserve task controls.
+The sticky shell header uses themed key controls on the chassis (charcoal keys in dark mode, bone keys in light mode). Artifact navigation uses horizontally scrollable raised switchers with a clearly depressed active item and one burnt-orange inset edge. On narrow screens, hide only secondary global navigation and preserve task controls.
 
 ### Procedure Steps
 
