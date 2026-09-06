@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 
 test("renders the zero-retention homepage when no fragment is present", async ({ page }) => {
   await waitForViewerState(page, "empty");
-  await expect(page.getByRole("heading", { name: /zero-retention artifact viewer/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /create a link/i })).toBeVisible();
   await expect(page.getByText(/artifact content lives in the URL fragment/i)).toBeVisible();
   await expect(page.getByText(/the static host does not receive artifact content/i)).toBeVisible();
   await expect(page.getByText(/browser history, screenshots, copied messages, extensions/i)).toBeVisible();
@@ -58,7 +58,7 @@ test("creates, copies, and previews a generated homepage link", async ({ page })
   await page.getByRole("button", { name: "code" }).click();
   await page.getByLabel("Title").fill("Homepage snippet");
   await page.getByLabel("Filename").fill("snippet.ts");
-  await page.getByRole("textbox", { name: "Language", exact: true }).fill("ts");
+  await page.getByRole("combobox", { name: "Language", exact: true }).selectOption("ts");
   await page.getByRole("textbox", { name: /^Content\b/ }).fill("export const value = 42;\n");
   await page.getByRole("button", { name: "Generate link" }).click();
 
@@ -84,6 +84,8 @@ test("renders markdown payloads and triggers print", async ({ page }) => {
   await waitForViewerState(page, "artifact");
   await expect(page.locator("[data-active-kind='markdown']")).toBeVisible();
   await expect(page.getByText("Sprint roadmap").first()).toBeVisible();
+  // Compact fences mount the Pierre file surface without wrapping.
+  await expect(page.locator(".markdown-code-frame .code-renderer-shell.is-compact diffs-container").first()).toBeVisible();
 
   await page.evaluate(() => {
     window.__printCalled = false;
@@ -103,10 +105,17 @@ test("edits an open markdown artifact and reshares it as a new link", async ({ p
   await waitForRendererReady(page, "markdown");
 
   await page.getByRole("button", { name: "Edit" }).click();
-  const editor = page.getByTestId("artifact-editor-content");
+  // The edit surface is a Pierre CodeView contenteditable inside shadow DOM.
+  const editor = page
+    .getByTestId("artifact-editor-body")
+    .locator("[contenteditable='true']")
+    .first();
   await expect(editor).toBeVisible();
-  const current = await editor.inputValue();
-  await editor.fill(`${current}\n\nEdited in the viewer.`);
+  await editor.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  await editor.pressSequentially("# Maintainer kickoff\n\nEdited in the viewer.", {
+    delay: 30,
+  });
   await page.getByRole("button", { name: "plain", exact: true }).click();
 
   await page.getByRole("button", { name: "Generate new link" }).click();
@@ -126,8 +135,15 @@ test("edits an open code artifact and reshares it as a new link", async ({ page 
   await waitForRendererReady(page, "code");
 
   await page.getByRole("button", { name: "Edit" }).click();
-  await expect(page.getByTestId("artifact-editor-content")).toBeVisible();
-  await page.getByTestId("artifact-editor-content").fill('export const value = "edited";\n');
+  const codeEditor = page
+    .getByTestId("artifact-editor-body")
+    .locator("[contenteditable='true']")
+    .first();
+  await expect(codeEditor).toBeVisible();
+  // Pierre re-renders the editable surface per change, so keystrokes need spacing to stay aligned.
+  await codeEditor.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  await codeEditor.pressSequentially('export const value = "edited";', { delay: 30 });
   await page.getByRole("button", { name: "plain", exact: true }).click();
   await page.getByRole("button", { name: "Generate new link" }).click();
   await expect(page.getByTestId("artifact-editor-result")).toBeVisible();
@@ -135,7 +151,7 @@ test("edits an open code artifact and reshares it as a new link", async ({ page 
 
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "code");
-  await expect(page.locator(".cm-editor").first()).toContainText('export const value = "edited"');
+  await expect(page.getByTestId("renderer-code")).toContainText('export const value = "edited"');
   await expect.poll(() => page.evaluate(() => window.location.hash)).not.toBe(beforeHash);
 });
 
@@ -168,7 +184,14 @@ test("keeps other bundle artifacts when resharing an edited one", async ({ page 
   await waitForRendererReady(page, "markdown");
 
   await page.getByRole("button", { name: "Edit" }).click();
-  await page.getByTestId("artifact-editor-content").fill("# Notes\n\nCorrected bundle notes.");
+  const bundleEditor = page
+    .getByTestId("artifact-editor-body")
+    .locator("[contenteditable='true']")
+    .first();
+  await expect(bundleEditor).toBeVisible();
+  await bundleEditor.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  await bundleEditor.pressSequentially("# Notes\n\nCorrected bundle notes.", { delay: 30 });
   await page.getByRole("button", { name: "plain", exact: true }).click();
   await page.getByRole("button", { name: "Generate new link" }).click();
   await expect(page.getByTestId("artifact-editor-result")).toBeVisible();
@@ -184,7 +207,7 @@ test("keeps other bundle artifacts when resharing an edited one", async ({ page 
   await expect(page.locator(".json-tree-shell")).toContainText("kept");
 });
 
-test("renders markdown raw view without mounting CodeMirror", async ({ page }) => {
+test("renders markdown raw view on the highlighted file surface", async ({ page }) => {
   const plainMarkdownEnvelope = {
     v: 1,
     codec: "plain",
@@ -206,15 +229,18 @@ test("renders markdown raw view without mounting CodeMirror", async ({ page }) =
 
   await page.getByRole("button", { name: /^Raw$/ }).click();
 
-  await expect(page.getByTestId("renderer-markdown-raw")).toContainText("No fenced code here.");
-  await expect(page.locator(".cm-editor")).toHaveCount(0);
+  const rawView = page.getByTestId("renderer-markdown-raw");
+  await expect(rawView).toContainText("No fenced code here.");
+  await expect(rawView.locator("[data-testid='renderer-code'][data-renderer-ready='true']")).toHaveCount(1);
 });
 
 test("renders code payloads", async ({ page }) => {
   await goToHash(page, getFragmentHash("Viewer bootstrap"));
   await waitForViewerState(page, "artifact");
   await expect(page.locator("[data-active-kind='code']")).toBeVisible();
-  await expect(page.locator(".cm-editor").first()).toBeVisible();
+  await expect(
+    page.locator("[data-testid='renderer-code'] diffs-container").first(),
+  ).toBeVisible();
 });
 
 test("renders arx2 fragments through the viewer", async ({ page }) => {
@@ -242,27 +268,111 @@ test("renders multi-file diffs without mutating the payload hash", async ({ page
   await waitForViewerState(page, "artifact");
   const beforeHash = await page.evaluate(() => window.location.hash);
   await expect(page.locator(".patch-file-section")).toHaveCount(2);
-  await page.locator("button.patch-bundle-link").nth(1).click();
+  await expect
+    .poll(() =>
+      page
+        .locator(".patch-file-tree")
+        .evaluate((tree) => tree.shadowRoot?.querySelectorAll('button[data-type="item"][data-item-type="file"]').length ?? 0),
+    )
+    .toBe(2);
+  await page.locator(".patch-file-tree").evaluate((tree) => {
+    const items = tree.shadowRoot?.querySelectorAll<HTMLButtonElement>('button[data-type="item"][data-item-type="file"]');
+    items?.item(items.length - 1).click();
+  });
+  await expect
+    .poll(() =>
+      page.locator(".patch-file-tree").evaluate((tree) => {
+        const items = tree.shadowRoot?.querySelectorAll<HTMLButtonElement>('button[data-type="item"][data-item-type="file"]');
+        return items && items.length > 0
+          ? items.item(items.length - 1).hasAttribute("data-item-selected")
+          : false;
+      }),
+    )
+    .toBe(true);
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(beforeHash);
 });
 
-test("loads the compressed diff stylesheet only after opening a diff artifact", async ({ page }) => {
-  await waitForViewerState(page, "empty");
-  await expect
-    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some((link) => link.getAttribute("href")?.includes("diff-view-pure.css"))))
-    .toBe(false);
+test("shows the editable-files tree inside the editor and focuses the selected file", async ({ page }) => {
+  await goToHash(page, getFragmentHash("Phase 1 sample diff"));
+  await waitForViewerState(page, "artifact");
+  await waitForRendererReady(page, "diff");
 
+  await page.getByRole("button", { name: "Edit" }).click();
+  const editor = page.getByTestId("artifact-editor");
+  await expect(editor).toBeVisible();
+  const editorBody = page.getByTestId("artifact-editor-body");
+  await expect(editorBody).toBeVisible();
+  const editorTree = page.getByTestId("artifact-editor-frame").locator(".patch-file-tree");
+  await expect
+    .poll(() =>
+      editorTree.evaluate(
+        (tree) =>
+          tree.shadowRoot?.querySelector('button[data-type="item"][data-item-path="src/version.ts"]') instanceof
+          HTMLButtonElement,
+      ),
+    )
+    .toBe(true);
+
+  // Wait for the deferred Pierre editor chunk to finish mounting the editable element.
+  await expect
+    .poll(() =>
+      editorBody.evaluate((frame) => {
+        let found = false;
+        const visit = (root: ParentNode) => {
+          for (const el of Array.from(root.children)) {
+            if (el.getAttribute("contenteditable") === "true") {
+              found = true;
+            }
+            visit(el);
+            if (el.shadowRoot) {
+              visit(el.shadowRoot);
+            }
+          }
+        };
+        visit(frame);
+        return found;
+      }),
+    )
+    .toBe(true);
+
+  await editorTree.evaluate((tree) => {
+    tree.shadowRoot
+      ?.querySelector<HTMLButtonElement>('button[data-type="item"][data-item-path="src/version.ts"]')
+      ?.click();
+  });
+  // The patch caret nav scrolls the CodeView (`.artifact-body-editor` is its scroll root) to
+  // the file's `diff --git` section and lands focus on the editable surface inside it.
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.querySelector<HTMLElement>(".artifact-body-editor")?.scrollTop ?? 0,
+      ),
+    )
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const frame = document.querySelector('[data-testid="artifact-editor-body"]');
+        return frame?.contains(document.activeElement) ?? false;
+      }),
+    )
+    .toBe(true);
+});
+
+test("renders rich diffs in shadow DOM without an external stylesheet", async ({ page }) => {
   await goToHash(page, getFragmentHash("Phase 1 sample diff"));
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "diff");
   await expect(page.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "rich");
+  await expect
+    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll(".patch-file-section *")).some((element) => element.shadowRoot !== null)))
+    .toBe(true);
 
   const stylesheetHrefs = await page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]'), (link) => link.getAttribute("href") ?? ""));
-  expect(stylesheetHrefs.some((href) => href.endsWith("/vendor/diff-view-pure.css.br"))).toBe(true);
-  expect(stylesheetHrefs.some((href) => href.endsWith("/vendor/diff-view-pure.css"))).toBe(false);
+  expect(stylesheetHrefs.some((href) => href.includes("diff-view"))).toBe(false);
 });
 
-test("keeps fallback diffs off the rich diff stylesheet path", async ({ page }) => {
+test("shows the raw patch fallback for invalid unified diffs", async ({ page }) => {
   const fallbackDiffEnvelope = {
     v: 1,
     codec: "plain",
@@ -283,9 +393,6 @@ test("keeps fallback diffs off the rich diff stylesheet path", async ({ page }) 
   await expect(page.getByTestId("renderer-diff")).toHaveAttribute("data-diff-state", "fallback");
   await expect(page.locator('[data-testid="viewer-shell"][data-renderer-ready="true"]')).toBeVisible();
   await expect(page.getByTestId("renderer-diff-fallback-raw")).toContainText("not a unified diff");
-  await expect
-    .poll(() => page.evaluate(() => Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some((link) => link.getAttribute("href")?.includes("diff-view-pure.css"))))
-    .toBe(false);
 });
 
 test.describe("mobile UX", () => {
@@ -297,12 +404,12 @@ test.describe("mobile UX", () => {
     await waitForRendererReady(page, "diff");
 
     const diffRenderer = page.getByTestId("renderer-diff");
-    const patchNav = page.locator(".patch-bundle-nav");
+    const patchTree = page.locator(".patch-file-tree");
     await expect(diffRenderer).toHaveAttribute("data-mobile-layout", "true");
     await expect(diffRenderer).toHaveAttribute("data-diff-mode", "unified");
     await expect(page.getByRole("button", { name: "Open split columns" })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Split$/ })).toHaveCount(0);
-    await expect.poll(() => patchNav.evaluate((element) => window.getComputedStyle(element).flexDirection)).toBe("row");
+    await expect(patchTree).toBeVisible();
 
     await page.getByRole("button", { name: "Open split columns" }).click();
     await expect(diffRenderer).toHaveAttribute("data-diff-mode", "split");
@@ -390,15 +497,16 @@ test("renders compact CSV payloads without giant whitespace", async ({ page }) =
   await expect(page.locator("table.csv-table")).toBeVisible();
 });
 
-test("renders CSV raw view without mounting CodeMirror", async ({ page }) => {
+test("renders CSV raw view on the highlighted file surface", async ({ page }) => {
   await goToHash(page, getFragmentHash("Data export preview"));
   await waitForViewerState(page, "artifact");
   await waitForRendererReady(page, "csv");
 
   await page.getByRole("button", { name: /^Raw$/ }).click();
 
-  await expect(page.getByTestId("renderer-csv-raw")).toContainText("artifact,kind,summary");
-  await expect(page.locator(".cm-editor")).toHaveCount(0);
+  const rawView = page.getByTestId("renderer-csv-raw");
+  await expect(rawView).toContainText("artifact,kind,summary");
+  await expect(rawView.locator("[data-testid='renderer-code'][data-renderer-ready='true']")).toHaveCount(1);
 });
 
 test("renders JSON tree and raw views", async ({ page }) => {
@@ -409,7 +517,7 @@ test("renders JSON tree and raw views", async ({ page }) => {
   await expect(page.locator(".json-tree-shell")).toBeVisible();
   await page.getByRole("button", { name: "Raw" }).click();
   await expect(page.getByTestId("renderer-json-raw")).toBeVisible();
-  await expect(page.locator(".json-renderer-shell .cm-editor")).toHaveCount(0);
+  await expect(page.locator(".json-renderer-shell diffs-container")).toHaveCount(1);
 });
 
 test("switches artifacts within a bundle", async ({ page }) => {
@@ -428,7 +536,7 @@ test("header icon and name navigate to homepage", async ({ page }) => {
 
   await page.getByRole("link", { name: "Go to homepage" }).click();
   await waitForViewerState(page, "empty");
-  await expect(page.getByRole("heading", { name: /zero-retention artifact viewer/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /create a link/i })).toBeVisible();
 });
 
 test("theme switching works", async ({ page }) => {

@@ -1,17 +1,21 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Component, type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Columns2, Copy, Rows3 } from "lucide-react";
-import { useResolvedTheme, type ResolvedTheme } from "@/components/theme/use-theme-controller";
+import { PatchDiff, MultiFileDiff, type FileDiffProps } from "@/lib/diff/pierre-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
-import { detectCodeLanguage } from "@/lib/code/language";
-import { parseGitPatchBundle } from "@/lib/diff/git-patch";
+import { detectCodeLanguage, toPierreLanguage } from "@/lib/code/language";
+import { useResolvedTheme } from "@/components/theme/use-theme-controller";
+import { getPatchFileLabels, getRenderablePatchFiles, parseGitPatchBundle } from "@/lib/diff/git-patch";
 import type { DiffArtifact } from "@/lib/payload/schema";
-import {
-  loadDiffViewStylesheet,
-  releaseDiffViewStylesheet,
-  retainDiffViewStylesheet,
-} from "@/components/renderers/diff-view-stylesheet";
+
+// The Trees runtime only mounts for multi-file patches, so it loads behind its own
+// boundary rather than inflating every diff render.
+const FileTreeNav = dynamic(
+  () => import("@/components/file-tree-nav").then((module) => module.FileTreeNav),
+  { ssr: false },
+);
 
 type DiffRendererProps = {
   artifact: DiffArtifact;
@@ -21,45 +25,28 @@ type DiffRendererProps = {
 const NARROW_DIFF_BREAKPOINT = 640;
 const MOBILE_DIFF_MEDIA_QUERY = `(max-width: ${NARROW_DIFF_BREAKPOINT}px)`;
 
-type DiffViewModule = typeof import("@git-diff-view/react");
-type DiffViewLibrary = Pick<DiffViewModule, "DiffFile" | "DiffModeEnum" | "DiffView">;
 type DiffViewMode = "unified" | "split";
-type DiffFileInstance = InstanceType<DiffViewLibrary["DiffFile"]>;
+type DiffOptions = NonNullable<FileDiffProps<undefined>["options"]>;
 
-type RenderableDiffFile = {
+type RenderablePatchFile = {
   meta: ReturnType<typeof parseGitPatchBundle>[number];
-  diffFile: DiffFileInstance | null;
 };
 
 type DiffRenderState =
   | {
-      kind: "loading";
+      kind: "rich-patch";
+      patchFiles: RenderablePatchFile[];
     }
   | {
-      kind: "rich";
-      diffFiles: RenderableDiffFile[];
+      kind: "rich-contents";
+      fileName: string;
+      language: string | undefined;
     }
   | {
       kind: "fallback";
       message: string;
       rawPatch: string;
       detail?: string;
-    };
-
-type ParsedPatchBundleState =
-  | {
-      kind: "none";
-    }
-  | {
-      kind: "invalid-shape";
-    }
-  | {
-      error: unknown;
-      kind: "parse-error";
-    }
-  | {
-      kind: "parsed";
-      patchFiles: ReturnType<typeof parseGitPatchBundle>;
     };
 
 type DiffRendererBoundaryProps = {
@@ -95,36 +82,18 @@ function getDefaultMode(view: DiffArtifact["view"], isNarrowScreen: boolean) {
   return view === "split" && !isNarrowScreen ? "split" : "unified";
 }
 
-function getDiffLibraryMode(mode: DiffViewMode, diffLibrary: DiffViewLibrary) {
-  return mode === "split" ? diffLibrary.DiffModeEnum.Split : diffLibrary.DiffModeEnum.Unified;
-}
-
-function patchFilesNeedDiffLibrary(patchFiles: ReturnType<typeof parseGitPatchBundle>): boolean {
-  for (const patchFile of patchFiles) {
-    if (!patchFile.isBinary) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function diffFilesHaveRenderableFile(diffFiles: RenderableDiffFile[]): boolean {
-  for (const { diffFile } of diffFiles) {
-    if (diffFile) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/** Run the four-call @git-diff-view warmup (theme + parse both view modes) a DiffFile needs before render. */
-function warmDiffFile(diffFile: DiffFileInstance, resolvedTheme: ResolvedTheme): void {
-  diffFile.initTheme(resolvedTheme === "dark" ? "dark" : "light");
-  diffFile.init();
-  diffFile.buildSplitDiffLines();
-  diffFile.buildUnifiedDiffLines();
+// The Shiki theme is the same CSS-variable theme in both app modes; colors come
+// from the --diffs-* custom properties in globals.css, which pierce the shadow
+// DOM and flip under .dark. themeType only sets Pierre's light/dark semantics.
+function getDiffOptions(mode: DiffViewMode, themeType: "light" | "dark"): DiffOptions {
+  return {
+    diffStyle: mode,
+    theme: "agent-render",
+    themeType,
+    overflow: "wrap",
+    disableFileHeader: true,
+    diffIndicators: "classic",
+  };
 }
 
 function looksLikeUnifiedDiff(patch: string) {
@@ -153,38 +122,6 @@ function getFallbackState(artifact: DiffArtifact, message: string, error?: unkno
     message,
     rawPatch: getRawPatch(artifact),
     detail,
-  };
-}
-
-function buildRenderablePatchFile(
-  patchFile: ReturnType<typeof parseGitPatchBundle>[number],
-  artifact: DiffArtifact,
-  resolvedTheme: ResolvedTheme,
-  diffLibrary: DiffViewLibrary,
-): RenderableDiffFile {
-  if (patchFile.isBinary) {
-    return {
-      meta: patchFile,
-      diffFile: null,
-    };
-  }
-
-  const language = detectCodeLanguage(patchFile.newPath ?? patchFile.oldPath ?? undefined, artifact.language);
-  const diffFile = new diffLibrary.DiffFile(
-    patchFile.oldPath ? `a/${patchFile.oldPath}` : "/dev/null",
-    "",
-    patchFile.newPath ? `b/${patchFile.newPath}` : "/dev/null",
-    "",
-    [patchFile.patch],
-    language,
-    language,
-  );
-
-  warmDiffFile(diffFile, resolvedTheme);
-
-  return {
-    meta: patchFile,
-    diffFile,
   };
 }
 
@@ -294,12 +231,8 @@ function DiffFallback({
       data-mobile-layout={getIsNarrowScreen() ? "true" : "false"}
     >
       <div className="diff-renderer-toolbar">
-        <div className="code-renderer-meta">
-          <span className="mono-pill">raw patch fallback</span>
-          <span className="section-kicker">invalid unified diff</span>
-        </div>
         {rawPatch ? (
-          <button type="button" className={`artifact-action ${copyState === "copied" ? "is-primary" : ""}`} onClick={handleCopyRawDiff}>
+          <button type="button" className={`artifact-action ${copyState === "copied" ? "is-confirmed" : ""}`} onClick={handleCopyRawDiff}>
             {copyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             {copyState === "copied" ? "Copied raw diff" : "Copy raw diff"}
           </button>
@@ -322,37 +255,10 @@ function DiffFallback({
   );
 }
 
-function DiffLoading({
-  mode,
-  isNarrowScreen,
-}: {
-  mode: DiffViewMode;
-  isNarrowScreen: boolean;
-}) {
-  return (
-    <div
-      className="diff-renderer-shell"
-      data-testid="renderer-diff"
-      data-renderer-ready="false"
-      data-diff-state="loading"
-      data-diff-mode={mode}
-      data-diff-controls={isNarrowScreen ? "gated" : "full"}
-      data-mobile-layout={isNarrowScreen ? "true" : "false"}
-    >
-      <div className="artifact-empty-state" role="status">
-        <p>Preparing the rich diff renderer.</p>
-      </div>
-    </div>
-  );
-}
-
 function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
   const resolvedTheme = useResolvedTheme();
   const onReadyRef = useRef(onReady);
-  const [diffLibrary, setDiffLibrary] = useState<DiffViewLibrary | null>(null);
-  const [diffLibraryError, setDiffLibraryError] = useState<Error | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [stylesReady, setStylesReady] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [isNarrowScreen, setIsNarrowScreen] = useState(getIsNarrowScreen);
@@ -388,222 +294,112 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
     setMode(getDefaultMode(artifact.view, isNarrowScreen));
   }, [artifact.id, artifact.view, isNarrowScreen]);
 
-  const parsedPatchBundle = useMemo<ParsedPatchBundleState>(() => {
-    if (!artifact.patch) {
-      return { kind: "none" };
-    }
-
-    if (!looksLikeUnifiedDiff(artifact.patch)) {
-      return { kind: "invalid-shape" };
-    }
-
-    try {
-      return { kind: "parsed", patchFiles: parseGitPatchBundle(artifact.patch) };
-    } catch (error) {
-      return { error, kind: "parse-error" };
-    }
-  }, [artifact.patch]);
-
-  const shouldLoadDiffLibrary = useMemo(() => {
-    if (artifact.oldContent !== undefined && artifact.newContent !== undefined) {
-      return true;
-    }
-
-    return parsedPatchBundle.kind === "parsed" && patchFilesNeedDiffLibrary(parsedPatchBundle.patchFiles);
-  }, [artifact.oldContent, artifact.newContent, parsedPatchBundle]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!shouldLoadDiffLibrary) {
-      setDiffLibraryError(null);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    if (diffLibrary) {
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    setDiffLibraryError(null);
-    import("@git-diff-view/react")
-      .then((module) => {
-        if (!cancelled) {
-          setDiffLibrary(module);
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setDiffLibraryError(error instanceof Error ? error : new Error("Failed to load the rich diff renderer."));
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [artifact.id, diffLibrary, shouldLoadDiffLibrary]);
-
   const renderedDiff = useMemo<DiffRenderState>(() => {
-    if (diffLibraryError) {
-      return getFallbackState(
-        artifact,
-        "The rich diff renderer could not be loaded. Showing the raw patch instead.",
-        diffLibraryError,
-      );
-    }
-
     if (artifact.patch) {
-      if (parsedPatchBundle.kind === "invalid-shape") {
+      if (!looksLikeUnifiedDiff(artifact.patch)) {
         return getFallbackState(
           artifact,
           "This patch is not a valid unified diff, so the raw patch is shown instead.",
         );
       }
 
-      if (parsedPatchBundle.kind === "parse-error") {
-        return getFallbackState(
-          artifact,
-          "This patch could not be rendered as a valid unified diff. Showing the raw patch instead.",
-          parsedPatchBundle.error,
-        );
-      }
-
-      if (parsedPatchBundle.kind === "parsed") {
-        const patchFiles = parsedPatchBundle.patchFiles;
-        const diffFiles = new Array<RenderableDiffFile>(patchFiles.length);
-
-        for (let index = 0; index < patchFiles.length; index += 1) {
-          const patchFile = patchFiles[index]!;
-          if (!diffLibrary && !patchFile.isBinary) {
-            return { kind: "loading" };
-          }
-
-          diffFiles[index] = diffLibrary
-            ? buildRenderablePatchFile(patchFile, artifact, resolvedTheme, diffLibrary)
-            : { meta: patchFile, diffFile: null };
-        }
-
-        return { kind: "rich", diffFiles };
-      }
-    }
-
-    if (artifact.oldContent !== undefined && artifact.newContent !== undefined) {
-      if (!diffLibrary) {
-        return { kind: "loading" };
-      }
-
       try {
-        const fileName = artifact.filename ?? artifact.id;
-        const language = detectCodeLanguage(fileName, artifact.language);
-        const diffFile = new diffLibrary.DiffFile(`a/${fileName}`, artifact.oldContent, `b/${fileName}`, artifact.newContent, [], language, language);
-
-        warmDiffFile(diffFile, resolvedTheme);
-
+        const patchFiles = getRenderablePatchFiles(parseGitPatchBundle(artifact.patch));
         return {
-          kind: "rich",
-          diffFiles: [
-            {
-              meta: {
-                id: artifact.id,
-                patch: "",
-                oldPath: artifact.filename ?? null,
-                newPath: artifact.filename ?? null,
-                displayPath: artifact.filename ?? artifact.id,
-                status: "modified",
-                isBinary: false,
-              },
-              diffFile,
-            },
-          ],
+          kind: "rich-patch",
+          patchFiles: patchFiles.map((meta) => ({ meta })),
         };
       } catch (error) {
         return getFallbackState(
           artifact,
-          "This before-and-after diff could not be rendered, so the rich diff view has been skipped.",
+          "This patch could not be rendered as a valid unified diff. Showing the raw patch instead.",
           error,
         );
       }
+    }
+
+    if (artifact.oldContent !== undefined && artifact.newContent !== undefined) {
+      const fileName = artifact.filename ?? artifact.id;
+      return {
+        kind: "rich-contents",
+        fileName,
+        language: toPierreLanguage(detectCodeLanguage(fileName, artifact.language)),
+      };
     }
 
     return getFallbackState(
       artifact,
       "This diff artifact does not include a valid patch payload to render.",
     );
-  }, [artifact, diffLibrary, diffLibraryError, parsedPatchBundle, resolvedTheme]);
+  }, [artifact]);
 
-  useEffect(() => {
+  const readyTimerRef = useRef<number | null>(null);
+
+  // Render-time adjustment (replay-safe): a new renderedDiff resets readiness and
+  // restores the first-file selection before the tree mounts, so the rail's
+  // initialSelectedPaths lands on mount instead of one render late. The pending
+  // readiness timer is cleared too, so a quiet window measured against the old
+  // diff cannot mark the new one ready early.
+  const [previousRenderedDiff, setPreviousRenderedDiff] = useState(renderedDiff);
+  if (previousRenderedDiff !== renderedDiff) {
+    setPreviousRenderedDiff(renderedDiff);
+    window.clearTimeout(readyTimerRef.current ?? undefined);
+    readyTimerRef.current = null;
     setIsReady(false);
-    setActiveFileId(renderedDiff.kind === "rich" ? renderedDiff.diffFiles[0]?.meta.id ?? null : null);
-  }, [renderedDiff]);
+    setActiveFileId(renderedDiff.kind === "rich-patch" ? renderedDiff.patchFiles[0]?.meta.id ?? null : null);
+  }
 
-  useEffect(() => {
-    let cancelled = false;
-
-    if (renderedDiff.kind !== "rich" || !diffFilesHaveRenderableFile(renderedDiff.diffFiles)) {
-      setStylesReady(true);
-      return;
+  const patchFileTree = useMemo(() => {
+    if (renderedDiff.kind !== "rich-patch" || renderedDiff.patchFiles.length <= 1) {
+      return null;
     }
 
-    let released = false;
-    const releaseStylesheet = () => {
-      if (released) {
-        return;
-      }
-      released = true;
-      releaseDiffViewStylesheet();
-    };
+    const labels = getPatchFileLabels(renderedDiff.patchFiles.map((file) => file.meta));
+    const fileIdByPath = new Map<string, string>();
+    const paths: string[] = [];
+    for (const { meta } of renderedDiff.patchFiles) {
+      const label = labels.get(meta.id) ?? meta.displayPath;
+      fileIdByPath.set(label, meta.id);
+      paths.push(label);
+    }
+    const selectedId =
+      renderedDiff.patchFiles.find(({ meta }) => meta.id === activeFileId)?.meta.id ??
+      renderedDiff.patchFiles[0]?.meta.id;
+    const selectedPath = selectedId ? labels.get(selectedId) : undefined;
 
-    retainDiffViewStylesheet();
-    setStylesReady(false);
-    loadDiffViewStylesheet()
-      .then(() => {
-        if (!cancelled) {
-          setStylesReady(true);
-        }
-      })
-      .catch((error) => {
-        console.warn("Failed to load diff stylesheet", error);
-        releaseStylesheet();
-        if (!cancelled) {
-          setStylesReady(true);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-      releaseStylesheet();
-    };
-  }, [renderedDiff]);
+    return { fileIdByPath, paths, selectedPath };
+  }, [renderedDiff, activeFileId]);
 
   useEffect(() => {
-    if (!mounted || !stylesReady || renderedDiff.kind !== "rich" || renderedDiff.diffFiles.length === 0) {
-      return;
-    }
-
-    const animationFrame = window.requestAnimationFrame(() => {
-      setIsReady(true);
-      onReadyRef.current?.();
-    });
-
     return () => {
-      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(readyTimerRef.current ?? undefined);
     };
-  }, [mounted, renderedDiff, stylesReady]);
+  }, []);
+
+  // A bare frame after mount races the highlighter: Shiki can resolve a cold
+  // engine after the first render pass, and Pierre re-emits an "update"
+  // post-render once the tokens land. Readiness waits for a quiet window after
+  // the last emit instead of a fixed delay.
+  const diffOptions = useMemo<DiffOptions>(
+    () => ({
+      ...getDiffOptions(mode, resolvedTheme),
+      onPostRender: (_node, _instance, phase) => {
+        if (phase === "unmount") {
+          return;
+        }
+        window.clearTimeout(readyTimerRef.current ?? undefined);
+        readyTimerRef.current = window.setTimeout(() => {
+          setIsReady(true);
+          onReadyRef.current?.();
+        }, 200);
+      },
+    }),
+    [mode, resolvedTheme],
+  );
 
   if (renderedDiff.kind === "fallback") {
     return <DiffFallback artifact={artifact} message={renderedDiff.message} detail={renderedDiff.detail} onReady={onReady} />;
   }
-
-  if (renderedDiff.kind === "loading") {
-    return <DiffLoading mode={mode} isNarrowScreen={isNarrowScreen} />;
-  }
-
-  const { diffFiles } = renderedDiff;
-  const RichDiffView = diffLibrary?.DiffView;
-  const richDiffMode = diffLibrary ? getDiffLibraryMode(mode, diffLibrary) : null;
 
   const handleFileSelect = (fileId: string) => {
     setActiveFileId(fileId);
@@ -622,16 +418,11 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       data-mobile-layout={isNarrowScreen ? "true" : "false"}
     >
       <div className="diff-renderer-toolbar">
-        <div className="code-renderer-meta">
-          <span className="mono-pill">review-style diff</span>
-          <span className="section-kicker">syntax highlighted</span>
-        </div>
         {isNarrowScreen ? (
           <div className="diff-view-toggle">
-            <span className="mono-pill diff-mobile-note">Unified is the phone default</span>
             <button
               type="button"
-              className={`artifact-action ${mode === "split" ? "" : "is-primary"}`}
+              className={`artifact-action ${mode === "split" ? "is-depressed" : ""}`}
               onClick={() => setMode(mode === "split" ? "unified" : "split")}
               aria-pressed={mode === "split"}
             >
@@ -643,7 +434,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
           <div className="diff-view-toggle">
             <button
               type="button"
-              className={`artifact-action ${mode === "unified" ? "is-primary" : ""}`}
+              className={`artifact-action ${mode === "unified" ? "is-depressed" : ""}`}
               onClick={() => setMode("unified")}
             >
               <Rows3 className="h-3.5 w-3.5" />
@@ -651,7 +442,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
             </button>
             <button
               type="button"
-              className={`artifact-action ${mode === "split" ? "is-primary" : ""}`}
+              className={`artifact-action ${mode === "split" ? "is-depressed" : ""}`}
               onClick={() => setMode("split")}
             >
               <Columns2 className="h-3.5 w-3.5" />
@@ -662,48 +453,67 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       </div>
       <div className="diff-renderer-frame">
         {mounted ? (
-          <div className="patch-bundle-shell">
-            <nav className="patch-bundle-nav">
-              {diffFiles.map(({ meta }) => (
-                <button
-                  key={meta.id}
-                  type="button"
-                  className={`patch-bundle-link ${activeFileId === meta.id ? "is-active" : ""}`}
-                  onClick={() => handleFileSelect(meta.id)}
-                >
-                  <span className="mono-pill">{meta.status}</span>
-                  <span className="truncate">{meta.displayPath}</span>
-                </button>
-              ))}
-            </nav>
-            <div className="patch-bundle-files">
-              {diffFiles.map(({ meta, diffFile }) => (
-                <section key={meta.id} id={`patch-file-${meta.id}`} className="patch-file-section">
+          renderedDiff.kind === "rich-contents" ? (
+            <div className="patch-bundle-shell is-single-file">
+              <div className="patch-bundle-files">
+                <section id={`patch-file-${artifact.id}`} className="patch-file-section">
                   <header className="patch-file-header">
                     <div>
-                      <p className="section-kicker">{meta.status}</p>
-                      <h4>{meta.displayPath}</h4>
+                      <p className="section-kicker">modified</p>
+                      <h4>{renderedDiff.fileName}</h4>
                     </div>
-                    {meta.oldPath && meta.newPath && meta.oldPath !== meta.newPath ? (
-                      <span className="mono-pill">{meta.oldPath} -&gt; {meta.newPath}</span>
-                    ) : null}
                   </header>
-                  {meta.isBinary || !diffFile ? (
-                    <div className="artifact-empty-state">Binary patch preview is not expanded. Download the patch to inspect the raw binary diff headers.</div>
-                  ) : RichDiffView && richDiffMode ? (
-                    <RichDiffView
-                      diffFile={diffFile}
-                      diffViewMode={richDiffMode}
-                      diffViewTheme={resolvedTheme === "dark" ? "dark" : "light"}
-                      diffViewFontSize={isNarrowScreen ? 12 : 13}
-                      diffViewHighlight
-                      diffViewWrap
-                    />
-                  ) : null}
+                  <MultiFileDiff
+                    oldFile={{ name: renderedDiff.fileName, contents: artifact.oldContent ?? "", lang: renderedDiff.language }}
+                    newFile={{ name: renderedDiff.fileName, contents: artifact.newContent ?? "", lang: renderedDiff.language }}
+                    options={diffOptions}
+                    disableWorkerPool
+                  />
                 </section>
-              ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className={patchFileTree ? "patch-bundle-shell" : "patch-bundle-shell is-single-file"}>
+              {patchFileTree ? (
+                <FileTreeNav
+                  // useFileTree applies initialSelectedPaths only on mount; remount on
+                  // artifact or path-set changes so the initial row lands selected.
+                  // Clicks self-select inside the tree, so selection is not keyed here
+                  // (keying it would discard the rail's search/scroll state per click).
+                  key={`${artifact.id}::${patchFileTree.paths.join("::")}`}
+                  paths={patchFileTree.paths}
+                  selectedPath={patchFileTree.selectedPath}
+                  ariaLabel="Changed files"
+                  onSelectPath={(path) => {
+                    const fileId = patchFileTree.fileIdByPath.get(path);
+                    if (fileId) {
+                      handleFileSelect(fileId);
+                    }
+                  }}
+                />
+              ) : null}
+              <div className="patch-bundle-files">
+                {renderedDiff.patchFiles.map(({ meta }) => (
+                  <section key={meta.id} id={`patch-file-${meta.id}`} className="patch-file-section">
+                    <header className="patch-file-header">
+                      <div>
+                        <p className="section-kicker">{meta.status}</p>
+                        <h4>{meta.displayPath}</h4>
+                      </div>
+                      {meta.oldPath && meta.newPath && meta.oldPath !== meta.newPath ? (
+                        <span className="mono-pill">{meta.oldPath} -&gt; {meta.newPath}</span>
+                      ) : null}
+                    </header>
+                    {meta.isBinary ? (
+                      <div className="artifact-empty-state">Binary patch preview is not expanded. Download the patch to inspect the raw binary diff headers.</div>
+                    ) : (
+                      <PatchDiff patch={meta.patch} options={diffOptions} disableWorkerPool />
+                    )}
+                  </section>
+                ))}
+              </div>
+            </div>
+          )
         ) : null}
       </div>
     </div>
@@ -714,6 +524,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
  * Renders diff artifacts as review-style unified/split views in the artifact stage.
  * Uses `artifact` diff payload details and optional `onReady` callback when the active diff UI is mount-ready.
  * Prefers parsed git patches, supports old/new content diffs, and falls back to raw patch output on parse/runtime errors.
+ * Rendering is delegated to @pierre/diffs (Shiki-based, shadow DOM); the diff bodies stay dark in both app themes.
  */
 export function DiffRenderer({ artifact, onReady }: DiffRendererProps) {
   // resetKey hashes patch/content (FNV-1a + length) as a deliberate bound to avoid embedding huge

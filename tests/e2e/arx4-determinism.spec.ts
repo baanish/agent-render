@@ -98,7 +98,7 @@ async function fillCreatorDraft(page: Page, draft: LinkCreatorDraft) {
   await page.getByLabel("Title").fill(draft.title);
   await page.getByLabel("Filename").fill(draft.filename);
   if (draft.kind === "code") {
-    await page.getByRole("textbox", { name: "Language", exact: true }).fill(draft.language);
+    await page.getByRole("combobox", { name: "Language", exact: true }).selectOption(draft.language);
   }
   await page.getByRole("textbox", { name: /^Content\b/ }).fill(draft.content);
   await page.getByRole("button", { name: codecPickerLabel(draft.codec ?? "auto"), exact: true }).click();

@@ -194,3 +194,55 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
 export function parseGitPatchBundle(patch: string): ParsedPatchFile[] {
   return parsePatchSections(patch);
 }
+
+const GIT_SECTION_PREFIX = "diff --git ";
+const SECTION_HUNK_RE = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/m;
+const SECTION_OLD_FILE_RE = /^--- \S/m;
+const SECTION_NEW_FILE_RE = /^\+\+\+ \S/m;
+
+/**
+ * Sections that render as files. The parser keeps leading format-patch email
+ * preambles as their own section for fidelity, but a section that is neither a
+ * git diff header nor a traditional `---/+++`/`@@` hunk is not a file and must
+ * not reach PatchDiff or the file tree. Traditional sections mixed into a git
+ * bundle stay renderable; bundles with no git header at all keep every section.
+ *
+ * @param files - Sections from `parseGitPatchBundle`.
+ * @returns The subset that carries diff content, or all sections when none do.
+ */
+export function getRenderablePatchFiles(files: readonly ParsedPatchFile[]): ParsedPatchFile[] {
+  // A traditional section needs all three markers; a bare line-start @@ in an
+  // email preamble (a quoted hunk snippet) is not a file.
+  const isDiffSection = (file: ParsedPatchFile) =>
+    file.patch.startsWith(GIT_SECTION_PREFIX) ||
+    (SECTION_HUNK_RE.test(file.patch) &&
+      SECTION_OLD_FILE_RE.test(file.patch) &&
+      SECTION_NEW_FILE_RE.test(file.patch));
+  const hasGitSection = files.some((file) => file.patch.startsWith(GIT_SECTION_PREFIX));
+  return hasGitSection ? files.filter(isDiffSection) : [...files];
+}
+
+/**
+ * Unique display labels for parsed sections. Repeated `displayPath` values
+ * (concatenated changes to the same path) gain a ` (n)` suffix so every
+ * section stays reachable through tree navigation, which keys rows by path.
+ *
+ * @param files - Sections from `parseGitPatchBundle`.
+ * @returns A map from section `id` to its unique label.
+ */
+export function getPatchFileLabels(files: readonly ParsedPatchFile[]): Map<string, string> {
+  const labels = new Map<string, string>();
+  const used = new Set<string>();
+  for (const file of files) {
+    const base = file.displayPath;
+    let label = base;
+    let suffix = 2;
+    while (used.has(label)) {
+      label = `${base} (${suffix})`;
+      suffix += 1;
+    }
+    used.add(label);
+    labels.set(file.id, label);
+  }
+  return labels;
+}

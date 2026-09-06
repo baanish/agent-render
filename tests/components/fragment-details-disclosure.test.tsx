@@ -6,22 +6,24 @@ import { FragmentDetailsDisclosure } from "@/components/viewer/fragment-details-
 import { MAX_FRAGMENT_LENGTH } from "@/lib/payload/schema";
 
 describe("FragmentDetailsDisclosure", () => {
-  it("reveals metadata when expanded", async () => {
+  it("opens fragment metadata by default and keeps the disclosure toggle", async () => {
     render(
       <FragmentDetailsDisclosure
         codec="lz"
         fragmentLength="120"
         hashPreview="#agent-render=v1.lz.abc"
         maxLength={String(MAX_FRAGMENT_LENGTH)}
-        statusLabel="Decoded"
-        statusMessage="Fragment decoded successfully."
       />,
     );
 
-    const summary = screen.getByText(/Codec, budget, and hash preview/i);
-    await userEvent.click(summary);
+    const disclosure = screen.getByTestId("fragment-disclosure");
+    const summary = screen.getByText("Fragment details");
 
-    expect(screen.getByText("Decoded")).toBeVisible();
+    expect(disclosure).toHaveAttribute("open");
+    await userEvent.click(summary);
+    expect(disclosure).not.toHaveAttribute("open");
+    await userEvent.click(summary);
+    expect(disclosure).toHaveAttribute("open");
     expect(screen.getByText("lz")).toBeVisible();
     expect(screen.getByText(/#agent-render=v1.lz.abc/i)).toBeVisible();
   });

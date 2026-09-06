@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectCodeLanguage, loadLanguageSupport } from "@/lib/code/language";
+import { detectCodeLanguage, toPierreLanguage } from "@/lib/code/language";
 
 describe("code language detection", () => {
   it("prefers explicit language hints", () => {
@@ -12,14 +12,17 @@ describe("code language detection", () => {
     expect(detectCodeLanguage("README.md")).toBe("markdown");
   });
 
-  it("returns null support for unknown languages", async () => {
-    await expect(loadLanguageSupport("unknown-language")).resolves.toBeNull();
+  it("passes through languages and aliases Shiki resolves", () => {
+    expect(toPierreLanguage("tsx")).toBe("tsx");
+    expect(toPierreLanguage("py")).toBe("py");
+    expect(toPierreLanguage("shell")).toBe("shell");
+    expect(toPierreLanguage("text")).toBe("text");
   });
 
-  it("shares cached support across language aliases", async () => {
-    const pySupport = await loadLanguageSupport("py");
-    const pythonSupport = await loadLanguageSupport("python");
-
-    expect(pySupport).toBe(pythonSupport);
+  it("falls back to text for languages Pierre cannot resolve", () => {
+    // `resolveLanguage` throws on unknown ids; `plain` is a codec name that can
+    // reach `language` through metadata, not a Shiki grammar.
+    expect(toPierreLanguage("plain")).toBe("text");
+    expect(toPierreLanguage("not-a-real-grammar")).toBe("text");
   });
 });

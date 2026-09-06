@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
+import { CODE_LANGUAGE_CHOICES } from "@/lib/code/language";
 import { numberFormatter } from "@/lib/format";
+import { getPatchFileLabels, getRenderablePatchFiles, parseGitPatchBundle, type ParsedPatchFile } from "@/lib/diff/git-patch";
+import type { CodeViewHandle, Editor } from "@/lib/diff/pierre-edit";
+import type { ArtifactBodyDocument } from "@/components/viewer/artifact-body-editor";
 import {
   applyArtifactEditDraft,
   createArtifactEditDraft,
@@ -22,11 +27,95 @@ import {
 import { withBasePath } from "@/lib/site/base-path";
 import { cn } from "@/lib/utils";
 
+// The Trees runtime stays behind its own chunk; the rail only renders when there is more than
+// one thing to navigate, so single-artifact edits never pay for it.
+const FileTreeNav = dynamic(
+  () => import("@/components/file-tree-nav").then((module) => module.FileTreeNav),
+  { ssr: false },
+);
+
+// The Pierre edit surface (CodeView + EditProvider + Editor) is heavy and only needed while
+// editing, so it loads behind its own dynamic boundary inside the already-deferred editor chunk.
+const ArtifactBodyEditor = dynamic(
+  () =>
+    import("@/components/viewer/artifact-body-editor").then(
+      (module) => module.ArtifactBodyEditor,
+    ),
+  { ssr: false },
+);
+
 type ArtifactEditorProps = {
   artifact: ArtifactPayload;
   envelope: PayloadEnvelope;
   onPreviewHash: (hash: string) => void;
 };
+
+const EMPTY_PATCH_FILES: ParsedPatchFile[] = [];
+
+
+// Maps each parsed file to its byte offset inside the raw patch text so tree
+// selection can move the textarea caret. Sections are ordered, so each file's
+// offset is found by locating its own `diff --git a/… b/…` first line from the
+// cursor forward — stray `diff --git`-prefixed text mid-edit (a bare or
+// partially typed header that the parser treats as preamble) cannot consume a
+// slot and shift every later file.
+function getPatchFileOffsets(content: string, files: ParsedPatchFile[]): Map<string, number> {
+  const offsets = new Map<string, number>();
+  let cursor = 0;
+  for (const file of files) {
+    if (!file.patch.startsWith("diff --git ")) {
+      offsets.set(file.id, 0);
+      continue;
+    }
+    const newlineIndex = file.patch.indexOf("\n");
+    const firstLine = newlineIndex === -1 ? file.patch : file.patch.slice(0, newlineIndex);
+    // Anchor the search to a line start: a patch that adds a patch file can
+    // carry the same "diff --git a/… b/…" text inside a `+` line mid-section.
+    let at = content.indexOf(firstLine, cursor);
+    while (at > 0 && content.charCodeAt(at - 1) !== 10) {
+      at = content.indexOf(firstLine, at + 1);
+    }
+    offsets.set(file.id, at === -1 ? 0 : at);
+    if (at !== -1) {
+      cursor = at + firstLine.length;
+    }
+  }
+
+  return offsets;
+}
+
+// Snapshots a draft into the documents the Pierre edit surface mounts. Pair diffs become two
+// documents with the conventional `a/`/`b/` prefixes so file headers read like a git patch and
+// the extension still drives language inference.
+function buildBodyDocuments(draft: ArtifactEditDraft): ArtifactBodyDocument[] {
+  const name = draft.filename.trim() || "content";
+  if (draft.kind === "diff" && draft.diffSource === "pair") {
+    return [
+      { id: "old", name: `a/${name}`, contents: draft.oldContent ?? "" },
+      { id: "new", name: `b/${name}`, contents: draft.newContent ?? "" },
+    ];
+  }
+  return [{ id: "content", name, contents: draft.content }];
+}
+
+// Pierre renders the editable element inside nested shadow roots; walk them to find it.
+function findContentEditable(root: ParentNode | null): HTMLElement | null {
+  if (root == null) {
+    return null;
+  }
+
+  let match: HTMLElement | null = null;
+  for (const child of Array.from(root.children)) {
+    if (child.getAttribute("contenteditable") === "true") {
+      match = child as HTMLElement;
+    }
+    match ??= findContentEditable(child);
+    if (child instanceof Element && child.shadowRoot) {
+      match ??= findContentEditable(child.shadowRoot);
+    }
+  }
+  return match;
+}
 
 const fieldHints: Record<ArtifactKind, string> = {
   markdown: "Edit the markdown, then generate a new shareable link.",
@@ -60,22 +149,39 @@ function getBodyFieldLabel(kind: ArtifactKind) {
   return kind === "diff" ? "Patch" : "Content";
 }
 
+function getArtifactTreeLabel(artifact: ArtifactPayload) {
+  return artifact.filename?.trim() || artifact.title?.trim() || artifact.id;
+}
+
 /**
  * In-viewer editor for the currently open artifact.
  *
  * Starts from the decoded artifact, lets the user correct title/body fields, and generates a new
  * fragment link without writing anything back to a server. Preview replaces the current hash so the
- * edited artifact renders immediately.
+ * edited artifact renders immediately. The body edits on a Pierre `CodeView`/`EditProvider` surface
+ * (`artifact-body-editor.tsx`); when the envelope has more than one navigable entry a tree rail lets
+ * the edit target switch in place without losing per-artifact drafts.
  */
 export function ArtifactEditor({
   artifact,
   envelope,
   onPreviewHash,
 }: ArtifactEditorProps) {
-  const [{ draft, version: draftVersion }, setDraftState] = useState(() => ({
-    draft: createArtifactEditDraft(artifact),
+  const [editingArtifactId, setEditingArtifactId] = useState(artifact.id);
+  const [draftState, setDraftState] = useState(() => ({
+    drafts: new Map<string, ArtifactEditDraft>(),
     version: 0,
   }));
+  const editingArtifact =
+    envelope.artifacts.find((entry) => entry.id === editingArtifactId) ?? artifact;
+  const draft =
+    draftState.drafts.get(editingArtifactId) ?? createArtifactEditDraft(editingArtifact);
+  const draftVersion = draftState.version;
+  // The Pierre edit surface owns the document after mount and reports every change through
+  // onDocumentChange, so documents only re-snapshot when the edit target switches.
+  const [bodyDocuments, setBodyDocuments] = useState<readonly ArtifactBodyDocument[]>(() =>
+    buildBodyDocuments(draft),
+  );
   const [generatedLink, setGeneratedLink] =
     useState<GeneratedArtifactLink | null>(null);
   const [generatedVersion, setGeneratedVersion] = useState(-1);
@@ -95,6 +201,131 @@ export function ArtifactEditor({
     Boolean(generatedLink) && draftVersion !== generatedVersion;
   const usesPairDiff = draft.kind === "diff" && draft.diffSource === "pair";
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
+  const bodyEditorRef = useRef<CodeViewHandle<undefined> | null>(null);
+  const bodyEditorFrameRef = useRef<HTMLDivElement | null>(null);
+  const patchFiles = useMemo(() => {
+    if (draft.kind !== "diff" || draft.diffSource !== "patch") {
+      return EMPTY_PATCH_FILES;
+    }
+
+    try {
+      return getRenderablePatchFiles(parseGitPatchBundle(draft.content));
+    } catch {
+      // The patch mid-edit may be malformed; the tree hides until it parses again.
+      return EMPTY_PATCH_FILES;
+    }
+  }, [draft.kind, draft.diffSource, draft.content]);
+  const patchFileLabels = useMemo(() => getPatchFileLabels(patchFiles), [patchFiles]);
+  const patchFilePaths = useMemo(
+    () => patchFiles.map((file) => patchFileLabels.get(file.id) ?? file.displayPath),
+    [patchFiles, patchFileLabels],
+  );
+  const patchFileByPath = useMemo(
+    () => new Map(patchFiles.map((file) => [patchFileLabels.get(file.id) ?? file.displayPath, file])),
+    [patchFiles, patchFileLabels],
+  );
+  const patchFileOffsets = useMemo(
+    () => getPatchFileOffsets(draft.content, patchFiles),
+    [draft.content, patchFiles],
+  );
+
+  // The picker keeps an opened artifact's out-of-list language selectable instead of
+  // silently clearing it, since payloads can carry any language hint.
+  const languageChoices = useMemo(() => {
+    if (!draft.language || CODE_LANGUAGE_CHOICES.some((choice) => choice.value === draft.language)) {
+      return CODE_LANGUAGE_CHOICES;
+    }
+    return [...CODE_LANGUAGE_CHOICES, { value: draft.language, label: draft.language }];
+  }, [draft.language]);
+
+  const artifactLabels = useMemo(() => {
+    const labels = new Map<string, string>();
+    // Patch file paths share the tree namespace with artifact labels; reserve them so a
+    // filename-shaped artifact label can never shadow a patch row under handleTreeSelect.
+    const used = new Set(patchFiles.length > 1 ? patchFilePaths : []);
+    for (const entry of envelope.artifacts) {
+      const base = getArtifactTreeLabel(entry);
+      let label = base;
+      let suffix = 2;
+      while (used.has(label)) {
+        label = `${base} (${suffix})`;
+        suffix += 1;
+      }
+      used.add(label);
+      labels.set(entry.id, label);
+    }
+    return labels;
+  }, [envelope.artifacts, patchFiles.length, patchFilePaths]);
+  const artifactIdByLabel = useMemo(
+    () => new Map(Array.from(artifactLabels, ([id, label]) => [label, id])),
+    [artifactLabels],
+  );
+  // The rail lists every artifact in the envelope; a multi-file patch being edited also lists its
+  // files so tree selection can move the patch caret without leaving the editor. A single row
+  // (one artifact, nothing nested) is just noise, so the rail hides then.
+  const treePaths = useMemo(
+    () => [...artifactLabels.values(), ...(patchFiles.length > 1 ? patchFilePaths : [])],
+    [artifactLabels, patchFiles.length, patchFilePaths],
+  );
+  const showTreeRail = treePaths.length > 1;
+  const selectedTreePath = artifactLabels.get(editingArtifactId);
+
+  const handlePatchFileSelect = (path: string) => {
+    const file = patchFileByPath.get(path);
+    const codeView = bodyEditorRef.current;
+    if (!file || !codeView) {
+      return;
+    }
+
+    const offset = patchFileOffsets.get(file.id) ?? 0;
+    const lineNumber = draft.content.slice(0, offset).split("\n").length;
+
+    codeView.scrollTo({ type: "line", id: "content", lineNumber, align: "center" });
+    // The editor object is our own `Editor` instance; the public DiffsEditor interface hides
+    // the selection APIs. `Editor.focus` does not reliably reach the contenteditable inside
+    // Pierre's shadow DOM, so focus the editable element directly after placing the caret.
+    const editor = codeView.getEditor("content") as Editor<undefined> | undefined;
+    const position = { line: lineNumber - 1, character: 0 };
+    editor?.setSelections([{ start: position, end: position, direction: "none" }]);
+    // The tree's own click handling re-focuses the pressed row after this callback returns,
+    // so the editable focus has to wait for the click dispatch to finish.
+    window.setTimeout(() => {
+      findContentEditable(bodyEditorFrameRef.current)?.focus({ preventScroll: true });
+    }, 0);
+  };
+
+  const handleTreeSelect = (path: string) => {
+    // Patch rows only exist in the rail when the patch has more than one file; the
+    // lookup is gated the same way so a hidden single-file row cannot shadow an
+    // artifact label that shares its path.
+    if (patchFiles.length > 1 && patchFileByPath.has(path)) {
+      handlePatchFileSelect(path);
+      return;
+    }
+
+    const targetId = artifactIdByLabel.get(path);
+    if (!targetId || targetId === editingArtifactId) {
+      return;
+    }
+
+    const target = envelope.artifacts.find((entry) => entry.id === targetId);
+    if (!target) {
+      return;
+    }
+
+    setEditingArtifactId(targetId);
+    // A link generated for the previous artifact does not describe this one; drop it
+    // so Copy/Preview cannot hand out the wrong link while the other draft is open.
+    setGeneratedLink(null);
+    setGeneratedVersion(-1);
+    setBodyDocuments(
+      buildBodyDocuments(draftState.drafts.get(targetId) ?? createArtifactEditDraft(target)),
+    );
+  };
+
+  const handleBodyDocumentChange = (id: string, contents: string) => {
+    updateDraft(id === "old" ? "oldContent" : id === "new" ? "newContent" : "content", contents);
+  };
 
   useEffect(() => {
     copyTokenRef.current += 1;
@@ -104,22 +335,39 @@ export function ArtifactEditor({
     setError(null);
   }, [draftVersion]);
 
+  // Renaming a file mid-edit re-labels the mounted document too: the file header and
+  // language inference read the item's name, while contents and cacheKey stay untouched.
+  useEffect(() => {
+    const codeView = bodyEditorRef.current;
+    if (!codeView) {
+      return;
+    }
+    const name = draft.filename.trim() || "content";
+    const targets = usesPairDiff
+      ? ([["old", `a/${name}`], ["new", `b/${name}`]] as const)
+      : ([["content", name]] as const);
+    for (const [id, fileName] of targets) {
+      const item = codeView.getItem(id);
+      if (item?.type === "file" && item.file.name !== fileName) {
+        codeView.updateItem({ ...item, file: { ...item.file, name: fileName } });
+      }
+    }
+  }, [draft.filename, usesPairDiff]);
+
   const updateDraft = <K extends keyof ArtifactEditDraft>(
     field: K,
     value: ArtifactEditDraft[K],
   ) => {
     setDraftState((current) => {
-      if (Object.is(current.draft[field], value)) {
+      const base =
+        current.drafts.get(editingArtifactId) ?? createArtifactEditDraft(editingArtifact);
+      if (Object.is(base[field], value)) {
         return current;
       }
 
-      return {
-        draft: {
-          ...current.draft,
-          [field]: value,
-        },
-        version: current.version + 1,
-      };
+      const drafts = new Map(current.drafts);
+      drafts.set(editingArtifactId, { ...base, [field]: value });
+      return { drafts, version: current.version + 1 };
     });
   };
 
@@ -129,8 +377,26 @@ export function ArtifactEditor({
     setIsGenerating(true);
 
     try {
+      // Apply every edited artifact, then the active one last so the generated
+      // link opens on the artifact currently on screen.
+      let nextEnvelope = envelope;
+      for (const [artifactId, editedDraft] of draftState.drafts) {
+        if (artifactId !== editingArtifactId) {
+          try {
+            nextEnvelope = applyArtifactEditDraft(nextEnvelope, editedDraft);
+          } catch (applyError) {
+            const source = envelope.artifacts.find((entry) => entry.id === artifactId);
+            const label = source ? getArtifactTreeLabel(source) : artifactId;
+            throw new Error(
+              `${label}: ${applyError instanceof Error ? applyError.message : String(applyError)}`,
+            );
+          }
+        }
+      }
+      nextEnvelope = applyArtifactEditDraft(nextEnvelope, draft);
+
       const nextGeneratedLink = await createGeneratedEnvelopeLinkAsync(
-        applyArtifactEditDraft(envelope, draft),
+        nextEnvelope,
         getShareBaseUrl(),
         draft.codec,
       );
@@ -235,18 +501,30 @@ export function ArtifactEditor({
 
   return (
     <div className="artifact-editor" data-testid="artifact-editor">
-      <p className="text-sm leading-7 text-[color:var(--text-muted)]">
-        Editing creates a new shareable link. The current URL stays put until
-        you preview or copy the new one.
-      </p>
-
-      <form
-        className="creator-form-grid"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleGenerate();
-        }}
+      <div
+        className={cn("artifact-editor-frame", !showTreeRail && "is-single")}
+        data-testid="artifact-editor-frame"
       >
+        {showTreeRail ? (
+          <FileTreeNav
+            // useFileTree applies initialSelectedPaths only on mount; remount when the
+            // edit target or path set changes so the new row lands selected. Clicks
+            // self-select inside the tree, so the selection is not keyed (keying it
+            // would discard the rail's search/scroll state on every click).
+            key={`${treePaths.join("::")}::${editingArtifactId}`}
+            paths={treePaths}
+            selectedPath={selectedTreePath}
+            ariaLabel="Editable files"
+            onSelectPath={handleTreeSelect}
+          />
+        ) : null}
+        <form
+          className="creator-form-grid"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleGenerate();
+          }}
+        >
         <label className="creator-field">
           <span className="metric-label">Title</span>
           <input
@@ -270,13 +548,18 @@ export function ArtifactEditor({
         {draft.kind === "code" ? (
           <label className="creator-field">
             <span className="metric-label">Language</span>
-            <input
+            <select
               name="language"
               value={draft.language}
               onChange={(event) => updateDraft("language", event.target.value)}
-              placeholder="tsx"
               className="creator-input"
-            />
+            >
+              {languageChoices.map((choice) => (
+                <option key={choice.value || "auto"} value={choice.value}>
+                  {choice.label}
+                </option>
+              ))}
+            </select>
           </label>
         ) : null}
 
@@ -300,63 +583,35 @@ export function ArtifactEditor({
           </label>
         ) : null}
 
-        {usesPairDiff ? (
-          <>
-            <label className="creator-field creator-field-full">
-              <span className="creator-field-head">
-                <span className="metric-label">Old content</span>
-              </span>
-              <textarea
-                name="oldContent"
-                value={draft.oldContent ?? ""}
-                onChange={(event) =>
-                  updateDraft("oldContent", event.target.value)
-                }
-                className="creator-textarea"
-                rows={8}
-                data-testid="artifact-editor-old-content"
-              />
-            </label>
-            <label className="creator-field creator-field-full">
-              <span className="creator-field-head">
-                <span className="metric-label">New content</span>
-              </span>
-              <textarea
-                name="newContent"
-                value={draft.newContent ?? ""}
-                onChange={(event) =>
-                  updateDraft("newContent", event.target.value)
-                }
-                className="creator-textarea"
-                rows={8}
-                data-testid="artifact-editor-new-content"
-              />
-            </label>
-          </>
-        ) : (
-          <label className="creator-field creator-field-full">
-            <span className="creator-field-head">
-              <span className="metric-label">{contentFieldLabel}</span>
-              <span className="creator-field-hint">
-                {fieldHints[draft.kind]}
-              </span>
+        <div className="creator-field creator-field-full">
+          <span className="creator-field-head">
+            <span className="metric-label">
+              {usesPairDiff ? "Old and new content" : contentFieldLabel}
             </span>
-            <textarea
-              name="content"
-              value={draft.content}
-              onChange={(event) => updateDraft("content", event.target.value)}
-              className="creator-textarea"
-              rows={14}
-              autoFocus
-              data-testid="artifact-editor-content"
+            <span className="creator-field-hint">
+              {usesPairDiff
+                ? "Edit the old and new content, then generate a new shareable link."
+                : fieldHints[draft.kind]}
+            </span>
+          </span>
+          <div
+            ref={bodyEditorFrameRef}
+            className="artifact-body-editor-frame"
+            data-testid="artifact-editor-body"
+          >
+            <ArtifactBodyEditor
+              key={editingArtifactId}
+              documents={bodyDocuments}
+              onDocumentChange={handleBodyDocumentChange}
+              codeViewRef={bodyEditorRef}
             />
-          </label>
-        )}
+          </div>
+        </div>
 
         <div className="creator-form-footer creator-field-full">
           <button
             type="submit"
-            className="artifact-action is-primary"
+            className="artifact-action is-commit"
             disabled={isGenerating}
           >
             <Link2 className="h-3.5 w-3.5" />
@@ -373,8 +628,8 @@ export function ArtifactEditor({
                 key={option}
                 type="button"
                 className={cn(
-                  "artifact-action",
-                  (draft.codec ?? "auto") === option && "is-primary",
+                  "artifact-action codec-key",
+                  (draft.codec ?? "auto") === option && "is-depressed",
                   isDeprecatedEmitCodec(option) && "is-deprecated",
                 )}
                 aria-pressed={(draft.codec ?? "auto") === option}
@@ -390,23 +645,22 @@ export function ArtifactEditor({
             ))}
           </div>
         </div>
-      </form>
+        </form>
+      </div>
 
       {generatedLink ? (
         <aside
           ref={resultRef}
-          className="creator-result-card"
+          className="creator-result-shell carbon-output"
           data-testid="artifact-editor-result"
         >
-          <div className="creator-result-head">
+          <header className="creator-result-head">
             <div>
-              <p className="section-kicker">New link</p>
-              <h4 className="mt-2 text-xl font-semibold tracking-[-0.03em]">
-                Ready to share
-              </h4>
+              <h3>Generated link</h3>
+              <p>{generatedLink.artifact.filename?.trim() || generatedLink.artifact.title || ""}</p>
             </div>
-            <span className="mono-pill">{generatedLink.artifact.kind}</span>
-          </div>
+            <span className="carbon-stamp">TRANSFER OK</span>
+          </header>
 
           <div className="creator-link-frame">
             <p className="metric-label">URL</p>
@@ -430,18 +684,16 @@ export function ArtifactEditor({
             />
           </div>
 
-          <div className="creator-result-metrics">
-            <div className="metric-card">
-              <p className="metric-label">Codec</p>
-              <p className="metric-value">{generatedLink.codec}</p>
+          <dl className="creator-result-metrics">
+            <div>
+              <dt>Codec</dt>
+              <dd>{generatedLink.codec}</dd>
             </div>
-            <div className="metric-card">
-              <p className="metric-label">Fragment size</p>
-              <p className="metric-value">
-                {numberFormatter.format(generatedLink.fragmentLength)} chars
-              </p>
+            <div>
+              <dt>Fragment</dt>
+              <dd>{numberFormatter.format(generatedLink.fragmentLength)} chars</dd>
             </div>
-          </div>
+          </dl>
 
           {generatedLink.discordMarkdownLinkWarning ? (
             <div className="creator-warning-state" role="status">
@@ -454,7 +706,7 @@ export function ArtifactEditor({
               type="button"
               className={cn(
                 "artifact-action",
-                copyState === "copied" && "is-primary",
+                copyState === "copied" && "is-confirmed",
               )}
               disabled={isGeneratedLinkStale}
               onClick={() => {
@@ -476,7 +728,7 @@ export function ArtifactEditor({
               type="button"
               className={cn(
                 "artifact-action",
-                markdownLinkCopyState === "copied" && "is-primary",
+                markdownLinkCopyState === "copied" && "is-confirmed",
               )}
               disabled={isGeneratedLinkStale}
               onClick={() => {
@@ -496,7 +748,7 @@ export function ArtifactEditor({
             </button>
             <button
               type="button"
-              className="artifact-action is-primary"
+              className="artifact-action"
               disabled={isGeneratedLinkStale}
               onClick={handlePreview}
             >

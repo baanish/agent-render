@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Braces, ChevronRight, ListTree } from "lucide-react";
 import type { JsonArtifact } from "@/lib/payload/schema";
@@ -16,6 +17,14 @@ type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string
 // (200k char) payload can nest thousands deep in only a few KB, which crashes the reconciler with
 // a RangeError; 200 is far beyond any human-readable JSON. Change only by maintainer decision.
 const MAX_JSON_TREE_DEPTH = 200;
+
+const RawCodeRenderer = dynamic(
+  () =>
+    import("@/components/renderers/code-renderer").then(
+      (module) => module.CodeRenderer,
+    ),
+  { ssr: false },
+);
 
 function JsonNode({ label, value, level = 0 }: { label?: string; value: JsonValue; level?: number }) {
   if (value === null || typeof value !== "object") {
@@ -76,11 +85,22 @@ function JsonNode({ label, value, level = 0 }: { label?: string; value: JsonValu
   );
 }
 
-function JsonRawSource({ content }: { content: string }) {
+function JsonRawSource({ artifact, onReady }: { artifact: JsonArtifact; onReady?: () => void }) {
   return (
-    <pre className="json-raw-source" data-testid="renderer-json-raw">
-      <code>{content}</code>
-    </pre>
+    <div className="json-raw-source" data-testid="renderer-json-raw">
+      <RawCodeRenderer
+        compact
+        onReady={onReady}
+        artifact={{
+          id: `${artifact.id}-raw`,
+          kind: "code",
+          title: artifact.title,
+          filename: artifact.filename ?? `${artifact.id}.json`,
+          content: artifact.content,
+          language: "json",
+        }}
+      />
+    </div>
   );
 }
 
@@ -107,9 +127,9 @@ class JsonTreeBoundary extends Component<{ fallback: ReactNode; children: ReactN
 }
 
 /**
- * Shows JSON artifacts with a toggle between structured tree and native raw source views.
+ * Shows JSON artifacts with a toggle between structured tree and syntax-highlighted raw source views.
  * Receives `artifact` and optional `onReady`, including readiness updates across parse and view-mode changes.
- * Falls back to a native raw source block with an error notice when JSON parsing fails.
+ * Falls back to highlighted raw source with an error notice when JSON parsing fails.
  */
 export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
   const onReadyRef = useRef(onReady);
@@ -126,15 +146,20 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
     onReadyRef.current = onReady;
   }, [onReady]);
 
+  // Only the tree view reports ready here; in the raw view (and the invalid-JSON
+  // fallback) readiness belongs to the deferred code surface, which fires its own
+  // onReady once the highlighted document has actually mounted.
   useEffect(() => {
-    onReadyRef.current?.();
+    if (parsed.ok && view === "tree") {
+      onReadyRef.current?.();
+    }
   }, [artifact.id, parsed.ok, view]);
 
   if (!parsed.ok) {
     return (
       <div className="json-renderer-shell" data-testid="renderer-json" data-renderer-ready="true">
         <div className="artifact-empty-state">{parsed.message}</div>
-        <JsonRawSource content={artifact.content} />
+        <JsonRawSource artifact={artifact} onReady={onReady} />
       </div>
     );
   }
@@ -143,25 +168,24 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
     <div className="json-renderer-shell" data-testid="renderer-json" data-renderer-ready="true">
       <div className="json-renderer-toolbar">
         <div className="diff-view-toggle">
-          <button type="button" className={`artifact-action ${view === "tree" ? "is-primary" : ""}`} onClick={() => setView("tree")}>
+          <button type="button" className={`artifact-action ${view === "tree" ? "is-depressed" : ""}`} onClick={() => setView("tree")}>
             <ListTree className="h-3.5 w-3.5" />
             Tree
           </button>
-          <button type="button" className={`artifact-action ${view === "raw" ? "is-primary" : ""}`} onClick={() => setView("raw")}>
+          <button type="button" className={`artifact-action ${view === "raw" ? "is-depressed" : ""}`} onClick={() => setView("raw")}>
             <Braces className="h-3.5 w-3.5" />
             Raw
           </button>
         </div>
-        <span className="mono-pill">read-only</span>
       </div>
       {view === "tree" ? (
-        <JsonTreeBoundary key={artifact.id} fallback={<JsonRawSource content={artifact.content} />}>
+        <JsonTreeBoundary key={artifact.id} fallback={<JsonRawSource artifact={artifact} onReady={onReady} />}>
           <div className="json-tree-shell">
             <JsonNode value={parsed.json} />
           </div>
         </JsonTreeBoundary>
       ) : (
-        <JsonRawSource content={artifact.content} />
+        <JsonRawSource artifact={artifact} onReady={onReady} />
       )}
     </div>
   );

@@ -4,6 +4,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { JsonRenderer } from "@/components/renderers/json-renderer";
 import type { JsonArtifact } from "@/lib/payload/schema";
 
+// The raw view mounts the Pierre-backed CodeRenderer; stub the Pierre surface so the test
+// asserts wiring (content + lang) rather than shadow-DOM rendering under jsdom.
+vi.mock("@/lib/diff/pierre-react", async () => {
+  const React = await vi.importActual<typeof import("react")>("react");
+
+  return {
+    File: ({ file }: { file: { contents: string } }) =>
+      React.createElement("pre", { "data-testid": "mock-pierre-file" }, file.contents),
+  };
+});
+
 function createArtifact(overrides: Partial<JsonArtifact> = {}): JsonArtifact {
   return {
     id: "json-artifact",
@@ -44,13 +55,17 @@ describe("JsonRenderer", () => {
     expect(secondReady).not.toHaveBeenCalled();
   });
 
-  it("switches to a native raw source view without mounting CodeMirror", async () => {
+  it("switches to a syntax-highlighted raw source view", async () => {
     render(<JsonRenderer artifact={createArtifact()} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Raw" }));
 
-    expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent('"name": "agent-render"');
-    expect(document.querySelector(".cm-editor")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent('"name": "agent-render"');
+      expect(
+        screen.getByTestId("renderer-json-raw").querySelector("[data-testid='mock-pierre-file']"),
+      ).toBeInTheDocument();
+    });
   });
 
   it("renders array nodes with numeric child labels", () => {
@@ -63,11 +78,16 @@ describe("JsonRenderer", () => {
     expect(screen.getByText("beta")).toBeVisible();
   });
 
-  it("shows invalid JSON as raw source with the parse error", () => {
+  it("shows invalid JSON as highlighted raw source with the parse error", async () => {
     render(<JsonRenderer artifact={createArtifact({ content: "{ nope" })} />);
 
     expect(screen.getByText(/expected property name/i)).toBeVisible();
-    expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent("{ nope");
+    await waitFor(() => {
+      expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent("{ nope");
+      expect(
+        screen.getByTestId("renderer-json-raw").querySelector("[data-testid='mock-pierre-file']"),
+      ).toBeInTheDocument();
+    });
   });
 
   it("renders deeply nested JSON without overflowing the render stack", () => {

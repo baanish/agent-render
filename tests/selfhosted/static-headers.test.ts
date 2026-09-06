@@ -51,7 +51,7 @@ function createExportFixture(): { root: string; outDir: string } {
     "brotli-compressed-json",
   );
   writeFileSync(
-    path.join(outDir, "vendor", "diff-view-pure.css.br"),
+    path.join(outDir, "vendor", "test-styles.css.br"),
     "brotli-compressed-css",
   );
   return { root, outDir };
@@ -140,7 +140,7 @@ describe("selfhosted precompressed header contract", () => {
 
   it("serves *.css.br with decompressed Content-Type and Brotli headers", async () => {
     const response = await fetch(
-      `http://127.0.0.1:${port}/vendor/diff-view-pure.css.br`,
+      `http://127.0.0.1:${port}/vendor/test-styles.css.br`,
       { method: "HEAD" },
     );
     expect(response.status).toBe(200);

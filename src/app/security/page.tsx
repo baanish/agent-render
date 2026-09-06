@@ -58,27 +58,26 @@ const sections = [
 export default function SecurityPage() {
   return (
     <main className="app-shell min-h-screen">
-      <header className="nav-bar sticky top-0 z-30 flex items-center justify-between px-4 py-3 sm:px-8 sm:py-4 lg:px-12">
-        <a href={homePath} className="nav-text-link">
-          Agent Render
+      <header className="nav-bar shell-header sticky top-0 z-30">
+        <a href={homePath} className="shell-home-link">
+          <span className="shell-wordmark">agent-render</span>
         </a>
       </header>
 
-      <div className="mx-auto grid w-full max-w-4xl gap-10 px-4 py-10 sm:px-8 sm:py-16 lg:px-12">
-        <section className="border-b border-[color:var(--border)] pb-10">
-          <p className="section-kicker">Public security notes</p>
-          <h1 className="font-display mt-4 text-4xl font-bold leading-tight sm:text-6xl">Security</h1>
-          <p className="mt-5 max-w-3xl text-base leading-8 text-[color:var(--text-muted)] sm:text-lg">
+      <div className="support-page">
+        <section className="support-heading">
+          <h1>Security</h1>
+          <p>
             agent-render is a static artifact viewer. Its core host boundary is simple: artifact data lives in the
             URL fragment, so the static host does not receive it as part of the initial page request.
           </p>
         </section>
 
-        <section className="bento-grid">
+        <section className="support-grid">
           {sections.map((section) => (
-            <article key={section.title} className="bento-card px-5 py-6 sm:px-7 sm:py-7">
-              <h2 className="text-lg font-bold leading-7">{section.title}</h2>
-              <ul className="mt-4 grid gap-3 pl-5 text-sm leading-7 text-[color:var(--text-muted)] marker:text-[color:var(--accent)] sm:text-base sm:leading-8">
+            <article key={section.title}>
+              <h2>{section.title}</h2>
+              <ul>
                 {section.body.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -87,10 +86,9 @@ export default function SecurityPage() {
           ))}
         </section>
 
-        <section className="border border-[color:var(--border)] px-5 py-6 sm:px-7 sm:py-7">
-          <p className="section-kicker">Reports</p>
-          <h2 className="mt-3 text-lg font-bold leading-7">Security contact</h2>
-          <p className="mt-4 text-sm leading-7 text-[color:var(--text-muted)] sm:text-base sm:leading-8">
+        <section className="support-contact">
+          <h2>Security contact</h2>
+          <p>
             Report security issues through the GitHub repository. Use a private vulnerability report when available;
             otherwise open a minimal issue asking for a private contact path and do not include exploit details in public.
           </p>
@@ -98,7 +96,7 @@ export default function SecurityPage() {
             href="https://github.com/baanish/agent-render/security/advisories/new"
             rel="noreferrer"
             target="_blank"
-            className="mt-4 inline-flex font-bold text-[color:var(--accent)]"
+            className="artifact-action"
           >
             Open a private GitHub security advisory
           </a>

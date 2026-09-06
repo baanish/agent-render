@@ -150,7 +150,7 @@ const markdownSchema = {
 /**
  * Displays markdown artifacts in the primary viewer stage using sanitized GFM output.
  * Consumes `artifact` content and optional `onReady`, which fires after embedded fenced code blocks report ready.
- * Reuses the CodeMirror renderer for code fences and keeps raw HTML disabled for safer rendering.
+ * Reuses the Pierre-backed code renderer for code fences and keeps raw HTML disabled for safer rendering.
  */
 export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   const heading = artifact.title ?? artifact.filename ?? artifact.id;
@@ -233,7 +233,6 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
           <div className="markdown-mermaid-frame">
             <div className="markdown-code-head">
               <span className="markdown-code-chip">mermaid</span>
-              <span className="markdown-code-caption">diagram</span>
             </div>
             <MermaidBlock
               code={code}
@@ -249,7 +248,6 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
         <div className="markdown-code-frame">
           <div className="markdown-code-head">
             <span className="markdown-code-chip">{language}</span>
-            <span className="markdown-code-caption">premium fence</span>
           </div>
           <EmbeddedCodeRenderer
             compact
@@ -278,7 +276,6 @@ export function MarkdownRenderer({ artifact, onReady }: MarkdownRendererProps) {
   return (
     <div className="markdown-document" data-testid="renderer-markdown" data-renderer-ready={readyBlockCount >= embeddedBlockCount ? "true" : "false"}>
       <header className="markdown-print-heading">
-        <p className="section-kicker">Markdown artifact</p>
         <h1>{heading}</h1>
         {artifact.filename ? <p>{artifact.filename}</p> : null}
       </header>

@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { Check, Code, Copy, Download, Eye, Link2, Pencil, Printer, X } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { numberFormatter } from "@/lib/format";
@@ -32,17 +31,7 @@ type ArtifactStageProps = {
   onPreviewHash: (hash: string) => void;
   onRendererReady: (readyKey: string) => void;
   rendererReadyKey: string;
-  statusTone: {
-    color: string;
-    label: string;
-    message: string;
-  };
 };
-
-const toolbarAnimationStyle: CSSProperties = { animationDelay: "80ms" };
-const selectorAnimationStyle: CSSProperties = { animationDelay: "100ms" };
-const contentAnimationStyle: CSSProperties = { animationDelay: "140ms" };
-const metadataAnimationStyle: CSSProperties = { animationDelay: "200ms" };
 
 const MarkdownRenderer = dynamic(
   () =>
@@ -104,16 +93,6 @@ function getArtifactBody(artifact: ArtifactPayload): string {
   return artifact.content;
 }
 
-function getArtifactSubtitle(artifact: ArtifactPayload): string {
-  if (artifact.kind === "markdown") return "Markdown";
-  if (artifact.kind === "code") return artifact.language ?? "Code";
-  if (artifact.kind === "diff")
-    return artifact.view ? `${artifact.view} diff` : "Diff";
-  if (artifact.kind === "json") return "JSON";
-  if (artifact.kind === "csv") return "CSV";
-  return (artifact as ArtifactPayload).kind;
-}
-
 function getArtifactHeading(artifact: ArtifactPayload): string {
   return artifact.title ?? artifact.filename ?? artifact.id;
 }
@@ -126,21 +105,21 @@ function getArtifactSupportingLabel(artifact: ArtifactPayload, heading = getArti
 
 function getArtifactDetailRows(artifact: ArtifactPayload, bodyLength: number) {
   const rows = [
-    { label: "Kind", value: artifact.kind },
-    { label: "Artifact", value: artifact.id },
-    { label: "File", value: artifact.filename ?? "Not provided" },
+    { label: "Format", value: artifact.kind },
+    { label: "Ident", value: artifact.id },
+    { label: "File", value: artifact.filename ?? "—" },
     {
-      label: "Size",
+      label: "Body",
       value: `${numberFormatter.format(bodyLength)} chars`,
     },
   ];
 
   if (artifact.kind === "code") {
-    rows.push({ label: "Language", value: artifact.language ?? "Auto later" });
+    rows.push({ label: "Language", value: artifact.language ?? "auto" });
   }
 
   if (artifact.kind === "diff") {
-    rows.push({ label: "View", value: artifact.view ?? "Unified later" });
+    rows.push({ label: "View", value: artifact.view ?? "unified" });
   }
 
   return rows;
@@ -149,7 +128,7 @@ function getArtifactDetailRows(artifact: ArtifactPayload, bodyLength: number) {
 function getPreviewText(content: string): string {
   return (
     content.trim().slice(0, 960) ||
-    "Artifact contents will appear here once a renderer is attached."
+    "Artifact contents will appear here."
   );
 }
 
@@ -164,33 +143,41 @@ function getDownloadFilename(artifact: ArtifactPayload): string {
 
 
 /**
- * Renders the 'Raw' view of markdown/CSV as un-highlighted plain text — by design.
+ * Renders the 'Raw' view of markdown/CSV on the same Pierre `File` surface as code.
  *
- * Deliberate decision: the raw path renders a plain <pre> instead of routing through
- * CodeRenderer (CodeMirror). This keeps the raw view free of the CodeMirror bundle, so
- * toggling to Raw never pulls that heavy chunk into the page. Consequence: raw output is
- * intentionally not syntax-highlighted. Changing this back to a highlighted view would
- * re-introduce the CodeMirror dependency on the raw path and must be an owner decision.
- *
- * React escapes the text child, so rendering untrusted artifact content here is XSS-safe.
+ * Owner decision: raw source viewing uses the highlighted file surface for every
+ * text body rather than a bare <pre>, since the highlighting chunk is already part
+ * of the viewer contract. The artifact is synthesized as a `code` payload so the
+ * existing CodeRenderer handles it, with the language hint pointing at the source
+ * format (`markdown` fences stay legible; `csv` degrades to `text`).
  */
-function RawArtifactSource({
-  content,
+function RawArtifactView({
+  artifact,
+  language,
   onReady,
   testId,
 }: {
-  content: string;
+  artifact: ArtifactPayload;
+  language: string;
   onReady: () => void;
   testId: string;
 }) {
-  useEffect(() => {
-    onReady();
-  }, [onReady]);
+  const rawArtifact = useMemo<CodeArtifact>(
+    () => ({
+      id: artifact.id,
+      kind: "code",
+      title: artifact.title,
+      filename: artifact.filename,
+      content: getArtifactBody(artifact),
+      language,
+    }),
+    [artifact, language],
+  );
 
   return (
-    <pre className="artifact-raw-source" data-testid={testId}>
-      {content}
-    </pre>
+    <div className="artifact-raw-view" data-testid={testId}>
+      <CodeRenderer artifact={rawArtifact} onReady={onReady} />
+    </div>
   );
 }
 
@@ -198,8 +185,7 @@ function RawArtifactSource({
  * Renders the artifact-first viewer branch after the shell has decoded a valid fragment.
  *
  * Keeps toolbar actions, artifact switching, metadata, edit-and-reshare, and heavy renderer
- * wrappers out of the empty-state shell chunk while preserving the same viewer behavior for
- * decoded payloads.
+ * wrappers out of the empty-state shell chunk while preserving decoded artifact behavior.
  */
 export function ArtifactStage({
   activeArtifact,
@@ -210,7 +196,6 @@ export function ArtifactStage({
   onPreviewHash,
   onRendererReady,
   rendererReadyKey,
-  statusTone,
 }: ArtifactStageProps) {
   const [artifactCopyState, setArtifactCopyState] = useState<
     "idle" | "copied" | "failed"
@@ -224,11 +209,7 @@ export function ArtifactStage({
   const activeArtifactRef = useRef<ArtifactPayload | null>(activeArtifact);
   const activeArtifactBody = useMemo(() => getArtifactBody(activeArtifact), [activeArtifact]);
   const activeArtifactHeading = useMemo(() => getArtifactHeading(activeArtifact), [activeArtifact]);
-  const activeArtifactSubtitle = useMemo(() => getArtifactSubtitle(activeArtifact), [activeArtifact]);
-  const activeArtifactSupportingLabel = useMemo(
-    () => getArtifactSupportingLabel(activeArtifact, activeArtifactHeading),
-    [activeArtifact, activeArtifactHeading],
-  );
+  const activeArtifactFilename = activeArtifact.filename?.trim() || null;
   const artifactDetailRows = useMemo(
     () => getArtifactDetailRows(activeArtifact, activeArtifactBody.length),
     [activeArtifact, activeArtifactBody.length],
@@ -428,23 +409,11 @@ export function ArtifactStage({
 
   return (
     <section className="artifact-first-layout" data-editing={isEditing ? "true" : "false"}>
-      <div
-        className="artifact-toolbar-bar fade-up print-hide-on-markdown"
-        style={toolbarAnimationStyle}
-      >
+      <div className="artifact-toolbar-bar print-hide-on-markdown">
         <div className="artifact-toolbar-left">
-          <span
-            className="mono-pill"
-            style={{ borderColor: statusTone.color, color: statusTone.color }}
-          >
-            {statusTone.label}
-          </span>
-          <span className="font-mono text-xs text-[color:var(--text-soft)]">
-            {activeArtifactSupportingLabel}
-          </span>
-          <span className="font-mono text-xs text-[color:var(--text-soft)]">
-            {numberFormatter.format(fragmentLength)} chars
-          </span>
+          {activeArtifactFilename ? (
+            <h2 className="artifact-toolbar-filename">{activeArtifactFilename}</h2>
+          ) : null}
         </div>
         <div className="viewer-toolbar">
           {isEditing ? (
@@ -462,7 +431,7 @@ export function ArtifactStage({
                 type="button"
                 className={cn(
                   "artifact-action",
-                  artifactCopyState === "copied" && "is-primary",
+                  artifactCopyState === "copied" && "is-confirmed",
                 )}
                 onClick={handleArtifactCopy}
               >
@@ -481,7 +450,7 @@ export function ArtifactStage({
                 type="button"
                 className={cn(
                   "artifact-action",
-                  markdownLinkCopyState === "copied" && "is-primary",
+                  markdownLinkCopyState === "copied" && "is-confirmed",
                 )}
                 onClick={handleCopyMarkdownLink}
               >
@@ -512,7 +481,7 @@ export function ArtifactStage({
                     type="button"
                     className={cn(
                       "artifact-action",
-                      viewMode === "rendered" && "is-primary",
+                      viewMode === "rendered" && "is-depressed",
                     )}
                     onClick={() => setViewMode("rendered")}
                   >
@@ -523,7 +492,7 @@ export function ArtifactStage({
                     type="button"
                     className={cn(
                       "artifact-action",
-                      viewMode === "raw" && "is-primary",
+                      viewMode === "raw" && "is-depressed",
                     )}
                     onClick={() => setViewMode("raw")}
                   >
@@ -542,7 +511,7 @@ export function ArtifactStage({
               </button>
               <button
                 type="button"
-                className="artifact-action is-primary"
+                className="artifact-action"
                 onClick={handleArtifactDownload}
               >
                 <Download className="h-3.5 w-3.5" />
@@ -555,19 +524,15 @@ export function ArtifactStage({
 
       {markdownLinkShareInfo?.discordViewerNotice ? (
         <p
-          className="artifact-share-warning fade-up print-hide-on-markdown"
+          className="artifact-share-warning print-hide-on-markdown"
           role="status"
-          style={toolbarAnimationStyle}
         >
           {markdownLinkShareInfo.discordViewerNotice}
         </p>
       ) : null}
 
       {envelope.artifacts.length > 1 ? (
-        <section
-          className="print-hide-on-markdown fade-up"
-          style={selectorAnimationStyle}
-        >
+        <section className="print-hide-on-markdown">
           <ArtifactSelector
             artifacts={envelope.artifacts}
             activeArtifactId={activeArtifact.id}
@@ -579,20 +544,34 @@ export function ArtifactStage({
         </section>
       ) : null}
 
-      <section
-        className="artifact-content-section fade-up"
-        style={contentAnimationStyle}
-      >
-        <div className="print-hide-on-markdown">
-          <p className="section-kicker">
-            {isEditing ? `Edit ${activeArtifactSubtitle}` : activeArtifactSubtitle}
-          </p>
-          <h3 className="font-display mt-3 text-[2.2rem] font-bold leading-[0.96] tracking-[-0.04em] sm:mt-4 sm:text-[3rem] lg:text-[3.5rem] lg:leading-[0.94]">
+      <section className="artifact-limits-panel print-hide-on-markdown">
+        <header className="artifact-limits-heading">
+          <h3>Artifact details</h3>
+        </header>
+        <div
+          className="artifact-metadata-grid"
+          data-testid="artifact-metadata-grid"
+        >
+          {artifactDetailRows.map((row) => (
+            <div
+              key={row.label}
+              className="artifact-limit-cell"
+            >
+              <p className="metric-label">{row.label}</p>
+              <p className="artifact-meta-value">{row.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="artifact-content-section">
+        <div className="artifact-title-row print-hide-on-markdown">
+          <h3 className="artifact-document-title">
             {activeArtifactHeading}
           </h3>
         </div>
 
-        <div className="viewer-frame viewer-frame-primary mt-6 sm:mt-10">
+        <div className="viewer-frame viewer-frame-primary">
           {isEditing ? (
             <ArtifactEditor
               key={activeArtifact.id}
@@ -610,8 +589,9 @@ export function ArtifactStage({
               )}
             >
               {markdownArtifact && viewMode === "raw" ? (
-                <RawArtifactSource
-                  content={markdownArtifact.content}
+                <RawArtifactView
+                  artifact={markdownArtifact}
+                  language="markdown"
                   onReady={markActiveRendererReady}
                   testId="renderer-markdown-raw"
                 />
@@ -625,8 +605,9 @@ export function ArtifactStage({
               ) : diffArtifact ? (
                 <DiffRenderer artifact={diffArtifact} onReady={markActiveRendererReady} />
               ) : csvArtifact && viewMode === "raw" ? (
-                <RawArtifactSource
-                  content={csvArtifact.content}
+                <RawArtifactView
+                  artifact={csvArtifact}
+                  language="csv"
                   onReady={markActiveRendererReady}
                   testId="renderer-csv-raw"
                 />
@@ -642,32 +623,12 @@ export function ArtifactStage({
         </div>
       </section>
 
-      <section
-        className="print-hide-on-markdown fade-up"
-        style={metadataAnimationStyle}
-      >
-        <div
-          className="bento-grid bento-grid-compact"
-          data-testid="artifact-metadata-grid"
-        >
-          {artifactDetailRows.map((row) => (
-            <div
-              key={row.label}
-              className="bento-card px-5 py-5 sm:px-6 sm:py-6"
-            >
-              <p className="metric-label">{row.label}</p>
-              <p className="artifact-meta-value">{row.value}</p>
-            </div>
-          ))}
-        </div>
-
+      <section className="artifact-instrument-stack print-hide-on-markdown">
         <FragmentDetailsDisclosure
           codec={envelope.codec}
           fragmentLength={numberFormatter.format(fragmentLength)}
           hashPreview={getHashPreview(hash)}
           maxLength={numberFormatter.format(MAX_FRAGMENT_LENGTH)}
-          statusLabel={statusTone.label}
-          statusMessage={statusTone.message}
         />
       </section>
     </section>

@@ -29,11 +29,12 @@ export const budgets = [
   },
   {
     // Guards the code renderer, which must load lazily from the artifact stage.
-    // 100 KiB gzipped covers the syntax-highlighting bundle; a regression here
-    // usually means a new language grammar or theme crept in. Trim or further
-    // split before raising.
+    // The renderer now mounts Pierre's `File`, so this entrypoint carries the
+    // shared @pierre/diffs + Shiki core chunks it overlaps with the diff viewer;
+    // the previous CodeMirror stack is gone. 170 KiB reflects that consolidated
+    // highlighting stack. Growth usually means a new grammar or theme crept in.
     importKeyParts: ["components/viewer/artifact-stage", "code-renderer"],
-    maxBytes: 100 * 1024,
+    maxBytes: 170 * 1024,
     name: "code renderer deferred JS",
     type: "loadable",
   },
@@ -47,13 +48,32 @@ export const budgets = [
     type: "loadable",
   },
   {
-    // Guards the rich diff library (@git-diff-view/react), the heaviest deferred
-    // chunk. 340 KiB gzipped is intentionally generous because the library is
-    // large but always lazy-loaded. A jump here means a version bump pulled in
-    // more — confirm the upgrade is wanted before raising.
-    importKeyParts: ["components/renderers/diff-renderer", "@git-diff-view/react"],
-    maxBytes: 340 * 1024,
+    // Guards the deferred @pierre/diffs stack. The review renderer stays outside
+    // the initial shell and loads only for diff artifacts; its count includes the
+    // shared Pierre core also counted under the code renderer's entrypoint.
+    // A jump here means a version bump grew that isolated review surface.
+    importKeyParts: ["components/viewer/artifact-stage", "diff-renderer"],
+    maxBytes: 165 * 1024,
     name: "rich diff library deferred JS",
+    type: "loadable",
+  },
+  {
+    // Guards the @pierre/trees file navigator. It sits behind its own dynamic
+    // boundary inside the diff renderer and the artifact editor, so flows whose
+    // rail would hold a single row (one file, one artifact) never pay for it.
+    // Both importers share one chunk.
+    importKeyParts: ["file-tree-nav"],
+    maxBytes: 80 * 1024,
+    name: "patch file tree deferred JS",
+    type: "loadable",
+  },
+  {
+    // Guards the editable document surface: Pierre's CodeView plus the Editor
+    // runtime from @pierre/diffs/edit. It loads only while the artifact editor
+    // is open and shares its core with the diff viewer's chunk.
+    importKeyParts: ["artifact-editor", "artifact-body-editor"],
+    maxBytes: 240 * 1024,
+    name: "artifact body editor deferred JS",
     type: "loadable",
   },
 ];
@@ -126,9 +146,10 @@ function getLoadableFiles(reactLoadableManifest, keyParts) {
   let hasMatch = false;
 
   for (const key in reactLoadableManifest) {
+    const normalizedKey = key.replaceAll("\\", "/");
     let isMatch = true;
     for (const part of keyParts) {
-      if (!key.includes(part)) {
+      if (!normalizedKey.includes(part)) {
         isMatch = false;
         break;
       }
