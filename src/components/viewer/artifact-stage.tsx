@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Check, Code, Copy, Download, Eye, Link2, Pencil, Printer, X } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { numberFormatter } from "@/lib/format";
@@ -229,8 +229,10 @@ export function ArtifactStage({
     activeArtifact.kind === "json" ? activeArtifact : null;
   const hasRawToggle = Boolean(markdownArtifact || csvArtifact);
 
-  activeArtifactRef.current = activeArtifact;
-  activeArtifactBodyRef.current = activeArtifactBody;
+  useLayoutEffect(() => {
+    activeArtifactRef.current = activeArtifact;
+    activeArtifactBodyRef.current = activeArtifactBody;
+  }, [activeArtifact, activeArtifactBody]);
 
   const markActiveRendererReady = useCallback(() => {
     onRendererReady(rendererReadyKey);
@@ -590,6 +592,7 @@ export function ArtifactStage({
             >
               {markdownArtifact && viewMode === "raw" ? (
                 <RawArtifactView
+                  key={`${rendererReadyKey}:markdown-raw`}
                   artifact={markdownArtifact}
                   language="markdown"
                   onReady={markActiveRendererReady}
@@ -597,24 +600,42 @@ export function ArtifactStage({
                 />
               ) : markdownArtifact ? (
                 <MarkdownRenderer
+                  key={`${rendererReadyKey}:markdown`}
                   artifact={markdownArtifact}
                   onReady={markActiveRendererReady}
                 />
               ) : codeArtifact ? (
-                <CodeRenderer artifact={codeArtifact} onReady={markActiveRendererReady} />
+                <CodeRenderer
+                  key={`${rendererReadyKey}:code`}
+                  artifact={codeArtifact}
+                  onReady={markActiveRendererReady}
+                />
               ) : diffArtifact ? (
-                <DiffRenderer artifact={diffArtifact} onReady={markActiveRendererReady} />
+                <DiffRenderer
+                  key={`${rendererReadyKey}:diff`}
+                  artifact={diffArtifact}
+                  onReady={markActiveRendererReady}
+                />
               ) : csvArtifact && viewMode === "raw" ? (
                 <RawArtifactView
+                  key={`${rendererReadyKey}:csv-raw`}
                   artifact={csvArtifact}
                   language="csv"
                   onReady={markActiveRendererReady}
                   testId="renderer-csv-raw"
                 />
               ) : csvArtifact ? (
-                <CsvRenderer artifact={csvArtifact} onReady={markActiveRendererReady} />
+                <CsvRenderer
+                  key={`${rendererReadyKey}:csv`}
+                  artifact={csvArtifact}
+                  onReady={markActiveRendererReady}
+                />
               ) : jsonArtifact ? (
-                <JsonRenderer artifact={jsonArtifact} onReady={markActiveRendererReady} />
+                <JsonRenderer
+                  key={`${rendererReadyKey}:json`}
+                  artifact={jsonArtifact}
+                  onReady={markActiveRendererReady}
+                />
               ) : (
                 <pre>{getPreviewText(activeArtifactBody)}</pre>
               )}

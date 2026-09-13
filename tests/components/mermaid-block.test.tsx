@@ -1,4 +1,4 @@
-import { act, cleanup, render, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MermaidBlock } from "@/components/renderers/mermaid-block";
 
@@ -25,6 +25,7 @@ describe("MermaidBlock", () => {
     await waitFor(() => {
       expect(mermaidMock.render).toHaveBeenCalledTimes(1);
     });
+    expect(screen.getByRole("img", { name: "Mermaid diagram" })).toBeInTheDocument();
 
     rerender(<MermaidBlock code="graph TD; A-->B" onReady={vi.fn()} />);
     await act(async () => {});

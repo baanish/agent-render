@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ArtifactEditor } from "@/components/viewer/artifact-editor";
@@ -43,6 +43,8 @@ vi.mock("@/components/file-tree-nav", () => ({
 const bodyEditorMock = vi.hoisted(() => ({
   scrollTo: vi.fn(),
   setSelections: vi.fn(),
+  focus: vi.fn(),
+  getItem: vi.fn(),
   updateItem: vi.fn(),
 }));
 
@@ -59,10 +61,11 @@ vi.mock("@/components/viewer/artifact-body-editor", () => ({
     if (codeViewRef) {
       codeViewRef.current = {
         scrollTo: bodyEditorMock.scrollTo,
-        getItem: () => undefined,
+        getItem: bodyEditorMock.getItem,
         updateItem: bodyEditorMock.updateItem,
         getEditor: () => ({
           setSelections: bodyEditorMock.setSelections,
+          focus: bodyEditorMock.focus,
         }),
       };
     }
@@ -132,6 +135,9 @@ afterEach(() => {
   generationMock.createGeneratedEnvelopeLinkAsync.mockReset();
   bodyEditorMock.scrollTo.mockReset();
   bodyEditorMock.setSelections.mockReset();
+  bodyEditorMock.focus.mockReset();
+  bodyEditorMock.getItem.mockReset();
+  bodyEditorMock.updateItem.mockReset();
   vi.restoreAllMocks();
 });
 
@@ -163,6 +169,48 @@ describe("ArtifactEditor", () => {
 
     await user.click(screen.getByRole("button", { name: "Preview here" }));
     expect(onPreviewHash).toHaveBeenCalledWith("#pcorrected");
+  });
+
+  it("updates the mounted Pierre item when the filename changes without restoring stale content", async () => {
+    const user = userEvent.setup();
+    bodyEditorMock.getItem.mockReturnValue({
+      id: "content",
+      type: "file",
+      version: 4,
+      file: {
+        name: "notes.md",
+        contents: "# Hello\n\nOriginal notes.",
+        cacheKey: "content",
+      },
+      edit: true,
+    });
+
+    render(
+      <ArtifactEditor
+        artifact={markdownArtifact}
+        envelope={envelope}
+        onPreviewHash={vi.fn()}
+      />,
+    );
+
+    const content = await screen.findByTestId("artifact-editor-content");
+    await user.clear(content);
+    await user.type(content, "# Current editor text");
+    await user.clear(screen.getByRole("textbox", { name: "Filename" }));
+    await user.type(screen.getByRole("textbox", { name: "Filename" }), "renamed.md");
+
+    await waitFor(() =>
+      expect(bodyEditorMock.updateItem).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          id: "content",
+          version: 5,
+          file: expect.objectContaining({
+            name: "renamed.md",
+            contents: "# Current editor text",
+          }),
+        }),
+      ),
+    );
   });
 
   it("disables reshare actions after the draft changes", async () => {
@@ -339,6 +387,40 @@ index 3333333..4444444 100644
     expect(screen.getByTestId<HTMLTextAreaElement>("artifact-editor-content")).toHaveValue(
       "# Edited notes",
     );
+  });
+
+  it("discards a generation that finishes after the edit target changes", async () => {
+    const user = userEvent.setup();
+    const bundleEnvelope: PayloadEnvelope = {
+      v: 1,
+      codec: "plain",
+      activeArtifactId: "notes",
+      artifacts: [markdownArtifact, diffArtifact],
+    };
+    let resolveGeneration!: (link: GeneratedArtifactLink) => void;
+    generationMock.createGeneratedEnvelopeLinkAsync.mockReturnValue(
+      new Promise((resolve) => {
+        resolveGeneration = resolve;
+      }),
+    );
+
+    render(
+      <ArtifactEditor
+        artifact={markdownArtifact}
+        envelope={bundleEnvelope}
+        onPreviewHash={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Generate new link" }));
+    await waitFor(() => expect(generationMock.createGeneratedEnvelopeLinkAsync).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByRole("button", { name: "release.patch" }));
+    await act(async () => {
+      resolveGeneration(createGeneratedLink("# stale"));
+    });
+
+    expect(screen.queryByTestId("artifact-editor-result")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Generate new link" })).toBeEnabled();
   });
 
   it("keeps the pair editor for old/new content diffs", () => {

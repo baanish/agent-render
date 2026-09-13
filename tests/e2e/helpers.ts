@@ -1,6 +1,11 @@
 import { expect, type Page } from "@playwright/test";
 
 export async function goToHash(page: Page, hash = "") {
+  if (hash) {
+    // WebKit intermittently drops the fragment on same-document page.goto calls.
+    // Leave the current document first so this always exercises a fresh page load.
+    await page.goto("about:blank");
+  }
   await page.goto(`.${hash}`);
 }
 

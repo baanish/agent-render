@@ -62,6 +62,12 @@
   --surface-code-is-code-border: var(--control-edge);
   --surface-code-is-code-bg: var(--control-face);
   --surface-code-is-code-fg: var(--control-text);
+  --json-key: var(--text-muted);
+  --json-structure: var(--text-muted);
+  --json-string: var(--confirmation-edge);
+  --json-number: var(--action-edge);
+  --json-boolean: var(--surface-code-text);
+  --json-null: var(--alert-edge);
   --surface: var(--bone);
   --surface-strong: var(--bone-lift);
   --surface-muted: var(--bone-mid);
@@ -159,6 +165,12 @@
   --surface-code-is-code-border: var(--control-edge);
   --surface-code-is-code-bg: var(--control-face);
   --surface-code-is-code-fg: var(--control-text);
+  --json-key: #b8ae9c;
+  --json-structure: #9d9382;
+  --json-string: #78b495;
+  --json-number: #d48150;
+  --json-boolean: #d0c5af;
+  --json-null: #c77b6d;
   --rb-0: #d38b58;
   --rb-1: #c7a85c;
   --rb-2: #74a886;
@@ -1617,7 +1629,7 @@ button:disabled {
 
 .markdown-inline-code {
   padding: 1px 4px;
-  border: 1px solid #5b5246;
+  border: 1px solid var(--surface-code-chrome-border);
   border-radius: 2px;
   background: var(--surface-code);
   color: var(--surface-code-text);
@@ -2016,7 +2028,7 @@ button:disabled {
 }
 
 .csv-table td {
-  color: #cfc6b4;
+  color: var(--surface-code-text);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -2084,7 +2096,7 @@ button:disabled {
 }
 
 .json-key {
-  color: #b8ae9c;
+  color: var(--json-key);
 }
 
 .json-key::after {
@@ -2093,25 +2105,25 @@ button:disabled {
 }
 
 .json-structure {
-  color: #8f8575;
+  color: var(--json-structure);
   font-size: 11px;
 }
 
 .json-string {
-  color: #78b495;
+  color: var(--json-string);
 }
 
 .json-number {
-  color: #d48150;
+  color: var(--json-number);
 }
 
 .json-boolean {
-  color: #d0c5af;
+  color: var(--json-boolean);
 }
 
 .json-null,
 .json-truncated {
-  color: #c77b6d;
+  color: var(--json-null);
 }
 
 .json-children {

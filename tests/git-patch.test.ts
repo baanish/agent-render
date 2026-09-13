@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseGitPatchBundle } from "@/lib/diff/git-patch";
+import { getRenderablePatchFiles, parseGitPatchBundle } from "@/lib/diff/git-patch";
 
 const multiFilePatch = `diff --git a/src/alpha.ts b/src/alpha.ts
 index 1111111..2222222 100644
@@ -44,6 +44,24 @@ describe("git patch parsing", () => {
     });
   });
 
+  it("parses quoted paths and preserves repository paths that start with a/", () => {
+    const files = parseGitPatchBundle(`diff --git "a/my file.ts" "b/my file.ts"
+--- "a/my file.ts"
++++ "b/my file.ts"
+@@ -1 +1 @@
+-old
++new
+diff --git a/a/nested.ts b/a/nested.ts
+--- a/a/nested.ts
++++ b/a/nested.ts
+@@ -1 +1 @@
+-old
++new
+`);
+
+    expect(files.map((file) => file.displayPath)).toEqual(["my file.ts", "a/nested.ts"]);
+  });
+
   it("rejects malformed hunk headers before rich diff rendering", () => {
     expect(() =>
       parseGitPatchBundle(`diff --git a/src/alpha.ts b/src/alpha.ts
@@ -54,6 +72,21 @@ describe("git patch parsing", () => {
 +export const alpha = 2;
 `),
     ).toThrow(/invalid hunk header/i);
+  });
+
+  it("ignores malformed hunk-like prose in a leading preamble", () => {
+    const files = getRenderablePatchFiles(parseGitPatchBundle(`Subject: review notes
+@@ this is prose @@
+
+diff --git a/src/alpha.ts b/src/alpha.ts
+--- a/src/alpha.ts
++++ b/src/alpha.ts
+@@ -1 +1 @@
+-old
++new
+`));
+
+    expect(files.map((file) => file.displayPath)).toEqual(["src/alpha.ts"]);
   });
 
   it("keeps leading patch preambles as their own section", () => {
@@ -76,6 +109,74 @@ diff --git a/src/alpha.ts b/src/alpha.ts
     expect(files[1]).toMatchObject({
       displayPath: "src/alpha.ts",
     });
+  });
+
+  it("keeps preambles out of renderable files without dropping traditional diffs", () => {
+    const patch = `From 123 Mon Sep 17 00:00:00 2001
+Subject: [PATCH] quoted review
+
+The review mentioned these separately:
+--- a/not-a-header.ts
+some prose
++++ b/not-a-header.ts
+@@ -1 +1 @@
+
+diff --git a/src/alpha.ts b/src/alpha.ts
+--- a/src/alpha.ts
++++ b/src/alpha.ts
+@@ -1 +1 @@
+-old
++new
+`;
+
+    const files = getRenderablePatchFiles(parseGitPatchBundle(patch));
+
+    expect(files.map((file) => file.displayPath)).toEqual(["src/alpha.ts"]);
+  });
+
+  it("separates an email preamble from a following traditional diff", () => {
+    const patch = `Subject: [PATCH] mixed formats
+
+--- a/legacy.txt
++++ b/legacy.txt
+@@ -1 +1 @@
+-old
++new
+diff --git a/src/alpha.ts b/src/alpha.ts
+--- a/src/alpha.ts
++++ b/src/alpha.ts
+@@ -1 +1 @@
+-old
++new
+`;
+
+    const files = getRenderablePatchFiles(parseGitPatchBundle(patch));
+
+    expect(files.map((file) => file.displayPath)).toEqual(["legacy.txt", "src/alpha.ts"]);
+    expect(files[0]?.patch.startsWith("--- a/legacy.txt")).toBe(true);
+  });
+
+  it("keeps a traditional unified diff before a git-style section", () => {
+    const patch = `--- a/legacy.txt
++++ b/legacy.txt
+@@ -1 +1 @@
+-old
++new
+diff --git a/src/alpha.ts b/src/alpha.ts
+--- a/src/alpha.ts
++++ b/src/alpha.ts
+@@ -1 +1 @@
+-old
++new
+`;
+
+    const files = getRenderablePatchFiles(parseGitPatchBundle(patch));
+
+    expect(files.map((file) => file.displayPath)).toEqual(["legacy.txt", "src/alpha.ts"]);
+  });
+
+  it("does not expose plain text as a renderable patch file", () => {
+    expect(getRenderablePatchFiles(parseGitPatchBundle("plain review notes"))).toEqual([]);
   });
 
   it("falls back to a file-N label when a rename target strips to an empty path", () => {

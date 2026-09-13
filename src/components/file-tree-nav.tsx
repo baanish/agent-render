@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { FileTree, useFileTree } from "@pierre/trees/react";
 
 const TREE_ROW_HEIGHT = 24;
@@ -20,13 +20,16 @@ type FileTreeNavProps = {
  *
  * `paths` contains leaf entries only; directory rows are synthesized by the tree and are filtered
  * out of selection events, so `onSelectPath` always receives a real listed path. `useFileTree`
- * builds its model once per mount (later option changes are ignored), so callers must remount via
- * `key` when the path set changes. Load this module through `next/dynamic`: it carries the
+ * builds its path model once per mount, so callers remount via `key` when the path set changes;
+ * `selectedPath` is synchronized in place through the model's public item handles. Load this module
+ * through `next/dynamic`: it carries the
  * @pierre/trees runtime, which should stay out of surfaces that never show a tree.
  */
 export function FileTreeNav({ paths, selectedPath, onSelectPath, ariaLabel = "Files" }: FileTreeNavProps) {
   const onSelectRef = useRef(onSelectPath);
-  onSelectRef.current = onSelectPath;
+  useLayoutEffect(() => {
+    onSelectRef.current = onSelectPath;
+  }, [onSelectPath]);
   const filePathSet = useMemo(() => new Set(paths), [paths]);
   const { model } = useFileTree({
     density: "compact",
@@ -42,6 +45,19 @@ export function FileTreeNav({ paths, selectedPath, onSelectPath, ariaLabel = "Fi
     paths,
     search: paths.length >= TREE_SEARCH_THRESHOLD,
   });
+  useLayoutEffect(() => {
+    const selectedPaths = model.getSelectedPaths();
+    if (selectedPaths.length === 1 && selectedPaths[0] === selectedPath) {
+      return;
+    }
+    for (const path of selectedPaths) {
+      model.getItem(path)?.deselect();
+    }
+    if (selectedPath) {
+      model.getItem(selectedPath)?.select();
+    }
+  }, [model, selectedPath]);
+
   const rowCount = Math.min(
     TREE_MAX_ROWS,
     Math.max(TREE_MIN_ROWS, paths.length + (paths.length >= TREE_SEARCH_THRESHOLD ? 2 : 1)),

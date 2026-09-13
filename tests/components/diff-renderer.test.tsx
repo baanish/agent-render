@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { DiffRenderer } from "@/components/renderers/diff-renderer";
@@ -25,7 +25,13 @@ vi.mock("@pierre/trees/react", () => ({
     paths: readonly string[];
   }) => {
     fileTreeMock.options.push(options);
-    return { model: options };
+    return {
+      model: {
+        ...options,
+        getSelectedPaths: () => options.initialSelectedPaths ?? [],
+        getItem: () => ({ deselect: vi.fn(), select: vi.fn() }),
+      },
+    };
   },
 }));
 
@@ -102,6 +108,7 @@ function createArtifact(overrides: Partial<DiffArtifact> = {}): DiffArtifact {
 }
 
 const originalMatchMedia = window.matchMedia;
+const originalClipboard = navigator.clipboard;
 
 beforeAll(() => {
   Object.defineProperty(window, "matchMedia", {
@@ -131,6 +138,10 @@ afterEach(() => {
   patchDiffMock.mockClear();
   multiFileDiffMock.mockClear();
   fileTreeMock.options.length = 0;
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: originalClipboard,
+  });
   vi.restoreAllMocks();
 });
 
@@ -145,6 +156,30 @@ describe("DiffRenderer", () => {
     expect(screen.queryByTestId("mock-file-tree")).not.toBeInTheDocument();
     expect(screen.getByTestId("mock-patch-diff")).toBeVisible();
     expect(patchDiffMock).toHaveBeenCalledWith(expect.objectContaining({ patch: expect.stringContaining("diff --git") }));
+  });
+
+  it("reports readiness from Pierre's completed post-render callback without a timer", async () => {
+    const onReady = vi.fn();
+    render(<DiffRenderer artifact={createArtifact()} onReady={onReady} />);
+
+    await screen.findByTestId("mock-patch-diff");
+    expect(screen.getByTestId("renderer-diff")).toHaveAttribute("data-renderer-ready", "false");
+
+    const props = patchDiffMock.mock.calls.at(-1)?.[0] as {
+      options?: {
+        onPostRender?: (
+          node: HTMLElement,
+          instance: unknown,
+          phase: "mount" | "update" | "unmount",
+        ) => void;
+      };
+    };
+    act(() => {
+      props.options?.onPostRender?.(document.createElement("div"), {}, "mount");
+    });
+
+    expect(screen.getByTestId("renderer-diff")).toHaveAttribute("data-renderer-ready", "true");
+    expect(onReady).toHaveBeenCalledTimes(1);
   });
 
   it("uses a path-aware tree for multi-file patches", async () => {
@@ -241,13 +276,20 @@ describe("DiffRenderer", () => {
   });
 
   it("skips diff rendering for binary patches and keeps the rich renderer shell", async () => {
-    render(<DiffRenderer artifact={createArtifact({ patch: binaryPatch, filename: "assets/logo.png" })} />);
+    const onReady = vi.fn();
+    render(
+      <DiffRenderer
+        artifact={createArtifact({ patch: binaryPatch, filename: "assets/logo.png" })}
+        onReady={onReady}
+      />,
+    );
 
     const renderer = await screen.findByTestId("renderer-diff");
     expect(renderer).toHaveAttribute("data-diff-state", "rich");
     expect(patchDiffMock).not.toHaveBeenCalled();
     expect(screen.getByText(/binary patch preview is not expanded/i)).toBeVisible();
     expect(screen.queryByText(/could not be rendered as a valid unified diff/i)).not.toBeInTheDocument();
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1));
   });
 
   it("keeps the rich/binary path for a CRLF binary patch instead of the raw fallback", async () => {
@@ -263,10 +305,9 @@ describe("DiffRenderer", () => {
 
   it("copies the raw patch from the fallback view", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, {
-      clipboard: {
-        writeText,
-      },
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
     });
 
     render(<DiffRenderer artifact={createArtifact({ patch: nonDiffPatch })} />);
@@ -284,10 +325,9 @@ describe("DiffRenderer", () => {
       configurable: true,
       value: execCommand,
     });
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: vi.fn().mockRejectedValue(new Error("denied")),
-      },
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
     });
 
     try {

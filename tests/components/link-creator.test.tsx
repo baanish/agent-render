@@ -24,7 +24,7 @@ vi.mock("@/lib/payload/link-creator", () => ({
 }));
 
 function createGeneratedLink(title: string): GeneratedArtifactLink {
-  const url = `https://agent-render.test/#agent-render=v1.plain.${title}`;
+  const url = `https://agent-render.test/#p${title}`;
   const shareInfo = buildMarkdownLinkShareInfo(title, url);
 
   return {
@@ -44,7 +44,7 @@ function createGeneratedLink(title: string): GeneratedArtifactLink {
       artifacts: [],
     },
     fragmentLength: 64,
-    hash: `#agent-render=v1.plain.${title}`,
+    hash: `#p${title}`,
     url,
     markdownUrl: url,
     markdownLink: shareInfo.markdownLink,

@@ -194,7 +194,6 @@ describe("link creator payloads", () => {
     // The paste URL keeps the packed non-ASCII fragment; the markdown URL must carry a
     // percent-escape-free ASCII fragment whose payload decodes identically.
     const markdownFragment = generatedLink.markdownUrl.slice(generatedLink.markdownUrl.indexOf("#") + 1);
-    // eslint-disable-next-line no-control-regex
     expect(markdownFragment).toMatch(/^[\x21-\x7e]+$/);
     expect(markdownFragment).not.toContain("%");
     // The markdown link must beat the percent-encoded serialization of the packed URL,

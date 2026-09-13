@@ -145,10 +145,6 @@ export function ViewerShell() {
   const artifactSelectionRequestRef = useRef(0);
   /** True when the current hash originated from a server-injected payload (self-hosted UUID mode). */
   const injectedPayloadRef = useRef(false);
-  // A deployment fact, not a per-hash one: once a server-injected page is seen the
-  // session is on the self-hosted variant, so the flag latches and the footer never
-  // flips back to the "no database" claim while navigating within that host.
-  const [isServerBacked, setIsServerBacked] = useState(false);
 
   useEffect(() => {
     // Self-hosted UUID mode: the server injects the payload string into the page.
@@ -160,7 +156,6 @@ export function ViewerShell() {
       delete (window as unknown as Record<string, unknown>)
         .__AGENT_RENDER_PAYLOAD__;
       injectedPayloadRef.current = true;
-      setIsServerBacked(true);
       setHash(`#${injected}`);
     }
 
@@ -431,7 +426,7 @@ export function ViewerShell() {
           <div className="footer-chassis">
             <div className="footer-identity">
               <span className="footer-wordmark">agent-render</span>
-              <span className="footer-tagline">zero-retention at the static host boundary</span>
+              <span className="footer-tagline">open source artifact viewer</span>
             </div>
             <nav className="footer-links">
               <a href={securityPath}>Safety / Security page</a>
@@ -442,13 +437,7 @@ export function ViewerShell() {
             </nav>
           </div>
           <div className="footer-spec-strip">
-            {/* The self-hosted UUID variant persists payloads in SQLite; the
-                no-database claim only holds for the static fragment mode. */}
-            <span>
-              {isServerBacked
-                ? "open source · self-hostable"
-                : "open source · self-hostable · no database"}
-            </span>
+            <span>self-hostable · static-export friendly</span>
           </div>
         </footer>
       </div>

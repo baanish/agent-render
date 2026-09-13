@@ -25,9 +25,9 @@ type CodeRendererProps = {
  */
 export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendererProps) {
   const onReadyRef = useRef(onReady);
+  const reportedReadyFileRef = useRef<object | null>(null);
   const wrapPreferenceRef = useRef<WrapPreference>("auto");
   const [wrapLines, setWrapLines] = useState(false);
-  const [isReady, setIsReady] = useState(false);
   const resolvedTheme = useResolvedTheme();
   const language = useMemo(
     () => detectCodeLanguage(artifact.filename, artifact.language),
@@ -43,22 +43,16 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
       name: artifact.filename ?? `${artifact.id}.txt`,
       contents: artifact.content,
       lang: toPierreLanguage(language),
-      // No cacheKey: Pierre treats matching cacheKeys as the same document without
-      // comparing contents, so an in-place artifact swap (edit -> preview) would reuse
-      // a stale line cache and crash with a line-count mismatch.
+      // The worker pool is disabled on this surface, so it does not need a cross-render cache key.
     }),
     [artifact.filename, artifact.id, artifact.content, language],
   );
 
-  // The stage resets its ready flag when the artifact identity changes; File keeps the same
-  // instance and emits "update" rather than "mount" on that path, so the flag must drop and
-  // be re-raised by the next render. Render-time adjustment (not an effect) so it lands
-  // before File's layout-effect re-render emits that "update".
-  const [previousFile, setPreviousFile] = useState(file);
-  if (previousFile !== file) {
-    setPreviousFile(file);
-    setIsReady(false);
-  }
+  // Readiness belongs to the exact file object that Pierre rendered. A stale post-render
+  // callback can only mark its own file ready, so an in-place artifact swap reads false
+  // immediately without a state update during render.
+  const [readyFile, setReadyFile] = useState<typeof file | null>(null);
+  const isReady = readyFile === file;
 
   // Runs before paint so the first mount matches the viewport (call sites use
   // dynamic(..., { ssr: false })). Compact blocks preserve source whitespace and scroll
@@ -112,14 +106,15 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
       onPostRender: (_node, _instance, phase) => {
         // "mount" fires on first hydrate and "update" on every later render, including the
         // in-place artifact swap the stage waits on. "unmount" is the only non-ready phase.
-        if (phase === "unmount") {
+        if (phase === "unmount" || reportedReadyFileRef.current === file) {
           return;
         }
-        setIsReady(true);
+        reportedReadyFileRef.current = file;
+        setReadyFile(file);
         onReadyRef.current?.();
       },
     }),
-    [wrapLines, compact, resolvedTheme],
+    [wrapLines, compact, resolvedTheme, file],
   );
 
   return (

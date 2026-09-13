@@ -46,6 +46,7 @@ export function ArtifactBodyEditor({
         id: doc.id,
         type: "file",
         file: { name: doc.name, contents: doc.contents, cacheKey: doc.id },
+        version: 0,
         edit: true,
       })),
     [documents],

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { CODE_LANGUAGE_CHOICES } from "@/lib/code/language";
@@ -92,7 +92,9 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
     Boolean(generatedLink) && draftVersion !== generatedVersion;
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
 
-  generatedLinkRef.current = generatedLink;
+  useLayoutEffect(() => {
+    generatedLinkRef.current = generatedLink;
+  }, [generatedLink]);
 
   useEffect(() => {
     setCopyState("idle");

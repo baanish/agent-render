@@ -28,7 +28,7 @@ import { withBasePath } from "@/lib/site/base-path";
 import { cn } from "@/lib/utils";
 
 // The Trees runtime stays behind its own chunk; the rail only renders when there is more than
-// one thing to navigate, so single-artifact edits never pay for it.
+// one thing to navigate, so single-row editing flows do not load it.
 const FileTreeNav = dynamic(
   () => import("@/components/file-tree-nav").then((module) => module.FileTreeNav),
   { ssr: false },
@@ -53,35 +53,23 @@ type ArtifactEditorProps = {
 const EMPTY_PATCH_FILES: ParsedPatchFile[] = [];
 
 
-// Maps each parsed file to its byte offset inside the raw patch text so tree
-// selection can move the textarea caret. Sections are ordered, so each file's
-// offset is found by locating its own `diff --git a/… b/…` first line from the
-// cursor forward — stray `diff --git`-prefixed text mid-edit (a bare or
-// partially typed header that the parser treats as preamble) cannot consume a
-// slot and shift every later file.
-function getPatchFileOffsets(content: string, files: ParsedPatchFile[]): Map<string, number> {
-  const offsets = new Map<string, number>();
+// Maps each parsed file to its one-based line in the raw editor document. Comparing
+// whole lines keeps CRLF input, duplicate paths, and patch text embedded in added lines
+// from confusing navigation.
+function getPatchFileLines(content: string, files: ParsedPatchFile[]): Map<string, number> {
+  const sourceLines = content.replace(/\r\n/g, "\n").split("\n");
+  const lineNumbers = new Map<string, number>();
   let cursor = 0;
   for (const file of files) {
-    if (!file.patch.startsWith("diff --git ")) {
-      offsets.set(file.id, 0);
-      continue;
-    }
-    const newlineIndex = file.patch.indexOf("\n");
-    const firstLine = newlineIndex === -1 ? file.patch : file.patch.slice(0, newlineIndex);
-    // Anchor the search to a line start: a patch that adds a patch file can
-    // carry the same "diff --git a/… b/…" text inside a `+` line mid-section.
-    let at = content.indexOf(firstLine, cursor);
-    while (at > 0 && content.charCodeAt(at - 1) !== 10) {
-      at = content.indexOf(firstLine, at + 1);
-    }
-    offsets.set(file.id, at === -1 ? 0 : at);
-    if (at !== -1) {
-      cursor = at + firstLine.length;
+    const firstLine = file.patch.split("\n", 1)[0] ?? "";
+    const lineIndex = sourceLines.indexOf(firstLine, cursor);
+    lineNumbers.set(file.id, lineIndex === -1 ? 1 : lineIndex + 1);
+    if (lineIndex !== -1) {
+      cursor = lineIndex + 1;
     }
   }
 
-  return offsets;
+  return lineNumbers;
 }
 
 // Snapshots a draft into the documents the Pierre edit surface mounts. Pair diffs become two
@@ -96,25 +84,6 @@ function buildBodyDocuments(draft: ArtifactEditDraft): ArtifactBodyDocument[] {
     ];
   }
   return [{ id: "content", name, contents: draft.content }];
-}
-
-// Pierre renders the editable element inside nested shadow roots; walk them to find it.
-function findContentEditable(root: ParentNode | null): HTMLElement | null {
-  if (root == null) {
-    return null;
-  }
-
-  let match: HTMLElement | null = null;
-  for (const child of Array.from(root.children)) {
-    if (child.getAttribute("contenteditable") === "true") {
-      match = child as HTMLElement;
-    }
-    match ??= findContentEditable(child);
-    if (child instanceof Element && child.shadowRoot) {
-      match ??= findContentEditable(child.shadowRoot);
-    }
-  }
-  return match;
 }
 
 const fieldHints: Record<ArtifactKind, string> = {
@@ -177,11 +146,6 @@ export function ArtifactEditor({
   const draft =
     draftState.drafts.get(editingArtifactId) ?? createArtifactEditDraft(editingArtifact);
   const draftVersion = draftState.version;
-  // The Pierre edit surface owns the document after mount and reports every change through
-  // onDocumentChange, so documents only re-snapshot when the edit target switches.
-  const [bodyDocuments, setBodyDocuments] = useState<readonly ArtifactBodyDocument[]>(() =>
-    buildBodyDocuments(draft),
-  );
   const [generatedLink, setGeneratedLink] =
     useState<GeneratedArtifactLink | null>(null);
   const [generatedVersion, setGeneratedVersion] = useState(-1);
@@ -202,7 +166,6 @@ export function ArtifactEditor({
   const usesPairDiff = draft.kind === "diff" && draft.diffSource === "pair";
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
   const bodyEditorRef = useRef<CodeViewHandle<undefined> | null>(null);
-  const bodyEditorFrameRef = useRef<HTMLDivElement | null>(null);
   const patchFiles = useMemo(() => {
     if (draft.kind !== "diff" || draft.diffSource !== "patch") {
       return EMPTY_PATCH_FILES;
@@ -224,8 +187,8 @@ export function ArtifactEditor({
     () => new Map(patchFiles.map((file) => [patchFileLabels.get(file.id) ?? file.displayPath, file])),
     [patchFiles, patchFileLabels],
   );
-  const patchFileOffsets = useMemo(
-    () => getPatchFileOffsets(draft.content, patchFiles),
+  const patchFileLines = useMemo(
+    () => getPatchFileLines(draft.content, patchFiles),
     [draft.content, patchFiles],
   );
 
@@ -277,20 +240,20 @@ export function ArtifactEditor({
       return;
     }
 
-    const offset = patchFileOffsets.get(file.id) ?? 0;
-    const lineNumber = draft.content.slice(0, offset).split("\n").length;
+    const lineNumber = patchFileLines.get(file.id) ?? 1;
 
     codeView.scrollTo({ type: "line", id: "content", lineNumber, align: "center" });
-    // The editor object is our own `Editor` instance; the public DiffsEditor interface hides
-    // the selection APIs. `Editor.focus` does not reliably reach the contenteditable inside
-    // Pierre's shadow DOM, so focus the editable element directly after placing the caret.
+    // CodeView exposes the editor as the narrow DiffsEditor interface, but this surface creates
+    // Pierre's concrete Editor. Use its selection and focus APIs instead of walking shadow DOM.
     const editor = codeView.getEditor("content") as Editor<undefined> | undefined;
+    if (!editor) {
+      return;
+    }
     const position = { line: lineNumber - 1, character: 0 };
-    editor?.setSelections([{ start: position, end: position, direction: "none" }]);
-    // The tree's own click handling re-focuses the pressed row after this callback returns,
-    // so the editable focus has to wait for the click dispatch to finish.
+    editor.setSelections([{ start: position, end: position, direction: "none" }]);
+    // The tree row takes focus when its click finishes, so restore editor focus on the next task.
     window.setTimeout(() => {
-      findContentEditable(bodyEditorFrameRef.current)?.focus({ preventScroll: true });
+      editor.focus({ preventScroll: true, lineNumber, character: 0 });
     }, 0);
   };
 
@@ -313,14 +276,18 @@ export function ArtifactEditor({
       return;
     }
 
+    generationRequestRef.current += 1;
+    copyTokenRef.current += 1;
+    markdownCopyTokenRef.current += 1;
     setEditingArtifactId(targetId);
+    setIsGenerating(false);
+    setCopyState("idle");
+    setMarkdownLinkCopyState("idle");
+    setError(null);
     // A link generated for the previous artifact does not describe this one; drop it
     // so Copy/Preview cannot hand out the wrong link while the other draft is open.
     setGeneratedLink(null);
     setGeneratedVersion(-1);
-    setBodyDocuments(
-      buildBodyDocuments(draftState.drafts.get(targetId) ?? createArtifactEditDraft(target)),
-    );
   };
 
   const handleBodyDocumentChange = (id: string, contents: string) => {
@@ -335,24 +302,25 @@ export function ArtifactEditor({
     setError(null);
   }, [draftVersion]);
 
-  // Renaming a file mid-edit re-labels the mounted document too: the file header and
-  // language inference read the item's name, while contents and cacheKey stay untouched.
+  // CodeView treats item.version as the controlled-update boundary. Bump it when a filename
+  // changes, and publish the current draft contents with the rename so the controlled item
+  // cannot restore the snapshot from before the user started typing.
   useEffect(() => {
     const codeView = bodyEditorRef.current;
     if (!codeView) {
       return;
     }
-    const name = draft.filename.trim() || "content";
-    const targets = usesPairDiff
-      ? ([["old", `a/${name}`], ["new", `b/${name}`]] as const)
-      : ([["content", name]] as const);
-    for (const [id, fileName] of targets) {
-      const item = codeView.getItem(id);
-      if (item?.type === "file" && item.file.name !== fileName) {
-        codeView.updateItem({ ...item, file: { ...item.file, name: fileName } });
+    for (const document of buildBodyDocuments(draft)) {
+      const item = codeView.getItem(document.id);
+      if (item?.type === "file" && item.file.name !== document.name) {
+        codeView.updateItem({
+          ...item,
+          version: (item.version ?? 0) + 1,
+          file: { ...item.file, name: document.name, contents: document.contents },
+        });
       }
     }
-  }, [draft.filename, usesPairDiff]);
+  }, [draft]);
 
   const updateDraft = <K extends keyof ArtifactEditDraft>(
     field: K,
@@ -507,11 +475,9 @@ export function ArtifactEditor({
       >
         {showTreeRail ? (
           <FileTreeNav
-            // useFileTree applies initialSelectedPaths only on mount; remount when the
-            // edit target or path set changes so the new row lands selected. Clicks
-            // self-select inside the tree, so the selection is not keyed (keying it
-            // would discard the rail's search/scroll state on every click).
-            key={`${treePaths.join("::")}::${editingArtifactId}`}
+            // useFileTree fixes its path set at mount. The wrapper synchronizes selection
+            // in place, so artifact switches preserve search and scroll state.
+            key={JSON.stringify(treePaths)}
             paths={treePaths}
             selectedPath={selectedTreePath}
             ariaLabel="Editable files"
@@ -595,13 +561,12 @@ export function ArtifactEditor({
             </span>
           </span>
           <div
-            ref={bodyEditorFrameRef}
             className="artifact-body-editor-frame"
             data-testid="artifact-editor-body"
           >
             <ArtifactBodyEditor
               key={editingArtifactId}
-              documents={bodyDocuments}
+              documents={buildBodyDocuments(draft)}
               onDocumentChange={handleBodyDocumentChange}
               codeViewRef={bodyEditorRef}
             />

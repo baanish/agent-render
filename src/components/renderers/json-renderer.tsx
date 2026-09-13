@@ -17,6 +17,29 @@ type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string
 // (200k char) payload can nest thousands deep in only a few KB, which crashes the reconciler with
 // a RangeError; 200 is far beyond any human-readable JSON. Change only by maintainer decision.
 const MAX_JSON_TREE_DEPTH = 200;
+const MAX_JSON_TREE_NODES = 5_000;
+
+function isJsonTreeWithinBudget(value: JsonValue): boolean {
+  const pending: JsonValue[] = [value];
+  let count = 0;
+  while (pending.length > 0) {
+    const current = pending.pop();
+    count += 1;
+    if (count > MAX_JSON_TREE_NODES) {
+      return false;
+    }
+    if (current && typeof current === "object") {
+      const children = Array.isArray(current) ? current : Object.values(current);
+      if (count + pending.length + children.length > MAX_JSON_TREE_NODES) {
+        return false;
+      }
+      for (const child of children) {
+        pending.push(child);
+      }
+    }
+  }
+  return true;
+}
 
 const RawCodeRenderer = dynamic(
   () =>
@@ -42,8 +65,8 @@ function JsonNode({ label, value, level = 0 }: { label?: string; value: JsonValu
         {label ? <span className="json-key">{label}</span> : null}
         <span className="json-value json-truncated">
           {Array.isArray(value)
-            ? `Array(${value.length}) — max depth reached`
-            : `Object(${Object.keys(value).length}) — max depth reached`}
+            ? `Array(${value.length}): max depth reached`
+            : `Object(${Object.keys(value).length}): max depth reached`}
         </span>
       </div>
     );
@@ -129,14 +152,16 @@ class JsonTreeBoundary extends Component<{ fallback: ReactNode; children: ReactN
 /**
  * Shows JSON artifacts with a toggle between structured tree and syntax-highlighted raw source views.
  * Receives `artifact` and optional `onReady`, including readiness updates across parse and view-mode changes.
- * Falls back to highlighted raw source with an error notice when JSON parsing fails.
+ * Falls back to highlighted raw source when parsing fails or the tree exceeds its render budget.
  */
 export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
   const onReadyRef = useRef(onReady);
   const [view, setView] = useState<"tree" | "raw">("tree");
+  const [rawReadyArtifact, setRawReadyArtifact] = useState<JsonArtifact | null>(null);
   const parsed = useMemo(() => {
     try {
-      return { ok: true as const, json: JSON.parse(artifact.content) as JsonValue };
+      const json = JSON.parse(artifact.content) as JsonValue;
+      return { ok: true as const, json, treeWithinBudget: isJsonTreeWithinBudget(json) };
     } catch (error) {
       return { ok: false as const, message: error instanceof Error ? error.message : "Invalid JSON payload." };
     }
@@ -150,42 +175,89 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
   // fallback) readiness belongs to the deferred code surface, which fires its own
   // onReady once the highlighted document has actually mounted.
   useEffect(() => {
-    if (parsed.ok && view === "tree") {
+    if (parsed.ok && parsed.treeWithinBudget && view === "tree") {
       onReadyRef.current?.();
     }
-  }, [artifact.id, parsed.ok, view]);
+  }, [artifact.id, parsed, view]);
+
+  const handleRawReady = () => {
+    setRawReadyArtifact(artifact);
+    onReadyRef.current?.();
+  };
+  const isReady =
+    parsed.ok && parsed.treeWithinBudget && view === "tree"
+      ? true
+      : rawReadyArtifact === artifact;
 
   if (!parsed.ok) {
     return (
-      <div className="json-renderer-shell" data-testid="renderer-json" data-renderer-ready="true">
-        <div className="artifact-empty-state">{parsed.message}</div>
-        <JsonRawSource artifact={artifact} onReady={onReady} />
+      <div
+        className="json-renderer-shell"
+        data-testid="renderer-json"
+        data-renderer-ready={isReady ? "true" : "false"}
+      >
+        <div className="artifact-empty-state" role="status">
+          {parsed.message}
+        </div>
+        <JsonRawSource artifact={artifact} onReady={handleRawReady} />
+      </div>
+    );
+  }
+
+  if (!parsed.treeWithinBudget) {
+    return (
+      <div
+        className="json-renderer-shell"
+        data-testid="renderer-json"
+        data-renderer-ready={isReady ? "true" : "false"}
+      >
+        <div className="artifact-empty-state" role="status">
+          This JSON has too many values for the interactive tree. Showing the raw source instead.
+        </div>
+        <JsonRawSource artifact={artifact} onReady={handleRawReady} />
       </div>
     );
   }
 
   return (
-    <div className="json-renderer-shell" data-testid="renderer-json" data-renderer-ready="true">
+    <div
+      className="json-renderer-shell"
+      data-testid="renderer-json"
+      data-renderer-ready={isReady ? "true" : "false"}
+    >
       <div className="json-renderer-toolbar">
-        <div className="diff-view-toggle">
-          <button type="button" className={`artifact-action ${view === "tree" ? "is-depressed" : ""}`} onClick={() => setView("tree")}>
+        <div className="diff-view-toggle" role="group" aria-label="JSON view mode">
+          <button
+            type="button"
+            className={`artifact-action ${view === "tree" ? "is-depressed" : ""}`}
+            onClick={() => setView("tree")}
+            aria-pressed={view === "tree"}
+          >
             <ListTree className="h-3.5 w-3.5" />
             Tree
           </button>
-          <button type="button" className={`artifact-action ${view === "raw" ? "is-depressed" : ""}`} onClick={() => setView("raw")}>
+          <button
+            type="button"
+            className={`artifact-action ${view === "raw" ? "is-depressed" : ""}`}
+            onClick={() => {
+              setRawReadyArtifact(null);
+              setView("raw");
+            }}
+            aria-pressed={view === "raw"}
+          >
             <Braces className="h-3.5 w-3.5" />
             Raw
           </button>
         </div>
       </div>
       {view === "tree" ? (
-        <JsonTreeBoundary key={artifact.id} fallback={<JsonRawSource artifact={artifact} onReady={onReady} />}>
+        <JsonTreeBoundary key={artifact.id} fallback={<JsonRawSource artifact={artifact} onReady={handleRawReady} />}>
           <div className="json-tree-shell">
             <JsonNode value={parsed.json} />
           </div>
         </JsonTreeBoundary>
       ) : (
-        <JsonRawSource artifact={artifact} onReady={onReady} />
+        <JsonRawSource artifact={artifact} onReady={handleRawReady} />
       )}
     </div>
   );

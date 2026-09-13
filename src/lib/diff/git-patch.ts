@@ -12,17 +12,62 @@ export type ParsedPatchFile = {
 
 const UNIFIED_HUNK_HEADER_RE = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@(?: .*)?$/;
 const DIFF_SECTION_HEADER_RE = /^diff --git .*$/gm;
+const TRADITIONAL_FILE_HEADER_RE = /^--- \S[^\n]*\n\+\+\+ \S[^\n]*(?:\n|$)/m;
+const TRADITIONAL_FILE_HEADER_GLOBAL_RE = /^--- \S[^\n]*\n\+\+\+ \S[^\n]*(?:\n|$)/gm;
+const DIFF_GIT_PATHS_RE = /^diff --git (?:"((?:\\.|[^"])*)"|(\S+)) (?:"((?:\\.|[^"])*)"|(\S+))$/;
+
+function unquoteGitPath(filePath: string): string {
+  const trimmed = filePath.trim();
+  if (!trimmed.startsWith('"') || !trimmed.endsWith('"')) {
+    return trimmed;
+  }
+  return trimmed
+    .slice(1, -1)
+    .replace(/\\([\\"])/g, "$1")
+    .replace(/\\t/g, "\t")
+    .replace(/\\n/g, "\n");
+}
+
+function normalizeRepositoryPath(filePath: string): string | null {
+  const normalized = unquoteGitPath(filePath);
+  return normalized && !normalized.endsWith("/") ? normalized : null;
+}
 
 function stripDiffPrefix(filePath: string | null): string | null {
-  if (!filePath || filePath === "/dev/null") {
+  if (!filePath) {
     return null;
   }
 
-  const stripped = filePath.replace(/^[ab]\//, "");
+  const normalized = unquoteGitPath(filePath);
+  if (normalized === "/dev/null") {
+    return null;
+  }
+
+  const stripped = normalized.replace(/^[ab]\//, "");
   // A path that reduces to empty (e.g. a bare "a/") is not a usable path; return null so the
   // `displayPath`/`id` fallback chain (newPath ?? oldPath ?? `file-N`) applies instead of
   // producing an empty label and a degenerate "-N" id.
   return stripped === "" ? null : stripped;
+}
+
+function parseDiffGitPaths(line: string): [string | null, string | null] | null {
+  const match = DIFF_GIT_PATHS_RE.exec(line);
+  if (!match) {
+    return null;
+  }
+  return [
+    stripDiffPrefix(match[1] ?? match[2] ?? null),
+    stripDiffPrefix(match[3] ?? match[4] ?? null),
+  ];
+}
+
+function parseMarkerPath(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.startsWith('"')) {
+    const quoted = /^("(?:\\.|[^"])*")/.exec(trimmed)?.[1] ?? trimmed;
+    return stripDiffPrefix(quoted);
+  }
+  return stripDiffPrefix(trimmed.split("\t", 1)[0] ?? null);
 }
 
 function normalizePatch(patch: string): string {
@@ -49,6 +94,32 @@ function scanLines(value: string, visitLine: (line: string) => void): void {
   }
 }
 
+function parseNonGitSections(value: string, startIndex: number): ParsedPatchFile[] {
+  const sections: ParsedPatchFile[] = [];
+  const starts: number[] = [];
+  TRADITIONAL_FILE_HEADER_GLOBAL_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = TRADITIONAL_FILE_HEADER_GLOBAL_RE.exec(value)) !== null) {
+    starts.push(match.index);
+  }
+  if (starts.length === 0) {
+    const section = value.trim();
+    return section ? [parsePatchSection(section, startIndex)] : [];
+  }
+  if (starts[0] && starts[0] > 0) {
+    const preamble = value.slice(0, starts[0]).trim();
+    if (preamble) {
+      sections.push(parsePatchSection(preamble, startIndex));
+    }
+  }
+  for (let index = 0; index < starts.length; index += 1) {
+    const start = starts[index] ?? 0;
+    const end = starts[index + 1] ?? value.length;
+    sections.push(parsePatchSection(value.slice(start, end).trim(), startIndex + sections.length));
+  }
+  return sections;
+}
+
 function parsePatchSections(patch: string): ParsedPatchFile[] {
   const normalized = normalizePatch(patch);
   if (!normalized) {
@@ -66,17 +137,15 @@ function parsePatchSections(patch: string): ParsedPatchFile[] {
       files.push(parsePatchSection(normalized.slice(previousStart, match.index).trim(), sectionIndex));
       sectionIndex += 1;
     } else if (match.index > 0) {
-      const preamble = normalized.slice(0, match.index).trim();
-      if (preamble) {
-        files.push(parsePatchSection(preamble, sectionIndex));
-        sectionIndex += 1;
-      }
+      const leadingSections = parseNonGitSections(normalized.slice(0, match.index), sectionIndex);
+      files.push(...leadingSections);
+      sectionIndex += leadingSections.length;
     }
     previousStart = match.index;
   }
 
   if (previousStart === -1) {
-    return [parsePatchSection(normalized, 0)];
+    return parseNonGitSections(normalized, 0);
   }
 
   files.push(parsePatchSection(normalized.slice(previousStart).trim(), sectionIndex));
@@ -91,10 +160,11 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
   let status: PatchFileStatus = "modified";
   let isBinary = false;
 
-  const headerMatch = /^diff --git a\/(.+) b\/(.+)$/.exec(getFirstLine(section));
-  if (headerMatch) {
-    oldPath = headerMatch[1] ?? null;
-    newPath = headerMatch[2] ?? null;
+  const firstLine = getFirstLine(section);
+  const headerPaths = parseDiffGitPaths(firstLine);
+  const hasTraditionalHeader = TRADITIONAL_FILE_HEADER_RE.test(section);
+  if (headerPaths) {
+    [oldPath, newPath] = headerPaths;
   }
 
   scanLines(section, (line) => {
@@ -109,40 +179,44 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
     }
 
     if (line.startsWith("rename from ")) {
-      renameFrom = line.slice("rename from ".length).trim();
+      renameFrom = normalizeRepositoryPath(line.slice("rename from ".length));
       status = "renamed";
       return;
     }
 
     if (line.startsWith("rename to ")) {
-      renameTo = line.slice("rename to ".length).trim();
+      renameTo = normalizeRepositoryPath(line.slice("rename to ".length));
       status = "renamed";
       return;
     }
 
     if (line.startsWith("copy from ")) {
-      oldPath = line.slice("copy from ".length).trim();
+      oldPath = normalizeRepositoryPath(line.slice("copy from ".length));
       status = "copied";
       return;
     }
 
     if (line.startsWith("copy to ")) {
-      newPath = line.slice("copy to ".length).trim();
+      newPath = normalizeRepositoryPath(line.slice("copy to ".length));
       status = "copied";
       return;
     }
 
     if (line.startsWith("--- ")) {
-      oldPath = stripDiffPrefix(line.slice(4).trim()) ?? oldPath;
+      oldPath = parseMarkerPath(line.slice(4)) ?? oldPath;
       return;
     }
 
     if (line.startsWith("+++ ")) {
-      newPath = stripDiffPrefix(line.slice(4).trim()) ?? newPath;
+      newPath = parseMarkerPath(line.slice(4)) ?? newPath;
       return;
     }
 
-    if (line.startsWith("@@") && !UNIFIED_HUNK_HEADER_RE.test(line)) {
+    if (
+      (headerPaths || hasTraditionalHeader) &&
+      line.startsWith("@@") &&
+      !UNIFIED_HUNK_HEADER_RE.test(line)
+    ) {
       throw new Error(`Invalid hunk header: ${line}`);
     }
 
@@ -159,8 +233,8 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
     }
   });
 
-  oldPath = stripDiffPrefix(renameFrom ?? oldPath);
-  newPath = stripDiffPrefix(renameTo ?? newPath);
+  oldPath = renameFrom ?? oldPath;
+  newPath = renameTo ?? newPath;
 
   const displayPath = newPath ?? oldPath ?? `file-${index + 1}`;
 
@@ -178,8 +252,8 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
 /**
  * Parses a git patch bundle into per-file patch entries.
  *
- * Expects a unified git patch string and splits multi-file input on each `diff --git` header;
- * if no such headers are present, the full input is treated as a single section.
+ * Expects a unified patch string and splits multi-file input on `diff --git` headers or
+ * adjacent traditional `---`/`+++` file headers.
  * Detects rename/copy metadata and binary markers (`Binary files ... differ` / `GIT binary patch`),
  * normalizes paths by removing `a/` and `b/` prefixes, and sets `status`/`isBinary` accordingly.
  * Output IDs are deterministic `${displayPath}-${index}` values so multiple sections with the same
@@ -189,37 +263,34 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
  * @returns Parsed file-level patch records ready for diff rendering.
  *
  * Failure/fallback: empty or whitespace-only input returns an empty array; malformed hunk
- * headers throw so callers can stay on the lightweight raw fallback path.
+ * headers inside diff sections throw so callers can stay on the lightweight raw fallback path.
  */
 export function parseGitPatchBundle(patch: string): ParsedPatchFile[] {
   return parsePatchSections(patch);
 }
 
-const GIT_SECTION_PREFIX = "diff --git ";
-const SECTION_HUNK_RE = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/m;
-const SECTION_OLD_FILE_RE = /^--- \S/m;
-const SECTION_NEW_FILE_RE = /^\+\+\+ \S/m;
+const BINARY_PATCH_RE = /^(?:Binary files .+ and .+ differ|GIT binary patch)$/;
 
 /**
  * Sections that render as files. The parser keeps leading format-patch email
- * preambles as their own section for fidelity, but a section that is neither a
- * git diff header nor a traditional `---/+++`/`@@` hunk is not a file and must
- * not reach PatchDiff or the file tree. Traditional sections mixed into a git
- * bundle stay renderable; bundles with no git header at all keep every section.
+ * preambles as their own section for fidelity, but only sections with a valid
+ * git header, an adjacent traditional `---`/`+++` header pair, or a binary patch
+ * marker may reach PatchDiff and the file tree. Filtering every bundle by the
+ * same grammar keeps standalone review notes out without dropping traditional
+ * diffs that appear before a git-style section.
  *
  * @param files - Sections from `parseGitPatchBundle`.
- * @returns The subset that carries diff content, or all sections when none do.
+ * @returns The sections that contain renderable diff data.
  */
 export function getRenderablePatchFiles(files: readonly ParsedPatchFile[]): ParsedPatchFile[] {
-  // A traditional section needs all three markers; a bare line-start @@ in an
-  // email preamble (a quoted hunk snippet) is not a file.
-  const isDiffSection = (file: ParsedPatchFile) =>
-    file.patch.startsWith(GIT_SECTION_PREFIX) ||
-    (SECTION_HUNK_RE.test(file.patch) &&
-      SECTION_OLD_FILE_RE.test(file.patch) &&
-      SECTION_NEW_FILE_RE.test(file.patch));
-  const hasGitSection = files.some((file) => file.patch.startsWith(GIT_SECTION_PREFIX));
-  return hasGitSection ? files.filter(isDiffSection) : [...files];
+  return files.filter((file) => {
+    const firstLine = getFirstLine(file.patch);
+    return (
+      parseDiffGitPaths(firstLine) !== null ||
+      TRADITIONAL_FILE_HEADER_RE.test(file.patch) ||
+      BINARY_PATCH_RE.test(firstLine)
+    );
+  });
 }
 
 /**

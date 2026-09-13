@@ -27,5 +27,6 @@ describe("ViewerShell homepage", () => {
     expect(screen.getByRole("link", { name: /payload format docs/i })).toBeVisible();
     expect(screen.getByRole("link", { name: /safety.*security page/i })).toBeVisible();
     expect(screen.getByRole("link", { name: /openclaw/i })).toBeVisible();
+    expect(screen.queryByText(/no database/i)).not.toBeInTheDocument();
   }, 10000);
 });

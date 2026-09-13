@@ -1,8 +1,14 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { JsonRenderer } from "@/components/renderers/json-renderer";
 import type { JsonArtifact } from "@/lib/payload/schema";
+
+const pierreFileMock = vi.hoisted(() => ({
+  options: null as null | {
+    onPostRender?: (node: HTMLElement, instance: unknown, phase: "mount" | "update" | "unmount") => void;
+  },
+}));
 
 // The raw view mounts the Pierre-backed CodeRenderer; stub the Pierre surface so the test
 // asserts wiring (content + lang) rather than shadow-DOM rendering under jsdom.
@@ -10,8 +16,10 @@ vi.mock("@/lib/diff/pierre-react", async () => {
   const React = await vi.importActual<typeof import("react")>("react");
 
   return {
-    File: ({ file }: { file: { contents: string } }) =>
-      React.createElement("pre", { "data-testid": "mock-pierre-file" }, file.contents),
+    File: ({ file, options }: { file: { contents: string }; options: typeof pierreFileMock.options }) => {
+      pierreFileMock.options = options;
+      return React.createElement("pre", { "data-testid": "mock-pierre-file" }, file.contents);
+    },
   };
 });
 
@@ -28,6 +36,7 @@ function createArtifact(overrides: Partial<JsonArtifact> = {}): JsonArtifact {
 
 afterEach(() => {
   cleanup();
+  pierreFileMock.options = null;
 });
 
 describe("JsonRenderer", () => {
@@ -66,6 +75,12 @@ describe("JsonRenderer", () => {
         screen.getByTestId("renderer-json-raw").querySelector("[data-testid='mock-pierre-file']"),
       ).toBeInTheDocument();
     });
+    expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "false");
+
+    act(() => {
+      pierreFileMock.options?.onPostRender?.(document.createElement("div"), {}, "mount");
+    });
+    expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "true");
   });
 
   it("renders array nodes with numeric child labels", () => {
@@ -88,6 +103,16 @@ describe("JsonRenderer", () => {
         screen.getByTestId("renderer-json-raw").querySelector("[data-testid='mock-pierre-file']"),
       ).toBeInTheDocument();
     });
+  });
+
+  it("falls back to raw source before a wide JSON value can flood the DOM", async () => {
+    const content = JSON.stringify(Array.from({ length: 5_001 }, (_, index) => index));
+
+    render(<JsonRenderer artifact={createArtifact({ content })} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(/too many values/i);
+    await waitFor(() => expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent("5000"));
+    expect(document.querySelectorAll(".json-leaf-row")).toHaveLength(0);
   });
 
   it("renders deeply nested JSON without overflowing the render stack", () => {
