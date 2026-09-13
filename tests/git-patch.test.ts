@@ -62,6 +62,12 @@ diff --git a/a/nested.ts b/a/nested.ts
     expect(files.map((file) => file.displayPath)).toEqual(["my file.ts", "a/nested.ts"]);
   });
 
+  it("rejects an unterminated quoted git path without regex backtracking", () => {
+    const patch = `diff --git "a/${"\\!".repeat(10_000)} b/file.ts\n`;
+
+    expect(getRenderablePatchFiles(parseGitPatchBundle(patch))).toEqual([]);
+  });
+
   it("rejects malformed hunk headers before rich diff rendering", () => {
     expect(() =>
       parseGitPatchBundle(`diff --git a/src/alpha.ts b/src/alpha.ts

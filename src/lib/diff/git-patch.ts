@@ -14,7 +14,27 @@ const UNIFIED_HUNK_HEADER_RE = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@(?: .*)?$/;
 const DIFF_SECTION_HEADER_RE = /^diff --git .*$/gm;
 const TRADITIONAL_FILE_HEADER_RE = /^--- \S[^\n]*\n\+\+\+ \S[^\n]*(?:\n|$)/m;
 const TRADITIONAL_FILE_HEADER_GLOBAL_RE = /^--- \S[^\n]*\n\+\+\+ \S[^\n]*(?:\n|$)/gm;
-const DIFF_GIT_PATHS_RE = /^diff --git (?:"((?:\\.|[^"])*)"|(\S+)) (?:"((?:\\.|[^"])*)"|(\S+))$/;
+
+function readGitPathToken(value: string, start: number): { token: string; end: number } | null {
+  if (start >= value.length) {
+    return null;
+  }
+  if (value[start] !== '"') {
+    const end = value.indexOf(" ", start);
+    return {
+      token: value.slice(start, end === -1 ? value.length : end),
+      end: end === -1 ? value.length : end,
+    };
+  }
+  for (let index = start + 1; index < value.length; index += 1) {
+    if (value[index] === "\\") {
+      index += 1;
+    } else if (value[index] === '"') {
+      return { token: value.slice(start, index + 1), end: index + 1 };
+    }
+  }
+  return null;
+}
 
 function unquoteGitPath(filePath: string): string {
   const trimmed = filePath.trim();
@@ -51,21 +71,26 @@ function stripDiffPrefix(filePath: string | null): string | null {
 }
 
 function parseDiffGitPaths(line: string): [string | null, string | null] | null {
-  const match = DIFF_GIT_PATHS_RE.exec(line);
-  if (!match) {
+  const prefix = "diff --git ";
+  if (!line.startsWith(prefix)) {
     return null;
   }
-  return [
-    stripDiffPrefix(match[1] ?? match[2] ?? null),
-    stripDiffPrefix(match[3] ?? match[4] ?? null),
-  ];
+  const oldToken = readGitPathToken(line, prefix.length);
+  if (!oldToken || line[oldToken.end] !== " ") {
+    return null;
+  }
+  const newToken = readGitPathToken(line, oldToken.end + 1);
+  if (!newToken || newToken.end !== line.length) {
+    return null;
+  }
+  return [stripDiffPrefix(oldToken.token), stripDiffPrefix(newToken.token)];
 }
 
 function parseMarkerPath(value: string): string | null {
   const trimmed = value.trim();
   if (trimmed.startsWith('"')) {
-    const quoted = /^("(?:\\.|[^"])*")/.exec(trimmed)?.[1] ?? trimmed;
-    return stripDiffPrefix(quoted);
+    const quoted = readGitPathToken(trimmed, 0);
+    return stripDiffPrefix(quoted?.token ?? trimmed);
   }
   return stripDiffPrefix(trimmed.split("\t", 1)[0] ?? null);
 }
