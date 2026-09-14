@@ -153,8 +153,7 @@ function getEmptyParsedPayload(): ParsedPayload {
 export function ViewerShell() {
   const [hash, setHash] = useState("");
   const [activeArtifactId, setActiveArtifactId] = useState<string | null>(null);
-  const [rendererReady, setRendererReady] = useState(true);
-  const rendererReadyKeyRef = useRef("");
+  const [readyRendererKey, setReadyRendererKey] = useState("");
   const artifactSelectionRequestRef = useRef(0);
   /** True when the current hash originated from a server-injected payload (self-hosted UUID mode). */
   const injectedPayloadRef = useRef(false);
@@ -256,24 +255,10 @@ export function ViewerShell() {
           ? "empty"
           : "error";
 
-  useEffect(() => {
-    rendererReadyKeyRef.current = rendererReadyKey;
-
-    if (!rendererReadyKey) {
-      setRendererReady(true);
-      return;
-    }
-
-    // Reset only when the active artifact's render input changes. Re-encoding the
-    // envelope to select that same artifact leaves this key stable, so the renderer
-    // does not remount and highlight the same content twice.
-    setRendererReady(false);
-  }, [rendererReadyKey]);
+  const rendererReady = !rendererReadyKey || readyRendererKey === rendererReadyKey;
 
   const markRendererReady = useCallback((readyKey: string) => {
-    if (rendererReadyKeyRef.current === readyKey) {
-      setRendererReady(true);
-    }
+    setReadyRendererKey(readyKey);
   }, []);
 
   const setFragmentHash = useCallback((nextHash: string) => {

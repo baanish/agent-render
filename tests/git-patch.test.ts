@@ -193,6 +193,27 @@ diff --git a/src/alpha.ts b/src/alpha.ts
     expect(files[0]?.patch).toContain("--- removed\n+++ added");
   });
 
+  it("rejects hunk bodies that do not match their declared counts", () => {
+    expect(() =>
+      parseGitPatchBundle(`--- a/short.txt
++++ b/short.txt
+@@ -1,2 +1 @@
+-only one old line
++one new line
+`),
+    ).toThrow(/shorter than its declared line counts/i);
+
+    expect(() =>
+      parseGitPatchBundle(`--- a/long.txt
++++ b/long.txt
+@@ -1 +1 @@
+-old
++new
++undeclared
+`),
+    ).toThrow(/exceeds its declared line counts/i);
+  });
+
   it("keeps a traditional unified diff before a git-style section", () => {
     const patch = `--- a/legacy.txt
 +++ b/legacy.txt

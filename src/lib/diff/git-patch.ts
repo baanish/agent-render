@@ -13,7 +13,7 @@ export type ParsedPatchFile = {
 const UNIFIED_HUNK_HEADER_RE = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@(?: .*)?$/;
 const HUNK_COUNTS_RE = /^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@/;
 const DIFF_SECTION_HEADER_RE = /^diff --git .*$/gm;
-const TRADITIONAL_FILE_HEADER_RE = /^--- \S[^\n]*\n\+\+\+ \S[^\n]*(?:\n|$)/m;
+const TRADITIONAL_FILE_HEADER_RE = /^--- \S[^\n]*\n\+\+\+ \S[^\n]*\n@@ -\d+/m;
 
 function readGitPathToken(value: string, start: number): { token: string; end: number } | null {
   if (start >= value.length) {
@@ -176,7 +176,8 @@ function findTraditionalSectionStarts(value: string): number[] {
     if (
       !isInsideHunk(hunkCursor) &&
       line.startsWith("--- ") &&
-      lines[index + 1]?.startsWith("+++ ")
+      lines[index + 1]?.startsWith("+++ ") &&
+      HUNK_COUNTS_RE.test(lines[index + 2] ?? "")
     ) {
       starts.push(offset);
     }
@@ -246,25 +247,29 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
   let renameTo: string | null = null;
   let status: PatchFileStatus = "modified";
   let isBinary = false;
+  let sawHunk = false;
   const hunkCursor: HunkCursor = { old: 0, new: 0 };
 
   const firstLine = getFirstLine(section);
   const headerPaths = parseDiffGitPaths(firstLine);
   const hasTraditionalHeader = TRADITIONAL_FILE_HEADER_RE.test(section);
+  const validatesHunks = headerPaths !== null || hasTraditionalHeader;
   if (headerPaths) {
     [oldPath, newPath] = headerPaths;
   }
 
   scanLines(section, (line) => {
-    if (
-      (headerPaths || hasTraditionalHeader) &&
-      line.startsWith("@@") &&
-      !UNIFIED_HUNK_HEADER_RE.test(line)
-    ) {
-      throw new Error(`Invalid hunk header: ${line}`);
+    if (validatesHunks && line.startsWith("@@")) {
+      if (!UNIFIED_HUNK_HEADER_RE.test(line) || isInsideHunk(hunkCursor)) {
+        throw new Error(`Invalid hunk header: ${line}`);
+      }
+      sawHunk = true;
     }
-    if (consumeHunkLine(line, hunkCursor)) {
+    if (validatesHunks && consumeHunkLine(line, hunkCursor)) {
       return;
+    }
+    if (sawHunk && (line.startsWith("+") || line.startsWith("-") || line.startsWith(" "))) {
+      throw new Error(`Hunk body exceeds its declared line counts: ${line}`);
     }
 
     if (line.startsWith("new file mode ")) {
@@ -323,6 +328,10 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
       status = "binary";
     }
   });
+
+  if (validatesHunks && isInsideHunk(hunkCursor)) {
+    throw new Error("Hunk body is shorter than its declared line counts.");
+  }
 
   oldPath = renameFrom ?? oldPath;
   newPath = renameTo ?? newPath;
