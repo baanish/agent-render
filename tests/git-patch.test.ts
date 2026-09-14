@@ -214,6 +214,19 @@ diff --git a/src/alpha.ts b/src/alpha.ts
     ).toThrow(/exceeds its declared line counts/i);
   });
 
+  it("accepts a format-patch signature trailer after the final hunk", () => {
+    const files = parseGitPatchBundle(`--- a/one.txt
++++ b/one.txt
+@@ -1 +1 @@
+-old
++new
+-- 
+2.34.1
+
+`);
+    expect(files.map((file) => file.newPath)).toEqual(["one.txt"]);
+  });
+
   it("keeps a traditional unified diff before a git-style section", () => {
     const patch = `--- a/legacy.txt
 +++ b/legacy.txt

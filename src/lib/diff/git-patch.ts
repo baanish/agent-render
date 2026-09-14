@@ -248,6 +248,7 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
   let status: PatchFileStatus = "modified";
   let isBinary = false;
   let sawHunk = false;
+  let inSignatureTrailer = false;
   const hunkCursor: HunkCursor = { old: 0, new: 0 };
 
   const firstLine = getFirstLine(section);
@@ -259,6 +260,20 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
   }
 
   scanLines(section, (line) => {
+    if (inSignatureTrailer) {
+      return;
+    }
+    // A completed hunk may be followed by a `git format-patch` signature
+    // delimiter (`-- `); everything after it is trailer, not hunk content.
+    if (
+      validatesHunks &&
+      sawHunk &&
+      !isInsideHunk(hunkCursor) &&
+      (line === "--" || line === "-- ")
+    ) {
+      inSignatureTrailer = true;
+      return;
+    }
     if (validatesHunks && line.startsWith("@@")) {
       if (!UNIFIED_HUNK_HEADER_RE.test(line) || isInsideHunk(hunkCursor)) {
         throw new Error(`Invalid hunk header: ${line}`);
