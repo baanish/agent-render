@@ -240,8 +240,10 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
             type="button"
             className={`artifact-action ${view === "raw" ? "is-depressed" : ""}`}
             onClick={() => {
-              setRawReadyArtifact(null);
-              setView("raw");
+              if (view !== "raw") {
+                setRawReadyArtifact(null);
+                setView("raw");
+              }
             }}
             aria-pressed={view === "raw"}
           >

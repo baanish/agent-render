@@ -62,6 +62,18 @@ diff --git a/a/nested.ts b/a/nested.ts
     expect(files.map((file) => file.displayPath)).toEqual(["my file.ts", "a/nested.ts"]);
   });
 
+  it("decodes an escaped backslash before t without turning it into a tab", () => {
+    const files = parseGitPatchBundle(String.raw`diff --git "a/dir\\tool.txt" "b/dir\\tool.txt"
+--- "a/dir\\tool.txt"
++++ "b/dir\\tool.txt"
+@@ -1 +1 @@
+-old
++new
+`);
+
+    expect(files[0]?.displayPath).toBe("dir\\tool.txt");
+  });
+
   it("rejects an unterminated quoted git path without regex backtracking", () => {
     const patch = `diff --git "a/${"\\!".repeat(10_000)} b/file.ts\n`;
 
@@ -160,6 +172,25 @@ diff --git a/src/alpha.ts b/src/alpha.ts
 
     expect(files.map((file) => file.displayPath)).toEqual(["legacy.txt", "src/alpha.ts"]);
     expect(files[0]?.patch.startsWith("--- a/legacy.txt")).toBe(true);
+  });
+
+  it("does not split adjacent --- and +++ content lines inside a hunk", () => {
+    const patch = `--- a/first.txt
++++ b/first.txt
+@@ -1 +1 @@
+--- removed
++++ added
+--- a/second.txt
++++ b/second.txt
+@@ -1 +1 @@
+-old
++new
+`;
+
+    const files = getRenderablePatchFiles(parseGitPatchBundle(patch));
+
+    expect(files.map((file) => file.displayPath)).toEqual(["first.txt", "second.txt"]);
+    expect(files[0]?.patch).toContain("--- removed\n+++ added");
   });
 
   it("keeps a traditional unified diff before a git-style section", () => {

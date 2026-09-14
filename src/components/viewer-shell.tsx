@@ -37,6 +37,19 @@ function getVisibleHashLength(hash: string): number {
   }
 }
 
+function getRendererReadyKey(artifact: ArtifactPayload | null): string {
+  if (!artifact) {
+    return "";
+  }
+  const serialized = JSON.stringify(artifact);
+  let hash = 2166136261;
+  for (let index = 0; index < serialized.length; index += 1) {
+    hash ^= serialized.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${artifact.id}:${artifact.kind}:${serialized.length}:${(hash >>> 0).toString(36)}`;
+}
+
 const githubPath = "https://github.com/baanish/agent-render";
 const payloadDocsPath = `${githubPath}/blob/main/docs/payload-format.md`;
 const openClawPath = "https://openclaw.ai";
@@ -220,7 +233,10 @@ export function ViewerShell() {
     () => (envelope ? getArtifactById(envelope, activeArtifactId) : null),
     [activeArtifactId, envelope],
   );
-  const rendererReadyKey = activeArtifact ? `${hash}:${activeArtifact.id}` : "";
+  const rendererReadyKey = useMemo(
+    () => getRendererReadyKey(activeArtifact),
+    [activeArtifact],
+  );
 
   useEffect(() => {
     setActiveArtifactId(parsed.ok ? parsed.envelope.activeArtifactId ?? null : null);
@@ -248,9 +264,9 @@ export function ViewerShell() {
       return;
     }
 
-    // Reset only when the hash/artifact-id key changes. A later decode that only
-    // replaces artifact contents (same id, new fragment) must not clear a ready
-    // signal the remounted renderer already reported for that key.
+    // Reset only when the active artifact's render input changes. Re-encoding the
+    // envelope to select that same artifact leaves this key stable, so the renderer
+    // does not remount and highlight the same content twice.
     setRendererReady(false);
   }, [rendererReadyKey]);
 

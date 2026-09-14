@@ -7,6 +7,9 @@ export async function goToHash(page: Page, hash = "") {
     await page.goto("about:blank");
   }
   await page.goto(`.${hash}`);
+  if (hash) {
+    await stabilizePage(page);
+  }
 }
 
 export async function setTheme(page: Page, theme: "light" | "dark") {

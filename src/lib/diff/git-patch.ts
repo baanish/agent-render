@@ -11,9 +11,9 @@ export type ParsedPatchFile = {
 };
 
 const UNIFIED_HUNK_HEADER_RE = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@(?: .*)?$/;
+const HUNK_COUNTS_RE = /^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@/;
 const DIFF_SECTION_HEADER_RE = /^diff --git .*$/gm;
 const TRADITIONAL_FILE_HEADER_RE = /^--- \S[^\n]*\n\+\+\+ \S[^\n]*(?:\n|$)/m;
-const TRADITIONAL_FILE_HEADER_GLOBAL_RE = /^--- \S[^\n]*\n\+\+\+ \S[^\n]*(?:\n|$)/gm;
 
 function readGitPathToken(value: string, start: number): { token: string; end: number } | null {
   if (start >= value.length) {
@@ -41,11 +41,29 @@ function unquoteGitPath(filePath: string): string {
   if (!trimmed.startsWith('"') || !trimmed.endsWith('"')) {
     return trimmed;
   }
-  return trimmed
-    .slice(1, -1)
-    .replace(/\\([\\"])/g, "$1")
-    .replace(/\\t/g, "\t")
-    .replace(/\\n/g, "\n");
+  const quoted = trimmed.slice(1, -1);
+  let decoded = "";
+  for (let index = 0; index < quoted.length; index += 1) {
+    const character = quoted[index] ?? "";
+    if (character !== "\\" || index + 1 >= quoted.length) {
+      decoded += character;
+      continue;
+    }
+    const escaped = quoted[index + 1] ?? "";
+    index += 1;
+    if (escaped === "t") {
+      decoded += "\t";
+    } else if (escaped === "n") {
+      decoded += "\n";
+    } else if (escaped === "r") {
+      decoded += "\r";
+    } else if (escaped === "\\" || escaped === '"') {
+      decoded += escaped;
+    } else {
+      decoded += `\\${escaped}`;
+    }
+  }
+  return decoded;
 }
 
 function normalizeRepositoryPath(filePath: string): string | null {
@@ -119,14 +137,58 @@ function scanLines(value: string, visitLine: (line: string) => void): void {
   }
 }
 
+type HunkCursor = { old: number; new: number };
+
+function isInsideHunk(cursor: HunkCursor): boolean {
+  return cursor.old > 0 || cursor.new > 0;
+}
+
+function consumeHunkLine(line: string, cursor: HunkCursor): boolean {
+  const hunkCounts = HUNK_COUNTS_RE.exec(line);
+  if (hunkCounts) {
+    cursor.old = hunkCounts[1] === undefined ? 1 : Number(hunkCounts[1]);
+    cursor.new = hunkCounts[2] === undefined ? 1 : Number(hunkCounts[2]);
+    return true;
+  }
+  if (!isInsideHunk(cursor)) {
+    return false;
+  }
+  if (line !== "\\ No newline at end of file") {
+    if (line.startsWith("+")) {
+      cursor.new = Math.max(0, cursor.new - 1);
+    } else if (line.startsWith("-")) {
+      cursor.old = Math.max(0, cursor.old - 1);
+    } else {
+      cursor.old = Math.max(0, cursor.old - 1);
+      cursor.new = Math.max(0, cursor.new - 1);
+    }
+  }
+  return true;
+}
+
+function findTraditionalSectionStarts(value: string): number[] {
+  const lines = value.split("\n");
+  const starts: number[] = [];
+  const hunkCursor: HunkCursor = { old: 0, new: 0 };
+  let offset = 0;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
+    if (
+      !isInsideHunk(hunkCursor) &&
+      line.startsWith("--- ") &&
+      lines[index + 1]?.startsWith("+++ ")
+    ) {
+      starts.push(offset);
+    }
+    consumeHunkLine(line, hunkCursor);
+    offset += line.length + (index < lines.length - 1 ? 1 : 0);
+  }
+  return starts;
+}
+
 function parseNonGitSections(value: string, startIndex: number): ParsedPatchFile[] {
   const sections: ParsedPatchFile[] = [];
-  const starts: number[] = [];
-  TRADITIONAL_FILE_HEADER_GLOBAL_RE.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = TRADITIONAL_FILE_HEADER_GLOBAL_RE.exec(value)) !== null) {
-    starts.push(match.index);
-  }
+  const starts = findTraditionalSectionStarts(value);
   if (starts.length === 0) {
     const section = value.trim();
     return section ? [parsePatchSection(section, startIndex)] : [];
@@ -184,6 +246,7 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
   let renameTo: string | null = null;
   let status: PatchFileStatus = "modified";
   let isBinary = false;
+  const hunkCursor: HunkCursor = { old: 0, new: 0 };
 
   const firstLine = getFirstLine(section);
   const headerPaths = parseDiffGitPaths(firstLine);
@@ -193,6 +256,17 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
   }
 
   scanLines(section, (line) => {
+    if (
+      (headerPaths || hasTraditionalHeader) &&
+      line.startsWith("@@") &&
+      !UNIFIED_HUNK_HEADER_RE.test(line)
+    ) {
+      throw new Error(`Invalid hunk header: ${line}`);
+    }
+    if (consumeHunkLine(line, hunkCursor)) {
+      return;
+    }
+
     if (line.startsWith("new file mode ")) {
       status = "added";
       return;
@@ -235,14 +309,6 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
     if (line.startsWith("+++ ")) {
       newPath = parseMarkerPath(line.slice(4)) ?? newPath;
       return;
-    }
-
-    if (
-      (headerPaths || hasTraditionalHeader) &&
-      line.startsWith("@@") &&
-      !UNIFIED_HUNK_HEADER_RE.test(line)
-    ) {
-      throw new Error(`Invalid hunk header: ${line}`);
     }
 
     if (line.startsWith("Binary files ") || line === "GIT binary patch") {

@@ -81,6 +81,9 @@ describe("JsonRenderer", () => {
       pierreFileMock.options?.onPostRender?.(document.createElement("div"), {}, "mount");
     });
     expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "true");
+
+    await userEvent.click(screen.getByRole("button", { name: "Raw" }));
+    expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "true");
   });
 
   it("renders array nodes with numeric child labels", () => {
