@@ -269,7 +269,7 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
       validatesHunks &&
       sawHunk &&
       !isInsideHunk(hunkCursor) &&
-      (line === "--" || line === "-- ")
+      line === "-- "
     ) {
       inSignatureTrailer = true;
       return;
