@@ -36,6 +36,7 @@ const TRADITIONAL_FILE_RE = /^--- \S[^\n]*\n\+\+\+ \S/m;
 // mode-only change; the marker lines are the only reliable signal.
 const BINARY_MARKER_RE = /^(?:GIT binary patch|Binary files .+ and .+ differ)$/m;
 const SECTION_START_RE = /^diff --git /;
+const HUNK_HEADER_RE = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/;
 
 function collectFileDiffs(patch: string, into: FileDiffMetadata[]): void {
   for (const parsed of parsePatchFiles(patch, undefined, true)) {
@@ -49,25 +50,56 @@ function collectFileDiffs(patch: string, into: FileDiffMetadata[]): void {
 
 // Maps file index to the raw line range of its section, used for editor
 // scroll targets and binary-marker detection. A `---`/`+++`/`@@` triple is a
-// traditional file header; a lone `---` line inside a hunk cannot fake one.
+// traditional file header, but only outside a hunk body: inside one, a removed
+// `-- x` line reads `--- x` and an added `++ y` line reads `+++ y`, so the
+// scanner tracks the declared hunk counts before trusting a triple.
 function findSectionRanges(lines: string[]): { start: number; end: number }[] {
   const starts: number[] = [];
-  // Inside a `diff --git` section the `---`/`+++` pair is that file's header;
-  // outside one it can only be a standalone traditional file.
+  // A git section's own `--- a/`/`+++ b/` pair is that file's header, consumed
+  // once via gitHeaderSeen; any later triple is a standalone traditional file
+  // following the git content.
   let insideGitSection = false;
+  let gitHeaderSeen = false;
+  let hunkOld = 0;
+  let hunkNew = 0;
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? "";
     if (SECTION_START_RE.test(line)) {
       insideGitSection = true;
+      gitHeaderSeen = false;
+      hunkOld = 0;
+      hunkNew = 0;
       starts.push(index);
       continue;
     }
+    const hunk = HUNK_HEADER_RE.exec(line);
+    if (hunk) {
+      hunkOld = hunk[2] ? Number(hunk[2]) : 1;
+      hunkNew = hunk[4] ? Number(hunk[4]) : 1;
+      continue;
+    }
+    if (hunkOld > 0 || hunkNew > 0) {
+      if (line.startsWith("-")) {
+        hunkOld -= 1;
+      } else if (line.startsWith("+")) {
+        hunkNew -= 1;
+      } else if (line.startsWith(" ") || line === "") {
+        hunkOld -= 1;
+        hunkNew -= 1;
+      }
+      continue;
+    }
     const isTraditionalHeader =
-      !insideGitSection &&
       line.startsWith("--- ") &&
       (lines[index + 1] ?? "").startsWith("+++ ") &&
-      /^@@ -\d/.test(lines[index + 2] ?? "");
-    if (isTraditionalHeader) {
+      HUNK_HEADER_RE.test(lines[index + 2] ?? "");
+    if (!isTraditionalHeader) {
+      continue;
+    }
+    if (insideGitSection && !gitHeaderSeen && /^--- (?:a\/|"a\/|\/dev\/null)/.test(line)) {
+      gitHeaderSeen = true;
+    } else {
+      insideGitSection = false;
       starts.push(index);
     }
   }

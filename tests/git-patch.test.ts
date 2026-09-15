@@ -237,6 +237,34 @@ diff --git a/second.txt b/second.txt
     expect(files[1]?.startLine).toBe(7);
   });
 
+  it("does not let hunk content fake a traditional section start", () => {
+    // The removed `-- x` and added `++ y` lines inside the first hunk read as a
+    // `--- `/`+++ ` pair; without hunk tracking the second file's startLine
+    // would point at that fake triple instead of its real header on line 13.
+    const files = parseRenderablePatchFiles(`--- a/f1.txt
++++ b/f1.txt
+@@ -1,3 +1,4 @@
+ base
+ mid
+--- x
++++ y
++z
+@@ -10,2 +10,2 @@
+ f
+-g
++h
+--- a/f2.txt
++++ b/f2.txt
+@@ -1 +1 @@
+-old
++new
+`);
+
+    expect(files.map((file) => file.displayPath)).toEqual(["f1.txt", "f2.txt"]);
+    expect(files[0]?.startLine).toBe(1);
+    expect(files[1]?.startLine).toBe(13);
+  });
+
   it("dedupes repeated paths into unique labels", () => {
     const files = parseRenderablePatchFiles(`diff --git a/x.txt b/x.txt
 --- a/x.txt
