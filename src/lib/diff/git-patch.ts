@@ -94,14 +94,25 @@ function parseDiffGitPaths(line: string): [string | null, string | null] | null 
     return null;
   }
   const oldToken = readGitPathToken(line, prefix.length);
-  if (!oldToken || line[oldToken.end] !== " ") {
-    return null;
+  if (oldToken && line[oldToken.end] === " ") {
+    const newToken = readGitPathToken(line, oldToken.end + 1);
+    if (newToken && newToken.end === line.length) {
+      return [stripDiffPrefix(oldToken.token), stripDiffPrefix(newToken.token)];
+    }
   }
-  const newToken = readGitPathToken(line, oldToken.end + 1);
-  if (!newToken || newToken.end !== line.length) {
-    return null;
+  // Git does not quote paths merely for containing spaces; unquoted prefixed
+  // headers are separated at the first ` b/` boundary.
+  const rest = line.slice(prefix.length);
+  if (rest.startsWith("a/")) {
+    const markerIndex = rest.indexOf(" b/");
+    if (markerIndex !== -1) {
+      return [
+        stripDiffPrefix(rest.slice(0, markerIndex)),
+        stripDiffPrefix(rest.slice(markerIndex + 1)),
+      ];
+    }
   }
-  return [stripDiffPrefix(oldToken.token), stripDiffPrefix(newToken.token)];
+  return null;
 }
 
 function parseMarkerPath(value: string): string | null {
@@ -114,7 +125,7 @@ function parseMarkerPath(value: string): string | null {
 }
 
 function normalizePatch(patch: string): string {
-  return patch.replace(/\r\n/g, "\n").trim();
+  return patch.replace(/\r\n/g, "\n");
 }
 
 function getFirstLine(value: string): string {
@@ -125,7 +136,7 @@ function getFirstLine(value: string): string {
 function scanLines(value: string, visitLine: (line: string) => void): void {
   let lineStart = 0;
 
-  while (lineStart <= value.length) {
+  while (lineStart < value.length) {
     const lineEnd = value.indexOf("\n", lineStart);
     if (lineEnd === -1) {
       visitLine(value.slice(lineStart));
@@ -203,7 +214,7 @@ function parseNonGitSections(value: string, startIndex: number): ParsedPatchFile
   for (let index = 0; index < starts.length; index += 1) {
     const start = starts[index] ?? 0;
     const end = starts[index + 1] ?? value.length;
-    sections.push(parsePatchSection(value.slice(start, end).trim(), startIndex + sections.length));
+    sections.push(parsePatchSection(value.slice(start, end), startIndex + sections.length));
   }
   return sections;
 }
@@ -222,7 +233,7 @@ function parsePatchSections(patch: string): ParsedPatchFile[] {
   let match: RegExpExecArray | null;
   while ((match = DIFF_SECTION_HEADER_RE.exec(normalized)) !== null) {
     if (previousStart !== -1) {
-      files.push(parsePatchSection(normalized.slice(previousStart, match.index).trim(), sectionIndex));
+      files.push(parsePatchSection(normalized.slice(previousStart, match.index), sectionIndex));
       sectionIndex += 1;
     } else if (match.index > 0) {
       const leadingSections = parseNonGitSections(normalized.slice(0, match.index), sectionIndex);
@@ -236,7 +247,7 @@ function parsePatchSections(patch: string): ParsedPatchFile[] {
     return parseNonGitSections(normalized, 0);
   }
 
-  files.push(parsePatchSection(normalized.slice(previousStart).trim(), sectionIndex));
+  files.push(parsePatchSection(normalized.slice(previousStart), sectionIndex));
   return files;
 }
 
@@ -355,7 +366,7 @@ function parsePatchSection(section: string, index: number): ParsedPatchFile {
 
   return {
     id: `${displayPath}-${index}`,
-    patch: `${section.trimEnd()}\n`,
+    patch: section.endsWith("\n") ? section : `${section}\n`,
     oldPath,
     newPath,
     displayPath,
@@ -402,6 +413,7 @@ export function getRenderablePatchFiles(files: readonly ParsedPatchFile[]): Pars
     const firstLine = getFirstLine(file.patch);
     return (
       parseDiffGitPaths(firstLine) !== null ||
+      file.status !== "modified" ||
       TRADITIONAL_FILE_HEADER_RE.test(file.patch) ||
       BINARY_PATCH_RE.test(firstLine)
     );

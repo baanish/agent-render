@@ -227,6 +227,39 @@ diff --git a/src/alpha.ts b/src/alpha.ts
     expect(files.map((file) => file.newPath)).toEqual(["one.txt"]);
   });
 
+  it("keeps rename-only files whose unquoted paths contain spaces", () => {
+    const bundle = parseGitPatchBundle(`diff --git a/old name.txt b/new name.txt
+similarity index 100%
+rename from old name.txt
+rename to new name.txt
+diff --git a/normal.txt b/normal.txt
+index 111..222 100644
+--- a/normal.txt
++++ b/normal.txt
+@@ -1 +1 @@
+-old
++new
+`);
+    expect(getRenderablePatchFiles(bundle).map((file) => file.displayPath)).toEqual([
+      "new name.txt",
+      "normal.txt",
+    ]);
+    expect(bundle[0]?.status).toBe("renamed");
+  });
+
+  it("accepts a hunk whose final context line is a blank line", () => {
+    const files = parseGitPatchBundle(`diff --git a/note.txt b/note.txt
+index 111..222 100644
+--- a/note.txt
++++ b/note.txt
+@@ -1,2 +1,2 @@
+-before
++after
+ 
+`);
+    expect(files.map((file) => file.newPath)).toEqual(["note.txt"]);
+  });
+
   it("keeps a traditional unified diff before a git-style section", () => {
     const patch = `--- a/legacy.txt
 +++ b/legacy.txt
