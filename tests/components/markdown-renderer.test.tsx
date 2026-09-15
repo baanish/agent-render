@@ -55,6 +55,17 @@ vi.mock("@/components/renderers/code-renderer", async () => {
   };
 });
 
+// Backstop for the real CodeRenderer if a deferred import ever resolves past the mock above:
+// Pierre's File needs ResizeObserver, which jsdom does not provide.
+vi.mock("@/lib/diff/pierre-react", async () => {
+  const React = await vi.importActual<typeof import("react")>("react");
+
+  return {
+    File: ({ file }: { file: { contents: string; name: string } }) =>
+      React.createElement("pre", { "data-testid": "mock-pierre-file" }, file.contents),
+  };
+});
+
 afterEach(() => {
   cleanup();
 });

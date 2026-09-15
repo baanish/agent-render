@@ -1,8 +1,27 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { JsonRenderer } from "@/components/renderers/json-renderer";
 import type { JsonArtifact } from "@/lib/payload/schema";
+
+const pierreFileMock = vi.hoisted(() => ({
+  options: null as null | {
+    onPostRender?: (node: HTMLElement, instance: unknown, phase: "mount" | "update" | "unmount") => void;
+  },
+}));
+
+// The raw view mounts the Pierre-backed CodeRenderer; stub the Pierre surface so the test
+// asserts wiring (content + lang) rather than shadow-DOM rendering under jsdom.
+vi.mock("@/lib/diff/pierre-react", async () => {
+  const React = await vi.importActual<typeof import("react")>("react");
+
+  return {
+    File: ({ file, options }: { file: { contents: string }; options: typeof pierreFileMock.options }) => {
+      pierreFileMock.options = options;
+      return React.createElement("pre", { "data-testid": "mock-pierre-file" }, file.contents);
+    },
+  };
+});
 
 function createArtifact(overrides: Partial<JsonArtifact> = {}): JsonArtifact {
   return {
@@ -17,6 +36,7 @@ function createArtifact(overrides: Partial<JsonArtifact> = {}): JsonArtifact {
 
 afterEach(() => {
   cleanup();
+  pierreFileMock.options = null;
 });
 
 describe("JsonRenderer", () => {
@@ -44,13 +64,26 @@ describe("JsonRenderer", () => {
     expect(secondReady).not.toHaveBeenCalled();
   });
 
-  it("switches to a native raw source view without mounting CodeMirror", async () => {
+  it("switches to a syntax-highlighted raw source view", async () => {
     render(<JsonRenderer artifact={createArtifact()} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Raw" }));
 
-    expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent('"name": "agent-render"');
-    expect(document.querySelector(".cm-editor")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent('"name": "agent-render"');
+      expect(
+        screen.getByTestId("renderer-json-raw").querySelector("[data-testid='mock-pierre-file']"),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "false");
+
+    act(() => {
+      pierreFileMock.options?.onPostRender?.(document.createElement("div"), {}, "mount");
+    });
+    expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "true");
+
+    await userEvent.click(screen.getByRole("button", { name: "Raw" }));
+    expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "true");
   });
 
   it("renders array nodes with numeric child labels", () => {
@@ -63,11 +96,45 @@ describe("JsonRenderer", () => {
     expect(screen.getByText("beta")).toBeVisible();
   });
 
-  it("shows invalid JSON as raw source with the parse error", () => {
+  it("shows invalid JSON as highlighted raw source with the parse error", async () => {
     render(<JsonRenderer artifact={createArtifact({ content: "{ nope" })} />);
 
     expect(screen.getByText(/expected property name/i)).toBeVisible();
-    expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent("{ nope");
+    await waitFor(() => {
+      expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent("{ nope");
+      expect(
+        screen.getByTestId("renderer-json-raw").querySelector("[data-testid='mock-pierre-file']"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("keeps raw readiness when a re-decoded artifact object carries the same content", async () => {
+    const { rerender } = render(<JsonRenderer artifact={createArtifact({ content: "{ nope" })} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("renderer-json-raw").querySelector("[data-testid='mock-pierre-file']"),
+      ).toBeInTheDocument();
+    });
+    act(() => {
+      pierreFileMock.options?.onPostRender?.(document.createElement("div"), {}, "mount");
+    });
+    expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "true");
+
+    // The shell keeps this renderer mounted across a hash change that decodes to an equal
+    // artifact; the raw surface does not post-render again, so readiness must survive.
+    rerender(<JsonRenderer artifact={createArtifact({ content: "{ nope" })} />);
+    expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "true");
+  });
+
+  it("falls back to raw source before a wide JSON value can flood the DOM", async () => {
+    const content = JSON.stringify(Array.from({ length: 5_001 }, (_, index) => index));
+
+    render(<JsonRenderer artifact={createArtifact({ content })} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(/too many values/i);
+    await waitFor(() => expect(screen.getByTestId("renderer-json-raw")).toHaveTextContent("5000"));
+    expect(document.querySelectorAll(".json-leaf-row")).toHaveLength(0);
   });
 
   it("renders deeply nested JSON without overflowing the render stack", () => {

@@ -1,6 +1,4 @@
 type FragmentDetailsDisclosureProps = {
-  statusLabel: string;
-  statusMessage: string;
   fragmentLength: string;
   maxLength: string;
   codec: string;
@@ -9,50 +7,38 @@ type FragmentDetailsDisclosureProps = {
 
 /**
  * Shows protocol diagnostics for the current fragment payload in a collapsible viewer panel.
- * Receives status, codec, length budget, and hash preview props from the shell-level decode state.
- * Stays read-only and provides quick visibility into transport/fallback conditions.
+ * Receives codec, length budget, and hash preview props from the shell-level decode state.
+ * Stays read-only and provides quick visibility into transport details.
  */
 export function FragmentDetailsDisclosure({
-  statusLabel,
-  statusMessage,
   fragmentLength,
   maxLength,
   codec,
   hashPreview,
 }: FragmentDetailsDisclosureProps) {
   return (
-    <details className="artifact-disclosure" data-testid="fragment-disclosure">
+    <details className="artifact-disclosure" data-testid="fragment-disclosure" open>
       <summary className="artifact-disclosure-summary">
-        <span className="artifact-disclosure-summary-copy">
-          <span className="section-kicker">Fragment details</span>
-          <span className="artifact-disclosure-title text-sm font-medium text-[color:var(--text-primary)]">
-            Codec, budget, and hash preview
-          </span>
-        </span>
+        <span className="artifact-disclosure-title">Fragment details</span>
       </summary>
       <div className="artifact-disclosure-body">
-        <p className="artifact-disclosure-status text-sm leading-6 text-[color:var(--text-muted)]">{statusMessage}</p>
-        <div className="artifact-disclosure-grid">
-          <div className="metric-card">
-            <p className="metric-label">Status</p>
-            <p className="metric-value">{statusLabel}</p>
+        <dl className="artifact-disclosure-grid">
+          <div>
+            <dt>Budget</dt>
+            <dd>{fragmentLength} / {maxLength}</dd>
           </div>
-          <div className="metric-card">
-            <p className="metric-label">Budget</p>
-            <p className="metric-value">{fragmentLength} / {maxLength}</p>
+          <div>
+            <dt>Codec</dt>
+            <dd>{codec}</dd>
           </div>
-          <div className="metric-card">
-            <p className="metric-label">Codec</p>
-            <p className="metric-value">{codec}</p>
+          <div>
+            <dt>Transport</dt>
+            <dd>Fragment only</dd>
           </div>
-          <div className="metric-card">
-            <p className="metric-label">Transport</p>
-            <p className="metric-value">Fragment only</p>
-          </div>
-        </div>
+        </dl>
         <div className="artifact-hash-preview">
-          <p className="metric-label">Hash preview</p>
-          <pre className="artifact-hash-preview-code font-mono mt-3 overflow-x-auto whitespace-pre-wrap break-all text-xs leading-6 text-[color:var(--text-muted)]">
+          <p className="metric-label">Hash</p>
+          <pre className="artifact-hash-preview-code">
             {hashPreview}
           </pre>
         </div>

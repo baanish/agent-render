@@ -31,9 +31,7 @@ describe("static security headers", () => {
 
     expect(headers).toContain("/arx-dictionary.json.br");
     expect(headers).toContain("/arx2-dictionary.json.br");
-    expect(headers).toContain("/vendor/diff-view-pure.css.br");
     expect(headers).toContain("Content-Type: application/json; charset=utf-8");
-    expect(headers).toContain("Content-Type: text/css; charset=utf-8");
     expect(headers).toContain("Content-Encoding: br");
     expect(headers).toContain("Vary: Accept-Encoding");
   });

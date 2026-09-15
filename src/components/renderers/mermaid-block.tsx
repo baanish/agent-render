@@ -52,6 +52,9 @@ export function MermaidBlock({ code, onReady }: MermaidBlockProps) {
         if (cancelled || !containerRef.current) return;
 
         containerRef.current.innerHTML = svg;
+        const diagram = containerRef.current.querySelector("svg");
+        diagram?.setAttribute("role", "img");
+        diagram?.setAttribute("aria-label", "Mermaid diagram");
         setError(null);
       } catch (err) {
         if (cancelled) return;

@@ -14,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Changed
 
 - Auto-emit no longer selects `arx3` or `arx4`. Existing `#c` and `#e` links still decode.
+- Highlighting consolidated on `@pierre/diffs` (Shiki) for diffs, standalone code, markdown fences, JSON raw views, and the artifact editor; CodeMirror and `@git-diff-view` are removed.
 
 ## [0.1.0] - 2026-05-05
 

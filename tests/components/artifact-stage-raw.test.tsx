@@ -7,6 +7,43 @@ import type {
   PayloadEnvelope,
 } from "@/lib/payload/schema";
 
+vi.mock("@/components/renderers/code-renderer", () => ({
+  CodeRenderer: ({
+    artifact,
+  }: {
+    artifact: { content: string; language?: string; filename?: string };
+  }) => (
+    <pre
+      className="code-renderer-shell"
+      data-testid="renderer-code"
+      data-language={artifact.language}
+    >
+      {artifact.content}
+    </pre>
+  ),
+}));
+
+vi.mock("@/components/viewer/artifact-body-editor", () => ({
+  ArtifactBodyEditor: ({
+    documents,
+    onDocumentChange,
+  }: {
+    documents: readonly { id: string; contents: string }[];
+    onDocumentChange: (id: string, contents: string) => void;
+  }) => (
+    <div data-testid="mock-body-editor">
+      {documents.map((doc) => (
+        <textarea
+          key={doc.id}
+          data-testid="artifact-editor-content"
+          defaultValue={doc.contents}
+          onChange={(event) => onDocumentChange(doc.id, event.target.value)}
+        />
+      ))}
+    </div>
+  ),
+}));
+
 vi.mock("next/dynamic", async () => {
   const React = await vi.importActual<typeof import("react")>("react");
 
@@ -35,12 +72,6 @@ vi.mock("next/dynamic", async () => {
   };
 });
 
-const statusTone = {
-  color: "#000000",
-  label: "Ready",
-  message: "Decoded fragment.",
-};
-
 function renderStage(activeArtifact: ArtifactPayload) {
   const envelope: PayloadEnvelope = {
     v: 1,
@@ -59,7 +90,6 @@ function renderStage(activeArtifact: ArtifactPayload) {
       onPreviewHash={vi.fn()}
       onRendererReady={vi.fn()}
       rendererReadyKey="ready"
-      statusTone={statusTone}
     />,
   );
 }
@@ -69,7 +99,7 @@ afterEach(() => {
 });
 
 describe("ArtifactStage raw view", () => {
-  it("renders markdown raw mode as un-highlighted plain text without mounting CodeMirror", async () => {
+  it("renders markdown raw mode on the highlighted file surface with a markdown hint", async () => {
     renderStage({
       id: "markdown-artifact",
       kind: "markdown",
@@ -79,13 +109,14 @@ describe("ArtifactStage raw view", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Raw" }));
 
-    expect(screen.getByTestId("renderer-markdown-raw")).toHaveTextContent(
-      "raw markdown body",
-    );
-    expect(document.querySelector(".cm-editor")).not.toBeInTheDocument();
+    const rawView = screen.getByTestId("renderer-markdown-raw");
+    expect(rawView).toHaveTextContent("raw markdown body");
+    const surface = await screen.findByTestId("renderer-code");
+    expect(rawView).toContainElement(surface);
+    expect(surface).toHaveAttribute("data-language", "markdown");
   });
 
-  it("renders csv raw mode as un-highlighted plain text without mounting CodeMirror", async () => {
+  it("renders csv raw mode on the highlighted file surface with a csv hint", async () => {
     renderStage({
       id: "csv-artifact",
       kind: "csv",
@@ -95,10 +126,11 @@ describe("ArtifactStage raw view", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Raw" }));
 
-    expect(screen.getByTestId("renderer-csv-raw")).toHaveTextContent(
-      "name,status",
-    );
-    expect(document.querySelector(".cm-editor")).not.toBeInTheDocument();
+    const rawView = screen.getByTestId("renderer-csv-raw");
+    expect(rawView).toHaveTextContent("name,status");
+    const surface = await screen.findByTestId("renderer-code");
+    expect(rawView).toContainElement(surface);
+    expect(surface).toHaveAttribute("data-language", "csv");
   });
 
   it("opens the in-viewer editor with the current artifact body", async () => {
@@ -112,7 +144,7 @@ describe("ArtifactStage raw view", () => {
     await userEvent.click(screen.getByRole("button", { name: "Edit" }));
 
     expect(await screen.findByTestId("artifact-editor")).toBeInTheDocument();
-    expect(screen.getByTestId("artifact-editor-content")).toHaveValue(
+    expect(await screen.findByTestId("artifact-editor-content")).toHaveValue(
       "# Heading\n\nraw markdown body",
     );
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();

@@ -1,0 +1,383 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-07T17:53:19Z",
+  "title": "Design System: agent-render",
+  "extensions": {
+    "colorMeta": {
+      "page-canvas": {
+        "role": "neutral",
+        "displayName": "Instrument Canvas",
+        "canonical": "#ebe7dd",
+        "tonalRamp": ["oklch(15% 0.025 78)", "oklch(27% 0.025 78)", "oklch(39% 0.025 78)", "oklch(51% 0.025 78)", "oklch(63% 0.025 78)", "oklch(75% 0.025 78)", "oklch(87% 0.025 78)", "oklch(95% 0.025 78)"]
+      },
+      "page-canvas-dark": {
+        "role": "neutral",
+        "displayName": "Dark Instrument Canvas",
+        "canonical": "#14110d",
+        "tonalRamp": ["oklch(15% 0.015 70)", "oklch(27% 0.015 70)", "oklch(39% 0.015 70)", "oklch(51% 0.015 70)", "oklch(63% 0.015 70)", "oklch(75% 0.015 70)", "oklch(87% 0.015 70)", "oklch(95% 0.015 70)"]
+      },
+      "primary-ink": {
+        "role": "neutral",
+        "displayName": "Primary Ink",
+        "canonical": "#211d18",
+        "tonalRamp": ["oklch(15% 0.015 70)", "oklch(27% 0.015 70)", "oklch(39% 0.015 70)", "oklch(51% 0.015 70)", "oklch(63% 0.015 70)", "oklch(75% 0.015 70)", "oklch(87% 0.015 70)", "oklch(95% 0.015 70)"]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#5f584d",
+        "tonalRamp": ["oklch(15% 0.02 75)", "oklch(27% 0.02 75)", "oklch(39% 0.02 75)", "oklch(51% 0.02 75)", "oklch(63% 0.02 75)", "oklch(75% 0.02 75)", "oklch(87% 0.02 75)", "oklch(95% 0.02 75)"]
+      },
+      "bone-key": {
+        "role": "neutral",
+        "displayName": "Aged Bone Key",
+        "canonical": "#e3ddd0",
+        "tonalRamp": ["oklch(15% 0.025 78)", "oklch(27% 0.025 78)", "oklch(39% 0.025 78)", "oklch(51% 0.025 78)", "oklch(63% 0.025 78)", "oklch(75% 0.025 78)", "oklch(87% 0.025 78)", "oklch(95% 0.025 78)"]
+      },
+      "bone-key-dark": {
+        "role": "neutral",
+        "displayName": "Dark-Shell Aged Bone Key",
+        "canonical": "#cfc6b4",
+        "tonalRamp": ["oklch(15% 0.03 78)", "oklch(27% 0.03 78)", "oklch(39% 0.03 78)", "oklch(51% 0.03 78)", "oklch(63% 0.03 78)", "oklch(75% 0.03 78)", "oklch(87% 0.03 78)", "oklch(95% 0.03 78)"]
+      },
+      "bone-key-lift": {
+        "role": "neutral",
+        "displayName": "Lifted Bone Key",
+        "canonical": "#f2ede3",
+        "tonalRamp": ["oklch(15% 0.02 78)", "oklch(27% 0.02 78)", "oklch(39% 0.02 78)", "oklch(51% 0.02 78)", "oklch(63% 0.02 78)", "oklch(75% 0.02 78)", "oklch(87% 0.02 78)", "oklch(95% 0.02 78)"]
+      },
+      "bone-key-lift-dark": {
+        "role": "neutral",
+        "displayName": "Dark-Shell Lifted Bone Key",
+        "canonical": "#dcd5c5",
+        "tonalRamp": ["oklch(15% 0.025 78)", "oklch(27% 0.025 78)", "oklch(39% 0.025 78)", "oklch(51% 0.025 78)", "oklch(63% 0.025 78)", "oklch(75% 0.025 78)", "oklch(87% 0.025 78)", "oklch(95% 0.025 78)"]
+      },
+      "bone-key-mid": {
+        "role": "neutral",
+        "displayName": "Pressed Bone Key",
+        "canonical": "#d2cab9",
+        "tonalRamp": ["oklch(15% 0.03 78)", "oklch(27% 0.03 78)", "oklch(39% 0.03 78)", "oklch(51% 0.03 78)", "oklch(63% 0.03 78)", "oklch(75% 0.03 78)", "oklch(87% 0.03 78)", "oklch(95% 0.03 78)"]
+      },
+      "bone-key-mid-dark": {
+        "role": "neutral",
+        "displayName": "Dark-Shell Pressed Bone Key",
+        "canonical": "#b8ae9c",
+        "tonalRamp": ["oklch(15% 0.03 78)", "oklch(27% 0.03 78)", "oklch(39% 0.03 78)", "oklch(51% 0.03 78)", "oklch(63% 0.03 78)", "oklch(75% 0.03 78)", "oklch(87% 0.03 78)", "oklch(95% 0.03 78)"]
+      },
+      "bone-key-edge": {
+        "role": "neutral",
+        "displayName": "Bone Key Edge",
+        "canonical": "#958a79",
+        "tonalRamp": ["oklch(15% 0.03 72)", "oklch(27% 0.03 72)", "oklch(39% 0.03 72)", "oklch(51% 0.03 72)", "oklch(63% 0.03 72)", "oklch(75% 0.03 72)", "oklch(87% 0.03 72)", "oklch(95% 0.03 72)"]
+      },
+      "bone-key-edge-dark": {
+        "role": "neutral",
+        "displayName": "Dark-Shell Bone Key Edge",
+        "canonical": "#756b5b",
+        "tonalRamp": ["oklch(15% 0.03 72)", "oklch(27% 0.03 72)", "oklch(39% 0.03 72)", "oklch(51% 0.03 72)", "oklch(63% 0.03 72)", "oklch(75% 0.03 72)", "oklch(87% 0.03 72)", "oklch(95% 0.03 72)"]
+      },
+      "chassis": {
+        "role": "neutral",
+        "displayName": "Charcoal Chassis",
+        "canonical": "#211d18",
+        "tonalRamp": ["oklch(15% 0.015 70)", "oklch(27% 0.015 70)", "oklch(39% 0.015 70)", "oklch(51% 0.015 70)", "oklch(63% 0.015 70)", "oklch(75% 0.015 70)", "oklch(87% 0.015 70)", "oklch(95% 0.015 70)"]
+      },
+      "chassis-dark": {
+        "role": "neutral",
+        "displayName": "Dark Charcoal Chassis",
+        "canonical": "#1c1915",
+        "tonalRamp": ["oklch(15% 0.015 70)", "oklch(27% 0.015 70)", "oklch(39% 0.015 70)", "oklch(51% 0.015 70)", "oklch(63% 0.015 70)", "oklch(75% 0.015 70)", "oklch(87% 0.015 70)", "oklch(95% 0.015 70)"]
+      },
+      "chassis-deep": {
+        "role": "neutral",
+        "displayName": "Recessed Chassis",
+        "canonical": "#14110d",
+        "tonalRamp": ["oklch(15% 0.015 70)", "oklch(27% 0.015 70)", "oklch(39% 0.015 70)", "oklch(51% 0.015 70)", "oklch(63% 0.015 70)", "oklch(75% 0.015 70)", "oklch(87% 0.015 70)", "oklch(95% 0.015 70)"]
+      },
+      "chassis-deep-dark": {
+        "role": "neutral",
+        "displayName": "Dark Recessed Chassis",
+        "canonical": "#0f0d0a",
+        "tonalRamp": ["oklch(15% 0.015 70)", "oklch(27% 0.015 70)", "oklch(39% 0.015 70)", "oklch(51% 0.015 70)", "oklch(63% 0.015 70)", "oklch(75% 0.015 70)", "oklch(87% 0.015 70)", "oklch(95% 0.015 70)"]
+      },
+      "chassis-raised": {
+        "role": "neutral",
+        "displayName": "Raised Chassis",
+        "canonical": "#2b2620",
+        "tonalRamp": ["oklch(15% 0.018 70)", "oklch(27% 0.018 70)", "oklch(39% 0.018 70)", "oklch(51% 0.018 70)", "oklch(63% 0.018 70)", "oklch(75% 0.018 70)", "oklch(87% 0.018 70)", "oklch(95% 0.018 70)"]
+      },
+      "chassis-ink": {
+        "role": "neutral",
+        "displayName": "Chassis Ink",
+        "canonical": "#e3dccd",
+        "tonalRamp": ["oklch(15% 0.025 78)", "oklch(27% 0.025 78)", "oklch(39% 0.025 78)", "oklch(51% 0.025 78)", "oklch(63% 0.025 78)", "oklch(75% 0.025 78)", "oklch(87% 0.025 78)", "oklch(95% 0.025 78)"]
+      },
+      "chassis-muted": {
+        "role": "neutral",
+        "displayName": "Muted Chassis Ink",
+        "canonical": "#b8ae9c",
+        "tonalRamp": ["oklch(15% 0.03 78)", "oklch(27% 0.03 78)", "oklch(39% 0.03 78)", "oklch(51% 0.03 78)", "oklch(63% 0.03 78)", "oklch(75% 0.03 78)", "oklch(87% 0.03 78)", "oklch(95% 0.03 78)"]
+      },
+      "structural-line": {
+        "role": "neutral",
+        "displayName": "Engraved Hairline",
+        "canonical": "#51493e",
+        "tonalRamp": ["oklch(15% 0.025 70)", "oklch(27% 0.025 70)", "oklch(39% 0.025 70)", "oklch(51% 0.025 70)", "oklch(63% 0.025 70)", "oklch(75% 0.025 70)", "oklch(87% 0.025 70)", "oklch(95% 0.025 70)"]
+      },
+      "action-orange": {
+        "role": "primary",
+        "displayName": "Commit Orange",
+        "canonical": "#cf6828",
+        "tonalRamp": ["oklch(15% 0.15 48)", "oklch(27% 0.15 48)", "oklch(39% 0.15 48)", "oklch(51% 0.15 48)", "oklch(63% 0.15 48)", "oklch(75% 0.15 48)", "oklch(87% 0.15 48)", "oklch(95% 0.15 48)"]
+      },
+      "action-orange-edge": {
+        "role": "primary",
+        "displayName": "Commit Orange Edge",
+        "canonical": "#8f3c12",
+        "tonalRamp": ["oklch(15% 0.14 45)", "oklch(27% 0.14 45)", "oklch(39% 0.14 45)", "oklch(51% 0.14 45)", "oklch(63% 0.14 45)", "oklch(75% 0.14 45)", "oklch(87% 0.14 45)", "oklch(95% 0.14 45)"]
+      },
+      "confirmation-mint": {
+        "role": "secondary",
+        "displayName": "Confirmation Mint",
+        "canonical": "#559174",
+        "tonalRamp": ["oklch(15% 0.08 155)", "oklch(27% 0.08 155)", "oklch(39% 0.08 155)", "oklch(51% 0.08 155)", "oklch(63% 0.08 155)", "oklch(75% 0.08 155)", "oklch(87% 0.08 155)", "oklch(95% 0.08 155)"]
+      },
+      "confirmation-mint-dark": {
+        "role": "secondary",
+        "displayName": "Dark-Theme Confirmation Mint",
+        "canonical": "#69a889",
+        "tonalRamp": ["oklch(15% 0.08 155)", "oklch(27% 0.08 155)", "oklch(39% 0.08 155)", "oklch(51% 0.08 155)", "oklch(63% 0.08 155)", "oklch(75% 0.08 155)", "oklch(87% 0.08 155)", "oklch(95% 0.08 155)"]
+      },
+      "confirmation-edge": {
+        "role": "secondary",
+        "displayName": "Confirmation Edge",
+        "canonical": "#2d5d43",
+        "tonalRamp": ["oklch(15% 0.075 155)", "oklch(27% 0.075 155)", "oklch(39% 0.075 155)", "oklch(51% 0.075 155)", "oklch(63% 0.075 155)", "oklch(75% 0.075 155)", "oklch(87% 0.075 155)", "oklch(95% 0.075 155)"]
+      },
+      "alert-brick": {
+        "role": "tertiary",
+        "displayName": "Alert Brick",
+        "canonical": "#c96b57",
+        "tonalRamp": ["oklch(15% 0.11 28)", "oklch(27% 0.11 28)", "oklch(39% 0.11 28)", "oklch(51% 0.11 28)", "oklch(63% 0.11 28)", "oklch(75% 0.11 28)", "oklch(87% 0.11 28)", "oklch(95% 0.11 28)"]
+      },
+      "alert-edge": {
+        "role": "tertiary",
+        "displayName": "Alert Brick Edge",
+        "canonical": "#713126",
+        "tonalRamp": ["oklch(15% 0.1 28)", "oklch(27% 0.1 28)", "oklch(39% 0.1 28)", "oklch(51% 0.1 28)", "oklch(63% 0.1 28)", "oklch(75% 0.1 28)", "oklch(87% 0.1 28)", "oklch(95% 0.1 28)"]
+      },
+      "amber-readout": {
+        "role": "tertiary",
+        "displayName": "Readout Amber",
+        "canonical": "#d59a43",
+        "tonalRamp": ["oklch(15% 0.11 75)", "oklch(27% 0.11 75)", "oklch(39% 0.11 75)", "oklch(51% 0.11 75)", "oklch(63% 0.11 75)", "oklch(75% 0.11 75)", "oklch(87% 0.11 75)", "oklch(95% 0.11 75)"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Instrument Paper",
+        "canonical": "#f0eadf",
+        "tonalRamp": ["oklch(15% 0.025 78)", "oklch(27% 0.025 78)", "oklch(39% 0.025 78)", "oklch(51% 0.025 78)", "oklch(63% 0.025 78)", "oklch(75% 0.025 78)", "oklch(87% 0.025 78)", "oklch(95% 0.025 78)"]
+      },
+      "paper-dark": {
+        "role": "neutral",
+        "displayName": "Dark-Theme Instrument Paper",
+        "canonical": "#dcd5c5",
+        "tonalRamp": ["oklch(15% 0.025 78)", "oklch(27% 0.025 78)", "oklch(39% 0.025 78)", "oklch(51% 0.025 78)", "oklch(63% 0.025 78)", "oklch(75% 0.025 78)", "oklch(87% 0.025 78)", "oklch(95% 0.025 78)"]
+      },
+      "paper-ink": {
+        "role": "neutral",
+        "displayName": "Paper Ink",
+        "canonical": "#28221b",
+        "tonalRamp": ["oklch(15% 0.018 70)", "oklch(27% 0.018 70)", "oklch(39% 0.018 70)", "oklch(51% 0.018 70)", "oklch(63% 0.018 70)", "oklch(75% 0.018 70)", "oklch(87% 0.018 70)", "oklch(95% 0.018 70)"]
+      },
+      "carbon-paper": {
+        "role": "neutral",
+        "displayName": "Carbon Transfer Stock",
+        "canonical": "#d9d0bd",
+        "tonalRamp": ["oklch(15% 0.035 78)", "oklch(27% 0.035 78)", "oklch(39% 0.035 78)", "oklch(51% 0.035 78)", "oklch(63% 0.035 78)", "oklch(75% 0.035 78)", "oklch(87% 0.035 78)", "oklch(95% 0.035 78)"]
+      },
+      "carbon-paper-dark": {
+        "role": "neutral",
+        "displayName": "Dark-Theme Carbon Transfer Stock",
+        "canonical": "#d2c8b3",
+        "tonalRamp": ["oklch(15% 0.035 78)", "oklch(27% 0.035 78)", "oklch(39% 0.035 78)", "oklch(51% 0.035 78)", "oklch(63% 0.035 78)", "oklch(75% 0.035 78)", "oklch(87% 0.035 78)", "oklch(95% 0.035 78)"]
+      },
+      "carbon-ink": {
+        "role": "neutral",
+        "displayName": "Carbon Transfer Ink",
+        "canonical": "#41392f",
+        "tonalRamp": ["oklch(15% 0.025 70)", "oklch(27% 0.025 70)", "oklch(39% 0.025 70)", "oklch(51% 0.025 70)", "oklch(63% 0.025 70)", "oklch(75% 0.025 70)", "oklch(87% 0.025 70)", "oklch(95% 0.025 70)"]
+      },
+      "carbon-line": {
+        "role": "neutral",
+        "displayName": "Carbon Perforation Line",
+        "canonical": "#776d5e",
+        "tonalRamp": ["oklch(15% 0.03 72)", "oklch(27% 0.03 72)", "oklch(39% 0.03 72)", "oklch(51% 0.03 72)", "oklch(63% 0.03 72)", "oklch(75% 0.03 72)", "oklch(87% 0.03 72)", "oklch(95% 0.03 72)"]
+      },
+      "renderer": {
+        "role": "neutral",
+        "displayName": "Renderer Carbon",
+        "canonical": "#1c1915",
+        "tonalRamp": ["oklch(15% 0.015 70)", "oklch(27% 0.015 70)", "oklch(39% 0.015 70)", "oklch(51% 0.015 70)", "oklch(63% 0.015 70)", "oklch(75% 0.015 70)", "oklch(87% 0.015 70)", "oklch(95% 0.015 70)"]
+      },
+      "renderer-raised": {
+        "role": "neutral",
+        "displayName": "Raised Renderer Carbon",
+        "canonical": "#27221c",
+        "tonalRamp": ["oklch(15% 0.018 70)", "oklch(27% 0.018 70)", "oklch(39% 0.018 70)", "oklch(51% 0.018 70)", "oklch(63% 0.018 70)", "oklch(75% 0.018 70)", "oklch(87% 0.018 70)", "oklch(95% 0.018 70)"]
+      },
+      "renderer-text": {
+        "role": "neutral",
+        "displayName": "Renderer Text",
+        "canonical": "#e1d9ca",
+        "tonalRamp": ["oklch(15% 0.025 78)", "oklch(27% 0.025 78)", "oklch(39% 0.025 78)", "oklch(51% 0.025 78)", "oklch(63% 0.025 78)", "oklch(75% 0.025 78)", "oklch(87% 0.025 78)", "oklch(95% 0.025 78)"]
+      },
+      "key-ink": {
+        "role": "neutral",
+        "displayName": "Keycap Ink",
+        "canonical": "#241f19",
+        "tonalRamp": ["oklch(15% 0.018 70)", "oklch(27% 0.018 70)", "oklch(39% 0.018 70)", "oklch(51% 0.018 70)", "oklch(63% 0.018 70)", "oklch(75% 0.018 70)", "oklch(87% 0.018 70)", "oklch(95% 0.018 70)"]
+      },
+      "confirmation-ink": {
+        "role": "neutral",
+        "displayName": "Confirmation Ink",
+        "canonical": "#111a15",
+        "tonalRamp": ["oklch(15% 0.025 155)", "oklch(27% 0.025 155)", "oklch(39% 0.025 155)", "oklch(51% 0.025 155)", "oklch(63% 0.025 155)", "oklch(75% 0.025 155)", "oklch(87% 0.025 155)", "oklch(95% 0.025 155)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Artifact titles and page-level hierarchy." },
+      "headline": { "displayName": "Headline", "purpose": "Procedure and workbench headings." },
+      "title": { "displayName": "Title", "purpose": "Panel, limits, and inspector headings." },
+      "body": { "displayName": "Body", "purpose": "Operational explanations and rendered prose." },
+      "label": { "displayName": "Instrument Label", "purpose": "Metrics, indices, revision placards, and state." }
+    },
+    "shadows": [
+      { "name": "key-rest", "value": "inset 0 1px 0 rgba(255, 255, 255, 0.44), 0 2px 0 var(--bone-edge)", "purpose": "Raises bone keycaps above the chassis." },
+      { "name": "key-pressed", "value": "inset 0 2px 3px rgba(20, 17, 13, 0.2)", "purpose": "Pairs with translateY(2px) for selected and active keys." },
+      { "name": "recessed-field", "value": "inset 0 2px 5px rgba(0, 0, 0, 0.38), inset 0 -1px 0 rgba(255, 255, 255, 0.035)", "purpose": "Recesses editable fields into the chassis." },
+      { "name": "chassis-hairline", "value": "inset 0 1px 0 rgba(255, 255, 255, 0.035)", "purpose": "Mounts large chassis panels without ambient lift." },
+      { "name": "technical-well", "value": "inset 0 2px 5px rgba(0, 0, 0, 0.42)", "purpose": "Recesses hash previews and technical readouts." }
+    ],
+    "motion": [
+      { "name": "state-change", "value": "140ms ease", "purpose": "Fast background and border feedback on controls." },
+      { "name": "carbon-feed", "value": "260ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Reveals successful generated output from top to bottom." },
+      { "name": "reduced-motion", "value": "0.01ms", "purpose": "Effectively removes animation and transition movement when reduced motion is preferred." }
+    ],
+    "breakpoints": [
+      { "name": "xxs", "value": "360px" },
+      { "name": "xs", "value": "520px" },
+      { "name": "metadata-wide", "value": "700px" },
+      { "name": "mobile", "value": "760px" },
+      { "name": "workbench", "value": "880px" },
+      { "name": "wide-procedure", "value": "1120px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Commit Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Outcome-producing action key; orange is reserved for commit semantics.",
+      "html": "<button class=\"ds-btn-commit\" type=\"button\">GENERATE LINK</button>",
+      "css": ".ds-btn-commit { min-width: 150px; min-height: 38px; padding: 7px 10px; border: 1px solid var(--action-edge, #8f3c12); border-radius: 2px; background: var(--action, #cf6828); box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 2px 0 var(--action-edge, #8f3c12); color: var(--chassis-deep, #14110d); font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 10px; font-weight: 650; letter-spacing: .035em; text-transform: uppercase; transition: background-color 140ms ease, border-color 140ms ease; } .ds-btn-commit:hover { background: #d26426; } .ds-btn-commit:focus-visible { outline: 2px solid var(--focus-ring, #756c5e); outline-offset: 2px; } .ds-btn-commit:active { transform: translateY(2px); box-shadow: inset 0 2px 3px rgba(20,17,13,.2); }"
+    },
+    {
+      "name": "Bone Key",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default compact action, mode, and theme control mounted on the chassis.",
+      "html": "<button class=\"ds-btn-key\" type=\"button\">RAW VIEW</button>",
+      "css": ".ds-btn-key { min-width: 50px; min-height: 38px; padding: 7px 10px; border: 1px solid var(--bone-edge, #958a79); border-radius: 2px; background: var(--bone, #e3ddd0); box-shadow: inset 0 1px 0 rgba(255,255,255,.44), 0 2px 0 var(--bone-edge, #958a79); color: #241f19; font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 10px; font-weight: 650; letter-spacing: .035em; text-transform: uppercase; transition: background-color 140ms ease, border-color 140ms ease; } .ds-btn-key:hover { background: var(--bone-lift, #f2ede3); } .ds-btn-key:focus-visible { outline: 2px solid var(--focus-ring, #756c5e); outline-offset: 2px; } .ds-btn-key:active, .ds-btn-key[aria-pressed='true'] { transform: translateY(2px); background: var(--bone-mid, #d2cab9); box-shadow: inset 0 2px 3px rgba(20,17,13,.2); }"
+    },
+    {
+      "name": "Confirmed Key",
+      "kind": "button",
+      "refersTo": "button-confirmed",
+      "description": "Transient success state for copied or completed actions.",
+      "html": "<button class=\"ds-btn-confirmed\" type=\"button\">COPIED</button>",
+      "css": ".ds-btn-confirmed { min-height: 38px; padding: 7px 10px; border: 1px solid var(--confirmation-edge, #2d5d43); border-radius: 2px; background: var(--confirmation, #559174); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 2px 0 var(--confirmation-edge, #2d5d43); color: #111a15; font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 10px; font-weight: 650; letter-spacing: .035em; text-transform: uppercase; } .ds-btn-confirmed:hover { background: var(--confirmation, #559174); } .ds-btn-confirmed:focus-visible { outline: 2px solid var(--focus-ring, #756c5e); outline-offset: 2px; } .ds-btn-confirmed:active { transform: translateY(2px); box-shadow: inset 0 2px 3px rgba(20,17,13,.2); }"
+    },
+    {
+      "name": "Recessed Input",
+      "kind": "input",
+      "refersTo": "input-recessed",
+      "description": "Editable instrument field sunk into the dark chassis.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">FILENAME</span><input class=\"ds-field-input\" value=\"brief.md\"></label>",
+      "css": ".ds-field { display: grid; gap: 5px; color: var(--on-chassis, #e3dccd); } .ds-field-label { color: var(--on-chassis-muted, #b8ae9c); font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 9px; font-weight: 650; letter-spacing: .085em; line-height: 1.25; text-transform: uppercase; } .ds-field-input { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line-dark, #51493e); border-radius: 2px; outline: none; background: var(--chassis-deep, #14110d); box-shadow: inset 0 2px 5px rgba(0,0,0,.38), inset 0 -1px 0 rgba(255,255,255,.035); color: var(--on-chassis, #e3dccd); font-family: var(--font-sans, SUSE), sans-serif; font-size: 15px; } .ds-field-input:hover { border-color: var(--line-strong, #756c5e); } .ds-field-input:focus-visible { border-color: var(--bone-edge, #958a79); box-shadow: inset 0 2px 5px rgba(0,0,0,.44), 0 0 0 1px var(--bone-edge, #958a79); }"
+    },
+    {
+      "name": "Shell Navigation",
+      "kind": "nav",
+      "description": "Compact chassis rail with an identity mark and raised key navigation.",
+      "html": "<nav class=\"ds-shell-nav\" aria-label=\"Example navigation\"><span class=\"ds-shell-wordmark\">agent-render</span><a class=\"ds-shell-key\" href=\"#\">SECURITY</a><button class=\"ds-shell-key\" type=\"button\">DARK</button></nav>",
+      "css": ".ds-shell-nav { display: flex; min-height: 54px; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line-dark, #51493e); background: var(--chassis, #211d18); color: var(--on-chassis, #e3dccd); } .ds-shell-wordmark { margin-right: auto; font-family: var(--font-display, Manrope), sans-serif; font-size: 17px; font-weight: 760; letter-spacing: -.025em; } .ds-shell-key { display: inline-flex; min-height: 34px; align-items: center; padding: 6px 10px; border: 1px solid var(--bone-edge, #958a79); border-radius: 2px; background: var(--bone, #e3ddd0); box-shadow: inset 0 1px 0 rgba(255,255,255,.42), 0 2px 0 var(--bone-edge, #958a79); color: #241f19; font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 11px; font-weight: 650; letter-spacing: .055em; text-decoration: none; } .ds-shell-key:hover { background: var(--bone-lift, #f2ede3); } .ds-shell-key:focus-visible { outline: 2px solid var(--focus-ring, #756c5e); outline-offset: 2px; } .ds-shell-key:active { transform: translateY(2px); box-shadow: inset 0 1px 2px rgba(20,17,13,.24); }"
+    },
+    {
+      "name": "Procedure Panel",
+      "kind": "card",
+      "refersTo": "panel-chassis",
+      "description": "Shared chassis assembly for procedures, limits, diagnostics, and toolbars.",
+      "html": "<section class=\"ds-procedure\"><header class=\"ds-procedure-head\"><div><h3 class=\"ds-procedure-title\">Operating limits</h3><p class=\"ds-procedure-copy\">Static fragment transport / browser-side decode</p></div><span class=\"ds-procedure-rev\">PROC LNK-01 / REV C</span></header><dl class=\"ds-procedure-grid\"><div><dt>TRANSPORT</dt><dd>URL fragment only</dd></div><div><dt>FORMATS</dt><dd>MD · CODE · DIFF · CSV · JSON</dd></div></dl></section>",
+      "css": ".ds-procedure { overflow: hidden; border: 1px solid var(--line-dark, #51493e); border-radius: 2px; background: var(--chassis, #211d18); box-shadow: inset 0 1px 0 rgba(255,255,255,.035); color: var(--on-chassis, #e3dccd); } .ds-procedure-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border-bottom: 1px solid var(--line-dark, #51493e); } .ds-procedure-title { margin: 0; font-family: var(--font-display, Manrope), sans-serif; font-size: 18px; font-weight: 760; letter-spacing: -.025em; line-height: 1.05; } .ds-procedure-copy { margin: 5px 0 0; color: var(--on-chassis-muted, #b8ae9c); font-family: var(--font-sans, SUSE), sans-serif; font-size: 13px; line-height: 1.45; } .ds-procedure-rev { padding: 4px 7px; border: 1px solid currentColor; border-radius: 2px; color: var(--on-chassis-muted, #b8ae9c); font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 9px; font-weight: 650; letter-spacing: .085em; white-space: nowrap; } .ds-procedure-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); margin: 0; } .ds-procedure-grid div { padding: 8px 10px; border-right: 1px solid var(--line-dark, #51493e); } .ds-procedure-grid div:last-child { border-right: 0; } .ds-procedure-grid dt { color: var(--on-chassis-muted, #b8ae9c); font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 9px; font-weight: 650; letter-spacing: .085em; } .ds-procedure-grid dd { margin: 4px 0 0; font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 11px; }"
+    },
+    {
+      "name": "Artifact Switcher",
+      "kind": "custom",
+      "refersTo": "artifact-switcher",
+      "description": "Horizontal bundle selector with a physically depressed active state.",
+      "html": "<button class=\"ds-artifact-switcher\" type=\"button\" aria-pressed=\"true\"><span class=\"ds-artifact-icon\" aria-hidden=\"true\"><svg class=\"ds-artifact-icon-svg\" viewBox=\"0 0 20 20\" fill=\"none\"><path d=\"M5 2.75h6l4 4v10.5H5zM11 2.75v4h4M8 10h4M8 13h4\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></span><span class=\"ds-artifact-copy\"><strong>Product brief</strong><small>brief.md</small></span></button>",
+      "css": ".ds-artifact-switcher { display: flex; width: 248px; min-height: 50px; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--bone-edge, #958a79); border-radius: 2px; background: var(--bone, #e3ddd0); box-shadow: inset 0 1px 0 rgba(255,255,255,.44), 0 2px 0 var(--bone-edge, #958a79); color: #241f19; text-align: left; transition: background-color 140ms ease, border-color 140ms ease; } .ds-artifact-icon { display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid var(--bone-edge, #958a79); background: var(--bone-mid, #d2cab9); } .ds-artifact-icon-svg { width: 15px; height: 15px; } .ds-artifact-copy { display: grid; min-width: 0; } .ds-artifact-copy strong { font-family: var(--font-sans, SUSE), sans-serif; font-size: 12px; font-weight: 700; } .ds-artifact-copy small { margin-top: 2px; color: #5d5549; font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 9px; } .ds-artifact-switcher:hover { background: var(--bone-lift, #f2ede3); } .ds-artifact-switcher:focus-visible { outline: 2px solid var(--focus-ring, #756c5e); outline-offset: 2px; } .ds-artifact-switcher:active, .ds-artifact-switcher[aria-pressed='true'] { transform: translateY(2px); background: var(--bone-mid, #d2cab9); box-shadow: inset 0 2px 3px rgba(20,17,13,.2); }"
+    },
+    {
+      "name": "QRH Warning",
+      "kind": "custom",
+      "description": "Explicit fault or warning callout whose text label remains present alongside color.",
+      "html": "<p class=\"ds-qrh-warning\"><span class=\"ds-qrh-label\">WARN</span><span>Fragment links can appear in browser history and copied messages.</span></p>",
+      "css": ".ds-qrh-warning { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 8px; align-items: start; margin: 0; padding: 7px 8px; border: 1px solid var(--alert, #c96b57); border-radius: 2px; background: var(--chassis-deep, #14110d); color: var(--on-chassis-muted, #b8ae9c); font-family: var(--font-sans, SUSE), sans-serif; font-size: 11px; line-height: 1.4; } .ds-qrh-label { color: var(--alert, #c96b57); font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 9px; font-weight: 750; letter-spacing: .08em; }"
+    },
+    {
+      "name": "Carbon Transfer Output",
+      "kind": "custom",
+      "refersTo": "carbon-output",
+      "description": "Successful generated-link result on perforated carbon stock.",
+      "html": "<section class=\"ds-carbon-output\"><header class=\"ds-carbon-head\"><div><h3>Generated link</h3><p>brief.md</p></div><span class=\"ds-carbon-stamp\">TRANSFER OK</span></header><div class=\"ds-carbon-readout\"><span>URL</span><code>https://agent-render.example/#e...</code></div></section>",
+      "css": "@keyframes ds-carbon-feed { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } } .ds-carbon-output { position: relative; display: grid; gap: 10px; overflow: hidden; padding: 20px 12px 22px; border: 1px solid var(--carbon-line, #776d5e); border-radius: 0; background: var(--carbon-paper, #d9d0bd); color: var(--carbon-ink, #41392f); animation: ds-carbon-feed 260ms cubic-bezier(.16,1,.3,1) both; } .ds-carbon-output::before { position: absolute; inset: 0 0 auto; height: 8px; background: repeating-linear-gradient(90deg,var(--carbon-ink, #41392f) 0 12px,transparent 12px 20px); content: ''; opacity: .66; } .ds-carbon-output::after { position: absolute; right: 9px; bottom: 8px; left: 9px; border-bottom: 1px dashed var(--carbon-line, #776d5e); content: ''; } .ds-carbon-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--carbon-line, #776d5e); } .ds-carbon-head h3 { margin: 0; font-family: var(--font-display, Manrope), sans-serif; font-size: 20px; font-weight: 760; letter-spacing: -.025em; } .ds-carbon-head p { margin: 5px 0 0; font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 10px; opacity: .72; } .ds-carbon-stamp { padding: 6px 9px; transform: rotate(-4deg); border: 2px solid var(--confirmation-edge, #2d5d43); color: var(--confirmation-edge, #2d5d43); font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 11px; font-weight: 760; letter-spacing: .1em; } .ds-carbon-readout { display: grid; gap: 5px; padding: 8px; border: 1px solid var(--carbon-line, #776d5e); background: rgba(255,255,255,.13); font-family: var(--font-mono, 'Spline Sans Mono'), monospace; font-size: 9px; letter-spacing: .085em; } .ds-carbon-readout code { overflow-wrap: anywhere; padding: 7px; border: 1px solid rgba(65,57,47,.42); background: rgba(40,34,27,.07); box-shadow: inset 0 2px 4px rgba(65,57,47,.15); font-size: 10px; letter-spacing: normal; } @media (prefers-reduced-motion: reduce) { .ds-carbon-output { animation-duration: .01ms; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Bench Instrument x Carbon Transfer",
+    "overview": "agent-render is an operating surface, not a promotional page. Airplane QRH supplies the procedural grammar first: numbered operations, revision placards, status lamps, limits, cautions, and explicit commit actions. Japanese high-density interface practice comes second, keeping metadata compact, aligned, and continuously visible. Functional skeuomorphic material comes third through bone keycaps, a charcoal chassis, recessed wells, engraved hairlines, and a carbon-transfer result that appears only after generation.\n\nThe hierarchy is intentionally “QRH first, Japanese density second, marketing page never.” Every surface should help an operator format, identify, load, compress, generate, inspect, or export an artifact. Decoration is permitted only when it makes state, structure, or physical interaction easier to understand.",
+    "keyCharacteristics": [
+      "Compact procedural sequencing with visible numbering and revision language",
+      "Bone controls mounted on a charcoal instrument chassis",
+      "Dense monospace metadata paired with direct, readable headings",
+      "Carbon paper reserved for successfully generated output",
+      "Artifact-first viewing with transport limits and diagnostics kept visible"
+    ],
+    "rules": [
+      { "name": "The Procedure-First Rule", "body": "Put the current operation, its state, and its constraints before explanation or promotion.", "section": "overview" },
+      { "name": "The Three-Signal Rule", "body": "Orange commits, mint confirms, and brick alerts; never interchange these roles or add a competing accent.", "section": "colors" },
+      { "name": "The Dark-Renderer Rule", "body": "Code-oriented artifacts stay on the renderer carbon palette in light and dark themes; theme switching changes the shell, not the content-body contract.", "section": "colors" },
+      { "name": "The Instrument Type Rule", "body": "Use Manrope for identity and hierarchy, SUSE for explanations and content, and Spline Sans Mono for anything measured, indexed, encoded, or stateful.", "section": "typography" },
+      { "name": "The Continuous-Chassis Rule", "body": "Prefer divided grids and shared rails over detached card collections; adjacent information should read as one machine assembly.", "section": "layout" },
+      { "name": "The Mechanical-Depth Rule", "body": "Every shadow must explain whether a control is raised, pressed, recessed, or mounted; if it explains none of those, remove it.", "section": "elevation" },
+      { "name": "The Two-Pixel Rule", "body": "Use 2px corners for the instrument system, 0 for carbon paper, and circles only for indicator lights; do not introduce soft card radii.", "section": "shapes" },
+      { "name": "The State-Must-Move Rule", "body": "Selected and pressed keys must visibly depress; successful output may feed into view, but routine panels never float or pulse.", "section": "components" }
+    ],
+    "dos": [
+      "Do lead task surfaces with a numbered procedure, visible state, and operating constraints.",
+      "Do keep metadata compact, aligned, and readable in Spline Sans Mono.",
+      "Do use 1px dividers, 2px corners, and structural depth to assemble dense information.",
+      "Do preserve dark renderer bodies across light and dark shell themes.",
+      "Do keep touch targets usable while allowing labels and metadata to stay visually dense."
+    ],
+    "donts": [
+      "Don't build a marketing hero, feature-card parade, or promotional narrative ahead of the operation.",
+      "Don't add decorative pills, soft rounded cards, blurred glows, glass effects, or ambient floating shadows.",
+      "Don't use orange, mint, brick, or amber as interchangeable decoration.",
+      "Don't use carbon-transfer paper before a successful generated output exists.",
+      "Don't hide limits, faults, or transport diagnostics to make a surface feel cleaner."
+    ]
+  }
+}

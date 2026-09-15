@@ -64,15 +64,18 @@ vi.mock("@/components/viewer/artifact-stage", async () => {
       activeArtifact,
       envelope,
       onArtifactSelect,
+      rendererReadyKey,
     }: {
       activeArtifact: PayloadEnvelope["artifacts"][number];
       envelope: PayloadEnvelope;
       onArtifactSelect: (artifactId: string) => void;
+      rendererReadyKey: string;
     }) =>
       React.createElement(
         "section",
         {
           "data-active-id": activeArtifact.id,
+          "data-renderer-key": rendererReadyKey,
           "data-testid": "mock-artifact-stage",
         },
         envelope.artifacts.map((artifact) =>
@@ -163,11 +166,18 @@ describe("ViewerShell artifact selection", () => {
     });
     await waitFor(() => expect(fragmentMock.encodes).toHaveLength(2));
     expect(fragmentMock.encodes[1].activeArtifactId).toBe("three");
+    const optimisticRendererKey = screen
+      .getByTestId("mock-artifact-stage")
+      .getAttribute("data-renderer-key");
 
     await act(async () => {
       fragmentMock.encodes[1].resolve("agent-render=v1.plain.three");
     });
     await waitFor(() => expect(window.location.hash).toBe("#agent-render=v1.plain.three"));
+    expect(screen.getByTestId("mock-artifact-stage")).toHaveAttribute(
+      "data-renderer-key",
+      optimisticRendererKey,
+    );
 
     await act(async () => {
       fragmentMock.encodes[0].resolve("agent-render=v1.plain.two");

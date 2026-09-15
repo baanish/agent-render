@@ -1,19 +1,33 @@
-import type { Extension } from "@codemirror/state";
+import type { SupportedLanguages } from "@pierre/diffs";
+import { bundledLanguages } from "shiki";
 
-const languageSupportCache = new Map<string, Promise<Extension | null>>();
-
-function getLanguageSupportCacheKey(language: string): string {
-  switch (language) {
-    case "javascript":
-      return "js";
-    case "py":
-      return "python";
-    case "yml":
-      return "yaml";
-    default:
-      return language;
-  }
-}
+/**
+ * Options for the language pickers in the link creator and artifact editor.
+ * `auto` stores an empty language hint so detection falls back to the filename.
+ * Values are `detectCodeLanguage` keys; `toPierreLanguage` resolves them to
+ * Shiki grammars and degrades unknown ones to `text`.
+ */
+export const CODE_LANGUAGE_CHOICES: readonly { value: string; label: string }[] = [
+  { value: "", label: "auto" },
+  { value: "tsx", label: "tsx" },
+  { value: "ts", label: "ts" },
+  { value: "jsx", label: "jsx" },
+  { value: "js", label: "js" },
+  { value: "python", label: "python" },
+  { value: "json", label: "json" },
+  { value: "html", label: "html" },
+  { value: "css", label: "css" },
+  { value: "markdown", label: "markdown" },
+  { value: "yaml", label: "yaml" },
+  { value: "shell", label: "shell" },
+  { value: "rust", label: "rust" },
+  { value: "go", label: "go" },
+  { value: "java", label: "java" },
+  { value: "c", label: "c" },
+  { value: "cpp", label: "cpp" },
+  { value: "sql", label: "sql" },
+  { value: "text", label: "text" },
+];
 
 /**
  * Determines the code language token used by the viewer.
@@ -51,80 +65,17 @@ export function detectCodeLanguage(filename?: string, explicit?: string) {
 }
 
 /**
- * Lazily loads CodeMirror language support for a normalized language key.
- *
- * Returns an extension for supported languages and aliases (for example `js`/`javascript`,
- * `python`/`py`, `yaml`/`yml`) using dynamic imports to keep base bundles small.
- *
- * @param language - Normalized language token from detection or artifact metadata.
- * @returns A CodeMirror extension for supported languages, or `null` when unsupported.
- *
- * Failure/fallback: unsupported language keys return `null` so callers can render plain text.
+ * Maps a `detectCodeLanguage` key to the Shiki grammar id Pierre's `File`/`CodeView`
+ * surfaces understand. `bundledLanguages` carries Shiki's alias keys too, so `ts`, `js`,
+ * `py`, `yml`, `shell`, and friends resolve. Anything outside the registry (for example a
+ * codec name like `plain` leaking into `language`) falls back to `text`, because Pierre's
+ * `resolveLanguage` throws on unknown ids instead of degrading.
  */
-async function loadLanguageSupportUncached(language: string): Promise<Extension | null> {
-  switch (language) {
-    case "tsx": {
-      const { javascript } = await import("@codemirror/lang-javascript");
-      return javascript({ jsx: true, typescript: true });
-    }
-    case "ts": {
-      const { javascript } = await import("@codemirror/lang-javascript");
-      return javascript({ typescript: true });
-    }
-    case "jsx": {
-      const { javascript } = await import("@codemirror/lang-javascript");
-      return javascript({ jsx: true });
-    }
-    case "js": {
-      const { javascript } = await import("@codemirror/lang-javascript");
-      return javascript();
-    }
-    case "json": {
-      const { json } = await import("@codemirror/lang-json");
-      return json();
-    }
-    case "css": {
-      const { css } = await import("@codemirror/lang-css");
-      return css();
-    }
-    case "html": {
-      const { html } = await import("@codemirror/lang-html");
-      return html();
-    }
-    case "python": {
-      const { python } = await import("@codemirror/lang-python");
-      return python();
-    }
-    case "markdown": {
-      const { markdown } = await import("@codemirror/lang-markdown");
-      return markdown();
-    }
-    case "yaml": {
-      const { yaml } = await import("@codemirror/lang-yaml");
-      return yaml();
-    }
-    default:
-      return null;
+export function toPierreLanguage(language: string): SupportedLanguages {
+  if (language === "text" || language === "ansi") {
+    return language;
   }
-}
-
-/**
- * Lazily loads and caches CodeMirror language support for a normalized language key.
- *
- * Returns an extension for supported languages and aliases; unsupported language keys resolve
- * to `null` so callers can render plain text.
- */
-export async function loadLanguageSupport(language: string): Promise<Extension | null> {
-  const cacheKey = getLanguageSupportCacheKey(language);
-  const cached = languageSupportCache.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  const supportPromise = loadLanguageSupportUncached(cacheKey).catch((error) => {
-    languageSupportCache.delete(cacheKey);
-    throw error;
-  });
-  languageSupportCache.set(cacheKey, supportPromise);
-  return supportPromise;
+  return Object.prototype.hasOwnProperty.call(bundledLanguages, language)
+    ? (language as SupportedLanguages)
+    : "text";
 }

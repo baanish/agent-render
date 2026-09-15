@@ -8,15 +8,12 @@
  *   public/arx-dictionary.json.br  — brotli-compressed (CDN or agent can use this)
  *   public/arx2-dictionary.json    — minified overlay JSON
  *   public/arx2-dictionary.json.br — brotli-compressed overlay JSON
- *   public/vendor/diff-view-pure.css    — mirrored @git-diff-view stylesheet
- *   public/vendor/diff-view-pure.css.br — brotli-compressed stylesheet loaded by diffs
  *
  * Run: node scripts/compress-dictionary.mjs
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import { createRequire } from "module";
-import { dirname } from "path";
 
 const require = createRequire(import.meta.url);
 const brotli = require("brotli-wasm");
@@ -39,17 +36,5 @@ function compressDictionary(path) {
   writeCompressedTextAsset(path, minified);
 }
 
-function mirrorAndCompressTextAsset(sourcePath, targetPath) {
-  const source = readFileSync(sourcePath, "utf8");
-
-  mkdirSync(dirname(targetPath), { recursive: true });
-  writeFileSync(targetPath, source, "utf8");
-  writeCompressedTextAsset(targetPath, source);
-}
-
 compressDictionary("public/arx-dictionary.json");
 compressDictionary("public/arx2-dictionary.json");
-mirrorAndCompressTextAsset(
-  "node_modules/@git-diff-view/react/styles/diff-view-pure.css",
-  "public/vendor/diff-view-pure.css",
-);

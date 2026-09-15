@@ -29,13 +29,13 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       type="button"
       onClick={() => mounted && setTheme(isDark ? "light" : "dark")}
       className={cn(
-        "mono-pill shell-pill min-w-[8.5rem] justify-center transition-colors duration-150",
+        "shell-key theme-key",
         className,
       )}
       aria-label={mounted ? `Switch to ${isDark ? "light" : "dark"} theme` : "Theme toggle loading"}
     >
       {mounted && isDark ? <SunMedium className="h-4 w-4" /> : <MoonStar className="h-4 w-4" />}
-      <span>{mounted ? (isDark ? "Light mode" : "Dark mode") : "Theme"}</span>
+      <span>{mounted ? (isDark ? "Light" : "Dark") : "Theme"}</span>
     </button>
   );
 }

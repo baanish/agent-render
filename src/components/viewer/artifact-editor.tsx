@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { Link2 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
-import { numberFormatter } from "@/lib/format";
+import { CODE_LANGUAGE_CHOICES } from "@/lib/code/language";
+import { CodecPicker, GeneratedLinkResult } from "@/components/generated-link";
+import { getPatchFileLabels, parseRenderablePatchFiles, type ParsedPatchFile } from "@/lib/diff/git-patch";
+import { getUniqueLabels } from "@/lib/unique-labels";
+import type { CodeViewHandle, Editor } from "@/lib/diff/pierre-edit";
+import type { ArtifactBodyDocument } from "@/components/viewer/artifact-body-editor";
 import {
   applyArtifactEditDraft,
   createArtifactEditDraft,
@@ -12,9 +18,6 @@ import {
   type GeneratedArtifactLink,
 } from "@/lib/payload/link-creator";
 import {
-  codecPickerLabel,
-  codecs,
-  isDeprecatedEmitCodec,
   type ArtifactKind,
   type ArtifactPayload,
   type PayloadEnvelope,
@@ -22,11 +25,44 @@ import {
 import { withBasePath } from "@/lib/site/base-path";
 import { cn } from "@/lib/utils";
 
+// The Trees runtime stays behind its own chunk; the rail only renders when there is more than
+// one thing to navigate, so single-row editing flows do not load it.
+const FileTreeNav = dynamic(
+  () => import("@/components/file-tree-nav").then((module) => module.FileTreeNav),
+  { ssr: false },
+);
+
+// The Pierre edit surface (CodeView + EditProvider + Editor) is heavy and only needed while
+// editing, so it loads behind its own dynamic boundary inside the already-deferred editor chunk.
+const ArtifactBodyEditor = dynamic(
+  () =>
+    import("@/components/viewer/artifact-body-editor").then(
+      (module) => module.ArtifactBodyEditor,
+    ),
+  { ssr: false },
+);
+
 type ArtifactEditorProps = {
   artifact: ArtifactPayload;
   envelope: PayloadEnvelope;
   onPreviewHash: (hash: string) => void;
 };
+
+const EMPTY_PATCH_FILES: ParsedPatchFile[] = [];
+
+// Snapshots a draft into the documents the Pierre edit surface mounts. Pair diffs become two
+// documents with the conventional `a/`/`b/` prefixes so file headers read like a git patch and
+// the extension still drives language inference.
+function buildBodyDocuments(draft: ArtifactEditDraft): ArtifactBodyDocument[] {
+  const name = draft.filename.trim() || "content";
+  if (draft.kind === "diff" && draft.diffSource === "pair") {
+    return [
+      { id: "old", name: `a/${name}`, contents: draft.oldContent ?? "" },
+      { id: "new", name: `b/${name}`, contents: draft.newContent ?? "" },
+    ];
+  }
+  return [{ id: "content", name, contents: draft.content }];
+}
 
 const fieldHints: Record<ArtifactKind, string> = {
   markdown: "Edit the markdown, then generate a new shareable link.",
@@ -35,8 +71,6 @@ const fieldHints: Record<ArtifactKind, string> = {
   csv: "Edit the raw CSV, then generate a new shareable link.",
   json: "Edit the JSON, then generate a new shareable link.",
 };
-
-const codecOptions = ["auto", ...codecs] as const;
 
 function getShareBaseUrl() {
   if (typeof window === "undefined") {
@@ -60,22 +94,34 @@ function getBodyFieldLabel(kind: ArtifactKind) {
   return kind === "diff" ? "Patch" : "Content";
 }
 
+function getArtifactTreeLabel(artifact: ArtifactPayload) {
+  return artifact.filename?.trim() || artifact.title?.trim() || artifact.id;
+}
+
 /**
  * In-viewer editor for the currently open artifact.
  *
  * Starts from the decoded artifact, lets the user correct title/body fields, and generates a new
  * fragment link without writing anything back to a server. Preview replaces the current hash so the
- * edited artifact renders immediately.
+ * edited artifact renders immediately. The body edits on a Pierre `CodeView`/`EditProvider` surface
+ * (`artifact-body-editor.tsx`); when the envelope has more than one navigable entry a tree rail lets
+ * the edit target switch in place without losing per-artifact drafts.
  */
 export function ArtifactEditor({
   artifact,
   envelope,
   onPreviewHash,
 }: ArtifactEditorProps) {
-  const [{ draft, version: draftVersion }, setDraftState] = useState(() => ({
-    draft: createArtifactEditDraft(artifact),
+  const [editingArtifactId, setEditingArtifactId] = useState(artifact.id);
+  const [draftState, setDraftState] = useState(() => ({
+    drafts: new Map<string, ArtifactEditDraft>(),
     version: 0,
   }));
+  const editingArtifact =
+    envelope.artifacts.find((entry) => entry.id === editingArtifactId) ?? artifact;
+  const draft =
+    draftState.drafts.get(editingArtifactId) ?? createArtifactEditDraft(editingArtifact);
+  const draftVersion = draftState.version;
   const [generatedLink, setGeneratedLink] =
     useState<GeneratedArtifactLink | null>(null);
   const [generatedVersion, setGeneratedVersion] = useState(-1);
@@ -95,6 +141,129 @@ export function ArtifactEditor({
     Boolean(generatedLink) && draftVersion !== generatedVersion;
   const usesPairDiff = draft.kind === "diff" && draft.diffSource === "pair";
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
+  const bodyEditorRef = useRef<CodeViewHandle<undefined> | null>(null);
+  // The patch re-parses on the deferred copy so a keystroke paints before the
+  // tree rebuilds; a stale rail while typing beats an input stall.
+  const deferredDraftContent = useDeferredValue(draft.content);
+  const patchFiles = useMemo(() => {
+    if (draft.kind !== "diff" || draft.diffSource !== "patch") {
+      return EMPTY_PATCH_FILES;
+    }
+
+    try {
+      return parseRenderablePatchFiles(deferredDraftContent);
+    } catch {
+      // The patch mid-edit may be malformed; the tree hides until it parses again.
+      return EMPTY_PATCH_FILES;
+    }
+  }, [draft.kind, draft.diffSource, deferredDraftContent]);
+  const patchFileLabels = useMemo(() => getPatchFileLabels(patchFiles), [patchFiles]);
+  const patchFilePaths = useMemo(
+    () => patchFiles.map((file) => patchFileLabels.get(file.id) ?? file.displayPath),
+    [patchFiles, patchFileLabels],
+  );
+  const patchFileByPath = useMemo(
+    () => new Map(patchFiles.map((file) => [patchFileLabels.get(file.id) ?? file.displayPath, file])),
+    [patchFiles, patchFileLabels],
+  );
+
+
+  // The picker keeps an opened artifact's out-of-list language selectable instead of
+  // silently clearing it, since payloads can carry any language hint.
+  const languageChoices = useMemo(() => {
+    if (!draft.language || CODE_LANGUAGE_CHOICES.some((choice) => choice.value === draft.language)) {
+      return CODE_LANGUAGE_CHOICES;
+    }
+    return [...CODE_LANGUAGE_CHOICES, { value: draft.language, label: draft.language }];
+  }, [draft.language]);
+
+  const artifactLabels = useMemo(
+    () =>
+      getUniqueLabels(
+        envelope.artifacts.map((entry) => ({
+          id: entry.id,
+          base: getArtifactTreeLabel(entry),
+        })),
+        // Patch file paths share the tree namespace with artifact labels; reserve them so a
+        // filename-shaped artifact label can never shadow a patch row under handleTreeSelect.
+        patchFiles.length > 1 ? new Set(patchFilePaths) : undefined,
+      ),
+    [envelope.artifacts, patchFiles.length, patchFilePaths],
+  );
+  const artifactIdByLabel = useMemo(
+    () => new Map(Array.from(artifactLabels, ([id, label]) => [label, id])),
+    [artifactLabels],
+  );
+  // The rail lists every artifact in the envelope; a multi-file patch being edited also lists its
+  // files so tree selection can move the patch caret without leaving the editor. A single row
+  // (one artifact, nothing nested) is just noise, so the rail hides then.
+  const treePaths = useMemo(
+    () => [...artifactLabels.values(), ...(patchFiles.length > 1 ? patchFilePaths : [])],
+    [artifactLabels, patchFiles.length, patchFilePaths],
+  );
+  const showTreeRail = treePaths.length > 1;
+  const selectedTreePath = artifactLabels.get(editingArtifactId);
+
+  const handlePatchFileSelect = (path: string) => {
+    const file = patchFileByPath.get(path);
+    const codeView = bodyEditorRef.current;
+    if (!file || !codeView) {
+      return;
+    }
+
+    const lineNumber = file.startLine;
+
+    codeView.scrollTo({ type: "line", id: "content", lineNumber, align: "center" });
+    // CodeView exposes the editor as the narrow DiffsEditor interface, but this surface creates
+    // Pierre's concrete Editor. Use its selection and focus APIs instead of walking shadow DOM.
+    const editor = codeView.getEditor("content") as Editor<undefined> | undefined;
+    if (!editor) {
+      return;
+    }
+    const position = { line: lineNumber - 1, character: 0 };
+    editor.setSelections([{ start: position, end: position, direction: "none" }]);
+    // The tree row takes focus when its click finishes, so restore editor focus on the next task.
+    window.setTimeout(() => {
+      editor.focus({ preventScroll: true, lineNumber, character: 0 });
+    }, 0);
+  };
+
+  const handleTreeSelect = (path: string) => {
+    // Patch rows only exist in the rail when the patch has more than one file; the
+    // lookup is gated the same way so a hidden single-file row cannot shadow an
+    // artifact label that shares its path.
+    if (patchFiles.length > 1 && patchFileByPath.has(path)) {
+      handlePatchFileSelect(path);
+      return;
+    }
+
+    const targetId = artifactIdByLabel.get(path);
+    if (!targetId || targetId === editingArtifactId) {
+      return;
+    }
+
+    const target = envelope.artifacts.find((entry) => entry.id === targetId);
+    if (!target) {
+      return;
+    }
+
+    generationRequestRef.current += 1;
+    copyTokenRef.current += 1;
+    markdownCopyTokenRef.current += 1;
+    setEditingArtifactId(targetId);
+    setIsGenerating(false);
+    setCopyState("idle");
+    setMarkdownLinkCopyState("idle");
+    setError(null);
+    // A link generated for the previous artifact does not describe this one; drop it
+    // so Copy/Preview cannot hand out the wrong link while the other draft is open.
+    setGeneratedLink(null);
+    setGeneratedVersion(-1);
+  };
+
+  const handleBodyDocumentChange = (id: string, contents: string) => {
+    updateDraft(id === "old" ? "oldContent" : id === "new" ? "newContent" : "content", contents);
+  };
 
   useEffect(() => {
     copyTokenRef.current += 1;
@@ -104,22 +273,40 @@ export function ArtifactEditor({
     setError(null);
   }, [draftVersion]);
 
+  // CodeView treats item.version as the controlled-update boundary. Bump it when a filename
+  // changes, and publish the current draft contents with the rename so the controlled item
+  // cannot restore the snapshot from before the user started typing.
+  useEffect(() => {
+    const codeView = bodyEditorRef.current;
+    if (!codeView) {
+      return;
+    }
+    for (const document of buildBodyDocuments(draft)) {
+      const item = codeView.getItem(document.id);
+      if (item?.type === "file" && item.file.name !== document.name) {
+        codeView.updateItem({
+          ...item,
+          version: (item.version ?? 0) + 1,
+          file: { ...item.file, name: document.name, contents: document.contents },
+        });
+      }
+    }
+  }, [draft]);
+
   const updateDraft = <K extends keyof ArtifactEditDraft>(
     field: K,
     value: ArtifactEditDraft[K],
   ) => {
     setDraftState((current) => {
-      if (Object.is(current.draft[field], value)) {
+      const base =
+        current.drafts.get(editingArtifactId) ?? createArtifactEditDraft(editingArtifact);
+      if (Object.is(base[field], value)) {
         return current;
       }
 
-      return {
-        draft: {
-          ...current.draft,
-          [field]: value,
-        },
-        version: current.version + 1,
-      };
+      const drafts = new Map(current.drafts);
+      drafts.set(editingArtifactId, { ...base, [field]: value });
+      return { drafts, version: current.version + 1 };
     });
   };
 
@@ -129,8 +316,26 @@ export function ArtifactEditor({
     setIsGenerating(true);
 
     try {
+      // Apply every edited artifact, then the active one last so the generated
+      // link opens on the artifact currently on screen.
+      let nextEnvelope = envelope;
+      for (const [artifactId, editedDraft] of draftState.drafts) {
+        if (artifactId !== editingArtifactId) {
+          try {
+            nextEnvelope = applyArtifactEditDraft(nextEnvelope, editedDraft);
+          } catch (applyError) {
+            const source = envelope.artifacts.find((entry) => entry.id === artifactId);
+            const label = source ? getArtifactTreeLabel(source) : artifactId;
+            throw new Error(
+              `${label}: ${applyError instanceof Error ? applyError.message : String(applyError)}`,
+            );
+          }
+        }
+      }
+      nextEnvelope = applyArtifactEditDraft(nextEnvelope, draft);
+
       const nextGeneratedLink = await createGeneratedEnvelopeLinkAsync(
-        applyArtifactEditDraft(envelope, draft),
+        nextEnvelope,
         getShareBaseUrl(),
         draft.codec,
       );
@@ -175,16 +380,15 @@ export function ArtifactEditor({
     }
 
     const requestToken = ++copyTokenRef.current;
-    const expectedHash = generatedLink.hash;
 
     try {
       await copyTextToClipboard(generatedLink.url);
-      if (copyTokenRef.current !== requestToken || generatedLink.hash !== expectedHash) {
+      if (copyTokenRef.current !== requestToken) {
         return;
       }
       setCopyState("copied");
     } catch {
-      if (copyTokenRef.current !== requestToken || generatedLink.hash !== expectedHash) {
+      if (copyTokenRef.current !== requestToken) {
         return;
       }
       setCopyState("failed");
@@ -197,22 +401,15 @@ export function ArtifactEditor({
     }
 
     const requestToken = ++markdownCopyTokenRef.current;
-    const expectedHash = generatedLink.hash;
 
     try {
       await copyTextToClipboard(generatedLink.markdownLink);
-      if (
-        markdownCopyTokenRef.current !== requestToken ||
-        generatedLink.hash !== expectedHash
-      ) {
+      if (markdownCopyTokenRef.current !== requestToken) {
         return;
       }
       setMarkdownLinkCopyState("copied");
     } catch {
-      if (
-        markdownCopyTokenRef.current !== requestToken ||
-        generatedLink.hash !== expectedHash
-      ) {
+      if (markdownCopyTokenRef.current !== requestToken) {
         return;
       }
       setMarkdownLinkCopyState("failed");
@@ -235,18 +432,28 @@ export function ArtifactEditor({
 
   return (
     <div className="artifact-editor" data-testid="artifact-editor">
-      <p className="text-sm leading-7 text-[color:var(--text-muted)]">
-        Editing creates a new shareable link. The current URL stays put until
-        you preview or copy the new one.
-      </p>
-
-      <form
-        className="creator-form-grid"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleGenerate();
-        }}
+      <div
+        className={cn("artifact-editor-frame", !showTreeRail && "is-single")}
+        data-testid="artifact-editor-frame"
       >
+        {showTreeRail ? (
+          <FileTreeNav
+            // useFileTree fixes its path set at mount. The wrapper synchronizes selection
+            // in place, so artifact switches preserve search and scroll state.
+            key={JSON.stringify(treePaths)}
+            paths={treePaths}
+            selectedPath={selectedTreePath}
+            ariaLabel="Editable files"
+            onSelectPath={handleTreeSelect}
+          />
+        ) : null}
+        <form
+          className="creator-form-grid"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleGenerate();
+          }}
+        >
         <label className="creator-field">
           <span className="metric-label">Title</span>
           <input
@@ -270,13 +477,18 @@ export function ArtifactEditor({
         {draft.kind === "code" ? (
           <label className="creator-field">
             <span className="metric-label">Language</span>
-            <input
+            <select
               name="language"
               value={draft.language}
               onChange={(event) => updateDraft("language", event.target.value)}
-              placeholder="tsx"
               className="creator-input"
-            />
+            >
+              {languageChoices.map((choice) => (
+                <option key={choice.value || "auto"} value={choice.value}>
+                  {choice.label}
+                </option>
+              ))}
+            </select>
           </label>
         ) : null}
 
@@ -300,232 +512,66 @@ export function ArtifactEditor({
           </label>
         ) : null}
 
-        {usesPairDiff ? (
-          <>
-            <label className="creator-field creator-field-full">
-              <span className="creator-field-head">
-                <span className="metric-label">Old content</span>
-              </span>
-              <textarea
-                name="oldContent"
-                value={draft.oldContent ?? ""}
-                onChange={(event) =>
-                  updateDraft("oldContent", event.target.value)
-                }
-                className="creator-textarea"
-                rows={8}
-                data-testid="artifact-editor-old-content"
-              />
-            </label>
-            <label className="creator-field creator-field-full">
-              <span className="creator-field-head">
-                <span className="metric-label">New content</span>
-              </span>
-              <textarea
-                name="newContent"
-                value={draft.newContent ?? ""}
-                onChange={(event) =>
-                  updateDraft("newContent", event.target.value)
-                }
-                className="creator-textarea"
-                rows={8}
-                data-testid="artifact-editor-new-content"
-              />
-            </label>
-          </>
-        ) : (
-          <label className="creator-field creator-field-full">
-            <span className="creator-field-head">
-              <span className="metric-label">{contentFieldLabel}</span>
-              <span className="creator-field-hint">
-                {fieldHints[draft.kind]}
-              </span>
+        <div className="creator-field creator-field-full">
+          <span className="creator-field-head">
+            <span className="metric-label">
+              {usesPairDiff ? "Old and new content" : contentFieldLabel}
             </span>
-            <textarea
-              name="content"
-              value={draft.content}
-              onChange={(event) => updateDraft("content", event.target.value)}
-              className="creator-textarea"
-              rows={14}
-              autoFocus
-              data-testid="artifact-editor-content"
+            <span className="creator-field-hint">
+              {usesPairDiff
+                ? "Edit the old and new content, then generate a new shareable link."
+                : fieldHints[draft.kind]}
+            </span>
+          </span>
+          <div
+            className="artifact-body-editor-frame"
+            data-testid="artifact-editor-body"
+          >
+            <ArtifactBodyEditor
+              key={editingArtifactId}
+              documents={buildBodyDocuments(draft)}
+              onDocumentChange={handleBodyDocumentChange}
+              codeViewRef={bodyEditorRef}
             />
-          </label>
-        )}
+          </div>
+        </div>
 
         <div className="creator-form-footer creator-field-full">
           <button
             type="submit"
-            className="artifact-action is-primary"
+            className="artifact-action is-commit"
             disabled={isGenerating}
           >
             <Link2 className="h-3.5 w-3.5" />
             {isGenerating ? "Generating…" : "Generate new link"}
           </button>
-          <div
-            className="creator-codec-row"
-            role="group"
-            aria-label="Compression algorithm"
-          >
-            <span className="metric-label">Compression</span>
-            {codecOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className={cn(
-                  "artifact-action",
-                  (draft.codec ?? "auto") === option && "is-primary",
-                  isDeprecatedEmitCodec(option) && "is-deprecated",
-                )}
-                aria-pressed={(draft.codec ?? "auto") === option}
-                title={
-                  isDeprecatedEmitCodec(option)
-                    ? "Deprecated: Discord and WhatsApp detonate these Unicode wires. Use auto or arx5."
-                    : undefined
-                }
-                onClick={() => updateDraft("codec", option)}
-              >
-                {codecPickerLabel(option)}
-              </button>
-            ))}
-          </div>
+          <CodecPicker
+            value={draft.codec}
+            label="Compression"
+            onSelect={(option) => updateDraft("codec", option)}
+          />
         </div>
-      </form>
+        </form>
+      </div>
 
       {generatedLink ? (
-        <aside
-          ref={resultRef}
-          className="creator-result-card"
-          data-testid="artifact-editor-result"
-        >
-          <div className="creator-result-head">
-            <div>
-              <p className="section-kicker">New link</p>
-              <h4 className="mt-2 text-xl font-semibold tracking-[-0.03em]">
-                Ready to share
-              </h4>
-            </div>
-            <span className="mono-pill">{generatedLink.artifact.kind}</span>
-          </div>
-
-          <div className="creator-link-frame">
-            <p className="metric-label">URL</p>
-            <textarea
-              className="creator-link-output"
-              value={generatedLink.url}
-              readOnly
-              aria-label="Generated agent-render link"
-              rows={4}
-            />
-          </div>
-
-          <div className="creator-link-frame">
-            <p className="metric-label">Markdown link</p>
-            <textarea
-              className="creator-link-output"
-              value={generatedLink.markdownLink}
-              readOnly
-              aria-label="Generated markdown link"
-              rows={3}
-            />
-          </div>
-
-          <div className="creator-result-metrics">
-            <div className="metric-card">
-              <p className="metric-label">Codec</p>
-              <p className="metric-value">{generatedLink.codec}</p>
-            </div>
-            <div className="metric-card">
-              <p className="metric-label">Fragment size</p>
-              <p className="metric-value">
-                {numberFormatter.format(generatedLink.fragmentLength)} chars
-              </p>
-            </div>
-          </div>
-
-          {generatedLink.discordMarkdownLinkWarning ? (
-            <div className="creator-warning-state" role="status">
-              {generatedLink.discordMarkdownLinkWarning}
-            </div>
-          ) : null}
-
-          <div className="creator-result-actions">
-            <button
-              type="button"
-              className={cn(
-                "artifact-action",
-                copyState === "copied" && "is-primary",
-              )}
-              disabled={isGeneratedLinkStale}
-              onClick={() => {
-                void handleCopy();
-              }}
-            >
-              {copyState === "copied" ? (
-                <Check className="h-3.5 w-3.5" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-              {copyState === "copied"
-                ? "Copied"
-                : copyState === "failed"
-                  ? "Copy failed"
-                  : "Copy link"}
-            </button>
-            <button
-              type="button"
-              className={cn(
-                "artifact-action",
-                markdownLinkCopyState === "copied" && "is-primary",
-              )}
-              disabled={isGeneratedLinkStale}
-              onClick={() => {
-                void handleCopyMarkdownLink();
-              }}
-            >
-              {markdownLinkCopyState === "copied" ? (
-                <Check className="h-3.5 w-3.5" />
-              ) : (
-                <Link2 className="h-3.5 w-3.5" />
-              )}
-              {markdownLinkCopyState === "copied"
-                ? "Copied"
-                : markdownLinkCopyState === "failed"
-                  ? "Copy failed"
-                  : "Copy markdown link"}
-            </button>
-            <button
-              type="button"
-              className="artifact-action is-primary"
-              disabled={isGeneratedLinkStale}
-              onClick={handlePreview}
-            >
-              <ArrowUpRight className="h-3.5 w-3.5" />
-              Preview here
-            </button>
-            <a
-              href={isGeneratedLinkStale ? undefined : generatedLink.url}
-              target="_blank"
-              rel="noreferrer"
-              className="artifact-action"
-              aria-disabled={isGeneratedLinkStale}
-              onClick={(event) => {
-                if (isGeneratedLinkStale) {
-                  event.preventDefault();
-                }
-              }}
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Open in new tab
-            </a>
-          </div>
-
-          {isGeneratedLinkStale ? (
-            <p className="creator-inline-status" role="status">
-              Draft changed since last generation.
-            </p>
-          ) : null}
-        </aside>
+        <GeneratedLinkResult
+          as="aside"
+          containerRef={resultRef}
+          testId="artifact-editor-result"
+          link={generatedLink}
+          stale={isGeneratedLinkStale}
+          disableActionsWhenStale
+          copyState={copyState}
+          markdownLinkCopyState={markdownLinkCopyState}
+          onCopy={() => {
+            void handleCopy();
+          }}
+          onCopyMarkdownLink={() => {
+            void handleCopyMarkdownLink();
+          }}
+          onPreview={handlePreview}
+        />
       ) : null}
 
       {error ? (

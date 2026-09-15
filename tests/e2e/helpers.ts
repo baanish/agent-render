@@ -1,7 +1,15 @@
 import { expect, type Page } from "@playwright/test";
 
 export async function goToHash(page: Page, hash = "") {
+  if (hash) {
+    // WebKit intermittently drops the fragment on same-document page.goto calls.
+    // Leave the current document first so this always exercises a fresh page load.
+    await page.goto("about:blank");
+  }
   await page.goto(`.${hash}`);
+  if (hash) {
+    await stabilizePage(page);
+  }
 }
 
 export async function setTheme(page: Page, theme: "light" | "dark") {
@@ -33,7 +41,7 @@ export async function waitForRendererReady(page: Page, kind: "markdown" | "code"
 
   const readinessSelectorByKind: Record<typeof kind, string> = {
     markdown: "[data-testid='renderer-markdown'][data-renderer-ready='true'] .markdown-article",
-    code: "[data-testid='renderer-code'][data-renderer-ready='true'] .cm-editor",
+    code: "[data-testid='renderer-code'][data-renderer-ready='true'] diffs-container",
     diff: "[data-testid='renderer-diff'][data-renderer-ready='true'] .patch-file-section",
     csv: "[data-testid='renderer-csv'][data-renderer-ready='true'] table.csv-table tbody tr",
     json: "[data-testid='renderer-json'][data-renderer-ready='true'] .json-tree-shell",
