@@ -205,8 +205,8 @@ The palette is warm, low-gloss, and material-led: dark mode runs charcoal keys o
 
 ### Hierarchy
 
-- **Display** (760, responsive 24–40px, 1.02): Artifact titles and the strongest page-level headings.
-- **Headline** (760, responsive 21–29px, 1.05): Procedure and workbench headings.
+- **Display** (760, responsive 24-40px, 1.02): Artifact titles and the strongest page-level headings.
+- **Headline** (760, responsive 21-29px, 1.05): Procedure and workbench headings.
 - **Title** (760, 18px, 1.05): Panel, limits, and inspector headings.
 - **Body** (400, 15px, 1.7): Rendered prose; markdown reading width is capped at 76ch.
 - **Label** (650, 9px, 0.085em tracking): Uppercase procedure labels, field names, and metrics.
@@ -229,7 +229,7 @@ Depth is structural rather than atmospheric. Chassis panels use hairline borders
 
 - **Raised key:** A fine top shine plus a hard 2px lower edge; use on clickable key controls (charcoal in dark mode, bone in light mode).
 - **Pressed key:** A compact inset shadow paired with a 2px downward translation.
-- **Recessed well:** A 2–5px dark inset shadow for editable fields, hashes, and raw technical readouts.
+- **Recessed well:** A 2-5px dark inset shadow for editable fields, hashes, and raw technical readouts.
 - **Chassis hairline:** A nearly transparent 1px inset highlight for large dark instrument panels.
 
 **The Mechanical-Depth Rule.** Every shadow must explain whether a control is raised, pressed, recessed, or mounted; if it explains none of those, remove it.
@@ -258,7 +258,7 @@ Components should feel manufactured, compact, and legible under pressure. Their 
 - **Background:** Chassis for procedural groups; theme-aware document fields only for readable markdown; carbon stock only for generated links.
 - **Shadow Strategy:** Hairline mounting shine for chassis and physical raised/recessed shadows for controls and wells.
 - **Border:** One-pixel structural rules divide headings, rails, steps, cells, and bodies.
-- **Internal Padding:** Dense 8–12px spacing, increasing only for readable artifact content.
+- **Internal Padding:** Dense 8-12px spacing, increasing only for readable artifact content.
 
 ### Inputs / Fields
 

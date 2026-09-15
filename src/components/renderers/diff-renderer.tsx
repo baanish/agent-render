@@ -3,11 +3,12 @@
 import dynamic from "next/dynamic";
 import { Component, type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Columns2, Copy, Rows3 } from "lucide-react";
-import { PatchDiff, MultiFileDiff, type FileDiffProps } from "@/lib/diff/pierre-react";
+import { FileDiff, MultiFileDiff, setLanguageOverride, type FileDiffProps } from "@/lib/diff/pierre-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { detectCodeLanguage, toPierreLanguage } from "@/lib/code/language";
+import { getContentKey } from "@/lib/content-key";
 import { useResolvedTheme } from "@/components/theme/use-theme-controller";
-import { getPatchFileLabels, getRenderablePatchFiles, parseGitPatchBundle } from "@/lib/diff/git-patch";
+import { getPatchFileLabels, parseRenderablePatchFiles, type ParsedPatchFile } from "@/lib/diff/git-patch";
 import type { DiffArtifact } from "@/lib/payload/schema";
 
 // The Trees runtime only mounts for multi-file patches, so it loads behind its own
@@ -28,14 +29,10 @@ const MOBILE_DIFF_MEDIA_QUERY = `(max-width: ${NARROW_DIFF_BREAKPOINT}px)`;
 type DiffViewMode = "unified" | "split";
 type DiffOptions = NonNullable<FileDiffProps<undefined>["options"]>;
 
-type RenderablePatchFile = {
-  meta: ReturnType<typeof parseGitPatchBundle>[number];
-};
-
 type DiffRenderState =
   | {
       kind: "rich-patch";
-      patchFiles: RenderablePatchFile[];
+      patchFiles: ParsedPatchFile[];
     }
   | {
       kind: "rich-contents";
@@ -60,20 +57,6 @@ type DiffRendererBoundaryState = {
 
 function getIsNarrowScreen() {
   return typeof window !== "undefined" && window.matchMedia(MOBILE_DIFF_MEDIA_QUERY).matches;
-}
-
-function hashResetValue(value: string | undefined): string {
-  if (value === undefined) {
-    return "u";
-  }
-
-  let hash = 2166136261;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return `${value.length}:${(hash >>> 0).toString(36)}`;
 }
 
 function getDefaultMode(view: DiffArtifact["view"], isNarrowScreen: boolean) {
@@ -275,16 +258,22 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
   const renderedDiff = useMemo<DiffRenderState>(() => {
     if (artifact.patch) {
       try {
-        const patchFiles = getRenderablePatchFiles(parseGitPatchBundle(artifact.patch));
+        const patchFiles = parseRenderablePatchFiles(artifact.patch);
         if (patchFiles.length === 0) {
           return getFallbackState(
             "This patch is not a valid unified diff, so the raw patch is shown instead.",
           );
         }
-        return {
-          kind: "rich-patch",
-          patchFiles: patchFiles.map((meta) => ({ meta })),
-        };
+        const hint = artifact.language?.trim().toLowerCase();
+        if (hint) {
+          const lang = toPierreLanguage(hint);
+          for (const file of patchFiles) {
+            if (file.meta) {
+              file.meta = setLanguageOverride(file.meta, lang);
+            }
+          }
+        }
+        return { kind: "rich-patch", patchFiles };
       } catch (error) {
         return getFallbackState(
           "This patch could not be rendered as a valid unified diff. Showing the raw patch instead.",
@@ -312,17 +301,17 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
       return null;
     }
 
-    const labels = getPatchFileLabels(renderedDiff.patchFiles.map((file) => file.meta));
+    const labels = getPatchFileLabels(renderedDiff.patchFiles);
     const fileIdByPath = new Map<string, string>();
     const paths: string[] = [];
-    for (const { meta } of renderedDiff.patchFiles) {
-      const label = labels.get(meta.id) ?? meta.displayPath;
-      fileIdByPath.set(label, meta.id);
+    for (const file of renderedDiff.patchFiles) {
+      const label = labels.get(file.id) ?? file.displayPath;
+      fileIdByPath.set(label, file.id);
       paths.push(label);
     }
     const selectedId =
-      renderedDiff.patchFiles.find(({ meta }) => meta.id === activeFileId)?.meta.id ??
-      renderedDiff.patchFiles[0]?.meta.id;
+      renderedDiff.patchFiles.find((file) => file.id === activeFileId)?.id ??
+      renderedDiff.patchFiles[0]?.id;
     const selectedPath = selectedId ? labels.get(selectedId) : undefined;
 
     return { fileIdByPath, paths, selectedPath };
@@ -343,7 +332,7 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
   useEffect(() => {
     if (
       renderedDiff.kind === "rich-patch" &&
-      renderedDiff.patchFiles.every(({ meta }) => meta.isBinary)
+      renderedDiff.patchFiles.every((file) => file.isBinary)
     ) {
       reportReady();
     }
@@ -420,6 +409,8 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
                   oldFile={{ name: renderedDiff.fileName, contents: artifact.oldContent ?? "", lang: renderedDiff.language }}
                   newFile={{ name: renderedDiff.fileName, contents: artifact.newContent ?? "", lang: renderedDiff.language }}
                   options={diffOptions}
+                  // Main-thread Shiki keeps onPostRender honest: readiness fires
+                  // after the highlighted document mounts, not after a worker queues.
                   disableWorkerPool
                 />
               </section>
@@ -444,21 +435,22 @@ function DiffRendererContent({ artifact, onReady }: DiffRendererProps) {
               />
             ) : null}
             <div className="patch-bundle-files">
-              {renderedDiff.patchFiles.map(({ meta }) => (
-                <section key={meta.id} id={`patch-file-${meta.id}`} className="patch-file-section">
+              {renderedDiff.patchFiles.map((file) => (
+                <section key={file.id} id={`patch-file-${file.id}`} className="patch-file-section">
                   <header className="patch-file-header">
                     <div>
-                      <p className="section-kicker">{meta.status}</p>
-                      <h4>{meta.displayPath}</h4>
+                      <p className="section-kicker">{file.status}</p>
+                      <h4>{file.displayPath}</h4>
                     </div>
-                    {meta.oldPath && meta.newPath && meta.oldPath !== meta.newPath ? (
-                      <span className="mono-pill">{meta.oldPath} -&gt; {meta.newPath}</span>
+                    {file.oldPath && file.newPath && file.oldPath !== file.newPath ? (
+                      <span className="mono-pill">{file.oldPath} -&gt; {file.newPath}</span>
                     ) : null}
                   </header>
-                  {meta.isBinary ? (
+                  {file.isBinary || !file.meta ? (
                     <div className="artifact-empty-state">Binary patch preview is not expanded. Download the patch to inspect the raw binary diff headers.</div>
                   ) : (
-                    <PatchDiff patch={meta.patch} options={diffOptions} disableWorkerPool />
+                    // See disableWorkerPool rationale on MultiFileDiff above.
+                    <FileDiff fileDiff={file.meta} options={diffOptions} disableWorkerPool />
                   )}
                 </section>
               ))}
@@ -484,9 +476,9 @@ export function DiffRenderer({ artifact, onReady }: DiffRendererProps) {
     () =>
       [
         artifact.id,
-        hashResetValue(artifact.patch),
-        hashResetValue(artifact.oldContent),
-        hashResetValue(artifact.newContent),
+        getContentKey(artifact.patch),
+        getContentKey(artifact.oldContent),
+        getContentKey(artifact.newContent),
         artifact.filename ?? "",
         artifact.language ?? "",
         artifact.view ?? "",

@@ -107,7 +107,7 @@ function getArtifactDetailRows(artifact: ArtifactPayload, bodyLength: number) {
   const rows = [
     { label: "Format", value: artifact.kind },
     { label: "Ident", value: artifact.id },
-    { label: "File", value: artifact.filename ?? "—" },
+    { label: "File", value: artifact.filename ?? "-" },
     {
       label: "Body",
       value: `${numberFormatter.format(bodyLength)} chars`,

@@ -2711,7 +2711,7 @@ button:disabled {
   }
 
   /* The Pierre surface reads the --diffs-* vars through the shadow boundary, and
-     .code-renderer-shell re-declares them on itself in the shared block above —
+     .code-renderer-shell re-declares them on itself in the shared block above.
      so the print overrides must land on that element, not on the outer frame. */
   body[data-print-mode="markdown"] .markdown-code-frame .code-renderer-shell {
     background: var(--print-paper) !important;

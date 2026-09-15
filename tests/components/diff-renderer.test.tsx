@@ -5,7 +5,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import { DiffRenderer } from "@/components/renderers/diff-renderer";
 import type { DiffArtifact } from "@/lib/payload/schema";
 
-const patchDiffMock = vi.fn();
+const fileDiffMock = vi.fn();
 const multiFileDiffMock = vi.fn();
 const fileTreeMock = vi.hoisted(() => ({
   options: [] as Array<{
@@ -35,16 +35,20 @@ vi.mock("@pierre/trees/react", () => ({
   },
 }));
 
-vi.mock("@/lib/diff/pierre-react", () => ({
-  PatchDiff: (props: { patch: string }) => {
-    patchDiffMock(props);
-    return <div data-testid="mock-patch-diff">Rich patch diff</div>;
-  },
-  MultiFileDiff: (props: { oldFile: { contents: string }; newFile: { contents: string } }) => {
-    multiFileDiffMock(props);
-    return <div data-testid="mock-multi-file-diff">Rich contents diff</div>;
-  },
-}));
+vi.mock("@/lib/diff/pierre-react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/diff/pierre-react")>();
+  return {
+    ...actual,
+    FileDiff: (props: { fileDiff: { name: string; hunks: unknown[] } }) => {
+      fileDiffMock(props);
+      return <div data-testid="mock-patch-diff">Rich patch diff</div>;
+    },
+    MultiFileDiff: (props: { oldFile: { contents: string }; newFile: { contents: string } }) => {
+      multiFileDiffMock(props);
+      return <div data-testid="mock-multi-file-diff">Rich contents diff</div>;
+    },
+  };
+});
 
 const validPatch = `diff --git a/src/hello.ts b/src/hello.ts
 index 1111111..2222222 100644
@@ -135,7 +139,7 @@ afterAll(() => {
 
 afterEach(() => {
   cleanup();
-  patchDiffMock.mockClear();
+  fileDiffMock.mockClear();
   multiFileDiffMock.mockClear();
   fileTreeMock.options.length = 0;
   Object.defineProperty(navigator, "clipboard", {
@@ -155,7 +159,11 @@ describe("DiffRenderer", () => {
     expect(screen.queryByText(/could not be rendered as a valid unified diff/i)).not.toBeInTheDocument();
     expect(screen.queryByTestId("mock-file-tree")).not.toBeInTheDocument();
     expect(screen.getByTestId("mock-patch-diff")).toBeVisible();
-    expect(patchDiffMock).toHaveBeenCalledWith(expect.objectContaining({ patch: expect.stringContaining("diff --git") }));
+    expect(fileDiffMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileDiff: expect.objectContaining({ name: "src/hello.ts" }),
+      }),
+    );
   });
 
   it("reports readiness from Pierre's completed post-render callback without a timer", async () => {
@@ -165,7 +173,7 @@ describe("DiffRenderer", () => {
     await screen.findByTestId("mock-patch-diff");
     expect(screen.getByTestId("renderer-diff")).toHaveAttribute("data-renderer-ready", "false");
 
-    const props = patchDiffMock.mock.calls.at(-1)?.[0] as {
+    const props = fileDiffMock.mock.calls.at(-1)?.[0] as {
       options?: {
         onPostRender?: (
           node: HTMLElement,
@@ -257,7 +265,7 @@ describe("DiffRenderer", () => {
 
   it("falls back to the raw patch when the rich diff component throws at render", async () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    patchDiffMock.mockImplementation(() => {
+    fileDiffMock.mockImplementation(() => {
       throw new Error("shadow root exploded");
     });
 
@@ -286,7 +294,7 @@ describe("DiffRenderer", () => {
 
     const renderer = await screen.findByTestId("renderer-diff");
     expect(renderer).toHaveAttribute("data-diff-state", "rich");
-    expect(patchDiffMock).not.toHaveBeenCalled();
+    expect(fileDiffMock).not.toHaveBeenCalled();
     expect(screen.getByText(/binary patch preview is not expanded/i)).toBeVisible();
     expect(screen.queryByText(/could not be rendered as a valid unified diff/i)).not.toBeInTheDocument();
     await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1));
@@ -297,7 +305,7 @@ describe("DiffRenderer", () => {
 
     const renderer = await screen.findByTestId("renderer-diff");
     expect(renderer).toHaveAttribute("data-diff-state", "rich");
-    expect(patchDiffMock).not.toHaveBeenCalled();
+    expect(fileDiffMock).not.toHaveBeenCalled();
     expect(screen.getByText(/binary patch preview is not expanded/i)).toBeVisible();
     expect(screen.queryByTestId("renderer-diff-fallback-raw")).not.toBeInTheDocument();
     expect(screen.queryByText(/not a valid unified diff/i)).not.toBeInTheDocument();

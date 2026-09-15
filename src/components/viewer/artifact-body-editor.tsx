@@ -64,6 +64,8 @@ export function ArtifactBodyEditor({
         className="artifact-body-editor"
         initialItems={initialItems}
         options={codeViewOptions}
+        // Matches the other Pierre surfaces: synchronous highlighting keeps
+        // repaints deterministic for the readiness and print contracts.
         disableWorkerPool
         onItemEditChange={(item, file) => {
           onChangeRef.current(item.id, file.contents);

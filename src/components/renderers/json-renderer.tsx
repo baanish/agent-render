@@ -157,7 +157,9 @@ class JsonTreeBoundary extends Component<{ fallback: ReactNode; children: ReactN
 export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
   const onReadyRef = useRef(onReady);
   const [view, setView] = useState<"tree" | "raw">("tree");
-  const [rawReadyArtifact, setRawReadyArtifact] = useState<JsonArtifact | null>(null);
+  // Keyed on content, not the artifact object: a re-decoded equal artifact is a
+  // new object identity but the same rendered raw document.
+  const [rawReadyContent, setRawReadyContent] = useState<string | null>(null);
   const parsed = useMemo(() => {
     try {
       const json = JSON.parse(artifact.content) as JsonValue;
@@ -181,13 +183,13 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
   }, [artifact.id, parsed, view]);
 
   const handleRawReady = () => {
-    setRawReadyArtifact(artifact);
+    setRawReadyContent(artifact.content);
     onReadyRef.current?.();
   };
   const isReady =
     parsed.ok && parsed.treeWithinBudget && view === "tree"
       ? true
-      : rawReadyArtifact === artifact;
+      : rawReadyContent === artifact.content;
 
   if (!parsed.ok) {
     return (
@@ -241,7 +243,7 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
             className={`artifact-action ${view === "raw" ? "is-depressed" : ""}`}
             onClick={() => {
               if (view !== "raw") {
-                setRawReadyArtifact(null);
+                setRawReadyContent(null);
                 setView("raw");
               }
             }}

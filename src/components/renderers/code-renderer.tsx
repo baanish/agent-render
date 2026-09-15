@@ -144,6 +144,8 @@ export function CodeRenderer({ artifact, compact = false, onReady }: CodeRendere
           file={file}
           options={options}
           className="code-renderer-pierre"
+          // Main-thread Shiki keeps onPostRender honest: readiness fires after
+          // the highlighted document mounts, not after a worker queues.
           disableWorkerPool
         />
       </div>

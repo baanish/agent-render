@@ -1,21 +1,15 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
+import { Link2 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { CODE_LANGUAGE_CHOICES } from "@/lib/code/language";
-import { numberFormatter } from "@/lib/format";
+import { CodecPicker, GeneratedLinkResult } from "@/components/generated-link";
 import type {
   GeneratedArtifactLink,
   LinkCreatorDraft,
 } from "@/lib/payload/link-creator";
-import {
-  artifactKinds,
-  codecPickerLabel,
-  codecs,
-  isDeprecatedEmitCodec,
-  type ArtifactKind,
-} from "@/lib/payload/schema";
+import { artifactKinds, type ArtifactKind } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
 
 type LinkCreatorProps = {
@@ -37,8 +31,6 @@ const fieldPlaceholders: Record<ArtifactKind, string> = {
   csv: "name,status\nviewer,ready\ncreator,draft",
   json: '{\n  "status": "ready",\n  "artifacts": 1\n}',
 };
-
-const codecOptions = ["auto", ...codecs] as const;
 
 const defaultLinkCreatorDraft: LinkCreatorDraft = {
   kind: "markdown",
@@ -335,32 +327,10 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             <span className="operation-number">04</span>
             <h3>Compress</h3>
           </header>
-          <div
-            className="creator-codec-row"
-            role="group"
-            aria-label="Compression algorithm"
-          >
-            {codecOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className={cn(
-                  "artifact-action codec-key",
-                  (draft.codec ?? "auto") === option && "is-depressed",
-                  isDeprecatedEmitCodec(option) && "is-deprecated",
-                )}
-                aria-pressed={(draft.codec ?? "auto") === option}
-                title={
-                  isDeprecatedEmitCodec(option)
-                    ? "Deprecated: Discord and WhatsApp detonate these Unicode wires. Use auto or arx5."
-                    : undefined
-                }
-                onClick={() => updateDraft("codec", option)}
-              >
-                {codecPickerLabel(option)}
-              </button>
-            ))}
-          </div>
+          <CodecPicker
+            value={draft.codec}
+            onSelect={(option) => updateDraft("codec", option)}
+          />
         </section>
 
         <section className="operation-step">
@@ -378,106 +348,20 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
       </form>
 
       {generatedLink ? (
-        <section className="creator-result-shell carbon-output">
-          <header className="creator-result-head">
-            <div>
-              <h3>Generated link</h3>
-              <p>{generatedLink.artifact.filename ?? generatedLink.artifact.title ?? ""}</p>
-            </div>
-            <span className="carbon-stamp">TRANSFER OK</span>
-          </header>
-
-          <div className="carbon-fields">
-            <label className="creator-link-frame">
-              <span className="metric-label">URL</span>
-              <textarea
-                className="creator-link-output"
-                value={generatedLink.url}
-                readOnly
-                aria-label="Generated agent-render link"
-                rows={5}
-              />
-            </label>
-
-            <label className="creator-link-frame">
-              <span className="metric-label">Markdown link</span>
-              <textarea
-                className="creator-link-output"
-                value={generatedLink.markdownLink}
-                readOnly
-                aria-label="Generated markdown link"
-                rows={3}
-              />
-            </label>
-          </div>
-
-          <dl className="creator-result-metrics">
-            <div>
-              <dt>CODEC</dt>
-              <dd>{generatedLink.codec}</dd>
-            </div>
-            <div>
-              <dt>FRAGMENT</dt>
-              <dd>{numberFormatter.format(generatedLink.fragmentLength)} chars</dd>
-            </div>
-            <div>
-              <dt>MARKDOWN LINK</dt>
-              <dd>{numberFormatter.format(generatedLink.markdownLinkLength)} chars</dd>
-            </div>
-            <div>
-              <dt>BUNDLE</dt>
-              <dd>{generatedLink.envelope.title}</dd>
-            </div>
-          </dl>
-
-          {generatedLink.discordMarkdownLinkWarning ? (
-            <div className="creator-warning-state" role="status">
-              {generatedLink.discordMarkdownLinkWarning}
-            </div>
-          ) : null}
-
-          <div className="creator-result-actions">
-            <button
-              type="button"
-              className={cn("artifact-action", copyState === "copied" && "is-confirmed")}
-              onClick={handleCopy}
-            >
-              {copyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy link"}
-            </button>
-            <button
-              type="button"
-              className={cn("artifact-action", markdownLinkCopyState === "copied" && "is-confirmed")}
-              onClick={handleCopyMarkdownLink}
-            >
-              {markdownLinkCopyState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
-              {markdownLinkCopyState === "copied" ? "Copied" : markdownLinkCopyState === "failed" ? "Copy failed" : "Copy markdown link"}
-            </button>
-            <button
-              type="button"
-              className="artifact-action"
-              onClick={() => onPreviewHash(generatedLink.hash)}
-            >
-              <ArrowUpRight className="h-3.5 w-3.5" />
-              Preview here
-            </button>
-            <a
-              href={generatedLink.url}
-              target="_blank"
-              rel="noreferrer"
-              className="artifact-action"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Open in new tab
-            </a>
-          </div>
-
-          {isGeneratedLinkStale ? (
-            <p className="creator-inline-status" role="status">
-              Draft changed since last generation.
-            </p>
-          ) : null}
-        </section>
+        <GeneratedLinkResult
+          link={generatedLink}
+          stale={isGeneratedLinkStale}
+          copyState={copyState}
+          markdownLinkCopyState={markdownLinkCopyState}
+          onCopy={() => {
+            void handleCopy();
+          }}
+          onCopyMarkdownLink={() => {
+            void handleCopyMarkdownLink();
+          }}
+          onPreview={() => onPreviewHash(generatedLink.hash)}
+          extendedMetrics
+        />
       ) : null}
 
       {error ? (

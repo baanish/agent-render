@@ -10,9 +10,14 @@ import "./pierre-theme";
  * chunk-id drift in a prior attempt). Also the single seam unit tests mock.
  */
 export {
-  PatchDiff,
+  FileDiff,
   MultiFileDiff,
   File,
   type FileDiffProps,
   type FileOptions,
 } from "@pierre/diffs/react";
+export {
+  parsePatchFiles,
+  setLanguageOverride,
+  type FileDiffMetadata,
+} from "@pierre/diffs";

@@ -31,10 +31,11 @@ export const budgets = [
     // Guards the code renderer, which must load lazily from the artifact stage.
     // The renderer now mounts Pierre's `File`, so this entrypoint carries the
     // shared @pierre/diffs + Shiki core chunks it overlaps with the diff viewer;
-    // the previous CodeMirror stack is gone. 170 KiB reflects that consolidated
-    // highlighting stack. Growth usually means a new grammar or theme crept in.
+    // the previous CodeMirror stack is gone. Measured at ~159 KiB; 190 KiB leaves
+    // room for grammar additions without making the gate decorative. Growth past
+    // that means a new grammar or theme crept in.
     importKeyParts: ["components/viewer/artifact-stage", "code-renderer"],
-    maxBytes: 170 * 1024,
+    maxBytes: 190 * 1024,
     name: "code renderer deferred JS",
     type: "loadable",
   },
@@ -51,9 +52,10 @@ export const budgets = [
     // Guards the deferred @pierre/diffs stack. The review renderer stays outside
     // the initial shell and loads only for diff artifacts; its count includes the
     // shared Pierre core also counted under the code renderer's entrypoint.
-    // A jump here means a version bump grew that isolated review surface.
+    // Measured at ~163 KiB; 195 KiB leaves real headroom for a Pierre minor bump
+    // while still catching a stray top-level import.
     importKeyParts: ["components/viewer/artifact-stage", "diff-renderer"],
-    maxBytes: 165 * 1024,
+    maxBytes: 195 * 1024,
     name: "rich diff library deferred JS",
     type: "loadable",
   },

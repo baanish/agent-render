@@ -11,6 +11,7 @@ import {
   type PayloadEnvelope,
 } from "@/lib/payload/schema";
 import { getHashPreview } from "@/components/viewer/hash-preview";
+import { getContentKey } from "@/lib/content-key";
 import { numberFormatter } from "@/lib/format";
 import { withBasePath } from "@/lib/site/base-path";
 
@@ -41,13 +42,7 @@ function getRendererReadyKey(artifact: ArtifactPayload | null): string {
   if (!artifact) {
     return "";
   }
-  const serialized = JSON.stringify(artifact);
-  let hash = 2166136261;
-  for (let index = 0; index < serialized.length; index += 1) {
-    hash ^= serialized.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return `${artifact.id}:${artifact.kind}:${serialized.length}:${(hash >>> 0).toString(36)}`;
+  return `${artifact.id}:${artifact.kind}:${getContentKey(JSON.stringify(artifact))}`;
 }
 
 const githubPath = "https://github.com/baanish/agent-render";

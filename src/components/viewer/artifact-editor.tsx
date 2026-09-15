@@ -1,12 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, Check, Copy, ExternalLink, Link2 } from "lucide-react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { Link2 } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { CODE_LANGUAGE_CHOICES } from "@/lib/code/language";
-import { numberFormatter } from "@/lib/format";
-import { getPatchFileLabels, getRenderablePatchFiles, parseGitPatchBundle, type ParsedPatchFile } from "@/lib/diff/git-patch";
+import { CodecPicker, GeneratedLinkResult } from "@/components/generated-link";
+import { getPatchFileLabels, parseRenderablePatchFiles, type ParsedPatchFile } from "@/lib/diff/git-patch";
+import { getUniqueLabels } from "@/lib/unique-labels";
 import type { CodeViewHandle, Editor } from "@/lib/diff/pierre-edit";
 import type { ArtifactBodyDocument } from "@/components/viewer/artifact-body-editor";
 import {
@@ -17,9 +18,6 @@ import {
   type GeneratedArtifactLink,
 } from "@/lib/payload/link-creator";
 import {
-  codecPickerLabel,
-  codecs,
-  isDeprecatedEmitCodec,
   type ArtifactKind,
   type ArtifactPayload,
   type PayloadEnvelope,
@@ -52,26 +50,6 @@ type ArtifactEditorProps = {
 
 const EMPTY_PATCH_FILES: ParsedPatchFile[] = [];
 
-
-// Maps each parsed file to its one-based line in the raw editor document. Comparing
-// whole lines keeps CRLF input, duplicate paths, and patch text embedded in added lines
-// from confusing navigation.
-function getPatchFileLines(content: string, files: ParsedPatchFile[]): Map<string, number> {
-  const sourceLines = content.replace(/\r\n/g, "\n").split("\n");
-  const lineNumbers = new Map<string, number>();
-  let cursor = 0;
-  for (const file of files) {
-    const firstLine = file.patch.split("\n", 1)[0] ?? "";
-    const lineIndex = sourceLines.indexOf(firstLine, cursor);
-    lineNumbers.set(file.id, lineIndex === -1 ? 1 : lineIndex + 1);
-    if (lineIndex !== -1) {
-      cursor = lineIndex + 1;
-    }
-  }
-
-  return lineNumbers;
-}
-
 // Snapshots a draft into the documents the Pierre edit surface mounts. Pair diffs become two
 // documents with the conventional `a/`/`b/` prefixes so file headers read like a git patch and
 // the extension still drives language inference.
@@ -93,8 +71,6 @@ const fieldHints: Record<ArtifactKind, string> = {
   csv: "Edit the raw CSV, then generate a new shareable link.",
   json: "Edit the JSON, then generate a new shareable link.",
 };
-
-const codecOptions = ["auto", ...codecs] as const;
 
 function getShareBaseUrl() {
   if (typeof window === "undefined") {
@@ -166,18 +142,21 @@ export function ArtifactEditor({
   const usesPairDiff = draft.kind === "diff" && draft.diffSource === "pair";
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
   const bodyEditorRef = useRef<CodeViewHandle<undefined> | null>(null);
+  // The patch re-parses on the deferred copy so a keystroke paints before the
+  // tree rebuilds; a stale rail while typing beats an input stall.
+  const deferredDraftContent = useDeferredValue(draft.content);
   const patchFiles = useMemo(() => {
     if (draft.kind !== "diff" || draft.diffSource !== "patch") {
       return EMPTY_PATCH_FILES;
     }
 
     try {
-      return getRenderablePatchFiles(parseGitPatchBundle(draft.content));
+      return parseRenderablePatchFiles(deferredDraftContent);
     } catch {
       // The patch mid-edit may be malformed; the tree hides until it parses again.
       return EMPTY_PATCH_FILES;
     }
-  }, [draft.kind, draft.diffSource, draft.content]);
+  }, [draft.kind, draft.diffSource, deferredDraftContent]);
   const patchFileLabels = useMemo(() => getPatchFileLabels(patchFiles), [patchFiles]);
   const patchFilePaths = useMemo(
     () => patchFiles.map((file) => patchFileLabels.get(file.id) ?? file.displayPath),
@@ -187,10 +166,7 @@ export function ArtifactEditor({
     () => new Map(patchFiles.map((file) => [patchFileLabels.get(file.id) ?? file.displayPath, file])),
     [patchFiles, patchFileLabels],
   );
-  const patchFileLines = useMemo(
-    () => getPatchFileLines(draft.content, patchFiles),
-    [draft.content, patchFiles],
-  );
+
 
   // The picker keeps an opened artifact's out-of-list language selectable instead of
   // silently clearing it, since payloads can carry any language hint.
@@ -201,24 +177,19 @@ export function ArtifactEditor({
     return [...CODE_LANGUAGE_CHOICES, { value: draft.language, label: draft.language }];
   }, [draft.language]);
 
-  const artifactLabels = useMemo(() => {
-    const labels = new Map<string, string>();
-    // Patch file paths share the tree namespace with artifact labels; reserve them so a
-    // filename-shaped artifact label can never shadow a patch row under handleTreeSelect.
-    const used = new Set(patchFiles.length > 1 ? patchFilePaths : []);
-    for (const entry of envelope.artifacts) {
-      const base = getArtifactTreeLabel(entry);
-      let label = base;
-      let suffix = 2;
-      while (used.has(label)) {
-        label = `${base} (${suffix})`;
-        suffix += 1;
-      }
-      used.add(label);
-      labels.set(entry.id, label);
-    }
-    return labels;
-  }, [envelope.artifacts, patchFiles.length, patchFilePaths]);
+  const artifactLabels = useMemo(
+    () =>
+      getUniqueLabels(
+        envelope.artifacts.map((entry) => ({
+          id: entry.id,
+          base: getArtifactTreeLabel(entry),
+        })),
+        // Patch file paths share the tree namespace with artifact labels; reserve them so a
+        // filename-shaped artifact label can never shadow a patch row under handleTreeSelect.
+        patchFiles.length > 1 ? new Set(patchFilePaths) : undefined,
+      ),
+    [envelope.artifacts, patchFiles.length, patchFilePaths],
+  );
   const artifactIdByLabel = useMemo(
     () => new Map(Array.from(artifactLabels, ([id, label]) => [label, id])),
     [artifactLabels],
@@ -240,7 +211,7 @@ export function ArtifactEditor({
       return;
     }
 
-    const lineNumber = patchFileLines.get(file.id) ?? 1;
+    const lineNumber = file.startLine;
 
     codeView.scrollTo({ type: "line", id: "content", lineNumber, align: "center" });
     // CodeView exposes the editor as the narrow DiffsEditor interface, but this surface creates
@@ -582,167 +553,33 @@ export function ArtifactEditor({
             <Link2 className="h-3.5 w-3.5" />
             {isGenerating ? "Generating…" : "Generate new link"}
           </button>
-          <div
-            className="creator-codec-row"
-            role="group"
-            aria-label="Compression algorithm"
-          >
-            <span className="metric-label">Compression</span>
-            {codecOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className={cn(
-                  "artifact-action codec-key",
-                  (draft.codec ?? "auto") === option && "is-depressed",
-                  isDeprecatedEmitCodec(option) && "is-deprecated",
-                )}
-                aria-pressed={(draft.codec ?? "auto") === option}
-                title={
-                  isDeprecatedEmitCodec(option)
-                    ? "Deprecated: Discord and WhatsApp detonate these Unicode wires. Use auto or arx5."
-                    : undefined
-                }
-                onClick={() => updateDraft("codec", option)}
-              >
-                {codecPickerLabel(option)}
-              </button>
-            ))}
-          </div>
+          <CodecPicker
+            value={draft.codec}
+            label="Compression"
+            onSelect={(option) => updateDraft("codec", option)}
+          />
         </div>
         </form>
       </div>
 
       {generatedLink ? (
-        <aside
-          ref={resultRef}
-          className="creator-result-shell carbon-output"
-          data-testid="artifact-editor-result"
-        >
-          <header className="creator-result-head">
-            <div>
-              <h3>Generated link</h3>
-              <p>{generatedLink.artifact.filename?.trim() || generatedLink.artifact.title || ""}</p>
-            </div>
-            <span className="carbon-stamp">TRANSFER OK</span>
-          </header>
-
-          <div className="creator-link-frame">
-            <p className="metric-label">URL</p>
-            <textarea
-              className="creator-link-output"
-              value={generatedLink.url}
-              readOnly
-              aria-label="Generated agent-render link"
-              rows={4}
-            />
-          </div>
-
-          <div className="creator-link-frame">
-            <p className="metric-label">Markdown link</p>
-            <textarea
-              className="creator-link-output"
-              value={generatedLink.markdownLink}
-              readOnly
-              aria-label="Generated markdown link"
-              rows={3}
-            />
-          </div>
-
-          <dl className="creator-result-metrics">
-            <div>
-              <dt>Codec</dt>
-              <dd>{generatedLink.codec}</dd>
-            </div>
-            <div>
-              <dt>Fragment</dt>
-              <dd>{numberFormatter.format(generatedLink.fragmentLength)} chars</dd>
-            </div>
-          </dl>
-
-          {generatedLink.discordMarkdownLinkWarning ? (
-            <div className="creator-warning-state" role="status">
-              {generatedLink.discordMarkdownLinkWarning}
-            </div>
-          ) : null}
-
-          <div className="creator-result-actions">
-            <button
-              type="button"
-              className={cn(
-                "artifact-action",
-                copyState === "copied" && "is-confirmed",
-              )}
-              disabled={isGeneratedLinkStale}
-              onClick={() => {
-                void handleCopy();
-              }}
-            >
-              {copyState === "copied" ? (
-                <Check className="h-3.5 w-3.5" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-              {copyState === "copied"
-                ? "Copied"
-                : copyState === "failed"
-                  ? "Copy failed"
-                  : "Copy link"}
-            </button>
-            <button
-              type="button"
-              className={cn(
-                "artifact-action",
-                markdownLinkCopyState === "copied" && "is-confirmed",
-              )}
-              disabled={isGeneratedLinkStale}
-              onClick={() => {
-                void handleCopyMarkdownLink();
-              }}
-            >
-              {markdownLinkCopyState === "copied" ? (
-                <Check className="h-3.5 w-3.5" />
-              ) : (
-                <Link2 className="h-3.5 w-3.5" />
-              )}
-              {markdownLinkCopyState === "copied"
-                ? "Copied"
-                : markdownLinkCopyState === "failed"
-                  ? "Copy failed"
-                  : "Copy markdown link"}
-            </button>
-            <button
-              type="button"
-              className="artifact-action"
-              disabled={isGeneratedLinkStale}
-              onClick={handlePreview}
-            >
-              <ArrowUpRight className="h-3.5 w-3.5" />
-              Preview here
-            </button>
-            <a
-              href={isGeneratedLinkStale ? undefined : generatedLink.url}
-              target="_blank"
-              rel="noreferrer"
-              className="artifact-action"
-              aria-disabled={isGeneratedLinkStale}
-              onClick={(event) => {
-                if (isGeneratedLinkStale) {
-                  event.preventDefault();
-                }
-              }}
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Open in new tab
-            </a>
-          </div>
-
-          {isGeneratedLinkStale ? (
-            <p className="creator-inline-status" role="status">
-              Draft changed since last generation.
-            </p>
-          ) : null}
-        </aside>
+        <GeneratedLinkResult
+          as="aside"
+          containerRef={resultRef}
+          testId="artifact-editor-result"
+          link={generatedLink}
+          stale={isGeneratedLinkStale}
+          disableActionsWhenStale
+          copyState={copyState}
+          markdownLinkCopyState={markdownLinkCopyState}
+          onCopy={() => {
+            void handleCopy();
+          }}
+          onCopyMarkdownLink={() => {
+            void handleCopyMarkdownLink();
+          }}
+          onPreview={handlePreview}
+        />
       ) : null}
 
       {error ? (
