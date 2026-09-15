@@ -108,6 +108,25 @@ describe("JsonRenderer", () => {
     });
   });
 
+  it("keeps raw readiness when a re-decoded artifact object carries the same content", async () => {
+    const { rerender } = render(<JsonRenderer artifact={createArtifact({ content: "{ nope" })} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("renderer-json-raw").querySelector("[data-testid='mock-pierre-file']"),
+      ).toBeInTheDocument();
+    });
+    act(() => {
+      pierreFileMock.options?.onPostRender?.(document.createElement("div"), {}, "mount");
+    });
+    expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "true");
+
+    // The shell keeps this renderer mounted across a hash change that decodes to an equal
+    // artifact; the raw surface does not post-render again, so readiness must survive.
+    rerender(<JsonRenderer artifact={createArtifact({ content: "{ nope" })} />);
+    expect(screen.getByTestId("renderer-json")).toHaveAttribute("data-renderer-ready", "true");
+  });
+
   it("falls back to raw source before a wide JSON value can flood the DOM", async () => {
     const content = JSON.stringify(Array.from({ length: 5_001 }, (_, index) => index));
 

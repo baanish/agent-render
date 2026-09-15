@@ -191,7 +191,7 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
       ? true
       : rawReadyContent === artifact.content;
 
-  if (!parsed.ok) {
+  if (!parsed.ok || !parsed.treeWithinBudget) {
     return (
       <div
         className="json-renderer-shell"
@@ -199,22 +199,9 @@ export function JsonRenderer({ artifact, onReady }: JsonRendererProps) {
         data-renderer-ready={isReady ? "true" : "false"}
       >
         <div className="artifact-empty-state" role="status">
-          {parsed.message}
-        </div>
-        <JsonRawSource artifact={artifact} onReady={handleRawReady} />
-      </div>
-    );
-  }
-
-  if (!parsed.treeWithinBudget) {
-    return (
-      <div
-        className="json-renderer-shell"
-        data-testid="renderer-json"
-        data-renderer-ready={isReady ? "true" : "false"}
-      >
-        <div className="artifact-empty-state" role="status">
-          This JSON has too many values for the interactive tree. Showing the raw source instead.
+          {parsed.ok
+            ? "This JSON has too many values for the interactive tree. Showing the raw source instead."
+            : parsed.message}
         </div>
         <JsonRawSource artifact={artifact} onReady={handleRawReady} />
       </div>

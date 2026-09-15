@@ -380,16 +380,15 @@ export function ArtifactEditor({
     }
 
     const requestToken = ++copyTokenRef.current;
-    const expectedHash = generatedLink.hash;
 
     try {
       await copyTextToClipboard(generatedLink.url);
-      if (copyTokenRef.current !== requestToken || generatedLink.hash !== expectedHash) {
+      if (copyTokenRef.current !== requestToken) {
         return;
       }
       setCopyState("copied");
     } catch {
-      if (copyTokenRef.current !== requestToken || generatedLink.hash !== expectedHash) {
+      if (copyTokenRef.current !== requestToken) {
         return;
       }
       setCopyState("failed");
@@ -402,22 +401,15 @@ export function ArtifactEditor({
     }
 
     const requestToken = ++markdownCopyTokenRef.current;
-    const expectedHash = generatedLink.hash;
 
     try {
       await copyTextToClipboard(generatedLink.markdownLink);
-      if (
-        markdownCopyTokenRef.current !== requestToken ||
-        generatedLink.hash !== expectedHash
-      ) {
+      if (markdownCopyTokenRef.current !== requestToken) {
         return;
       }
       setMarkdownLinkCopyState("copied");
     } catch {
-      if (
-        markdownCopyTokenRef.current !== requestToken ||
-        generatedLink.hash !== expectedHash
-      ) {
+      if (markdownCopyTokenRef.current !== requestToken) {
         return;
       }
       setMarkdownLinkCopyState("failed");
