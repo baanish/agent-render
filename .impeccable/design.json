@@ -199,7 +199,7 @@
       "carbon-paper-dark": {
         "role": "neutral",
         "displayName": "Dark-Theme Carbon Transfer Stock",
-        "canonical": "#d2c8b3",
+        "canonical": "#221d18",
         "tonalRamp": ["oklch(15% 0.035 78)", "oklch(27% 0.035 78)", "oklch(39% 0.035 78)", "oklch(51% 0.035 78)", "oklch(63% 0.035 78)", "oklch(75% 0.035 78)", "oklch(87% 0.035 78)", "oklch(95% 0.035 78)"]
       },
       "carbon-ink": {

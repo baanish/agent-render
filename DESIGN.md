@@ -37,9 +37,11 @@ colors:
   paper-body: "#4d453a"
   paper-body-dark: "#c9c0b0"
   carbon-paper: "#d9d0bd"
-  carbon-paper-dark: "#d2c8b3"
+  carbon-paper-dark: "#221d18"
   carbon-ink: "#41392f"
+  carbon-ink-dark: "#e6dccb"
   carbon-line: "#776d5e"
+  carbon-line-dark: "#6a5f51"
   renderer: "#1c1915"
   renderer-raised: "#27221c"
   renderer-text: "#e1d9ca"
@@ -182,11 +184,11 @@ The palette is warm, low-gloss, and material-led: dark mode runs charcoal keys o
 
 ### Neutral
 
-- **Aged Bone:** Paper-adjacent surfaces, the identity mark, and the light-mode control faces; the charcoal key face stays the dark-mode control material.
+- **Aged Bone:** Paper-adjacent surfaces and the light-mode control faces; the identity mark and charcoal key face stay the dark-mode control material.
 - **Instrument Controls:** Raised keys keep the same physical grammar in both themes: a lifted face, a hard lower foot, and a darker pressed well. Dark mode uses a #26221d charcoal face with ivory labels; light mode uses a bone face with ink labels. A one-pixel burnt-orange edge marks persistent selection without turning the whole key into an accent.
 - **Instrument Chassis:** The structural shell for procedures, toolbars, panels, and diagnostics. Charcoal in dark mode, warm bone in light mode.
 - **Instrument Paper:** Rendered markdown uses warm paper in light mode and a charcoal document field with ivory text in dark mode.
-- **Carbon Transfer Stock:** A distinct generated-output material with its own ink and perforation lines.
+- **Carbon Transfer Stock:** A distinct generated-output material with its own ink and perforation lines. Light mode uses cream stock with dark typewriter ink; dark mode uses a dark carbon sheet with ivory ink so the result stays on-theme.
 - **Renderer Surface:** Code, diff, CSV, JSON, raw source, and technical preview surfaces follow the shell theme: paper stock with ink text in light mode, charcoal with ivory text in dark mode.
 
 **The Three-Signal Rule.** Orange commits, mint confirms, and brick alerts; never interchange these roles or add a competing accent.
@@ -268,7 +270,7 @@ Components should feel manufactured, compact, and legible under pressure. Their 
 
 ### Navigation
 
-The sticky shell header uses themed key controls on the chassis (charcoal keys in dark mode, bone keys in light mode). Artifact navigation uses horizontally scrollable raised switchers with a clearly depressed active item and one burnt-orange inset edge. On narrow screens, hide only secondary global navigation and preserve task controls.
+The sticky shell header uses themed key controls on the chassis (charcoal keys in dark mode, bone keys in light mode), including the identity mark. Artifact navigation uses horizontally scrollable raised switchers with a clearly depressed active item and one burnt-orange inset edge. On narrow screens, hide only secondary global navigation and preserve task controls.
 
 ### Procedure Steps
 
