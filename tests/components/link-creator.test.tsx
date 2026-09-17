@@ -134,4 +134,44 @@ describe("LinkCreator", () => {
 
     expect(screen.getByText("Draft changed since last generation.")).toBeVisible();
   });
+
+  it("loads a local file into the draft without generating a link", async () => {
+    const user = userEvent.setup();
+
+    render(<LinkCreator onPreviewHash={vi.fn()} />);
+
+    const file = new File(["print('ready')\n"], "hello.py", {
+      type: "text/x-python",
+    });
+    await user.upload(screen.getByLabelText("Load a local file"), file);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Title")).toHaveValue("hello");
+    });
+    expect(screen.getByLabelText("Filename")).toHaveValue("hello.py");
+    expect(screen.getByLabelText("Content")).toHaveValue("print('ready')\n");
+    expect(screen.getByRole("button", { name: "code" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByLabelText("Language")).toHaveValue("python");
+    expect(screen.queryByLabelText("Generated agent-render link")).not.toBeInTheDocument();
+  });
+
+  it("reports a binary file instead of replacing the draft", async () => {
+    const user = userEvent.setup();
+
+    render(<LinkCreator onPreviewHash={vi.fn()} />);
+
+    const file = new File(["ok\0still"], "notes.md", { type: "text/markdown" });
+    await user.upload(screen.getByLabelText("Load a local file"), file);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "This file looks binary. Choose a text file.",
+      );
+    });
+    expect(screen.getByLabelText("Title")).toHaveValue("Product brief");
+    expect(screen.getByLabelText("Filename")).toHaveValue("brief.md");
+  });
 });
