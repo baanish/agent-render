@@ -574,6 +574,48 @@ test("theme switching works", async ({ page }) => {
   await expect(page.locator("html")).toHaveClass(/dark/);
 });
 
+test("dark mode keeps generated output and the identity mark on the chassis", async ({ page }) => {
+  await waitForViewerState(page, "empty");
+  await page.getByRole("button", { name: /Switch to dark theme/i }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+
+  await page.getByRole("button", { name: /generate link/i }).click();
+  await expect(page.locator(".carbon-output")).toBeVisible();
+
+  const surfaceLuminance = async (selector: string) =>
+    page.locator(selector).evaluate((element) => {
+      const parseRgb = (value: string) =>
+        [...value.matchAll(/rgba?\(([^)]+)\)/g)].flatMap((match) => {
+          const [red, green, blue, alpha = 1] = match[1].split(",").map((part) => Number(part.trim()));
+          if (![red, green, blue].every(Number.isFinite) || alpha === 0) {
+            return [];
+          }
+
+          return [{ red, green, blue }];
+        });
+
+      const style = getComputedStyle(element);
+      const colors = [...parseRgb(style.backgroundColor), ...parseRgb(style.backgroundImage)];
+      if (colors.length === 0) {
+        return 1;
+      }
+
+      const channel = (value: number) => {
+        const normalized = value / 255;
+        return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+      };
+
+      return Math.max(
+        ...colors.map(
+          ({ red, green, blue }) => 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue),
+        ),
+      );
+    });
+
+  expect(await surfaceLuminance(".shell-mark")).toBeLessThan(0.35);
+  expect(await surfaceLuminance(".carbon-output")).toBeLessThan(0.35);
+});
+
 test("download action emits a file", async ({ page }) => {
   await goToHash(page, getFragmentHash("Viewer bootstrap"));
   await waitForViewerState(page, "artifact");
