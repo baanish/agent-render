@@ -158,6 +158,44 @@ describe("LinkCreator", () => {
     expect(screen.queryByLabelText("Generated agent-render link")).not.toBeInTheDocument();
   });
 
+  it("keeps the newest local file when reads resolve out of order", async () => {
+    const user = userEvent.setup();
+    let releaseSlow = () => {};
+    const slowGate = new Promise<void>((resolve) => {
+      releaseSlow = resolve;
+    });
+    const originalText = File.prototype.text;
+    vi.spyOn(File.prototype, "text").mockImplementation(async function (this: File) {
+      if (this.name === "slow.md") {
+        await slowGate;
+      }
+      return originalText.call(this);
+    });
+
+    render(<LinkCreator onPreviewHash={vi.fn()} />);
+
+    await user.upload(
+      screen.getByLabelText("Load a local file"),
+      new File(["# Slow\n"], "slow.md", { type: "text/markdown" }),
+    );
+    await user.upload(
+      screen.getByLabelText("Load a local file"),
+      new File(["# Fast\n"], "fast.md", { type: "text/markdown" }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Filename")).toHaveValue("fast.md");
+    });
+
+    await act(async () => {
+      releaseSlow();
+    });
+
+    expect(screen.getByLabelText("Filename")).toHaveValue("fast.md");
+    expect(screen.getByLabelText("Content")).toHaveValue("# Fast\n");
+    expect(screen.getByLabelText("Title")).toHaveValue("fast");
+  });
+
   it("reports a binary file instead of replacing the draft", async () => {
     const user = userEvent.setup();
 

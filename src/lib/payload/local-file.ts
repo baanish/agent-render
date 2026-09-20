@@ -94,6 +94,7 @@ const BINARY_EXTENSIONS = new Set([
 
 const BINARY_MIME_TYPES = new Set([
   "application/gzip",
+  "application/octet-stream",
   "application/pdf",
   "application/x-gzip",
   "application/zip",
@@ -204,12 +205,36 @@ function isBinaryMimeType(type: string | undefined) {
   );
 }
 
+function isKnownTextFilename(filename: string) {
+  return getFilenameExtension(filename) === "txt" || inferArtifactKindFromFilename(filename) !== null;
+}
+
+/**
+ * True when decoded text contains NUL, replacement characters, or C0 controls
+ * other than tab / newline / carriage return.
+ */
+function looksLikeBinaryText(content: string) {
+  if (content.includes("\0") || content.includes("\uFFFD")) {
+    return true;
+  }
+
+  for (const char of content) {
+    const code = char.charCodeAt(0);
+    if (code < 32 && code !== 9 && code !== 10 && code !== 13) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /**
  * Rejects files that should not be read into the link-creator draft.
  *
  * Throws when the file is empty, larger than {@link MAX_LOCAL_FILE_BYTES}, has a
- * binary extension, or reports a binary MIME type. Callers still need to validate
- * the decoded text with {@link createDraftFromLocalFile}.
+ * binary extension, or reports a binary MIME type on an unknown extension.
+ * Known text/source extensions skip the MIME check. Callers still need to
+ * validate the decoded text with {@link createDraftFromLocalFile}.
  */
 export function assertReadableLocalArtifactFile(file: {
   name: string;
@@ -227,7 +252,13 @@ export function assertReadableLocalArtifactFile(file: {
   }
 
   const extension = getFilenameExtension(file.name);
-  if (BINARY_EXTENSIONS.has(extension) || isBinaryMimeType(file.type)) {
+  if (BINARY_EXTENSIONS.has(extension)) {
+    throw new Error("This file looks binary. Choose a text file.");
+  }
+
+  // Known text/source extensions win over a misleading MIME type. Browsers and
+  // OS pickers often report `.ts` / `.mts` as `video/mp2t`.
+  if (!isKnownTextFilename(file.name) && isBinaryMimeType(file.type)) {
     throw new Error("This file looks binary. Choose a text file.");
   }
 }
@@ -250,7 +281,7 @@ export function createDraftFromLocalFile(
     throw new Error("The selected file is empty.");
   }
 
-  if (content.includes("\0")) {
+  if (looksLikeBinaryText(content)) {
     throw new Error("This file looks binary. Choose a text file.");
   }
 

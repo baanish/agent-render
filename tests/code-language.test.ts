@@ -10,6 +10,9 @@ describe("code language detection", () => {
     expect(detectCodeLanguage("viewer-shell.tsx")).toBe("tsx");
     expect(detectCodeLanguage("config.yaml")).toBe("yaml");
     expect(detectCodeLanguage("README.md")).toBe("markdown");
+    expect(detectCodeLanguage("main.rs")).toBe("rust");
+    expect(detectCodeLanguage("main.go")).toBe("go");
+    expect(detectCodeLanguage("Query.sql")).toBe("sql");
   });
 
   it("passes through languages and aliases Shiki resolves", () => {

@@ -87,6 +87,8 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   const markdownCopyTokenRef = useRef(0);
   const generatedLinkRef = useRef<GeneratedArtifactLink | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileLoadRequestRef = useRef(0);
+  const draftRef = useRef(draft);
   const fileDragDepthRef = useRef(0);
   const [isFileDragOver, setIsFileDragOver] = useState(false);
   const isGeneratedLinkStale =
@@ -96,6 +98,10 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   useLayoutEffect(() => {
     generatedLinkRef.current = generatedLink;
   }, [generatedLink]);
+
+  useLayoutEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
 
   useEffect(() => {
     setCopyState("idle");
@@ -144,9 +150,16 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   };
 
   const handleLocalFile = async (file: File) => {
+    const requestId = fileLoadRequestRef.current + 1;
+    fileLoadRequestRef.current = requestId;
+
     try {
       assertReadableLocalArtifactFile(file);
       const text = await file.text();
+      if (fileLoadRequestRef.current !== requestId) {
+        return;
+      }
+
       replaceDraft(
         createDraftFromLocalFile(
           {
@@ -155,11 +168,15 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             type: file.type,
             text,
           },
-          draft,
+          draftRef.current,
         ),
       );
       setError(null);
     } catch (loadError) {
+      if (fileLoadRequestRef.current !== requestId) {
+        return;
+      }
+
       setError(
         loadError instanceof Error
           ? loadError.message
@@ -431,6 +448,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
                 type="file"
                 accept={LOCAL_ARTIFACT_FILE_ACCEPT}
                 className="creator-file-input"
+                tabIndex={-1}
                 aria-label="Load a local file"
                 onChange={(event) => {
                   const file = event.target.files?.item(0);

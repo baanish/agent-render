@@ -77,6 +77,38 @@ describe("createDraftFromLocalFile", () => {
     expect(draft.content).toBe("print('hi')\n");
   });
 
+  it("accepts TypeScript even when the picker reports a video MIME type", () => {
+    const draft = createDraftFromLocalFile(
+      {
+        name: "viewer.ts",
+        size: 18,
+        type: "video/mp2t",
+        text: "export const n = 1;\n",
+      },
+      baseDraft,
+    );
+
+    expect(draft.kind).toBe("code");
+    expect(draft.filename).toBe("viewer.ts");
+    expect(draft.language).toBe("ts");
+    expect(draft.content).toBe("export const n = 1;\n");
+  });
+
+  it("infers language for other recognized source extensions", () => {
+    expect(
+      createDraftFromLocalFile(
+        { name: "main.rs", size: 16, text: "fn main() {}\n" },
+        baseDraft,
+      ).language,
+    ).toBe("rust");
+    expect(
+      createDraftFromLocalFile(
+        { name: "main.go", size: 16, text: "package main\n" },
+        baseDraft,
+      ).language,
+    ).toBe("go");
+  });
+
   it("keeps the current kind for unknown text extensions", () => {
     const draft = createDraftFromLocalFile(
       {
@@ -124,6 +156,21 @@ describe("createDraftFromLocalFile", () => {
         { name: "notes.md", size: 12, text: "ok\0still" },
         baseDraft,
       ),
+    ).toThrow("This file looks binary. Choose a text file.");
+
+    expect(() =>
+      createDraftFromLocalFile(
+        { name: "notes.md", size: 6, text: "ab\uFFFDcd" },
+        baseDraft,
+      ),
+    ).toThrow("This file looks binary. Choose a text file.");
+
+    expect(() =>
+      assertReadableLocalArtifactFile({
+        name: "unknown.xyz",
+        size: 12,
+        type: "application/octet-stream",
+      }),
     ).toThrow("This file looks binary. Choose a text file.");
 
     expect(() =>
