@@ -157,6 +157,85 @@ test("edits an open markdown artifact and reshares it as a new link", async ({ p
   await expect.poll(() => page.evaluate(() => window.location.hash)).not.toBe(beforeHash);
 });
 
+for (const theme of ["light", "dark"] as const) {
+  test(`keeps edited text and mouse selections visible in ${theme} mode`, async ({ page }) => {
+    await page.addInitScript((value) => localStorage.setItem("theme", value), theme);
+    await goToHash(page, `#${encodeEnvelope({
+      v: 1,
+      codec: "plain",
+      artifacts: [{
+        id: "notes",
+        kind: "markdown",
+        filename: "notes.md",
+        content: "# Release notes\nAlpha release\nBeta checklist",
+      }],
+    })}`);
+    await waitForRendererReady(page, "markdown");
+    await page.getByRole("button", { name: "Edit", exact: true }).click();
+    const body = page.getByTestId("artifact-editor-body");
+    const editor = body.locator("[contenteditable='true']");
+    const firstLine = editor.locator('[data-line="1"]');
+    await editor.click();
+    await page.keyboard.press("ControlOrMeta+Home");
+    await page.keyboard.press("End");
+    await page.keyboard.type(" updated");
+    await expect(firstLine).toHaveText("# Release notes updated");
+    // Text presence alone missed the CSS-variable theme's transparent token colors.
+    await expect.poll(() => firstLine.locator("span").evaluateAll((spans) =>
+      spans.every((span) => /^rgb\(/.test(getComputedStyle(span).color)),
+    )).toBe(true);
+
+    const dragBodyLines = async () => {
+      const start = await editor.locator('[data-line="2"]').boundingBox();
+      const end = await editor.locator('[data-line="3"]').evaluate((line) => {
+        const range = document.createRange();
+        range.selectNodeContents(line);
+        const rect = range.getBoundingClientRect();
+        return { x: rect.right, y: rect.y + rect.height / 2 };
+      });
+      expect(start).not.toBeNull();
+      await page.mouse.move(start!.x + 1, start!.y + start!.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(end.x, end.y, { steps: 20 });
+      await page.mouse.up();
+    };
+    // Drag from the beginning of line 2 to the end of line 3 using real pointer input.
+    await dragBodyLines();
+    const selection = body.locator("[data-selection-range]").first();
+    await expect(selection).toBeVisible();
+    await expect.poll(() => selection.evaluate((element) => {
+      const color = getComputedStyle(element).backgroundColor;
+      const host = (element.getRootNode() as ShadowRoot).host;
+      const background = getComputedStyle(host).getPropertyValue("--diffs-bg").trim();
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d")!;
+      context.fillStyle = background;
+      context.fillRect(0, 0, 1, 1);
+      const before = [...context.getImageData(0, 0, 1, 1).data];
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+      return before.some((channel, i) => channel !== context.getImageData(0, 0, 1, 1).data[i]);
+    })).toBe(true);
+    await page.keyboard.type("Ready to ship");
+    await expect(editor).toHaveText("# Release notes updatedReady to ship");
+    // Pierre records replacing a selection as the first inserted character and
+    // the remaining text, so undo both history entries to restore the selection.
+    await page.keyboard.press("ControlOrMeta+z");
+    await page.keyboard.press("ControlOrMeta+z");
+    await expect(editor).toContainText("Alpha release");
+    await expect(editor).toContainText("Beta checklist");
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("# Release notes updated\n\nReady to ship");
+    await page.getByRole("button", { name: "plain", exact: true }).click();
+    await page.getByRole("button", { name: "Generate new link" }).click();
+    await page.getByRole("button", { name: "Preview here" }).click();
+    await waitForRendererReady(page, "markdown");
+    await expect(page.getByRole("heading", { name: "Release notes updated", exact: true })).toBeVisible();
+    await expect(page.locator(".markdown-article")).toContainText("Ready to ship");
+    await expect(page.locator(".markdown-article")).not.toContainText("Alpha release");
+  });
+}
+
 test("edits an open code artifact and reshares it as a new link", async ({ page }) => {
   const beforeHash = getFragmentHash("Viewer bootstrap");
   await goToHash(page, beforeHash);

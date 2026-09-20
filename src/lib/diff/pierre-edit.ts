@@ -1,11 +1,9 @@
 "use client";
 
-// Registers the shared "agent-render" Shiki theme for every Pierre surface.
-import "./pierre-theme";
-
 // Same import-seam reasoning as pierre-react.ts, but for the editing surface:
 // CodeView/EditProvider plus the Editor runtime stay in the deferred
 // artifact-body-editor chunk so the diff viewer never pays for edit machinery.
+export { DEFAULT_THEMES } from "@pierre/diffs";
 export {
   CodeView,
   EditProvider,

@@ -4,6 +4,7 @@ import { useLayoutEffect, useMemo, useRef, type Ref } from "react";
 import { useResolvedTheme } from "@/components/theme/use-theme-controller";
 import {
   CodeView,
+  DEFAULT_THEMES,
   EditProvider,
   Editor,
   type CodeViewHandle,
@@ -53,7 +54,10 @@ export function ArtifactBodyEditor({
   );
   const resolvedTheme = useResolvedTheme();
   const codeViewOptions = useMemo(
-    () => ({ theme: "agent-render", themeType: resolvedTheme }),
+    // The editor reads raw TextMate colors, bypassing Shiki's CSS-variable
+    // replacement. The viewer theme's placeholder colors become transparent
+    // after an edit and it has no selection color. Use concrete editor themes.
+    () => ({ theme: DEFAULT_THEMES, themeType: resolvedTheme }),
     [resolvedTheme],
   );
 
