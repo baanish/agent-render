@@ -79,6 +79,35 @@ test("creates, copies, and previews a generated homepage link", async ({ page })
   await expect(page.getByText("Homepage snippet").first()).toBeVisible();
 });
 
+test("loads a local file into the homepage link creator", async ({ page }) => {
+  await waitForViewerState(page, "empty");
+
+  await page.getByLabel("Load a local file").setInputFiles({
+    name: "kickoff.md",
+    mimeType: "text/markdown",
+    buffer: Buffer.from("# File kickoff\n\nLoaded from disk.\n"),
+  });
+
+  await expect(page.getByLabel("Title")).toHaveValue("kickoff");
+  await expect(page.getByLabel("Filename")).toHaveValue("kickoff.md");
+  await expect(page.getByRole("textbox", { name: /^Content\b/ })).toHaveValue(
+    "# File kickoff\n\nLoaded from disk.\n",
+  );
+  await expect(page.getByRole("button", { name: "markdown" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+
+  await page.getByRole("button", { name: "Generate link" }).click();
+  const generatedLink = page.getByLabel("Generated agent-render link");
+  await expect(generatedLink).toHaveValue(/\/#\w/);
+
+  await page.getByRole("button", { name: "Preview here" }).click();
+  await waitForViewerState(page, "artifact");
+  await expect(page.locator("[data-active-kind='markdown']")).toBeVisible();
+  await expect(page.getByText("File kickoff").first()).toBeVisible();
+});
+
 test("renders markdown payloads and triggers print", async ({ page }) => {
   await goToHash(page, getFragmentHash("Maintainer kickoff"));
   await waitForViewerState(page, "artifact");

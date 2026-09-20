@@ -45,7 +45,7 @@ Describe and preserve what is already true in the repo today.
 
 - The app renders as one export-friendly shell.
 - The empty state explains the product and exposes sample fragment presets.
-- A built-in link creator can generate fragment-based links locally in the browser.
+- A built-in link creator can generate fragment-based links locally in the browser. The load-body step accepts pasted text or a local file read in the browser; the file is not sent to the host.
 - When a valid fragment is present, the app switches to a viewer-first artifact layout.
 - The artifact stage toolbar exposes copy-to-clipboard, file download, (for markdown) browser print-to-PDF, and an editor that regenerates a new fragment link from the currently open artifact.
 - `activeArtifactId` controls which artifact opens first.

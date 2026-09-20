@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link2 } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState, type DragEvent } from "react";
+import { Link2, Upload } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/copy-text";
 import { CODE_LANGUAGE_CHOICES } from "@/lib/code/language";
 import { CodecPicker, GeneratedLinkResult } from "@/components/generated-link";
@@ -9,6 +9,11 @@ import type {
   GeneratedArtifactLink,
   LinkCreatorDraft,
 } from "@/lib/payload/link-creator";
+import {
+  assertReadableLocalArtifactFile,
+  createDraftFromLocalFile,
+  LOCAL_ARTIFACT_FILE_ACCEPT,
+} from "@/lib/payload/local-file";
 import { artifactKinds, type ArtifactKind } from "@/lib/payload/schema";
 import { cn } from "@/lib/utils";
 
@@ -17,11 +22,11 @@ type LinkCreatorProps = {
 };
 
 const fieldHints: Record<ArtifactKind, string> = {
-  markdown: "Paste markdown notes, release docs, or a spec excerpt.",
-  code: "Paste a code snippet and add a language hint when known.",
-  diff: "Paste a unified git patch.",
-  csv: "Paste comma-separated headings and rows.",
-  json: "Paste formatted or compact JSON.",
+  markdown: "Paste notes or load a local markdown file.",
+  code: "Paste a snippet or load a local source file.",
+  diff: "Paste a unified git patch or load a .diff / .patch file.",
+  csv: "Paste rows or load a local CSV file.",
+  json: "Paste JSON or load a local .json file.",
 };
 
 const fieldPlaceholders: Record<ArtifactKind, string> = {
@@ -58,7 +63,8 @@ function getBodyFieldLabel(kind: ArtifactKind) {
 }
 
 /**
- * Builds shareable fragment links from pasted artifact content in the home empty state flow.
+ * Builds shareable fragment links from pasted or locally loaded artifact content
+ * in the home empty state flow. File selection is read in the browser only.
  * Accepts `onPreviewHash` so the parent shell can preview the generated fragment before navigation.
  * Generates links client-side with validation, and exposes inline copy/error/stale-result states.
  */
@@ -80,6 +86,11 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   const generationRequestRef = useRef(0);
   const markdownCopyTokenRef = useRef(0);
   const generatedLinkRef = useRef<GeneratedArtifactLink | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileLoadRequestRef = useRef(0);
+  const draftRef = useRef(draft);
+  const fileDragDepthRef = useRef(0);
+  const [isFileDragOver, setIsFileDragOver] = useState(false);
   const isGeneratedLinkStale =
     Boolean(generatedLink) && draftVersion !== generatedVersion;
   const contentFieldLabel = getBodyFieldLabel(draft.kind);
@@ -87,6 +98,10 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   useLayoutEffect(() => {
     generatedLinkRef.current = generatedLink;
   }, [generatedLink]);
+
+  useLayoutEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
 
   useEffect(() => {
     setCopyState("idle");
@@ -111,6 +126,110 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
         version: current.version + 1,
       };
     });
+  };
+
+  const replaceDraft = (nextDraft: LinkCreatorDraft) => {
+    setDraftState((current) => {
+      if (
+        current.draft.kind === nextDraft.kind &&
+        current.draft.title === nextDraft.title &&
+        current.draft.filename === nextDraft.filename &&
+        current.draft.content === nextDraft.content &&
+        current.draft.language === nextDraft.language &&
+        current.draft.diffView === nextDraft.diffView &&
+        current.draft.codec === nextDraft.codec
+      ) {
+        return current;
+      }
+
+      return {
+        draft: nextDraft,
+        version: current.version + 1,
+      };
+    });
+  };
+
+  const handleLocalFile = async (file: File) => {
+    const requestId = fileLoadRequestRef.current + 1;
+    fileLoadRequestRef.current = requestId;
+
+    try {
+      assertReadableLocalArtifactFile(file);
+      const text = await file.text();
+      if (fileLoadRequestRef.current !== requestId) {
+        return;
+      }
+
+      replaceDraft(
+        createDraftFromLocalFile(
+          {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            text,
+          },
+          draftRef.current,
+        ),
+      );
+      setError(null);
+    } catch (loadError) {
+      if (fileLoadRequestRef.current !== requestId) {
+        return;
+      }
+
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "The file could not be read.",
+      );
+    }
+  };
+
+  const resetFileDragState = () => {
+    fileDragDepthRef.current = 0;
+    setIsFileDragOver(false);
+  };
+
+  const handleFileDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+
+    event.preventDefault();
+    fileDragDepthRef.current += 1;
+    setIsFileDragOver(true);
+  };
+
+  const handleFileDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleFileDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+
+    event.preventDefault();
+    fileDragDepthRef.current -= 1;
+    if (fileDragDepthRef.current <= 0) {
+      resetFileDragState();
+    }
+  };
+
+  const handleFileDrop = (event: DragEvent<HTMLDivElement>) => {
+    const file = event.dataTransfer.files.item(0);
+    resetFileDragState();
+    if (!file) {
+      return;
+    }
+
+    event.preventDefault();
+    void handleLocalFile(file);
   };
 
   const handleGenerate = async () => {
@@ -306,12 +425,53 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
             <span className="operation-number">03</span>
             <h3>Load body</h3>
           </header>
-          <label className="creator-field creator-field-full">
+          <div
+            className={cn(
+              "creator-field creator-field-full",
+              isFileDragOver && "is-drop-target",
+            )}
+            onDragEnter={handleFileDragEnter}
+            onDragOver={handleFileDragOver}
+            onDragLeave={handleFileDragLeave}
+            onDrop={handleFileDrop}
+          >
             <span className="creator-field-head">
-              <span className="metric-label">{contentFieldLabel}</span>
+              <label htmlFor="creator-content" className="metric-label">
+                {contentFieldLabel}
+              </label>
               <span className="creator-field-hint">{fieldHints[draft.kind]}</span>
             </span>
+            <div className="creator-file-row">
+              <input
+                ref={fileInputRef}
+                id="creator-file"
+                type="file"
+                accept={LOCAL_ARTIFACT_FILE_ACCEPT}
+                className="creator-file-input"
+                tabIndex={-1}
+                aria-label="Load a local file"
+                onChange={(event) => {
+                  const file = event.target.files?.item(0);
+                  event.target.value = "";
+                  if (file) {
+                    void handleLocalFile(file);
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="artifact-action"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-3.5 w-3.5" />
+                Load file
+              </button>
+              <span className="creator-file-note">
+                Stays in the browser. Nothing is uploaded.
+              </span>
+            </div>
             <textarea
+              id="creator-content"
               name="content"
               value={draft.content}
               onChange={(event) => updateDraft("content", event.target.value)}
@@ -319,7 +479,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
               className="creator-textarea"
               rows={12}
             />
-          </label>
+          </div>
         </section>
 
         <section className="operation-step">

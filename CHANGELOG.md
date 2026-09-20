@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
+- Link creator can load a local text file into the draft (client-side only) instead of requiring a paste.
 - In-viewer edit-and-reshare: open any artifact, correct its content, and generate a new fragment link without leaving the viewer.
 - `arx5` (ARX 4.5): ARX4's context mixer on ARX2's tuple pipeline, scored by honest serialized transport length so Discord and WhatsApp no longer detonate Unicode wires.
 

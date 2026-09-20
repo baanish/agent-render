@@ -60,6 +60,12 @@ export function detectCodeLanguage(filename?: string, explicit?: string) {
   if (lower.endsWith(".md") || lower.endsWith(".mdx")) return "markdown";
   if (lower.endsWith(".yaml") || lower.endsWith(".yml")) return "yaml";
   if (lower.endsWith(".sh") || lower.endsWith(".bash")) return "shell";
+  if (lower.endsWith(".rs")) return "rust";
+  if (lower.endsWith(".go")) return "go";
+  if (lower.endsWith(".java")) return "java";
+  if (lower.endsWith(".c") || lower.endsWith(".h")) return "c";
+  if (lower.endsWith(".cpp") || lower.endsWith(".cc") || lower.endsWith(".hpp")) return "cpp";
+  if (lower.endsWith(".sql")) return "sql";
 
   return "text";
 }
