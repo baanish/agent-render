@@ -45,7 +45,7 @@ Markdown artifacts render ` ```mermaid ` fenced code blocks as interactive diagr
 
 The code viewer uses Pierre's read-only `File` component from `@pierre/diffs`:
 
-- the same `agent-render` Shiki theme and `--diffs-*` surface variables serve the viewer, the diff renderer, and the artifact editor
+- the `agent-render` Shiki theme and `--diffs-*` surface variables serve read-only viewer and diff surfaces; the artifact editor uses Pierre's concrete default themes because its edit runtime consumes raw TextMate colors
 - the wrap toggle maps to Pierre's `overflow` option, so it re-renders in place instead of remounting
 - `detectCodeLanguage` keys pass through `toPierreLanguage`, which maps any detection tokens that are not Shiki grammar ids
 
