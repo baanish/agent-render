@@ -1,6 +1,6 @@
 "use client";
 
-// Registers the shared "agent-render" Shiki theme for every Pierre surface.
+// Registers the shared "agent-render" Shiki theme for read-only Pierre surfaces.
 import "./pierre-theme";
 
 /**

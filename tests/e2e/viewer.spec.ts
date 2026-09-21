@@ -182,7 +182,7 @@ for (const theme of ["light", "dark"] as const) {
     await expect(firstLine).toHaveText("# Release notes updated");
     // Text presence alone missed the CSS-variable theme's transparent token colors.
     await expect.poll(() => firstLine.locator("span").evaluateAll((spans) =>
-      spans.every((span) => /^rgb\(/.test(getComputedStyle(span).color)),
+      spans.length > 0 && spans.every((span) => /^rgb\(/.test(getComputedStyle(span).color)),
     )).toBe(true);
 
     const dragBodyLines = async () => {
