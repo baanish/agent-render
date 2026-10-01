@@ -3,33 +3,38 @@ export const MAX_DECODED_PAYLOAD_LENGTH = 200000;
 export const PAYLOAD_FRAGMENT_KEY = "agent-render";
 
 export const artifactKinds = ["markdown", "code", "diff", "csv", "json"] as const;
-export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3", "arx4", "arx5"] as const;
+export const codecs = ["plain", "lz", "deflate", "arx", "arx2", "arx3", "arx4", "arx5", "arx6"] as const;
 
 export type ArtifactKind = (typeof artifactKinds)[number];
 export type PayloadCodec = (typeof codecs)[number];
 
 /**
  * The dictionary + entropy-coder + binary-to-text codecs, as opposed to plain/lz/deflate.
- * arx/arx2/arx3 entropy-code with Brotli; arx4/arx5 use the context mixer in arx4-codec.ts.
- * arx3 and arx4 remain decodable but are no longer auto-emitted: they score dense Unicode
- * wires by visible character count, which Discord/WhatsApp then percent-encode or mangle.
+ * arx/arx2/arx3 entropy-code with Brotli; arx4/arx5 use the context mixer in arx4-codec.ts and
+ * arx6 its own stronger model (arx6-model.ts). arx3 and arx4 remain decodable but are no longer auto-emitted:
+ * they score dense Unicode wires by visible character count, which Discord/WhatsApp then
+ * percent-encode or mangle.
  */
-export type ArxCodec = "arx" | "arx2" | "arx3" | "arx4" | "arx5";
+export type ArxCodec = "arx" | "arx2" | "arx3" | "arx4" | "arx5" | "arx6";
 
 /** Tuple codecs that share the arx2 overlay + envelope reconstruction path. */
 export type ArxTupleCodec = "arx2" | "arx3" | "arx4" | "arx5";
 
-/** Context-mixer codecs: same compressed bytes, different compact tags and selection policy. */
-export type ArxMixerCodec = "arx4" | "arx5";
+/**
+ * Context-mixer codecs, which all prime on the pinned dictionaries and the curated priors. arx4 and
+ * arx5 share compressed bytes under different tags and selection policies; arx6 codes a raw
+ * container with its own model and framing.
+ */
+export type ArxMixerCodec = "arx4" | "arx5" | "arx6";
 
 /** True when `codec` is one of the arx-family codecs. */
 export function isArxCodec(codec: PayloadCodec): codec is ArxCodec {
-  return codec === "arx" || codec === "arx2" || codec === "arx3" || codec === "arx4" || codec === "arx5";
+  return codec === "arx" || codec === "arx2" || codec === "arx3" || codec === "arx4" || codec === "arx5" || codec === "arx6";
 }
 
-/** True when `codec` uses the context mixer and curated priors (arx4 / arx5). */
+/** True when `codec` uses the context mixer and curated priors (arx4 / arx5 / arx6). */
 export function isArxMixerCodec(codec: PayloadCodec): codec is ArxMixerCodec {
-  return codec === "arx4" || codec === "arx5";
+  return codec === "arx4" || codec === "arx5" || codec === "arx6";
 }
 
 /** True when a codec still decodes but must not be newly emitted. */
@@ -45,11 +50,12 @@ export function codecPickerLabel(option: PayloadCodec | "auto"): string {
 // Compact fragment header: a single URL-unreserved tag char replaces the legacy
 // `agent-render=v1.<codec>.<dictVersion>.` prefix. The tag encodes wire version 1 and codec; it
 // does not carry a dictionary version — arx-family tags imply the build's current pinned dictionary
-// (version 1). The payload stays self-describing (base64url
+// (version 1). Payloads up to arx5 stay self-describing (base64url
 // `B.` prefix, baseBMP U+FFF0 marker, base76/base1k length prefix), so the alphabet is not in the
-// header. Tags come from the RFC-3986 unreserved set so they never percent-escape, and none can
-// begin the legacy `agent-render=` literal, which keeps the two header forms unambiguous on decode.
-// The arx family runs a, b, c, e, then f because d is taken by deflate.
+// header; arx6 has a single wire, so its `g` tag names the wire too. Tags come from the RFC-3986
+// unreserved set so they never percent-escape, and none can begin the legacy `agent-render=`
+// literal, which keeps the two header forms unambiguous on decode.
+// The arx family runs a, b, c, e, f, then g because d is taken by deflate.
 export const compactCodecTags = {
   plain: "p",
   lz: "l",
@@ -59,6 +65,7 @@ export const compactCodecTags = {
   arx3: "c",
   arx4: "e",
   arx5: "f",
+  arx6: "g",
 } as const satisfies Record<PayloadCodec, string>;
 
 const compactTagToCodec = new Map<string, PayloadCodec>(

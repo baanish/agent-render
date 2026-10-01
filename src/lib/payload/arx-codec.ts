@@ -507,7 +507,11 @@ function artifactToArx2Tuple(artifact: ArtifactPayload): Arx2ArtifactTuple {
   }
 }
 
-function envelopeToArx2Tuple(envelope: PayloadEnvelope): Arx2EnvelopeTuple {
+/**
+ * The compact tuple every tuple codec starts from. Builds fresh arrays on every call, so callers may
+ * rewrite the result in place (arx6 swaps artifact bodies for their lengths).
+ */
+export function envelopeToArx2Tuple(envelope: PayloadEnvelope): Arx2EnvelopeTuple {
   const artifacts: Arx2ArtifactTuple[] = new Array(envelope.artifacts.length);
   const activeArtifactId = envelope.activeArtifactId;
   let activeIndex = -1;
@@ -604,7 +608,7 @@ function decodeArx2ArtifactTuple(value: unknown): ArtifactPayload {
   }
 }
 
-function envelopeFromArxTuple(value: unknown, codec: Extract<PayloadCodec, "arx2" | "arx3" | "arx4" | "arx5">): PayloadEnvelope {
+function envelopeFromArxTuple(value: unknown, codec: Extract<PayloadCodec, "arx2" | "arx3" | "arx4" | "arx5" | "arx6">): PayloadEnvelope {
   if (!Array.isArray(value)) {
     throw new Error("Invalid arx2 envelope tuple.");
   }
@@ -1442,7 +1446,17 @@ export function envelopeFromSubstitutedArxTupleText(
   // DEL bytes to the 6-char  JSON escape, which inflates the tuple ~6x for DEL-heavy content.
   // Re-serializing the parsed tuple collapses each escape back to one character, so a valid
   // sub-limit payload is no longer falsely rejected as decoded-too-large.
-  const tuple = JSON.parse(tupleJson);
+  return envelopeFromParsedArxTuple(JSON.parse(tupleJson), codec);
+}
+
+/**
+ * Rebuilds an envelope from an already-parsed tuple, after budgeting its serialized size against the
+ * decoded-payload limit. arx6 enters here directly, since its raw container skips substitution.
+ */
+export function envelopeFromParsedArxTuple(
+  tuple: unknown,
+  codec: "arx2" | "arx3" | "arx4" | "arx5" | "arx6",
+): PayloadEnvelope {
   assertDecodedTextBudget(JSON.stringify(tuple));
   return envelopeFromArxTuple(tuple, codec);
 }

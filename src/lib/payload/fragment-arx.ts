@@ -24,6 +24,7 @@ import {
   getActiveArx4PriorsVersion,
   loadArx4Priors,
 } from "@/lib/payload/arx4-codec";
+import { arx6CompressEnvelope, arx6DecompressEnvelope } from "@/lib/payload/arx6-codec";
 import { packEnvelope } from "@/lib/payload/wire-format";
 import {
   compactTagForCodec,
@@ -88,7 +89,7 @@ let arxDictionaryLoadPromise: Promise<void> | null = null;
 let arx2OverlayDictionaryLoadPromise: Promise<void> | null = null;
 let arx4PriorsLoadPromise: Promise<void> | null = null;
 
-// Compact ARX fragments (tags `a`/`b`/`c`/`e`/`f`) do NOT carry a dictionary version — the tag implies
+// Compact ARX fragments (tags `a`/`b`/`c`/`e`/`f`/`g`) do NOT carry a dictionary version; the tag implies
 // the CURRENT dictionary, which keeps links short. The safety cost is that a build must not decode
 // with a dictionary NEWER than it was built for (a CDN/asset split serving a future dictionary, or a
 // version bump), because it would lack the new slots and could produce a structurally-valid-but-
@@ -97,7 +98,8 @@ let arx4PriorsLoadPromise: Promise<void> | null = null;
 // dictionary (version 1) are both <= this and remain usable. Bumping a dictionary version is
 // therefore a wire change that also requires new compact tags and updating
 // tests/arx-dictionary-pin.test.ts. arx4/arx5 depend on the same pin twice over, since the context-mixer
-// prior is derived from the dictionary slot text as well as its substitution stage.
+// prior is derived from the dictionary slot text as well as its substitution stage; arx6 skips
+// substitution but primes on that same prior, so it depends on the pin once.
 const EXPECTED_ARX_DICTIONARY_VERSION = 1;
 const EXPECTED_ARX2_OVERLAY_VERSION = 1;
 // The arx4 priors asset is pinned the same way and for the same reason, except that it tolerates no
@@ -105,7 +107,7 @@ const EXPECTED_ARX2_OVERLAY_VERSION = 1;
 // corpus this build's fragments were never coded against. That pin lives on the codec that codes with
 // it (EXPECTED_ARX4_PRIORS_VERSION in arx4-codec.ts); this module only drives the loader toward it.
 //
-// arx4/arx5 hold their DICTIONARIES to that same exact standard, which is where they part ways with
+// arx4/arx5/arx6 hold their DICTIONARIES to that same exact standard, which is where they part ways with
 // arx/arx2/arx3. They tolerate the built-in fallback (version 0) because substitution alone degrades
 // predictably; the mixer also primes on the dictionary slot text, so a fragment coded against any
 // other dictionary is one that healthy viewers cannot decode at all. Both sides therefore hold out
@@ -261,6 +263,8 @@ async function decodeArxAttempt(
       return arx4DecompressEnvelope(encodedPayload);
     case "arx5":
       return arx5DecompressEnvelope(encodedPayload);
+    case "arx6":
+      return arx6DecompressEnvelope(encodedPayload);
     default: {
       const _exhaustive: never = codec;
       throw new Error(`Unsupported arx codec: ${_exhaustive}`);
@@ -379,6 +383,29 @@ export async function buildArx5Candidates(
   const payloadEnvelope = { ...envelope, codec: "arx5" as PayloadCodec };
   const payloads = arx5CompressEnvelope(payloadEnvelope);
   return wirePayloadsToCandidates("arx5", false, payloads, computeTransportLength);
+}
+
+/**
+ * Builds the deferred `arx6` candidate: arx6-codec.ts's mixer over the raw container, on its one
+ * fraction wire. It primes on the same dictionaries and priors as arx5, so it holds out for the same
+ * pins and loads the priors the same way. An envelope it cannot carry (a lone surrogate) yields no
+ * candidate, which leaves it to arx5.
+ */
+export async function buildArx6Candidates(
+  envelope: PayloadEnvelope,
+  computeTransportLength: TransportLengthCalculator,
+): Promise<CandidateFragment[]> {
+  await ensureArx2DictionariesLoaded();
+  if (!arx4DictionariesMatchPins()) return [];
+
+  await loadArx4PriorsOnce();
+
+  const payload = arx6CompressEnvelope(envelope);
+  if (payload === null) return [];
+
+  const value = `${compactTagForCodec("arx6")}${payload}`;
+  const length = computeTransportLength(value);
+  return [{ value, codec: "arx6", packed: false, transportLength: length, urlSerializedLength: length }];
 }
 
 /**

@@ -11,10 +11,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Link creator can load a local text file into the draft (client-side only) instead of requiring a paste.
 - In-viewer edit-and-reshare: open any artifact, correct its content, and generate a new fragment link without leaving the viewer.
 - `arx5` (ARX 4.5): ARX4's context mixer on ARX2's tuple pipeline, scored by honest serialized transport length so Discord and WhatsApp no longer detonate Unicode wires.
+- `arx6` (tag `g`): a stronger context mixer over a raw container (no JSON escaping or dictionary substitution) on a base-66 fraction wire. About 14% shorter links than `arx5` on a held-out corpus of real artifacts, at roughly 3x the coding time. Truncated `#g` links fail to decode instead of rendering a garbled tail.
 
 ### Changed
 
 - Auto-emit no longer selects `arx3` or `arx4`. Existing `#c` and `#e` links still decode.
+- Auto-emit prefers `arx6`; `arx5` runs only when `arx6` declines an envelope (a lone surrogate in a body) or misses the fragment budget. Existing `#f` links still decode.
 - Highlighting consolidated on `@pierre/diffs` (Shiki) for diffs, standalone code, markdown fences, JSON raw views, and the artifact editor; CodeMirror and `@git-diff-view` are removed.
 
 ## [0.1.0] - 2026-05-05

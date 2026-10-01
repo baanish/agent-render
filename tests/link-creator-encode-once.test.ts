@@ -30,6 +30,17 @@ vi.mock("@/lib/payload/arx4-codec", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/payload/arx6-codec", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/payload/arx6-codec")>();
+  return {
+    ...actual,
+    arx6CompressEnvelope: (...args: Parameters<typeof actual.arx6CompressEnvelope>) => {
+      mixerCompressions(...args);
+      return actual.arx6CompressEnvelope(...args);
+    },
+  };
+});
+
 const draft: LinkCreatorDraft = {
   kind: "markdown",
   title: "Launch note",
@@ -72,7 +83,9 @@ describe("async link creation", () => {
     }
   });
 
-  it("codes the payload once in auto mode too, where arx5 leads the codec priority", async () => {
+  // arx5 sits right behind arx6 in the auto priority, so this also pins that arx5 does not spend a
+  // second mixer pass once arx6 has coded the payload.
+  it("codes the payload once in auto mode too, where arx6 leads the codec priority", async () => {
     await createGeneratedArtifactLinkAsync({ ...draft, codec: "auto" }, "https://agent-render.com/");
 
     expect(mixerCompressions).toHaveBeenCalledTimes(1);

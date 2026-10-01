@@ -29,7 +29,7 @@
 - `@pierre/diffs` provides every syntax-highlighted surface: review-style patches and before/after content, standalone code artifacts, JSON raw views, markdown code fences, and the `CodeView`/`EditProvider` artifact editor, all through Shiki-backed shadow DOM. `@pierre/trees` adds path-aware navigation only when a flow has multiple files. Both stay inside deferred renderer paths. Compact markdown and JSON source blocks omit wrapping and the file header so they preserve source whitespace; markdown, CSV, and JSON raw views all reuse the same `File` surface as standalone code.
 - `papaparse` handles CSV parsing; CSV rendering uses a native read-only table to avoid a data-grid dependency for the shipped static viewer.
 - `fflate` provides portable deflate/inflate support across iOS Safari and Android Chromium without relying on browser-specific compression streams.
-- `brotli-wasm` provides the arx/arx2/arx3 Brotli compression layer, including streaming decompression used to cap expanded output before allocating oversized decoded payloads. arx4/arx5 use the integer context mixer instead.
+- `brotli-wasm` provides the arx/arx2/arx3 Brotli compression layer, including streaming decompression used to cap expanded output before allocating oversized decoded payloads. arx4/arx5/arx6 use the integer context mixer instead.
 - `mermaid` renders diagram definitions (flowcharts, sequence diagrams, etc.) to SVG client-side. Dynamically imported within the markdown renderer so it does not affect initial bundle size.
 - `better-sqlite3` provides synchronous SQLite access for the optional self-hosted server mode. Only used by `selfhosted/` code and not bundled into the static frontend export.
 

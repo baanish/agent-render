@@ -48,6 +48,7 @@ describe("arx4 dictionary pin guard", () => {
     expect(getActiveDictVersion()).toBe(0);
     expect(fragment.startsWith(ARX4_TAG)).toBe(false);
     expect(fragment.startsWith(compactTagForCodec("arx5"))).toBe(false);
+    expect(fragment.startsWith(compactTagForCodec("arx6"))).toBe(false);
 
     // The rest of the pool still serves the link, and what it emits decodes.
     expect((await decodeFragmentAsync(`#${fragment}`, { skipFragmentBudget: true })).ok).toBe(true);

@@ -27,7 +27,6 @@ import { createNodeGeneratedArtifactLink } from "./node-generated-link";
  */
 
 const ARX4_TAG = compactTagForCodec("arx4");
-const ARX5_TAG = compactTagForCodec("arx5");
 
 declare global {
   interface Window {
@@ -218,7 +217,7 @@ test.describe("arx4 links from the shipped app bundle", () => {
   }
 });
 
-const arx5CreatorDrafts: LinkCreatorDraft[] = [
+const transportScoredCreatorDrafts: LinkCreatorDraft[] = [
   {
     kind: "markdown",
     title: "Release notes",
@@ -228,10 +227,21 @@ const arx5CreatorDrafts: LinkCreatorDraft[] = [
     diffView: "unified",
     codec: "arx5",
   },
+  {
+    // arx6 codes bodies verbatim through TextEncoder, so quotes, backslashes and non-ASCII text reach
+    // the mixer unescaped and have to code identically in every engine.
+    kind: "markdown",
+    title: "Raw container",
+    filename: "raw.md",
+    content: "# Raw container\n\n> \"Quoted\" C:\\path, caf\u00e9, \u{1F680}\n\n| Surface | State |\n| --- | --- |\n| viewer | ready |\n",
+    language: "",
+    diffView: "unified",
+    codec: "arx6",
+  },
 ];
 
-test.describe("arx5 links from the shipped app bundle", () => {
-  for (const draft of arx5CreatorDrafts) {
+test.describe("arx5 and arx6 links from the shipped app bundle", () => {
+  for (const draft of transportScoredCreatorDrafts) {
     test(`generates and previews the Node-identical ${draft.codec} link for a ${draft.title} draft`, async ({ page }) => {
       await goToHash(page);
       await waitForViewerState(page, "empty");
@@ -248,9 +258,9 @@ test.describe("arx5 links from the shipped app bundle", () => {
       const nodeLink = await createNodeGeneratedArtifactLink(draft, baseUrl);
       const generatedUrl = await generatedLink.inputValue();
 
-      expect(nodeLink.codec).toBe("arx5");
+      expect(nodeLink.codec).toBe(draft.codec);
       expect(generatedUrl).toBe(nodeLink.url);
-      expect(new URL(generatedUrl).hash).toMatch(new RegExp(`^#${ARX5_TAG}[\\x21-\\x7e]+$`));
+      expect(new URL(generatedUrl).hash).toMatch(new RegExp(`^#${compactTagForCodec(nodeLink.codec)}[\\x21-\\x7e]+$`));
 
       await page.getByRole("button", { name: "Preview here" }).click();
       await waitForViewerState(page, "artifact");
