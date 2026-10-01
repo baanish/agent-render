@@ -63,7 +63,7 @@ describe("LinkCreator", () => {
   it("offers every registered codec in the compression selector", () => {
     render(<LinkCreator onPreviewHash={vi.fn()} />);
 
-    for (const option of ["auto", "plain", "lz", "deflate", "arx", "arx2", "arx5"]) {
+    for (const option of ["auto", "plain", "lz", "deflate", "arx", "arx2", "arx5", "arx6"]) {
       expect(screen.getByRole("button", { name: option })).toBeInTheDocument();
     }
 

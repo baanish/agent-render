@@ -34,9 +34,10 @@ character identifying the codec:
 #c<payload>   (arx3, deprecated emit)
 #e<payload>   (arx4, deprecated emit)
 #f<payload>   (arx5)
+#g<payload>   (arx6)
 ```
 
-The single tag char identifies the codec; for `arx`/`arx2`/`arx3`/`arx4`/`arx5` it implies
+The single tag char identifies the codec; for `arx`/`arx2`/`arx3`/`arx4`/`arx5`/`arx6` it implies
 the current dictionary but does not carry a dictionary version. The payload follows
 immediately after it. The legacy `#agent-render=v1.<codec>.<payload>` form
 (arx-family carry an extra `<dictVersion>.` segment) still decodes, but the
@@ -50,12 +51,13 @@ Supported codecs:
 - `arx2`: tuple-envelope transport + `https://agent-render.com/arx2-dictionary.json` overlay (or pre-compressed `https://agent-render.com/arx2-dictionary.json.br`) + the shared arx dictionary + brotli (quality 11) + the same four wire shapes. Existing arx links remain valid; prefer arx2 when you encode yourself and need a chat-safe ASCII wire.
 - `arx3`: **deprecated emit.** Same bytes as arx2, but it scored baseBMP by visible character count. Discord and WhatsApp then percent-encode or mangle those Unicode fragments. Recognize and open `#c` links; do not mint new ones.
 - `arx4`: **deprecated emit.** Context mixer plus the same broken visible-length Unicode policy. Recognize and open `#e` links; do not mint new ones.
-- `arx5`: ARX 4.5 — arx4's context mixer on arx2's tuple pipeline, with every wire scored by honest serialized transport length. Compact tag `f`, same prior-id prefix as arx4 (`m`, `c`, `j`, `s`, or `n`). Recognize and open `#f` links; do not hand-roll them. Reproducing the wire needs the exact frozen mixer plus `https://agent-render.com/arx4-priors.json`, so an agent encoding on its own should stop at `arx2` (chat-safe ASCII) and let the app or library emit arx5.
+- `arx5`: ARX 4.5, arx4's context mixer on arx2's tuple pipeline, with every wire scored by honest serialized transport length. Compact tag `f`, same prior-id prefix as arx4 (`m`, `c`, `j`, `s`, or `n`). Recognize and open `#f` links; do not hand-roll them. Reproducing the wire needs the exact frozen mixer plus `https://agent-render.com/arx4-priors.json`, so an agent encoding on its own should stop at `arx2` (chat-safe ASCII) and let the app or library emit arx6.
+- `arx6`: the codec the app emits. A stronger context mixer over a raw container (the bodies verbatim, a newline, then the arx2 tuple JSON with each artifact body swapped for its length), on a base-66 fraction wire over `0-9A-Za-z-._~` whose last digit is alphanumeric. Compact tag `g`, same prior-id prefix as arx5. Recognize and open `#g` links; do not hand-roll them, for the same reason as arx5. The app falls back to arx5 for the rare envelope arx6 cannot carry (a lone surrogate in an artifact body).
 - packed wire mode (`p: 1`) may be used automatically to shorten transport keys
 
 Prefer:
 1. shortest valid fragment for the target surface, measured by serialized transport length (not visible Unicode count)
-2. codec priority `arx2 -> arx -> deflate -> lz -> plain` for links you encode yourself; the app itself tries `arx5` first
+2. codec priority `arx2 -> arx -> deflate -> lz -> plain` for links you encode yourself; the app itself tries `arx6` first
 3. packed wire mode when available
 4. never emit baseBMP/base1k Unicode wires for Discord, WhatsApp, or any markdown-link destination
 
@@ -205,6 +207,7 @@ https://agent-render.com/#b<payload>   (arx2)
 https://agent-render.com/#c<payload>   (arx3, deprecated emit)
 https://agent-render.com/#e<payload>   (arx4, deprecated emit)
 https://agent-render.com/#f<payload>   (arx5)
+https://agent-render.com/#g<payload>   (arx6)
 ```
 
 For `plain`:
@@ -271,7 +274,7 @@ Then apply substitutions in this order:
 
 Do not encode `arx3` or `arx4`. Those tags remain readable so already-shared links open; their visible-length Unicode wires break on Discord and WhatsApp.
 
-For `arx5`, there is no hand-rollable recipe: the payload is arithmetic-coded against a context-mixing model primed on a corpus that must match the encoder bit for bit, so encode arx5 only through the app or `encodeEnvelopeAsync`. Read the tag `f` and the prior id that follows it when parsing a link someone else produced. When encoding yourself, stop at `arx2` with a transport-scored ASCII wire (usually base64url).
+For `arx5` and `arx6`, there is no hand-rollable recipe: the payload is arithmetic-coded against a context-mixing model primed on a corpus that must match the encoder bit for bit, so encode them only through the app or `encodeEnvelopeAsync`. Read the tag `f` or `g` and the prior id that follows it when parsing a link someone else produced. When encoding yourself, stop at `arx2` with a transport-scored ASCII wire (usually base64url).
 
 ## Practical limits
 
@@ -285,7 +288,7 @@ Before sharing on Discord, check `markdownLinkLength` or `discordMarkdownLinkWar
 When generating links programmatically via `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync`, send `markdownLink` verbatim and inspect `discordMarkdownLinkWarning`. When it is non-null, surface that warning to the caller and split the payload before sharing on Discord.
 
 If a link is getting too large:
-1. try `arx2` first (chat-safe ASCII), then `arx`, then `deflate`, then `lz`, then `plain`. Let the app emit `arx5` when you can use `encodeEnvelopeAsync`
+1. try `arx2` first (chat-safe ASCII), then `arx`, then `deflate`, then `lz`, then `plain`. Let the app emit `arx6` when you can use `encodeEnvelopeAsync`
 2. allow packed wire mode
 3. trim unnecessary prose or metadata
 4. prefer a focused artifact over a bloated one
@@ -295,7 +298,7 @@ If a link is getting too large:
 
 When the caller provides a strict budget (for example 1,500 chars):
 
-1. encode using all available live candidates (`arx5/arx2/arx/deflate/lz/plain` when the library is available, otherwise `arx2/arx/deflate/lz/plain`, packed and non-packed where applicable)
+1. encode using all available live candidates (`arx6/arx5/arx2/arx/deflate/lz/plain` when the library is available, otherwise `arx2/arx/deflate/lz/plain`, packed and non-packed where applicable)
 2. choose the shortest fragment that is within budget
 3. if no candidate fits, return the shortest fragment plus a clear budget failure explanation
 

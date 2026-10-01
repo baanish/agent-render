@@ -4,7 +4,8 @@
  * Pipeline: envelope → compact tuple JSON → overlay + shared dictionary substitution →
  * context-mixing arithmetic coder → binary-to-text wire encoding. arx4/arx5 replace only Brotli
  * in the arx2 tuple pipeline; the tuple and substitution stages are the same functions arx2/arx3 call.
- * arx5 is the emitted mixer codec (honest transport-length scoring). arx4 stays decodable.
+ * arx5 (honest transport-length scoring) and arx4 stay decodable; new links use arx6 (arx6-codec.ts),
+ * which shares this module's curated priors but codes a raw container with its own model (arx6-model.ts).
  *
  * Fragment shape: `<tag><priorId><wirePayload>`. The prior id names the priming corpus the coder ran
  * before the payload, because a decoder has to reproduce the encoder's model state exactly. The
@@ -723,7 +724,7 @@ export function arx4PriorIdForEnvelope(envelope: PayloadEnvelope): Arx4PriorId {
 /** Curated corpora the priors asset carries, keyed the way the asset keys them. */
 const ARX4_PRIOR_KINDS = ["markdown", "code", "json"] as const;
 
-type Arx4PriorKind = (typeof ARX4_PRIOR_KINDS)[number];
+export type Arx4PriorKind = (typeof ARX4_PRIOR_KINDS)[number];
 
 /**
  * The `/arx4-priors.json` asset: the kind-specific tail of each curated prior. The 2203-char common
@@ -934,6 +935,17 @@ function versionMatchedPriors(): Arx4Priors | null {
 }
 
 /**
+ * The curated kind blocks without the dictionary prefix, for arx6, which composes its priors from more
+ * than one block. Throws {@link Arx4PriorsUnavailableError} naming `priorId` whenever curated priming
+ * would, so both codecs fail the same way on a missing or version-skewed asset.
+ */
+export function curatedArx4PriorBlocks(priorId: Arx4PriorId): Readonly<Record<Arx4PriorKind, string>> {
+  const priors = versionMatchedPriors();
+  if (priors === null) throw new Arx4PriorsUnavailableError(priorId);
+  return priors.kinds;
+}
+
+/**
  * Priming bytes for a prior id, or null for "n" (cold model).
  *
  * Every prior starts from the pinned arx dictionary slot text in its RAW form, not the substituted
@@ -944,8 +956,10 @@ function versionMatchedPriors(): Arx4Priors | null {
  * which is what the 16 KiB per-kind priors in docs/arx4-cm-bench.md measured, and throw when that
  * corpus is missing or version-skewed rather than quietly coding against a different prior than the
  * id names.
+ *
+ * Exported so arx6, which primes on the same corpora under the same ids, never rebuilds them itself.
  */
-function priorBytesFor(priorId: Arx4PriorId): Uint8Array | null {
+export function priorBytesFor(priorId: Arx4PriorId): Uint8Array | null {
   if (priorId === "n") return null;
 
   const kind = PRIOR_KIND_BY_ID[priorId];
@@ -961,7 +975,7 @@ function priorBytesFor(priorId: Arx4PriorId): Uint8Array | null {
  * version-skewed, so a failed or stale asset fetch costs compression instead of blocking link
  * creation; the emitted id always names the prior the payload was really coded against.
  */
-function encodablePriorId(priorId: Arx4PriorId): Arx4PriorId {
+export function encodablePriorId(priorId: Arx4PriorId): Arx4PriorId {
   if (PRIOR_KIND_BY_ID[priorId] === null) return priorId;
   return versionMatchedPriors() === null ? "s" : priorId;
 }

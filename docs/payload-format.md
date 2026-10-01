@@ -17,6 +17,7 @@ Payload contents are untrusted user content. Viewers, agents, and automations sh
 #c<payload>   (arx3, deprecated emit)
 #e<payload>   (arx4, deprecated emit)
 #f<payload>   (arx5)
+#g<payload>   (arx6)
 ```
 
 The compact fragment is a single codec tag char followed by the payload. The tag encodes the codec so unsupported formats fail cleanly; the compact tag does not carry a dictionary version — arx-family tags imply the build's current dictionary (the build pins the newest supported version and rejects a newer one). The legacy `#agent-render=v1.<codec>.<payload>` form (arx-family carry an extra `<dictVersion>.` segment) still decodes for back-compatibility but is no longer emitted. Fragment URLs can look long because they carry the artifact payload in the browser-only fragment instead of sending it to the host during the page request.
@@ -30,7 +31,8 @@ Supported codecs:
 - `arx2` - tuple-envelope transport + arx2 overlay substitution + the shared arx dictionary + brotli (quality 11) + the same four binary-to-text wire shapes. The compact `b` tag identifies arx2 but does not carry a dictionary version — it implies the current pinned shared arx dictionary and arx2 overlay. Existing `arx` links remain valid; async auto-selection keeps arx2 in the pool as the conservative Brotli tuple codec (needed for some CSV regressions).
 - `arx3` - **deprecated emit.** Same compressed bytes as arx2. The only difference was scoring baseBMP by visible character count instead of serialized URL length, so Unicode won artificially and then Discord markdown / WhatsApp percent-encoding detonated the link. Existing `#c` links still decode. Do not mint new arx3 links.
 - `arx4` - **deprecated emit.** ARX2's tuple/overlay pipeline with Brotli replaced by the deterministic context mixer, plus a prior id char, but it kept arx3's broken visible-length baseBMP policy. Existing `#e` links still decode. Do not mint new arx4 links.
-- `arx5` - ARX 4.5: the sane mixer codec. Same context mixer, priors, and wire shapes as arx4 (`arx4-codec.ts`), scored with ARX2's honest serialized transport length for every wire including baseBMP. The compact `f` tag identifies arx5. The payload still carries one extra leading char, the prior id (`m`, `c`, `j`, `s`, or `n`); `m`/`c`/`j` need `/arx4-priors.json` (pre-compressed `/arx4-priors.json.br` tried first). If the asset is unavailable the encoder falls back to `s`. Auto-selection prefers arx5, then arx2. It is roughly 100x slower than Brotli, which is why the whole arx family is async-only.
+- `arx5` - ARX 4.5: the sane mixer codec. Same context mixer, priors, and wire shapes as arx4 (`arx4-codec.ts`), scored with ARX2's honest serialized transport length for every wire including baseBMP. The compact `f` tag identifies arx5. The payload still carries one extra leading char, the prior id (`m`, `c`, `j`, `s`, or `n`); `m`/`c`/`j` need `/arx4-priors.json` (pre-compressed `/arx4-priors.json.br` tried first). If the asset is unavailable the encoder falls back to `s`. Auto-selection uses arx5 only for envelopes arx6 declines. It is roughly 100x slower than Brotli, which is why the whole arx family is async-only.
+- `arx6` - the emitted mixer codec. Same prior ids and curated corpora as arx5, with its own context mixer (`arx6-model.ts`: arx5's model plus a line-type context, run and deterministic-slot inputs, a two-layer mixer, and an adaptive probability map chain) coding the raw container described under the tuple fields below instead of substituted tuple JSON. Each curated prior id primes on the dictionary text, the first half of a second curated block (json for `m`, markdown for `c` and `j`), then its own block. The wire reads the fragment digits as one base-66 fraction over `0-9A-Za-z-._~`, so a fragment is `g` + prior id + digits, with no length marker and no `B.` marker; the encoder picks the fewest digits that land inside the arithmetic coder's final interval. The last digit is always alphanumeric, because linkifiers strip a trailing `.`, `~`, `-`, or `_`. About 14% shorter than arx5 on a held-out corpus of 214 real artifacts from the maintainer's repositories (shorter on every artifact in that corpus; the corpus is not committed), at roughly 3x arx5's coding time. Auto-selection skips arx5 once arx6 fits the fragment budget, so for unusual high-entropy text auto can return an arx6 link slightly longer than arx5 would have been. An artifact body holding a lone surrogate cannot survive UTF-8, so arx6 declines that envelope and auto-selection falls back to arx5. Auto-selection prefers arx6, then arx2.
 
 The encoder now also supports a packed wire representation (`p: 1`) that shortens key names before compression. Packed mode is transport-only; decoded envelopes normalize back to the standard shape.
 
@@ -94,6 +96,17 @@ Tuple fields:
 - code: `["c", id, content, language?, title?, filename?]`
 - diff: `["d", id, patch?, oldContent?, newContent?, language?, view?, title?, filename?]`
 
+arx6 codes the same tuple as a raw container: the bodies concatenated verbatim in tuple order, then one newline, then the tuple JSON with every body field (`content`, or a diff's `patch`, `oldContent`, and `newContent`) replaced by its UTF-16 length, except the last body, which is `-1` because it runs up to the newline. JSON escapes every newline inside the tuple, so the last newline in the container starts it. A markdown artifact titled `Notes` with content `# Hi` becomes:
+
+```text
+# Hi
+[3,["m","notes",-1,"Notes"]]
+```
+
+A diff `patch` may be stored elided: `diff --git a/P b/P` becomes `diff --git P`, the `--- a/P` and `+++ b/P` lines that follow it become `---` and `+++`, and a canonical hunk header whose counts and new start the hunk body and earlier hunks imply becomes `@@ -<oldStart> @@` plus its section text. An elided diff uses kind code `D` instead of `d`. The encoder elides only when restoring gives back the patch exactly, and otherwise keeps `d` and the patch verbatim. The decoder restores a `D` patch within the decoded payload budget and rejects it unless eliding the restored patch reproduces the stored text, so it never renders a patch the encoder could not have written.
+
+The decoder rejects any container whose tuple does not parse, whose kind codes are unknown, or whose lengths do not account for every body exactly. The tuple goes last because a truncated link garbles the end of the container, so truncation breaks the tuple and the link fails to open instead of rendering a body with a garbled tail.
+
 ## Required support
 
 - `kind`
@@ -108,9 +121,9 @@ Tuple fields:
 - Supported decoded payload budget: 200,000 characters
 - Discord markdown link limit: 2,000 characters for the full formatted `[label](url)` string
 - Larger payloads should fail with a clear error before rendering
-- Compression is selected automatically across packed/non-packed candidates. Live codecs (`arx`, `arx2`, `arx5`) optimize conservative percent-escaped transport length. Deprecated `arx3`/`arx4` still optimize compact visible length when explicitly requested
+- Compression is selected automatically across packed/non-packed candidates. Live codecs (`arx`, `arx2`, `arx5`, `arx6`) optimize conservative percent-escaped transport length. Deprecated `arx3`/`arx4` still optimize compact visible length when explicitly requested
 - Default sync codec priority is `deflate -> lz -> plain`
-- Default async codec priority is `arx5 -> arx2 -> arx -> deflate -> lz -> plain`
+- Default async codec priority is `arx6 -> arx5 -> arx2 -> arx -> deflate -> lz -> plain`; arx5 only runs when arx6 declines the envelope
 - Optional budget-aware encoding can target strict limits and returns the shortest fragment when none fit
 - `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync` return `url`, `markdownLink` (ready to paste verbatim in chat), `markdownLinkLength`, and `discordMarkdownLinkWarning` so agents do not need to reconstruct `[label](url)` themselves
 
@@ -144,13 +157,13 @@ Researched surface constraints:
 
 Largest alphabet that is safe on both Discord markdown and WhatsApp without mangling: **RFC 3986 unreserved `A-Za-z0-9-._~` (66 chars)**. Adding `=` (already treated as chat-safe) makes 67. That is only ~0.7–1.2% denser than base64url's 64-character `A-Za-z0-9-_`.
 
-Why a new base66/67 wire is not worth it:
+Why arx5 keeps its per-byte wires instead of a base66/67 one:
 
 - base64url already uses 64 of those 66 characters and is proven in production `#bB.` / `#fB.` links
 - base76's extra punctuation (`!$*()',;:@/`) is either fatal (`)`) or 3x after chat escaping, so honest scoring already rejects it
 - base1k/baseBMP look shortest by visible character count and then explode 3–9x when a chat client percent-encodes them
 
-arx5 therefore keeps the existing four wires and lets honest transport length pick. In practice that is base64url (or base76 when its punctuation does not inflate).
+arx5 therefore keeps the existing four wires and lets honest transport length pick. In practice that is base64url (or base76 when its punctuation does not inflate). arx6 is the exception: it has one wire, so its `g` tag names it, and that wire reads all 66 unreserved characters as a single fraction rather than a per-byte radix, which also makes the coder's flush digit-granular. Its last digit stays alphanumeric for the linkifiers above.
 
 ## Active artifact behavior
 

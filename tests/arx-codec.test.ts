@@ -380,6 +380,7 @@ describe("arx fragment round-trip", () => {
       compactTagForCodec("arx3"),
       compactTagForCodec("arx4"),
       compactTagForCodec("arx5"),
+      compactTagForCodec("arx6"),
     ];
     expect(arxTags).toContain(autoHash.charAt(0));
   });
