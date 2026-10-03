@@ -1,10 +1,10 @@
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import {
   encodeEnvelope,
-  encodeEnvelopeSurfacesAsync,
   getFragmentTransportLength,
   getVisibleFragmentLength,
 } from "@/lib/payload/fragment";
+import { encodeEnvelopeInBrowser } from "@/lib/payload/browser-codec";
 import { buildMarkdownLinkShareInfo } from "@/lib/markdown-link";
 import {
   codecForCompactTag,
@@ -351,13 +351,17 @@ export function createGeneratedArtifactLink(draft: LinkCreatorDraft, baseUrl?: s
 
 /**
  * Async variant of {@link createGeneratedArtifactLink} that can leverage the ARX family of async
- * codecs via {@link encodeEnvelopeSurfacesAsync}, which encodes once and returns both the
+ * codecs via {@link encodeEnvelopeInBrowser}, which encodes once and returns both the
  * copy-paste and markdown-destination winners.
  *
  * Error and return semantics match the sync variant: throws on invalid draft/normalized payload
  * or over-budget fragments, and returns `{ hash, url, codec, fragmentLength, envelope, artifact }`.
  */
-export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, baseUrl?: string): Promise<GeneratedArtifactLink> {
+export async function createGeneratedArtifactLinkAsync(
+  draft: LinkCreatorDraft,
+  baseUrl?: string,
+  signal?: AbortSignal,
+): Promise<GeneratedArtifactLink> {
   const normalized = normalizeEnvelope(createDraftEnvelope(draft));
 
   if (!normalized.ok) {
@@ -365,7 +369,7 @@ export async function createGeneratedArtifactLinkAsync(draft: LinkCreatorDraft, 
   }
 
   const encodeOptions = draft.codec && draft.codec !== "auto" ? { codec: draft.codec } : {};
-  const surfaces = await encodeEnvelopeSurfacesAsync(normalized.envelope, encodeOptions);
+  const surfaces = await encodeEnvelopeInBrowser(normalized.envelope, encodeOptions, signal);
   return assembleGeneratedLink(
     normalized.envelope,
     surfaces.fragmentBody,
@@ -385,6 +389,7 @@ export async function createGeneratedEnvelopeLinkAsync(
   envelope: PayloadEnvelope,
   baseUrl?: string,
   codec?: PayloadCodec | "auto",
+  signal?: AbortSignal,
 ): Promise<GeneratedArtifactLink> {
   const normalized = normalizeEnvelope(envelope);
 
@@ -393,7 +398,7 @@ export async function createGeneratedEnvelopeLinkAsync(
   }
 
   const encodeOptions = codec && codec !== "auto" ? { codec } : {};
-  const surfaces = await encodeEnvelopeSurfacesAsync(normalized.envelope, encodeOptions);
+  const surfaces = await encodeEnvelopeInBrowser(normalized.envelope, encodeOptions, signal);
   return assembleGeneratedLink(
     normalized.envelope,
     surfaces.fragmentBody,

@@ -84,6 +84,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
     "idle" | "copied" | "failed"
   >("idle");
   const generationRequestRef = useRef(0);
+  const generationAbortRef = useRef<AbortController | null>(null);
   const markdownCopyTokenRef = useRef(0);
   const generatedLinkRef = useRef<GeneratedArtifactLink | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +109,11 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
     setMarkdownLinkCopyState("idle");
     setError(null);
   }, [draftVersion]);
+
+  useEffect(() => () => {
+    generationRequestRef.current += 1;
+    generationAbortRef.current?.abort();
+  }, []);
 
   const updateDraft = <K extends keyof LinkCreatorDraft>(
     field: K,
@@ -235,6 +241,9 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   const handleGenerate = async () => {
     const requestId = generationRequestRef.current + 1;
     generationRequestRef.current = requestId;
+    generationAbortRef.current?.abort();
+    const abort = new AbortController();
+    generationAbortRef.current = abort;
 
     try {
       const { createGeneratedArtifactLinkAsync } =
@@ -242,6 +251,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
       const nextGeneratedLink = await createGeneratedArtifactLinkAsync(
         draft,
         getBaseUrl(),
+        abort.signal,
       );
       if (generationRequestRef.current !== requestId) {
         return;

@@ -866,11 +866,23 @@ async function fetchArx4Priors(url: string): Promise<unknown> {
  * unusable and leaves the slot alone, which is what makes such a load retryable.
  */
 function installArx4Priors(value: unknown): number {
-  if (!isArx4Priors(value) || !priorsMatchPinnedDigests(value)) return -1;
+  if (!isArx4Priors(value)) return -1;
 
-  priorsSlot.priors = value;
-  priorsSlot.version = value.version;
-  return value.version;
+  // Validate the owned snapshot, not a caller-owned object that can change after digest checking.
+  // Freezing the nested blocks also makes curatedArx4PriorBlocks safe to expose to other codecs.
+  const installed = Object.freeze({
+    version: value.version,
+    kinds: Object.freeze({
+      markdown: value.kinds.markdown,
+      code: value.kinds.code,
+      json: value.kinds.json,
+    }),
+  });
+  if (!isArx4Priors(installed) || !priorsMatchPinnedDigests(installed)) return -1;
+
+  priorsSlot.priors = installed;
+  priorsSlot.version = installed.version;
+  return installed.version;
 }
 
 /**

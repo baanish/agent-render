@@ -35,7 +35,8 @@ type BudgetPolicy = "default" | "urlSerialized";
 
 const BINARY_STRING_CHUNK_SIZE = 0x8000;
 const DEFAULT_SYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["deflate", "lz", "plain"];
-const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx6", "arx5", "arx2", "arx", "deflate", "lz", "plain"];
+// Preserve the shipped pool and its tie order. ARX6 replaces its winner only when strictly shorter.
+const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx5", "arx2", "arx", "deflate", "lz", "plain", "arx6"];
 const PACKED_WIRE_MODES: readonly boolean[] = [true, false];
 const UNPACKED_ONLY_WIRE_MODES: readonly boolean[] = [false];
 const supportedCodecSet = new Set<string>(codecs);
@@ -308,14 +309,9 @@ async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOp
     }
 
     if (codec === "arx5") {
-      // arx5 costs a full mixer pass and arx6 is shorter on typical artifacts, so once arx6 has a
-      // candidate that fits the budget arx5 is skipped. It still runs for envelopes arx6 declines (a
-      // lone surrogate) and when arx6 misses the budget, where high-entropy text can favor arx5.
-      const budget = Math.min(options.targetMaxFragmentLength ?? MAX_FRAGMENT_LENGTH, MAX_FRAGMENT_LENGTH);
-      const arx6Fits = candidates.some((candidate) => candidate.codec === "arx6" && candidate.transportLength <= budget);
-      if (!arx6Fits) {
-        candidates.push(...await buildArx5Candidates(envelope));
-      }
+      // Fitting a budget is not evidence that ARX6 beats this candidate. Evaluate both on every
+      // input, including short, unfamiliar, and high-entropy artifacts.
+      candidates.push(...await buildArx5Candidates(envelope));
       continue;
     }
 
@@ -378,11 +374,29 @@ function selectCandidate(
     }
   }
 
-  if (typeof budget !== "number") {
-    return shortest;
-  }
+  const selected = shortestInBudget ?? shortest;
+  if (selected.codec !== "arx6") return selected;
 
-  return shortestInBudget ?? shortest;
+  const legacy = candidates.filter((candidate) => candidate.codec !== "arx6");
+  if (legacy.length === 0) return selected;
+  const previous = selectCandidate(legacy, budget, policy);
+  // An explicit transport budget takes precedence over preserving a shorter browser URL:
+  // escape-prone punctuation can put that legacy URL outside the caller's requested limit.
+  if (
+    typeof budget === "number" &&
+    budgetLengthFor(selected, policy) <= budget &&
+    budgetLengthFor(previous, policy) > budget
+  ) return selected;
+  // The conservative chat score escapes more punctuation than WHATWG URL serialization does.
+  // Keep the exact old winner if ARX6 only beats that estimate, not the URL users actually copy.
+  // ARX6 contains no parentheses, so a strictly shorter serialized fragment also cannot grow the
+  // formatted Markdown destination, regardless of whether its base URL needs angle brackets.
+  const serializedLength = (value: string) => {
+    const url = new URL("https://agent-render.invalid/");
+    url.hash = value;
+    return url.hash.length;
+  };
+  return serializedLength(selected.value) < serializedLength(previous.value) ? selected : previous;
 }
 
 /**

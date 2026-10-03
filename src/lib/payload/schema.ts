@@ -11,7 +11,8 @@ export type PayloadCodec = (typeof codecs)[number];
 /**
  * The dictionary + entropy-coder + binary-to-text codecs, as opposed to plain/lz/deflate.
  * arx/arx2/arx3 entropy-code with Brotli; arx4/arx5 use the context mixer in arx4-codec.ts and
- * arx6 its own stronger model (arx6-model.ts). arx3 and arx4 remain decodable but are no longer auto-emitted:
+ * arx6 its versioned model (arx6-v2-model.ts, with arx6-model.ts retained for original links).
+ * arx3 and arx4 remain decodable but are no longer auto-emitted:
  * they score dense Unicode wires by visible character count, which Discord/WhatsApp then
  * percent-encode or mangle.
  */
@@ -21,9 +22,9 @@ export type ArxCodec = "arx" | "arx2" | "arx3" | "arx4" | "arx5" | "arx6";
 export type ArxTupleCodec = "arx2" | "arx3" | "arx4" | "arx5";
 
 /**
- * Context-mixer codecs, which all prime on the pinned dictionaries and the curated priors. arx4 and
- * arx5 share compressed bytes under different tags and selection policies; arx6 codes a raw
- * container with its own model and framing.
+ * Context-mixer codecs with optional pinned priors. arx4 and arx5 share compressed bytes under
+ * different tags and selection policies; arx6 codes a raw container with its own model and
+ * versioned framing. ARX6 v2's unprimed `n` wire requires no dictionary or prior assets.
  */
 export type ArxMixerCodec = "arx4" | "arx5" | "arx6";
 
@@ -52,7 +53,8 @@ export function codecPickerLabel(option: PayloadCodec | "auto"): string {
 // does not carry a dictionary version — arx-family tags imply the build's current pinned dictionary
 // (version 1). Payloads up to arx5 stay self-describing (base64url
 // `B.` prefix, baseBMP U+FFF0 marker, base76/base1k length prefix), so the alphabet is not in the
-// header; arx6 has a single wire, so its `g` tag names the wire too. Tags come from the RFC-3986
+// header; arx6 emits `g2<prior><fraction>` and retains its original `g<prior><fraction>` decoder.
+// Tags come from the RFC-3986
 // unreserved set so they never percent-escape, and none can begin the legacy `agent-render=`
 // literal, which keeps the two header forms unambiguous on decode.
 // The arx family runs a, b, c, e, f, then g because d is taken by deflate.

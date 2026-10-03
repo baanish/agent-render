@@ -24,7 +24,7 @@ import {
   getActiveArx4PriorsVersion,
   loadArx4Priors,
 } from "@/lib/payload/arx4-codec";
-import { arx6CompressEnvelope, arx6DecompressEnvelope } from "@/lib/payload/arx6-codec";
+import { arx6CompressEnvelope, arx6DecompressEnvelope, getArx6PriorId } from "@/lib/payload/arx6-codec";
 import { packEnvelope } from "@/lib/payload/wire-format";
 import {
   compactTagForCodec,
@@ -111,7 +111,8 @@ const EXPECTED_ARX2_OVERLAY_VERSION = 1;
 // arx/arx2/arx3. They tolerate the built-in fallback (version 0) because substitution alone degrades
 // predictably; the mixer also primes on the dictionary slot text, so a fragment coded against any
 // other dictionary is one that healthy viewers cannot decode at all. Both sides therefore hold out
-// for the pinned pair: encode leaves the candidate pool, decode refuses.
+// for the pinned pair: primed encoding leaves the candidate pool, primed decoding refuses.
+// ARX6 v2 can instead use its unprimed `n` model, which has no asset dependency.
 
 /**
  * Thrown when an arx4 fragment reaches the decoder while the active dictionaries are not the exact
@@ -387,21 +388,25 @@ export async function buildArx5Candidates(
 
 /**
  * Builds the deferred `arx6` candidate: arx6-codec.ts's mixer over the raw container, on its one
- * fraction wire. It primes on the same dictionaries and priors as arx5, so it holds out for the same
- * pins and loads the priors the same way. An envelope it cannot carry (a lone surrogate) yields no
- * candidate, which leaves it to arx5.
+ * fraction wire. Primed candidates require the same pinned assets as ARX5. The unprimed v2 model
+ * needs no assets and remains available when the dictionary fetch fails. A candidate outside
+ * ARX6's reconstructed-envelope budget cannot prevent the existing portfolio from being evaluated.
  */
 export async function buildArx6Candidates(
   envelope: PayloadEnvelope,
   computeTransportLength: TransportLengthCalculator,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
-  if (!arx4DictionariesMatchPins()) return [];
+  const dictionariesPinned = arx4DictionariesMatchPins();
+  if (dictionariesPinned) await loadArx4PriorsOnce();
 
-  await loadArx4PriorsOnce();
-
-  const payload = arx6CompressEnvelope(envelope);
-  if (payload === null) return [];
+  let payload: string;
+  try {
+    payload = arx6CompressEnvelope(envelope, dictionariesPinned ? undefined : "n");
+  } catch (error) {
+    if (error instanceof ArxDecodedPayloadTooLargeError) return [];
+    throw error;
+  }
 
   const value = `${compactTagForCodec("arx6")}${payload}`;
   const length = computeTransportLength(value);
@@ -415,21 +420,24 @@ export async function decodeArxFragmentPayload(
   codec: ArxCodec,
   remainder: string,
 ): Promise<string | PayloadEnvelope> {
-  if (codec === "arx") {
-    await ensureArxDictionaryLoaded();
-  } else {
-    await ensureArx2DictionariesLoaded();
+  const { parsedDictVersion, versionedPayload } = splitArxFragmentRemainder(remainder);
+  const decodedPayload = decodeArxEncodedPayload(versionedPayload);
+  const priorIdChar = codec === "arx6" ? getArx6PriorId(decodedPayload) : decodedPayload.charAt(0);
+  // V2's unprimed model uses only its frozen code and the tuple schema. Fetching or requiring
+  // unrelated dictionaries would make an otherwise self-contained link fail while offline.
+  const unprimedArx6 = codec === "arx6" && decodedPayload.startsWith("2n");
+  if (!unprimedArx6) {
+    if (codec === "arx") await ensureArxDictionaryLoaded();
+    else await ensureArx2DictionariesLoaded();
   }
 
-  if (isArxMixerCodec(codec) && !arx4DictionariesMatchPins()) {
+  if (isArxMixerCodec(codec) && !unprimedArx6 && !arx4DictionariesMatchPins()) {
     throw new Arx4DictionarySkewError(getActiveDictVersion(), getActiveArx2OverlayVersion());
   }
 
   let lastError: Error | null = null;
-  const { parsedDictVersion, versionedPayload } = splitArxFragmentRemainder(remainder);
-  const decodedPayload = decodeArxEncodedPayload(versionedPayload);
 
-  // Only fragments naming a curated prior (the first payload char) need the priors asset; s and n
+  // Only fragments naming a curated prior need the priors asset (ARX6 v2 prefixes its prior with 2); s and n
   // fragments decode without it, so they must not trigger the fetch. A curated fragment that the
   // fetch cannot serve at the expected version fails in the codec, which is the retryable outcome:
   // decoding it against a skewed corpus would return plausible garbage instead.
@@ -437,7 +445,6 @@ export async function decodeArxFragmentPayload(
   // The char is read AFTER percent-decoding, so this routes on what the decoder will really see: a
   // re-encoding proxy or a handcrafted fragment can deliver `%6d` where the app writes `m`, and routing
   // on the raw char would leave that fragment asking for an asset nothing ever fetches.
-  const priorIdChar = decodedPayload.charAt(0);
   if (isArxMixerCodec(codec) && CURATED_PRIOR_IDS.some((priorId) => priorId === priorIdChar)) {
     await loadArx4PriorsOnce();
   }

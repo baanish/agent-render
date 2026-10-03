@@ -7,13 +7,14 @@
  * are written in, and no overlay or dictionary substitution runs at all. The one rewrite is on diff patches,
  * which drop the paths and hunk counts they state twice (see {@link elideDiffPatch}).
  *
- * Fragment shape: `g<priorId><digits>`, digits over [0-9A-Za-z-._~] with an alphanumeric last digit.
+ * Emitted fragment: `g2<priorId><digits>`, with CRC32 packed into the fraction numerator. The original
+ * `g<priorId><digits>` format remains decodable with its frozen model and UTF-8 container.
  * Prior ids and curated corpora are arx4's (arx4-codec.ts), composed differently (see ARX6_PRIOR_LAYOUT);
- * the model is arx6-model.ts, which this file reaches only through `Arx6ContextModel`'s two byte-level
- * methods.
+ * arx6-v2-model.ts supplies the new model. Both models expose the same two byte-level methods.
  */
 
 import {
+  ArxDecodedPayloadTooLargeError,
   assertArxWireByteLength,
   envelopeFromParsedArxTuple,
   envelopeToArx2Tuple,
@@ -29,7 +30,12 @@ import {
   type Arx4PriorKind,
 } from "@/lib/payload/arx4-codec";
 import { Arx6ContextModel } from "@/lib/payload/arx6-model";
-import { MAX_DECODED_PAYLOAD_LENGTH, type PayloadEnvelope } from "@/lib/payload/schema";
+import { Arx6V2ContextModel } from "@/lib/payload/arx6-v2-model";
+import { arx6Checksum, decodeArx6String, encodeArx6String } from "@/lib/payload/arx6-bytes";
+import { normalizeEnvelope } from "@/lib/payload/envelope";
+import { isPayloadEnvelope, MAX_DECODED_PAYLOAD_LENGTH, type PayloadEnvelope } from "@/lib/payload/schema";
+
+const ARX6_VERSION = "2";
 
 // ---------------------------------------------------------------------------
 // Diff patch elision
@@ -241,11 +247,12 @@ export function restoreDiffPatch(elided: string, spendChars: (count: number) => 
 }
 
 /** A running charge against the decoded payload budget that throws once the total passes it. */
-function createDecodedLengthMeter(): (count: number) => void {
+function createDecodedLengthMeter(v2 = false): (count: number) => void {
   let spent = 0;
   return (count) => {
     spent += count;
     if (spent > MAX_DECODED_PAYLOAD_LENGTH) {
+      if (v2) throw new ArxDecodedPayloadTooLargeError();
       throw new Error("A restored arx6 diff patch exceeds the decoded payload budget.");
     }
   };
@@ -292,17 +299,13 @@ const BODY_INDEXES_BY_KIND_CODE = new Map<unknown, readonly number[]>([
 /** The last body runs up to the tuple's newline, so it declares this instead of a length. */
 const IMPLIED_BODY_LENGTH = -1;
 
-/** In `u` mode a surrogate range matches only unpaired halves, which TextEncoder turns into U+FFFD. */
-const LONE_SURROGATE_PATTERN = /[\uD800-\uDFFF]/u;
-
 /**
  * The bodies in tuple order, a newline, then the tuple with each body replaced by its UTF-16 length.
  * JSON escapes every newline inside the tuple, so the last newline always starts it. The tuple goes
- * last because a truncated link garbles the end of the container: there it breaks the tuple, which
- * decode rejects, where a last body would just come back short. Null when a body holds a lone
- * surrogate, which no UTF-8 container can carry.
+ * last so most damaged streams fail structural validation too. V2 additionally checks the raw
+ * bytes' CRC32 and uses WTF-8 to preserve every UTF-16 code unit, including lone surrogates.
  */
-function envelopeToRawContainer(envelope: PayloadEnvelope): string | null {
+function envelopeToRawContainer(envelope: PayloadEnvelope): string {
   const tuple = envelopeToArx2Tuple(envelope);
   const artifacts: unknown[][] = tuple[0] === 3 ? [tuple[1]] : tuple[1];
   const bodies: string[] = [];
@@ -316,7 +319,12 @@ function envelopeToRawContainer(envelope: PayloadEnvelope): string | null {
     }
     for (const index of BODY_INDEXES_BY_KIND_CODE.get(artifact[0]) ?? []) {
       const body = artifact[index];
-      if (typeof body !== "string") continue;
+      if (typeof body !== "string") {
+        // The public schema permits a diff pair with an unrelated non-string patch (or vice versa).
+        // The tuple decoder drops those optional values. They must not become body lengths here.
+        if (body !== undefined && body !== null) artifact[index] = null;
+        continue;
+      }
       bodies.push(body);
       artifact[index] = body.length;
       lastBodySlot = { artifact, index };
@@ -324,12 +332,11 @@ function envelopeToRawContainer(envelope: PayloadEnvelope): string | null {
   }
   if (lastBodySlot) lastBodySlot.artifact[lastBodySlot.index] = IMPLIED_BODY_LENGTH;
 
-  const container = `${bodies.join("")}\n${JSON.stringify(tuple)}`;
-  return LONE_SURROGATE_PATTERN.test(container) ? null : container;
+  return `${bodies.join("")}\n${JSON.stringify(tuple)}`;
 }
 
 /** Inverse of {@link envelopeToRawContainer}. Throws on any tuple or length the encoder cannot emit. */
-function rawContainerToEnvelope(container: string): PayloadEnvelope {
+function rawContainerToEnvelope(container: string, v2 = false): PayloadEnvelope {
   const bodiesEnd = container.lastIndexOf("\n");
   if (bodiesEnd < 0) throw new Error("The arx6 container has no tuple line.");
 
@@ -364,7 +371,7 @@ function rawContainerToEnvelope(container: string): PayloadEnvelope {
   });
   if (offset !== bodiesEnd) throw new Error("The arx6 container has text past its last body.");
 
-  const spendRestoredChars = createDecodedLengthMeter();
+  const spendRestoredChars = createDecodedLengthMeter(v2);
   for (const artifact of artifacts as unknown[][]) {
     if (artifact[0] !== ELIDED_DIFF_KIND_CODE) continue;
     if (typeof artifact[2] !== "string") throw new Error("An elided arx6 diff has no patch.");
@@ -425,10 +432,12 @@ class BinaryArithmeticDecoder {
   private x1 = 0;
   private x2 = 0xffffffff;
   private x = 0;
+  private readonly committedHead: number[] | null;
 
-  constructor(input: Uint8Array, start: number) {
+  constructor(input: Uint8Array, start: number, trackInterval = false) {
     this.input = input;
     this.offset = start;
+    this.committedHead = trackInterval ? Array.from(input.subarray(0, start)) : null;
     for (let index = 0; index < 4; index++) {
       this.x = ((this.x << 8) | this.readByte()) >>> 0;
     }
@@ -460,11 +469,17 @@ class BinaryArithmeticDecoder {
     }
 
     while (((this.x1 ^ this.x2) & 0xff000000) === 0) {
+      this.committedHead?.push(this.x2 >>> 24);
       this.x1 = (this.x1 << 8) >>> 0;
       this.x2 = ((this.x2 << 8) | 0xff) >>> 0;
       this.x = ((this.x << 8) | this.readByte()) >>> 0;
     }
     return bit;
+  }
+
+  finalInterval(): CodedInterval {
+    if (this.committedHead === null) throw new Error("The legacy decoder does not track its final interval.");
+    return { head: Uint8Array.from(this.committedHead), x1: this.x1, x2: this.x2 };
   }
 }
 
@@ -492,8 +507,10 @@ function decodeVarint(input: Uint8Array): { value: number; bytesRead: number } {
   throw new Error("invalid or truncated varint");
 }
 
+type ByteModel = Pick<Arx6ContextModel, "processKnownByte" | "processDecodedByte">;
+
 /** Runs the priming bytes through the model uncoded, so both sides start from the same statistics. */
-function primeModel(model: Arx6ContextModel, primeBytes: Uint8Array): void {
+function primeModel(model: ByteModel, primeBytes: Uint8Array): void {
   for (const byte of primeBytes) {
     model.processKnownByte(byte, () => {});
   }
@@ -519,6 +536,7 @@ const FINAL_FRACTION_RADIX = BigInt(FINAL_FRACTION_DIGITS.length);
 const DIGIT_CHUNK_LENGTH = 24;
 const BIGINT_0 = BigInt(0);
 const BIGINT_1 = BigInt(1);
+const CHECKSUM_MASK = (BIGINT_1 << BigInt(32)) - BIGINT_1;
 
 /** 66^exponent by square-and-multiply, off `**` so no downlevel transform can hand a BigInt to Math.pow. */
 function fractionRadixPower(exponent: number): bigint {
@@ -599,7 +617,7 @@ function radixValue(digits: string): bigint {
 }
 
 /** The fewest digits whose fraction, expanded the way the decoder expands it, lands in `interval`. */
-function intervalToFractionDigits({ head, x1, x2 }: CodedInterval): string {
+export function encodeArx6Fraction({ head, x1, x2 }: CodedInterval, checksum?: number): string {
   // The code's first byteCount bytes must read as a value in [low, low + width).
   const byteCount = head.length + 4;
   const shift = BigInt(8 * byteCount);
@@ -607,16 +625,27 @@ function intervalToFractionDigits({ head, x1, x2 }: CodedInterval): string {
   const width = BigInt(x2 - x1 + 1);
 
   // The smallest numerator at or above low/2^shift is the candidate; it fits when
-  // numerator*2^shift - low*denominator < width*denominator. Fitting digit counts are upward-closed (an
-  // n-digit fraction is also an (n+1)-digit one), so the scan starts from a lower bound set by the width.
+  // numerator*2^shift - low*denominator < width*denominator. V2 additionally requires
+  // numerator mod 2^32 = CRC32(header || raw bytes). Round the candidate up to that residue class:
+  // N = ceil(low*D/2^shift) + ((CRC - ceil(low*D/2^shift)) mod 2^32).
+  // This integrates exactly 32 integrity bits into the same fraction instead of wasting a whole
+  // six-character suffix. Constrained fitting counts need not be upward-closed.
   const precisionBits = 8 * byteCount - 4 * width.toString(16).length;
-  const firstCount = Math.max(0, Math.floor((precisionBits * 64) / FRACTION_RADIX_BITS_TIMES_64) - 2);
+  // Keep the original heuristic frozen for old wires. For v2, start at a rigorous lower bound:
+  // byteLength(D) + 5 >= byteCount implies D >= 256^(byteCount - 6), while D <= 66^n.
+  // The upper bound on log2(66) makes this estimate round down. Checking every count from here
+  // finds the true shortest materializable fraction, even when a tiny interval contains a simple
+  // fraction such as 1/2 (interval width alone cannot rule out a short representation).
+  const firstCount = checksum === undefined
+    ? Math.max(0, Math.floor((precisionBits * 64) / FRACTION_RADIX_BITS_TIMES_64) - 2)
+    : Math.max(0, Math.floor((8 * (byteCount - 6) * 64) / FRACTION_RADIX_BITS_TIMES_64));
   for (let digitCount = firstCount; ; digitCount++) {
     const denominator = fractionDenominator(digitCount);
     if (fractionCodeByteLength(denominator) < byteCount) continue;
 
     const scaled = low * denominator;
-    const numerator = (scaled + (BIGINT_1 << shift) - BIGINT_1) >> shift;
+    let numerator = (scaled + (BIGINT_1 << shift) - BIGINT_1) >> shift;
+    if (checksum !== undefined) numerator += (BigInt(checksum) - numerator) & CHECKSUM_MASK;
     if (numerator < denominator && (numerator << shift) - scaled < width * denominator) {
       if (digitCount === 0) return "";
       const last = FINAL_FRACTION_DIGITS[Number(numerator % FINAL_FRACTION_RADIX)];
@@ -626,7 +655,7 @@ function intervalToFractionDigits({ head, x1, x2 }: CodedInterval): string {
 }
 
 /** The code a digit string stands for: its fraction's base-256 expansion, see {@link fractionCodeByteLength}. */
-function fractionDigitsToBytes(digits: string): Uint8Array {
+function fractionDigitsToCode(digits: string): { bytes: Uint8Array; checksum: number } {
   let numerator = BIGINT_0;
   if (digits.length > 0) {
     const last = FINAL_FRACTION_DIGITS.indexOf(digits.charAt(digits.length - 1));
@@ -636,7 +665,10 @@ function fractionDigitsToBytes(digits: string): Uint8Array {
 
   const denominator = fractionDenominator(digits.length);
   const byteLength = fractionCodeByteLength(denominator);
-  return bigIntToBytes((numerator << BigInt(8 * byteLength)) / denominator, byteLength);
+  return {
+    bytes: bigIntToBytes((numerator << BigInt(8 * byteLength)) / denominator, byteLength),
+    checksum: Number(numerator & CHECKSUM_MASK),
+  };
 }
 
 /**
@@ -645,32 +677,67 @@ function fractionDigitsToBytes(digits: string): Uint8Array {
  * exercised without an envelope.
  */
 export function encodeArx6Wire(input: Uint8Array, primeBytes: Uint8Array | null): string {
-  const model = new Arx6ContextModel();
+  return encodeWire(input, primeBytes, new Arx6ContextModel());
+}
+
+function encodeWire(input: Uint8Array, primeBytes: Uint8Array | null, model: ByteModel, checksumHeader?: string): string {
   if (primeBytes) primeModel(model, primeBytes);
 
   const coder = new BinaryArithmeticEncoder(encodeVarint(input.length));
   for (const byte of input) {
     model.processKnownByte(byte, (probability, bit) => coder.writeBit(bit, probability));
   }
-  return intervalToFractionDigits(coder.finalInterval());
+  return encodeArx6Fraction(coder.finalInterval(), checksumHeader === undefined ? undefined : arx6Checksum(checksumHeader, input));
 }
 
 /** Inverse of {@link encodeArx6Wire}, given the same priming bytes. Throws on a malformed digit. */
 export function decodeArx6Wire(digits: string, primeBytes: Uint8Array | null): Uint8Array {
-  const code = fractionDigitsToBytes(digits);
+  return decodeWire(digits, primeBytes, () => new Arx6ContextModel());
+}
+
+function decodeWire(
+  digits: string,
+  primeBytes: Uint8Array | null,
+  createModel: () => ByteModel,
+  checksumHeader?: string,
+): Uint8Array {
+  const { bytes: code, checksum } = fractionDigitsToCode(digits);
+  const canonical = checksumHeader !== undefined;
   const { value: byteLength, bytesRead } = decodeVarint(code);
   // The varint is attacker-controlled and reaches 2^56, so bound it before allocating the output.
   assertArxWireByteLength(byteLength);
 
-  const model = new Arx6ContextModel();
+  if (canonical && encodeVarint(byteLength).length !== bytesRead) {
+    throw new Error("The arx6 byte length is not a canonical varint.");
+  }
+  const model = createModel();
   if (primeBytes) primeModel(model, primeBytes);
 
-  const coder = new BinaryArithmeticDecoder(code, bytesRead);
+  const coder = new BinaryArithmeticDecoder(code, bytesRead, canonical);
   const output = new Uint8Array(byteLength);
   for (let index = 0; index < byteLength; index++) {
     output[index] = model.processDecodedByte((probability) => coder.readBit(probability));
   }
+  if (canonical && arx6Checksum(checksumHeader, output) !== checksum) {
+    throw new Error("The arx6 payload checksum does not match.");
+  }
+  // The decoder already computed the encoder's final interval. Comparing its shortest fraction
+  // rejects aliases and unused trailing digits without running the expensive model a second time.
+  if (canonical && encodeArx6Fraction(coder.finalInterval(), checksum) !== digits) {
+    throw new Error("The arx6 fraction is not canonical.");
+  }
   return output;
+}
+
+/** Code bytes with the v2 model, embedding CRC32(header || input) into the canonical fraction numerator. */
+export function encodeArx6V2Wire(input: Uint8Array, primeBytes: Uint8Array | null, checksumHeader = ""): string {
+  assertArxWireByteLength(input.length);
+  return encodeWire(input, primeBytes, new Arx6V2ContextModel(), checksumHeader);
+}
+
+/** Decode the v2 wire and reject noncanonical fractions without a second model pass. */
+export function decodeArx6V2Wire(digits: string, primeBytes: Uint8Array | null, checksumHeader = ""): Uint8Array {
+  return decodeWire(digits, primeBytes, () => new Arx6V2ContextModel(), checksumHeader);
 }
 
 // ---------------------------------------------------------------------------
@@ -710,30 +777,51 @@ export function arx6PriorBytes(priorId: Arx4PriorId): Uint8Array | null {
 // ---------------------------------------------------------------------------
 
 /**
- * Compresses an envelope with the arx6 pipeline into `<priorId><wire>`, so a fragment is `g` plus the
- * returned string. The prior id follows arx4's rules, including the downgrade to `s` when the curated
- * asset is not loaded.
- *
- * Returns null for an envelope holding a lone surrogate: UTF-8 cannot carry one, while arx5's JSON
- * escaping can, so auto-selection falls back to arx5 for it.
+ * Compress an envelope as `2<priorId><fraction>`, following compact tag `g`.
+ * WTF-8 preserves lone surrogates; the checksum binds raw bytes to the version and prior id.
+ * Without an explicit prior, compare the kind prior with unprimed coding and keep the shorter wire.
  */
-export function arx6CompressEnvelope(envelope: PayloadEnvelope, priorId?: Arx4PriorId): string | null {
-  const container = envelopeToRawContainer(envelope);
-  if (container === null) return null;
+export function arx6CompressEnvelope(envelope: PayloadEnvelope, priorId?: Arx4PriorId): string {
+  const normalized = normalizeV2Envelope({ ...envelope, codec: "arx6" });
+  const bytes = encodeArx6String(envelopeToRawContainer(normalized));
+  const selectedPriorId = encodablePriorId(priorId ?? arx4PriorIdForEnvelope(normalized));
+  const encodeWithPrior = (id: Arx4PriorId) => {
+    const header = `${ARX6_VERSION}${id}`;
+    return `${header}${encodeArx6V2Wire(bytes, arx6PriorBytes(id), `g${header}`)}`;
+  };
+  const preferred = encodeWithPrior(selectedPriorId);
+  if (priorId !== undefined || selectedPriorId === "n") return preferred;
+  const unprimed = encodeWithPrior("n");
+  return unprimed.length < preferred.length ? unprimed : preferred;
+}
 
-  const selectedPriorId = encodablePriorId(priorId ?? arx4PriorIdForEnvelope(envelope));
-  return `${selectedPriorId}${encodeArx6Wire(new TextEncoder().encode(container), arx6PriorBytes(selectedPriorId))}`;
+function normalizeV2Envelope(envelope: unknown): PayloadEnvelope {
+  if (!isPayloadEnvelope(envelope)) throw new Error("Invalid arx6 envelope.");
+  const normalized = normalizeEnvelope(envelope);
+  if (!normalized.ok) throw new Error(normalized.message);
+  if (JSON.stringify(normalized.envelope).length > MAX_DECODED_PAYLOAD_LENGTH) {
+    throw new ArxDecodedPayloadTooLargeError();
+  }
+  return normalized.envelope;
+}
+
+/** Locate and validate the prior id in either the original ARX6 payload or the versioned v2 payload. */
+export function getArx6PriorId(encoded: string): Arx4PriorId {
+  const priorId = encoded.charAt(encoded.startsWith(ARX6_VERSION) ? 1 : 0);
+  if (!isArx4PriorId(priorId)) throw new Error(`Unsupported arx6 prior id "${priorId}".`);
+  return priorId;
 }
 
 /**
- * Decompresses an arx6 payload (prior id char + wire) and rebuilds the envelope stamped `arx6`.
- * Throws on an unknown prior id, a digit outside the wire alphabet, bytes that are not UTF-8, or a
- * container whose tuple or lengths do not add up, rather than rendering a guess.
+ * Decode original or v2 ARX6 payloads. V2 validates a canonical fraction, CRC32, strict WTF-8,
+ * artifact schema and the complete normalized envelope size before exposing artifact contents.
  */
 export function arx6DecompressEnvelope(encoded: string): PayloadEnvelope {
-  const priorId = encoded.slice(0, 1);
-  if (!isArx4PriorId(priorId)) {
-    throw new Error(`Unsupported arx6 prior id "${priorId}".`);
+  const priorId = getArx6PriorId(encoded);
+  if (encoded.startsWith(ARX6_VERSION)) {
+    if (encoded.length <= 2) throw new Error("The arx6 v2 payload is truncated.");
+    const bytes = decodeArx6V2Wire(encoded.slice(2), arx6PriorBytes(priorId), `g${encoded.slice(0, 2)}`);
+    return normalizeV2Envelope(rawContainerToEnvelope(decodeArx6String(bytes), true));
   }
 
   const containerBytes = decodeArx6Wire(encoded.slice(1), arx6PriorBytes(priorId));

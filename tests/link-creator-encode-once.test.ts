@@ -10,8 +10,8 @@ import { createGeneratedArtifactLinkAsync, type LinkCreatorDraft } from "@/lib/p
 /**
  * A generated link needs two selections over the same candidates: the copy-paste URL uses each
  * codec's default budget while the markdown destination is measured percent-escaped. Those are two
- * reads of one pool, not two encodes: the context mixer costs ~770 ms per 60 KB artifact, so a
- * second pass would double every link creation's main-thread stall for identical bytes.
+ * reads of one pool, not two encodes. Both mixer candidates are expensive, so re-encoding the
+ * pool for the second surface would double the work for identical bytes.
  */
 const mixerCompressions = vi.fn();
 
@@ -83,11 +83,10 @@ describe("async link creation", () => {
     }
   });
 
-  // arx5 sits right behind arx6 in the auto priority, so this also pins that arx5 does not spend a
-  // second mixer pass once arx6 has coded the payload.
-  it("codes the payload once in auto mode too, where arx6 leads the codec priority", async () => {
+  // Automatic selection evaluates both mixers, but neither is rerun for the Markdown surface.
+  it("codes each mixer candidate once in auto mode", async () => {
     await createGeneratedArtifactLinkAsync({ ...draft, codec: "auto" }, "https://agent-render.com/");
 
-    expect(mixerCompressions).toHaveBeenCalledTimes(1);
+    expect(mixerCompressions).toHaveBeenCalledTimes(2);
   });
 });

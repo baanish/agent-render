@@ -2,7 +2,7 @@
 //
 // Spawns the real self-hosted server against a ROOT build (out/) and drives it in headless chromium
 // to confirm the strict Content-Security-Policy does not break anything: the stored-artifact viewer
-// renders all five artifact kinds + mermaid, WebAssembly (brotli-wasm for ARX decode) instantiates,
+// renders all five artifact kinds + mermaid, ARX6 and Brotli encode/decode in the real payload worker,
 // and every exported static route loads — each under its own per-file script hashes — with zero CSP
 // violations.
 //
@@ -12,7 +12,7 @@ import { spawn } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
 import net from "node:net";
 import path from "node:path";
-import { chromium } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
 
 const repoRoot = process.cwd();
 if (!existsSync(path.join(repoRoot, "out", "index.html"))) {
@@ -125,14 +125,41 @@ try {
     await p.close();
   }
 
+  // 3) The real creator and preview execute both context mixing and Brotli WASM in the worker.
+  // A trivial main-thread WebAssembly module above cannot catch worker-specific CSP failures.
+  const workerCodecs = {};
+  for (const [codec, tag] of [["arx6", "g2"], ["arx2", "b"]]) {
+    const page = await newPage();
+    const workerUrls = [];
+    page.on("worker", (worker) => workerUrls.push(worker.url()));
+    const response = await page.goto(base, { waitUntil: "networkidle" });
+    const marker = `The ${codec} worker preserved café and 🚀 under strict CSP.`;
+    await page.getByLabel("Title").fill(`CSP ${codec}`);
+    await page.getByRole("textbox", { name: /^Content\b/ }).fill(`# CSP ${codec}\n\n${marker}\n`);
+    await page.getByRole("button", { name: codec, exact: true }).click();
+    await page.getByRole("button", { name: "Generate link", exact: true }).click();
+    const generatedLink = page.getByLabel("Generated agent-render link");
+    await expect(generatedLink).toBeVisible({ timeout: 60_000 });
+    const generatedHash = new URL(await generatedLink.inputValue()).hash;
+    expect(generatedHash.startsWith(`#${tag}`)).toBe(true);
+    await page.getByRole("button", { name: "Preview here", exact: true }).click();
+    await expect(page.locator('[data-testid="viewer-shell"]')).toHaveAttribute("data-renderer-ready", "true", { timeout: 60_000 });
+    await expect(page.locator(".markdown-article")).toContainText(marker);
+    workerCodecs[codec] = !!response.headers()["content-security-policy"] &&
+      workerUrls.some((url) => url.startsWith(`${base}/_next/`));
+    await page.close();
+  }
+
   await browser.close();
 
   console.log("viewer CSP header:", cspPresent, "| mermaid:", mermaid, "| WASM:", wasm);
   console.log("static routes (status 200 + CSP):", JSON.stringify(routeOk));
+  console.log("worker codec generation + preview (strict CSP):", JSON.stringify(workerCodecs));
   console.log("CSP violations:", violations.length);
   violations.forEach((v) => console.log("  ✗", v));
 
-  const ok = cspPresent && mermaid && wasm && Object.values(routeOk).every(Boolean) && violations.length === 0;
+  const ok = cspPresent && mermaid && wasm && Object.values(routeOk).every(Boolean) &&
+    Object.values(workerCodecs).every(Boolean) && violations.length === 0;
   console.log("\nVERDICT:", ok ? "PASS" : "FAIL");
   cleanup();
   process.exit(ok ? 0 : 1);

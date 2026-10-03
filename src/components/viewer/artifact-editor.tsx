@@ -134,6 +134,7 @@ export function ArtifactEditor({
   >("idle");
   const [isGenerating, setIsGenerating] = useState(false);
   const generationRequestRef = useRef(0);
+  const generationAbortRef = useRef<AbortController | null>(null);
   const copyTokenRef = useRef(0);
   const markdownCopyTokenRef = useRef(0);
   const resultRef = useRef<HTMLElement | null>(null);
@@ -248,6 +249,7 @@ export function ArtifactEditor({
     }
 
     generationRequestRef.current += 1;
+    generationAbortRef.current?.abort();
     copyTokenRef.current += 1;
     markdownCopyTokenRef.current += 1;
     setEditingArtifactId(targetId);
@@ -272,6 +274,11 @@ export function ArtifactEditor({
     setMarkdownLinkCopyState("idle");
     setError(null);
   }, [draftVersion]);
+
+  useEffect(() => () => {
+    generationRequestRef.current += 1;
+    generationAbortRef.current?.abort();
+  }, []);
 
   // CodeView treats item.version as the controlled-update boundary. Bump it when a filename
   // changes, and publish the current draft contents with the rename so the controlled item
@@ -313,6 +320,9 @@ export function ArtifactEditor({
   const handleGenerate = async () => {
     const requestId = generationRequestRef.current + 1;
     generationRequestRef.current = requestId;
+    generationAbortRef.current?.abort();
+    const abort = new AbortController();
+    generationAbortRef.current = abort;
     setIsGenerating(true);
 
     try {
@@ -338,6 +348,7 @@ export function ArtifactEditor({
         nextEnvelope,
         getShareBaseUrl(),
         draft.codec,
+        abort.signal,
       );
       if (generationRequestRef.current !== requestId) {
         return;

@@ -353,11 +353,21 @@ async function loadDictSlot(slot: DictSlot, source?: string | ArxDictionary): Pr
 
 /** Load a dictionary slot from a pre-parsed object (synchronous). */
 function loadDictSlotSync(slot: DictSlot, dict: ArxDictionary): number {
-  slot.table = buildSubstitutionTable(slot.buildPairs(dict));
-  slot.dictionary = dict;
-  slot.version = dict.version;
+  // The substitution table and the mixer's prior text must describe the same immutable snapshot.
+  // Keeping the caller's arrays here lets later mutation change only the prior, breaking old links.
+  const installed = {
+    version: dict.version,
+    singleByteSlots: [...dict.singleByteSlots],
+    extendedSlots: [...dict.extendedSlots],
+  };
+  Object.freeze(installed.singleByteSlots);
+  Object.freeze(installed.extendedSlots);
+  Object.freeze(installed);
+  slot.table = buildSubstitutionTable(slot.buildPairs(installed));
+  slot.dictionary = installed;
+  slot.version = installed.version;
   slot.loaded = true;
-  return dict.version;
+  return installed.version;
 }
 
 /**

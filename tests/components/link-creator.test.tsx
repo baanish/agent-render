@@ -7,6 +7,7 @@ import type { GeneratedArtifactLink, LinkCreatorDraft } from "@/lib/payload/link
 
 type PendingGeneration = {
   draft: LinkCreatorDraft;
+  signal?: AbortSignal;
   resolve: (link: GeneratedArtifactLink) => void;
   reject: (error: Error) => void;
 };
@@ -16,9 +17,9 @@ const generationMock = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/payload/link-creator", () => ({
-  createGeneratedArtifactLinkAsync: vi.fn((draft: LinkCreatorDraft) => {
+  createGeneratedArtifactLinkAsync: vi.fn((draft: LinkCreatorDraft, _baseUrl?: string, signal?: AbortSignal) => {
     return new Promise<GeneratedArtifactLink>((resolve, reject) => {
-      generationMock.pending.push({ draft, resolve, reject });
+      generationMock.pending.push({ draft, signal, resolve, reject });
     });
   }),
 }));
@@ -83,6 +84,8 @@ describe("LinkCreator", () => {
     await user.type(screen.getByLabelText("Title"), "Fresh brief");
     await user.click(screen.getByRole("button", { name: "Generate link" }));
     await waitFor(() => expect(generationMock.pending).toHaveLength(2));
+    expect(generationMock.pending[0].signal?.aborted).toBe(true);
+    expect(generationMock.pending[1].signal?.aborted).toBe(false);
 
     await act(async () => {
       generationMock.pending[1].resolve(createGeneratedLink("Fresh brief"));
@@ -133,6 +136,23 @@ describe("LinkCreator", () => {
     await user.type(screen.getByLabelText("Title"), " updated");
 
     expect(screen.getByText("Draft changed since last generation.")).toBeVisible();
+  });
+
+  it("marks a completed snapshot stale when its draft changed during generation", async () => {
+    const user = userEvent.setup();
+    render(<LinkCreator onPreviewHash={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+    await waitFor(() => expect(generationMock.pending).toHaveLength(1));
+    await user.type(screen.getByLabelText("Title"), " updated while encoding");
+    await act(async () => {
+      generationMock.pending[0].resolve(createGeneratedLink("Product brief"));
+    });
+
+    expect(screen.getByText("Draft changed since last generation.")).toBeVisible();
+    expect(screen.getByLabelText<HTMLTextAreaElement>("Generated agent-render link").value).toContain("Product brief");
+    // The creator intentionally permits sharing its earlier snapshot, unlike the artifact editor.
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeEnabled();
   });
 
   it("loads a local file into the draft without generating a link", async () => {
