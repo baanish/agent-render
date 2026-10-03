@@ -699,6 +699,54 @@ for (let i = 0; i < ALPHABET.length; i++) {
   CHAR_TO_INDEX[ALPHABET.charCodeAt(i)] = i;
 }
 
+const BYTE_HEX = Array.from({ length: 256 }, (_, byte) => byte.toString(16).padStart(2, "0"));
+const RADIX_LEAF_LEVEL = 4;
+
+/** Parse the same big-endian integer without repeatedly copying an ever-growing BigInt per byte. */
+function bytesToRadixInteger(bytes: Uint8Array): bigint {
+  const hex = new Array<string>(bytes.length);
+  for (let index = 0; index < bytes.length; index++) hex[index] = BYTE_HEX[bytes[index]];
+  return bytes.length === 0 ? BIGINT_0 : BigInt(`0x${hex.join("")}`);
+}
+
+/**
+ * The minimal radix representation, exactly matching repeated remainder/division by the base.
+ * At each split N = q * B^k + r, so concatenating q's digits with exactly k digits for r preserves
+ * the integer. Only the leading branch may omit zeros; low branches must retain their full width.
+ * Balanced splits avoid dividing the entire large integer once per output digit. All powers are
+ * per-call values, and small leaves use the original conversion, with no floating-point estimates.
+ */
+function radixIntegerDigits(value: bigint, alphabet: string | readonly string[]): string {
+  if (value === BIGINT_0) return "";
+  const base = BigInt(alphabet.length);
+  // powers[level] = B^(2^level), an exclusive upper bound for a block at that level.
+  const powers = [base];
+  while (powers[powers.length - 1] <= value) {
+    const previous = powers[powers.length - 1];
+    powers.push(previous * previous);
+  }
+
+  const convert = (number: bigint, level: number, fixedWidth: boolean): string => {
+    if (level <= RADIX_LEAF_LEVEL) {
+      const chars: string[] = [];
+      const width = fixedWidth ? 1 << level : 0;
+      while (number > BIGINT_0 || chars.length < width) {
+        chars.push(alphabet[Number(number % base)]);
+        number /= base;
+      }
+      return chars.reverse().join("");
+    }
+
+    const divisor = powers[level - 1];
+    const high = number / divisor;
+    const low = number % divisor;
+    if (!fixedWidth && high === BIGINT_0) return convert(low, level - 1, false);
+    return convert(high, level - 1, fixedWidth) + convert(low, level - 1, true);
+  };
+
+  return convert(value, powers.length - 1, false);
+}
+
 /** Encodes a non-negative integer as minimal-width big-endian base-77 digits (>= 1 digit). */
 function encodeBase76Length(length: number): string {
   if (length === 0) return ALPHABET[0];
@@ -712,21 +760,8 @@ function encodeBase76Length(length: number): string {
 /** Public API for `encodeBase76`. */
 export function encodeBase76(bytes: Uint8Array): string {
   if (bytes.length === 0) return "";
-
-  let num = BIGINT_0;
-  for (const b of bytes) {
-    num = (num << BIGINT_8) | BigInt(b);
-  }
-
-  const chars: string[] = [];
-  while (num > BIGINT_0) {
-    chars.push(ALPHABET[Number(num % BASE)]);
-    num /= BASE;
-  }
-  chars.reverse();
-
   const lenPrefix = encodeBase76LengthPrefix(bytes.length);
-  return lenPrefix + chars.join("");
+  return lenPrefix + radixIntegerDigits(bytesToRadixInteger(bytes), ALPHABET);
 }
 
 /** Builds the length prefix, choosing the legacy 2-char shape or the extended "=" shape by size. */
@@ -808,22 +843,9 @@ for (let i = 0; i < UNICODE_ALPHABET.length; i++) {
 /** Public API for `encodeBase1k`. */
 export function encodeBase1k(bytes: Uint8Array): string {
   if (bytes.length === 0) return "";
-
-  let num = BIGINT_0;
-  for (const b of bytes) {
-    num = (num << BIGINT_8) | BigInt(b);
-  }
-
-  const chars: string[] = [];
-  while (num > BIGINT_0) {
-    chars.push(UNICODE_ALPHABET[Number(num % UBASE)]);
-    num /= UBASE;
-  }
-  chars.reverse();
-
   const lenHigh = Math.floor(bytes.length / UNICODE_ALPHABET.length);
   const lenLow = bytes.length % UNICODE_ALPHABET.length;
-  return UNICODE_ALPHABET[lenHigh] + UNICODE_ALPHABET[lenLow] + chars.join("");
+  return UNICODE_ALPHABET[lenHigh] + UNICODE_ALPHABET[lenLow] + radixIntegerDigits(bytesToRadixInteger(bytes), UNICODE_ALPHABET);
 }
 
 /** Public API for `decodeBase1k`. */
@@ -1047,22 +1069,9 @@ const BMP_MARKER = "\uFFF0";
 /** Public API for `encodeBaseBMP`. */
 export function encodeBaseBMP(bytes: Uint8Array): string {
   if (bytes.length === 0) return "";
-
-  let num = BIGINT_0;
-  for (const b of bytes) {
-    num = (num << BIGINT_8) | BigInt(b);
-  }
-
-  const chars: string[] = [];
-  while (num > BIGINT_0) {
-    chars.push(BMP_ALPHABET[Number(num % BMPBASE)]);
-    num /= BMPBASE;
-  }
-  chars.reverse();
-
   const lenHigh = Math.floor(bytes.length / BMP_ALPHABET.length);
   const lenLow = bytes.length % BMP_ALPHABET.length;
-  return BMP_MARKER + BMP_ALPHABET[lenHigh] + BMP_ALPHABET[lenLow] + chars.join("");
+  return BMP_MARKER + BMP_ALPHABET[lenHigh] + BMP_ALPHABET[lenLow] + radixIntegerDigits(bytesToRadixInteger(bytes), BMP_ALPHABET);
 }
 
 /** Public API for `decodeBaseBMP`. */
