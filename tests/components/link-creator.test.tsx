@@ -155,6 +155,32 @@ describe("LinkCreator", () => {
     expect(screen.getByRole("button", { name: "Copy link" })).toBeEnabled();
   });
 
+  it("keeps its earlier snapshot when navigation cancels pending regeneration", async () => {
+    const user = userEvent.setup();
+    const onPreviewHash = vi.fn();
+    const { rerender } = render(<LinkCreator onPreviewHash={onPreviewHash} navigationHash="" />);
+
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+    await waitFor(() => expect(generationMock.pending).toHaveLength(1));
+    await act(async () => {
+      generationMock.pending[0].resolve(createGeneratedLink("Product brief"));
+    });
+
+    await user.type(screen.getByLabelText("Title"), " updated");
+    await user.click(screen.getByRole("button", { name: "Generate link" }));
+    await waitFor(() => expect(generationMock.pending).toHaveLength(2));
+    rerender(<LinkCreator onPreviewHash={onPreviewHash} navigationHash="#psample" />);
+
+    expect(generationMock.pending[1].signal?.aborted).toBe(true);
+    await act(async () => {
+      generationMock.pending[1].reject(new DOMException("Payload processing was cancelled.", "AbortError"));
+    });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByText("Draft changed since last generation.")).toBeVisible();
+    expect(screen.getByLabelText<HTMLTextAreaElement>("Generated agent-render link").value).toContain("Product brief");
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeEnabled();
+  });
+
   it("loads a local file into the draft without generating a link", async () => {
     const user = userEvent.setup();
 

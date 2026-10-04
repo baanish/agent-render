@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 type LinkCreatorProps = {
   onPreviewHash: (hash: string) => void;
+  navigationHash?: string;
 };
 
 const fieldHints: Record<ArtifactKind, string> = {
@@ -66,9 +67,10 @@ function getBodyFieldLabel(kind: ArtifactKind) {
  * Builds shareable fragment links from pasted or locally loaded artifact content
  * in the home empty state flow. File selection is read in the browser only.
  * Accepts `onPreviewHash` so the parent shell can preview the generated fragment before navigation.
+ * Cancels pending generation when `navigationHash` changes, before the shell starts decoding it.
  * Generates links client-side with validation, and exposes inline copy/error/stale-result states.
  */
-export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
+export function LinkCreator({ onPreviewHash, navigationHash = "" }: LinkCreatorProps) {
   const [{ draft, version: draftVersion }, setDraftState] = useState({
     draft: defaultLinkCreatorDraft,
     version: 0,
@@ -110,10 +112,12 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
     setError(null);
   }, [draftVersion]);
 
-  useEffect(() => () => {
+  // Navigation keeps the creator mounted until decoding finishes. Cancel in layout cleanup so
+  // its obsolete encode releases the shared worker before the shell's passive decode effect.
+  useLayoutEffect(() => () => {
     generationRequestRef.current += 1;
     generationAbortRef.current?.abort();
-  }, []);
+  }, [navigationHash]);
 
   const updateDraft = <K extends keyof LinkCreatorDraft>(
     field: K,

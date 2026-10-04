@@ -155,7 +155,7 @@ function assertArx2OverlayNotNewerThanExpected(): void {
   }
 }
 
-async function ensureArxDictionaryLoaded(): Promise<void> {
+async function ensureArxDictionaryLoaded(requireSupportedVersion = true): Promise<void> {
   if (!isExternalDictionaryLoaded()) {
     arxDictionaryLoadPromise ??= loadArxDictionary()
       .then((version) => {
@@ -173,13 +173,13 @@ async function ensureArxDictionaryLoaded(): Promise<void> {
     await arxDictionaryLoadPromise;
   }
 
-  // Runs for both fetched and injected (sync) dictionaries so a forward-incompatible skew can't slip
-  // through whichever way the dictionary was loaded.
-  assertArxDictionaryNotNewerThanExpected();
+  // Check fetched and injected dictionaries alike. ARX6 encoding can defer this check until it
+  // selects an exact-pinned prior or the model that uses no assets.
+  if (requireSupportedVersion) assertArxDictionaryNotNewerThanExpected();
 }
 
-async function ensureArx2DictionariesLoaded(): Promise<void> {
-  await ensureArxDictionaryLoaded();
+async function ensureArx2DictionariesLoaded(requireSupportedVersion = true): Promise<void> {
+  await ensureArxDictionaryLoaded(requireSupportedVersion);
 
   if (!isExternalArx2OverlayDictionaryLoaded()) {
     // Same retry-on-failure contract as the base dictionary (loadArx2OverlayDictionary also resolves
@@ -197,7 +197,7 @@ async function ensureArx2DictionariesLoaded(): Promise<void> {
     await arx2OverlayDictionaryLoadPromise;
   }
 
-  assertArx2OverlayNotNewerThanExpected();
+  if (requireSupportedVersion) assertArx2OverlayNotNewerThanExpected();
 }
 
 /**
@@ -389,14 +389,16 @@ export async function buildArx5Candidates(
 /**
  * Builds the deferred `arx6` candidate: arx6-codec.ts's mixer over the raw container, on its one
  * fraction wire. Primed candidates require the same pinned assets as ARX5. The unprimed v2 model
- * needs no assets and remains available when the dictionary fetch fails. A candidate outside
+ * needs no assets and remains available when dictionaries are missing or version-skewed. A candidate outside
  * ARX6's reconstructed-envelope budget cannot prevent the existing portfolio from being evaluated.
  */
 export async function buildArx6Candidates(
   envelope: PayloadEnvelope,
   computeTransportLength: TransportLengthCalculator,
 ): Promise<CandidateFragment[]> {
-  await ensureArx2DictionariesLoaded();
+  // Inspect the loaded versions before requiring compatibility: unsupported assets select the
+  // self-contained `n` model below, while every primed candidate still requires the exact pins.
+  await ensureArx2DictionariesLoaded(false);
   const dictionariesPinned = arx4DictionariesMatchPins();
   if (dictionariesPinned) await loadArx4PriorsOnce();
 
@@ -423,9 +425,9 @@ export async function decodeArxFragmentPayload(
   const { parsedDictVersion, versionedPayload } = splitArxFragmentRemainder(remainder);
   const decodedPayload = decodeArxEncodedPayload(versionedPayload);
   const priorIdChar = codec === "arx6" ? getArx6PriorId(decodedPayload) : decodedPayload.charAt(0);
-  // V2's unprimed model uses only its frozen code and the tuple schema. Fetching or requiring
-  // unrelated dictionaries would make an otherwise self-contained link fail while offline.
-  const unprimedArx6 = codec === "arx6" && decodedPayload.startsWith("2n");
+  // Both ARX6 versions' unprimed models use only frozen code and the tuple schema. Fetching or
+  // requiring unrelated dictionaries would make an otherwise self-contained link fail offline.
+  const unprimedArx6 = codec === "arx6" && priorIdChar === "n";
   if (!unprimedArx6) {
     if (codec === "arx") await ensureArxDictionaryLoaded();
     else await ensureArx2DictionariesLoaded();

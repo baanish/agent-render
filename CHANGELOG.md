@@ -14,6 +14,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - ARX6 v2 (`#g2`): lossless raw-text context mixing, mixed-radix fraction transport, a corruption checksum, and exact UTF-16 preservation. Existing unversioned ARX6 links retain their frozen decoder. See `docs/arx6-research.md` for the consolidated findings and qualified measurements.
 - Browser codec Worker with serialized jobs, cancellation, queue bounds, a 60-second deadline, and idle shutdown.
 
+### Fixed
+
+- Unprimed legacy `#gn` and v2 `#g2n` links decode without dictionary/prior fetches; explicit ARX6 encoding retains its unprimed fallback with newer dictionary/overlay assets.
+- Hash navigation aborts obsolete creator encoding before queuing the destination decode.
+
 ### Changed
 
 - Auto-emit no longer selects `arx3` or `arx4`. Existing `#c` and `#e` links still decode.

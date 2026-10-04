@@ -211,12 +211,14 @@ export function ViewerShell() {
       .then((result) => {
         if (!cancelled) setParsed(result);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setParsed({
             ok: false,
             code: "invalid-format",
-            message: "The fragment payload could not be decoded by this browser session.",
+            message: error instanceof Error && error.message.trim()
+              ? error.message
+              : "The fragment payload could not be decoded by this browser session.",
           });
         }
       });
@@ -387,7 +389,7 @@ export function ViewerShell() {
             ) : null}
 
             <div className="home-workbench">
-              <LinkCreator onPreviewHash={setFragmentHash} />
+              <LinkCreator onPreviewHash={setFragmentHash} navigationHash={hash} />
               <SampleLinks activeHash={hash} />
             </div>
 

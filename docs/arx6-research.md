@@ -44,6 +44,8 @@ These percentages must not be averaged or presented as a combined improvement.
 | Caller-owned dictionary arrays or curated prior blocks could mutate after successful identity validation | Copy/freeze installed assets and avoid exposing mutable internal prior state |
 | Mutating a context model in place would make existing links undecodable | Freeze the original model and give the new model an explicit `2` wire version |
 | Async APIs still executed CPU-heavy mixing on the browser main thread | Use a bounded Worker with cancellation, deadlines, serial jobs, and idle release |
+| Unprimed ARX6 could still depend on unrelated assets: legacy `#gn` decode fetched dictionaries, and newer asset versions blocked explicit v2 encoding | Skip asset loading for both unprimed decoders and keep the v2 `n` candidate available when loaded assets fail the frozen pins |
+| Hash navigation could leave creator encoding running until unmount, delaying the destination decode behind obsolete work | Abort creator encoding when navigation starts, before queuing the decode |
 | The complete old portfolio repeatedly converted large integers one digit at a time, making large candidate wires expensive even when never selected | Use balanced radix splits and construct integers from byte hex, preserving every emitted digit |
 
 ## Production wire and losslessness
@@ -184,17 +186,24 @@ Browser link creation, editing, bundle selection, and decoding therefore use a
 single lazy Worker with a FIFO queue, at most eight outstanding jobs, and a
 60-second deadline including queueing and asset loading. Aborting an active job
 or reaching its deadline terminates the Worker; it also shuts down after 15 idle
-seconds to release model caches. Worker startup/runtime failures return explicit
-errors instead of repeating the work on the main thread. Node and runtimes
+seconds to release model caches. Hash navigation aborts obsolete creator encoding
+before queuing the destination decode, without waiting for creator unmount.
+Worker startup/runtime failures return explicit
+errors instead of repeating the work on the main thread. The viewer preserves
+usable Worker error messages, including deadline and queue failures, with a
+generic fallback for unusable rejections. Node and runtimes
 without Worker support retain the direct async APIs.
 
 The Worker and existing dictionaries/priors are static assets under the normal
 base path. No artifact upload, server-side codec, new compression dependency, or
 per-artifact fetch is introduced. A decoder must load the exact prior identified
-by its link or fail. An unprimed `#g2n` link needs no dictionaries or curated prior
-assets; decoding it skips those fetches entirely. Encoding can still produce the
-unprimed candidate when pinned assets are unavailable. When only curated priors
-are unavailable, the dictionary-derived `s` prior can compete with `n`.
+by its link or fail. Both legacy `#gn` and v2 `#g2n` links need no dictionaries or
+curated prior assets; decoding them skips those fetches entirely. Explicit
+`{ codec: "arx6" }` encoding can still produce the v2 unprimed candidate when
+pinned assets are unavailable or newer than supported. Automatic selection
+retains legacy codecs' version checks and can reject newer assets. When only
+curated priors are unavailable, the dictionary-derived `s` prior can compete with
+`n`. Primed links continue to require their exact assets.
 
 ### Legacy radix conversion
 
@@ -270,6 +279,14 @@ radix conversion optimization reproduces all measured wires exactly, as checked
 by the replay above. The model, wire, and default prior selection stayed frozen.
 Historical timing or corpus scores below are not replacement measurements for
 this comparison.
+
+Post-evaluation review also corrected explicit ARX6 fallback with newer assets,
+asset-free legacy `#gn` decoding, creator cancellation at hash navigation, and
+preservation of actionable Worker errors in the viewer.
+These robustness fixes do not change the model, wire, prior policy, or completed
+encoding results with healthy pinned assets. The frozen benchmark artifacts
+retain their actual evaluated revisions and source hashes; they are not
+retroactively attributed to the later fixes.
 
 ### Runtime and memory cost
 
@@ -370,7 +387,7 @@ made here.
 
 ## Verification and remaining limits
 
-The final application validation passed 492 unit tests across 61 files and all
+The final application validation passed 503 unit tests across 62 files and all
 116 Playwright checks across Chromium and WebKit. Lint, TypeScript, the static
 production root and subpath builds, build-budget checks, and the existing codec benchmark
 also passed; the historical benchmark fixture totals were unchanged.
