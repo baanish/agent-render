@@ -10,7 +10,6 @@ mods.order8=source.replace('[0, 1, 2, 3, 4, 6, -1]','[0, 1, 2, 3, 4, 6, 8, -1]')
 function extra(src,hash,state='',update=''){
  return src.replace('const MODEL_COUNT = CLASS_MODEL_INDEX + 1;','const EXTRA_MODEL_INDEX = CLASS_MODEL_INDEX + 1;\nconst MODEL_COUNT = EXTRA_MODEL_INDEX + 1;')
  .replace('  private wordHash = 0;',state+'\n  private wordHash = 0;')
- .replace('  private matchByteAt(position: number): number {','  private matchByteAt(position: number): number {')
  .replace('  }\n\n  private matchByteAt(position: number): number {',`    this.historyHashes[EXTRA_MODEL_INDEX] = ${hash};\n  }\n\n  private matchByteAt(position: number): number {`)
  .replace('    this.updateRuns(byte);',update+'\n    this.updateRuns(byte);');
 }
