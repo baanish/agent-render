@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "declaredAt": "2026-10-04T01:36:00Z",
+  "purpose": "Fresh validation reserved for the additional research pass. All sources/limits predeclared before fetching, with no compression-dependent replacement. Prior inspected corpora are diagnostic only in this pass.",
+  "textLimitUtf16": 6000,
+  "jsonLimitUtf16": 24000,
+  "selectionRule": "Pin each repository current HEAD once; fetch exactly the listed paths and latest commit diff. Keep complete JSON only; other kinds retain a complete-line prefix up to the fixed limit. Record missing/oversize/network exclusions without replacement.",
+  "repositories": [
+    {
+      "repository": "pallets/flask",
+      "sources": [
+        {
+          "path": "README.md",
+          "kind": "markdown",
+          "language": "English"
+        },
+        {
+          "path": "src/flask/app.py",
+          "kind": "code",
+          "language": "python"
+        },
+        {
+          "path": "src/flask/json/provider.py",
+          "kind": "code",
+          "language": "python"
+        },
+        {
+          "commitDiff": true,
+          "kind": "diff"
+        }
+      ]
+    },
+    {
+      "repository": "fastapi/fastapi",
+      "sources": [
+        {
+          "path": "docs/zh/docs/async.md",
+          "kind": "markdown",
+          "language": "Chinese"
+        },
+        {
+          "path": "docs/es/docs/async.md",
+          "kind": "markdown",
+          "language": "Spanish"
+        },
+        {
+          "path": "fastapi/routing.py",
+          "kind": "code",
+          "language": "python"
+        },
+        {
+          "path": "pyproject.toml",
+          "kind": "code",
+          "language": "toml"
+        }
+      ]
+    },
+    {
+      "repository": "prettier/prettier",
+      "sources": [
+        {
+          "path": "README.md",
+          "kind": "markdown",
+          "language": "English"
+        },
+        {
+          "path": "package.json",
+          "kind": "json"
+        },
+        {
+          "path": "src/index.js",
+          "kind": "code",
+          "language": "javascript"
+        },
+        {
+          "commitDiff": true,
+          "kind": "diff"
+        }
+      ]
+    },
+    {
+      "repository": "BurntSushi/ripgrep",
+      "sources": [
+        {
+          "path": "README.md",
+          "kind": "markdown",
+          "language": "English"
+        },
+        {
+          "path": "crates/core/main.rs",
+          "kind": "code",
+          "language": "rust"
+        },
+        {
+          "commitDiff": true,
+          "kind": "diff"
+        }
+      ]
+    },
+    {
+      "repository": "datasets/airport-codes",
+      "sources": [
+        {
+          "path": "README.md",
+          "kind": "markdown",
+          "language": "English"
+        },
+        {
+          "path": "datapackage.json",
+          "kind": "json"
+        },
+        {
+          "path": "data/airport-codes.csv",
+          "kind": "csv"
+        }
+      ]
+    },
+    {
+      "repository": "datasets/country-codes",
+      "sources": [
+        {
+          "path": "README.md",
+          "kind": "markdown",
+          "language": "English"
+        },
+        {
+          "path": "datapackage.json",
+          "kind": "json"
+        },
+        {
+          "path": "data/country-codes.csv",
+          "kind": "csv"
+        }
+      ]
+    },
+    {
+      "repository": "datasets/finance-vix",
+      "sources": [
+        {
+          "path": "README.md",
+          "kind": "markdown",
+          "language": "English"
+        },
+        {
+          "path": "datapackage.json",
+          "kind": "json"
+        },
+        {
+          "path": "data/vix-daily.csv",
+          "kind": "csv"
+        }
+      ]
+    },
+    {
+      "repository": "vuejs/core",
+      "sources": [
+        {
+          "path": "README.md",
+          "kind": "markdown",
+          "language": "English"
+        },
+        {
+          "path": "packages/vue/package.json",
+          "kind": "json"
+        },
+        {
+          "path": "packages/reactivity/src/reactive.ts",
+          "kind": "code",
+          "language": "typescript"
+        },
+        {
+          "commitDiff": true,
+          "kind": "diff"
+        }
+      ]
+    }
+  ]
+}

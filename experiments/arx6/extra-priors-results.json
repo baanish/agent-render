@@ -1,0 +1,1053 @@
+{
+  "scope": "All existing priors versus kind+n; same frozen model/wire. Diagnostic only. Indicative contended timings, not latency claims.",
+  "sourceSha256": "2a224f1b0558e7211d74406542e70132bc7911cdc07108b310fa3ede927386dc",
+  "modelSha256": "4be96ce00bb36c518c6e2ece06b07ebcdb1a3a22dd8966d2dc0fc3b8228058b5",
+  "assetSha256": {
+    "arx-dictionary.json": "16fe3f72dd5d282fd2f0271647a56c38c4b7eebb6e4723da670765f7d90380a9",
+    "arx2-dictionary.json": "12d0166fda16ce9697831805d92af0f558b4fad5a882c471ba072118561a74eb",
+    "arx4-priors.json": "7cf3adce7295c3133efd4b3b1c75233e63b738e0452257c1e4264fb6634021e1"
+  },
+  "corpusSha256": "b1f3e97e337896b90a300ab0e9acf89b4a1ca88951211d38ee2410ca9c3bdabd",
+  "rows": [
+    {
+      "id": "diagnostic/prose/0",
+      "family": "prose",
+      "kind": "m",
+      "baseline": "m",
+      "best": "m",
+      "baselineChars": 151,
+      "bestChars": 151,
+      "saved": 0,
+      "priorChars": {
+        "m": 116,
+        "c": 128,
+        "j": 120,
+        "s": 137,
+        "n": 163
+      },
+      "baselineMs": 610.9086330000002,
+      "allMs": 1677.8177050000004,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/prose/1",
+      "family": "prose",
+      "kind": "m",
+      "baseline": "m",
+      "best": "s",
+      "baselineChars": 246,
+      "bestChars": 243,
+      "saved": 3,
+      "priorChars": {
+        "m": 211,
+        "c": 213,
+        "j": 218,
+        "s": 208,
+        "n": 224
+      },
+      "baselineMs": 414.53708700000016,
+      "allMs": 1293.2517910000001,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/prose/2",
+      "family": "prose",
+      "kind": "m",
+      "baseline": "m",
+      "best": "m",
+      "baselineChars": 352,
+      "bestChars": 352,
+      "saved": 0,
+      "priorChars": {
+        "m": 317,
+        "c": 327,
+        "j": 326,
+        "s": 317,
+        "n": 325
+      },
+      "baselineMs": 405.2235900000005,
+      "allMs": 1331.715760000001,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/prose/3",
+      "family": "prose",
+      "kind": "m",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 519,
+      "bestChars": 519,
+      "saved": 0,
+      "priorChars": {
+        "m": 525,
+        "c": 524,
+        "j": 528,
+        "s": 501,
+        "n": 484
+      },
+      "baselineMs": 562.0229719999988,
+      "allMs": 1766.0706279999995,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/code/0",
+      "family": "code",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 140,
+      "bestChars": 140,
+      "saved": 0,
+      "priorChars": {
+        "m": 127,
+        "c": 105,
+        "j": 127,
+        "s": 140,
+        "n": 172
+      },
+      "baselineMs": 486.2925869999999,
+      "allMs": 1542.1320579999992,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/code/1",
+      "family": "code",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 194,
+      "bestChars": 194,
+      "saved": 0,
+      "priorChars": {
+        "m": 170,
+        "c": 159,
+        "j": 165,
+        "s": 174,
+        "n": 196
+      },
+      "baselineMs": 498.34542899999906,
+      "allMs": 1538.6126130000011,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/code/2",
+      "family": "code",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 228,
+      "bestChars": 228,
+      "saved": 0,
+      "priorChars": {
+        "m": 226,
+        "c": 193,
+        "j": 217,
+        "s": 230,
+        "n": 281
+      },
+      "baselineMs": 477.69000199999937,
+      "allMs": 1527.3688420000017,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/code/3",
+      "family": "code",
+      "kind": "c",
+      "baseline": "c",
+      "best": "j",
+      "baselineChars": 389,
+      "bestChars": 384,
+      "saved": 5,
+      "priorChars": {
+        "m": 357,
+        "c": 354,
+        "j": 349,
+        "s": 366,
+        "n": 388
+      },
+      "baselineMs": 554.906860000001,
+      "allMs": 1650.6711400000022,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/markdown/0",
+      "family": "markdown",
+      "kind": "m",
+      "baseline": "m",
+      "best": "m",
+      "baselineChars": 239,
+      "bestChars": 239,
+      "saved": 0,
+      "priorChars": {
+        "m": 204,
+        "c": 211,
+        "j": 211,
+        "s": 213,
+        "n": 222
+      },
+      "baselineMs": 456.88970000000154,
+      "allMs": 1302.0800710000003,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/markdown/1",
+      "family": "markdown",
+      "kind": "m",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 430,
+      "bestChars": 430,
+      "saved": 0,
+      "priorChars": {
+        "m": 416,
+        "c": 416,
+        "j": 416,
+        "s": 401,
+        "n": 395
+      },
+      "baselineMs": 465.9435799999992,
+      "allMs": 1412.0333510000019,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/markdown/2",
+      "family": "markdown",
+      "kind": "m",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 846,
+      "bestChars": 846,
+      "saved": 0,
+      "priorChars": {
+        "m": 877,
+        "c": 874,
+        "j": 872,
+        "s": 833,
+        "n": 811
+      },
+      "baselineMs": 509.8254390000038,
+      "allMs": 1490.205576000004,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/markdown/3",
+      "family": "markdown",
+      "kind": "m",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 1486,
+      "bestChars": 1486,
+      "saved": 0,
+      "priorChars": {
+        "m": 1540,
+        "c": 1544,
+        "j": 1532,
+        "s": 1480,
+        "n": 1451
+      },
+      "baselineMs": 488.3226800000011,
+      "allMs": 1508.3599520000025,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/json/0",
+      "family": "json",
+      "kind": "j",
+      "baseline": "j",
+      "best": "j",
+      "baselineChars": 348,
+      "bestChars": 348,
+      "saved": 0,
+      "priorChars": {
+        "m": 323,
+        "c": 345,
+        "j": 313,
+        "s": 393,
+        "n": 446
+      },
+      "baselineMs": 382.78967000000193,
+      "allMs": 1225.5571440000022,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/json/1",
+      "family": "json",
+      "kind": "j",
+      "baseline": "j",
+      "best": "j",
+      "baselineChars": 716,
+      "bestChars": 716,
+      "saved": 0,
+      "priorChars": {
+        "m": 695,
+        "c": 721,
+        "j": 681,
+        "s": 758,
+        "n": 807
+      },
+      "baselineMs": 466.7443119999989,
+      "allMs": 1433.3986459999942,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/json/2",
+      "family": "json",
+      "kind": "j",
+      "baseline": "j",
+      "best": "j",
+      "baselineChars": 1013,
+      "bestChars": 1013,
+      "saved": 0,
+      "priorChars": {
+        "m": 990,
+        "c": 1015,
+        "j": 978,
+        "s": 1038,
+        "n": 1085
+      },
+      "baselineMs": 571.3078629999982,
+      "allMs": 1661.5287259999968,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/json/3",
+      "family": "json",
+      "kind": "j",
+      "baseline": "j",
+      "best": "j",
+      "baselineChars": 1422,
+      "bestChars": 1422,
+      "saved": 0,
+      "priorChars": {
+        "m": 1394,
+        "c": 1412,
+        "j": 1387,
+        "s": 1422,
+        "n": 1471
+      },
+      "baselineMs": 872.8475340000005,
+      "allMs": 2379.935989999998,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/csv/0",
+      "family": "csv",
+      "kind": "j",
+      "baseline": "j",
+      "best": "c",
+      "baselineChars": 183,
+      "bestChars": 179,
+      "saved": 4,
+      "priorChars": {
+        "m": 149,
+        "c": 144,
+        "j": 148,
+        "s": 159,
+        "n": 186
+      },
+      "baselineMs": 493.4293830000024,
+      "allMs": 1367.3569089999983,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/csv/1",
+      "family": "csv",
+      "kind": "j",
+      "baseline": "j",
+      "best": "j",
+      "baselineChars": 294,
+      "bestChars": 294,
+      "saved": 0,
+      "priorChars": {
+        "m": 262,
+        "c": 261,
+        "j": 259,
+        "s": 273,
+        "n": 291
+      },
+      "baselineMs": 435.7725419999988,
+      "allMs": 1497.4680540000045,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/csv/2",
+      "family": "csv",
+      "kind": "j",
+      "baseline": "j",
+      "best": "j",
+      "baselineChars": 536,
+      "bestChars": 536,
+      "saved": 0,
+      "priorChars": {
+        "m": 508,
+        "c": 504,
+        "j": 501,
+        "s": 503,
+        "n": 513
+      },
+      "baselineMs": 456.7731580000036,
+      "allMs": 1434.1647330000123,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/csv/3",
+      "family": "csv",
+      "kind": "j",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 857,
+      "bestChars": 857,
+      "saved": 0,
+      "priorChars": {
+        "m": 849,
+        "c": 829,
+        "j": 836,
+        "s": 822,
+        "n": 822
+      },
+      "baselineMs": 466.04533100000117,
+      "allMs": 1473.262735999997,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/patch/0",
+      "family": "patch",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 136,
+      "bestChars": 136,
+      "saved": 0,
+      "priorChars": {
+        "m": 132,
+        "c": 101,
+        "j": 128,
+        "s": 128,
+        "n": 183
+      },
+      "baselineMs": 338.52246000000014,
+      "allMs": 1036.111960999995,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/patch/1",
+      "family": "patch",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 164,
+      "bestChars": 164,
+      "saved": 0,
+      "priorChars": {
+        "m": 162,
+        "c": 129,
+        "j": 157,
+        "s": 156,
+        "n": 214
+      },
+      "baselineMs": 363.9917690000002,
+      "allMs": 1035.7723409999962,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/patch/2",
+      "family": "patch",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 233,
+      "bestChars": 233,
+      "saved": 0,
+      "priorChars": {
+        "m": 231,
+        "c": 198,
+        "j": 223,
+        "s": 232,
+        "n": 289
+      },
+      "baselineMs": 358.56085199999507,
+      "allMs": 1062.8314039999968,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/patch/3",
+      "family": "patch",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 334,
+      "bestChars": 334,
+      "saved": 0,
+      "priorChars": {
+        "m": 327,
+        "c": 299,
+        "j": 322,
+        "s": 330,
+        "n": 383
+      },
+      "baselineMs": 395.9108720000004,
+      "allMs": 1162.9604319999999,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/diff-pair/0",
+      "family": "diff-pair",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 229,
+      "bestChars": 229,
+      "saved": 0,
+      "priorChars": {
+        "m": 203,
+        "c": 194,
+        "j": 203,
+        "s": 204,
+        "n": 229
+      },
+      "baselineMs": 346.68918600000325,
+      "allMs": 1015.1878350000043,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/diff-pair/1",
+      "family": "diff-pair",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 379,
+      "bestChars": 379,
+      "saved": 0,
+      "priorChars": {
+        "m": 349,
+        "c": 344,
+        "j": 349,
+        "s": 345,
+        "n": 353
+      },
+      "baselineMs": 397.78933599999436,
+      "allMs": 1131.9667799999952,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/diff-pair/2",
+      "family": "diff-pair",
+      "kind": "c",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 661,
+      "bestChars": 661,
+      "saved": 0,
+      "priorChars": {
+        "m": 650,
+        "c": 641,
+        "j": 649,
+        "s": 630,
+        "n": 626
+      },
+      "baselineMs": 434.431196000005,
+      "allMs": 1228.408549000007,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/diff-pair/3",
+      "family": "diff-pair",
+      "kind": "c",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 1084,
+      "bestChars": 1084,
+      "saved": 0,
+      "priorChars": {
+        "m": 1081,
+        "c": 1079,
+        "j": 1085,
+        "s": 1064,
+        "n": 1049
+      },
+      "baselineMs": 546.9938739999998,
+      "allMs": 1546.2382360000047,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/bundle/0",
+      "family": "bundle",
+      "kind": "m",
+      "baseline": "m",
+      "best": "c",
+      "baselineChars": 281,
+      "bestChars": 277,
+      "saved": 4,
+      "priorChars": {
+        "m": 246,
+        "c": 242,
+        "j": 246,
+        "s": 249,
+        "n": 274
+      },
+      "baselineMs": 345.41273199999705,
+      "allMs": 1056.737070999996,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/bundle/1",
+      "family": "bundle",
+      "kind": "m",
+      "baseline": "m",
+      "best": "s",
+      "baselineChars": 437,
+      "bestChars": 427,
+      "saved": 10,
+      "priorChars": {
+        "m": 402,
+        "c": 395,
+        "j": 401,
+        "s": 392,
+        "n": 405
+      },
+      "baselineMs": 454.6979330000031,
+      "allMs": 1252.8547180000023,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/bundle/2",
+      "family": "bundle",
+      "kind": "m",
+      "baseline": "n",
+      "best": "s",
+      "baselineChars": 761,
+      "bestChars": 759,
+      "saved": 2,
+      "priorChars": {
+        "m": 741,
+        "c": 740,
+        "j": 742,
+        "s": 724,
+        "n": 726
+      },
+      "baselineMs": 514.8568400000004,
+      "allMs": 1467.7942980000007,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/bundle/3",
+      "family": "bundle",
+      "kind": "m",
+      "baseline": "n",
+      "best": "s",
+      "baselineChars": 1325,
+      "bestChars": 1324,
+      "saved": 1,
+      "priorChars": {
+        "m": 1318,
+        "c": 1311,
+        "j": 1311,
+        "s": 1289,
+        "n": 1290
+      },
+      "baselineMs": 763.4231719999952,
+      "allMs": 2005.3574369999988,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/entropy/0",
+      "family": "entropy",
+      "kind": "c",
+      "baseline": "n",
+      "best": "s",
+      "baselineChars": 277,
+      "bestChars": 276,
+      "saved": 1,
+      "priorChars": {
+        "m": 246,
+        "c": 245,
+        "j": 244,
+        "s": 241,
+        "n": 242
+      },
+      "baselineMs": 323.61544799999683,
+      "allMs": 1019.9566720000003,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/entropy/1",
+      "family": "entropy",
+      "kind": "c",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 651,
+      "bestChars": 651,
+      "saved": 0,
+      "priorChars": {
+        "m": 634,
+        "c": 638,
+        "j": 636,
+        "s": 629,
+        "n": 616
+      },
+      "baselineMs": 406.4886649999971,
+      "allMs": 1178.829389000006,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/entropy/2",
+      "family": "entropy",
+      "kind": "c",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 1757,
+      "bestChars": 1757,
+      "saved": 0,
+      "priorChars": {
+        "m": 1763,
+        "c": 1779,
+        "j": 1775,
+        "s": 1757,
+        "n": 1722
+      },
+      "baselineMs": 354.42202999999427,
+      "allMs": 1084.3788199999908,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/entropy/3",
+      "family": "entropy",
+      "kind": "c",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 3760,
+      "bestChars": 3760,
+      "saved": 0,
+      "priorChars": {
+        "m": 3784,
+        "c": 3807,
+        "j": 3798,
+        "s": 3780,
+        "n": 3725
+      },
+      "baselineMs": 411.16795500000444,
+      "allMs": 1228.219495000012,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/repeat/0",
+      "family": "repeat",
+      "kind": "m",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 167,
+      "bestChars": 167,
+      "saved": 0,
+      "priorChars": {
+        "m": 145,
+        "c": 145,
+        "j": 144,
+        "s": 133,
+        "n": 132
+      },
+      "baselineMs": 365.05001499999344,
+      "allMs": 1144.399332999994,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/repeat/1",
+      "family": "repeat",
+      "kind": "m",
+      "baseline": "n",
+      "best": "s",
+      "baselineChars": 175,
+      "bestChars": 174,
+      "saved": 1,
+      "priorChars": {
+        "m": 150,
+        "c": 152,
+        "j": 152,
+        "s": 139,
+        "n": 140
+      },
+      "baselineMs": 479.4930760000061,
+      "allMs": 1320.017414000009,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/repeat/2",
+      "family": "repeat",
+      "kind": "m",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 174,
+      "bestChars": 174,
+      "saved": 0,
+      "priorChars": {
+        "m": 153,
+        "c": 154,
+        "j": 154,
+        "s": 139,
+        "n": 139
+      },
+      "baselineMs": 680.296835000001,
+      "allMs": 1911.2473219999956,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/repeat/3",
+      "family": "repeat",
+      "kind": "m",
+      "baseline": "n",
+      "best": "s",
+      "baselineChars": 181,
+      "bestChars": 180,
+      "saved": 1,
+      "priorChars": {
+        "m": 156,
+        "c": 156,
+        "j": 156,
+        "s": 145,
+        "n": 146
+      },
+      "baselineMs": 1134.8171969999894,
+      "allMs": 2905.5498949999965,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/utf16-exact/0",
+      "family": "utf16-exact",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 179,
+      "bestChars": 179,
+      "saved": 0,
+      "priorChars": {
+        "m": 147,
+        "c": 144,
+        "j": 146,
+        "s": 144,
+        "n": 160
+      },
+      "baselineMs": 331.0209920000052,
+      "allMs": 1060.0401669999992,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/utf16-exact/1",
+      "family": "utf16-exact",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 236,
+      "bestChars": 236,
+      "saved": 0,
+      "priorChars": {
+        "m": 203,
+        "c": 201,
+        "j": 202,
+        "s": 203,
+        "n": 216
+      },
+      "baselineMs": 327.9650939999992,
+      "allMs": 1020.4211900000082,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/utf16-exact/2",
+      "family": "utf16-exact",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 388,
+      "bestChars": 388,
+      "saved": 0,
+      "priorChars": {
+        "m": 356,
+        "c": 353,
+        "j": 355,
+        "s": 358,
+        "n": 368
+      },
+      "baselineMs": 339.8436260000017,
+      "allMs": 1039.524357000002,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/utf16-exact/3",
+      "family": "utf16-exact",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 664,
+      "bestChars": 664,
+      "saved": 0,
+      "priorChars": {
+        "m": 631,
+        "c": 629,
+        "j": 629,
+        "s": 631,
+        "n": 643
+      },
+      "baselineMs": 336.48715800000355,
+      "allMs": 1049.0087389999971,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/metadata/0",
+      "family": "metadata",
+      "kind": "c",
+      "baseline": "c",
+      "best": "m",
+      "baselineChars": 218,
+      "bestChars": 205,
+      "saved": 13,
+      "priorChars": {
+        "m": 170,
+        "c": 183,
+        "j": 177,
+        "s": 193,
+        "n": 226
+      },
+      "baselineMs": 331.3597470000095,
+      "allMs": 1072.371284000008,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/metadata/1",
+      "family": "metadata",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 303,
+      "bestChars": 303,
+      "saved": 0,
+      "priorChars": {
+        "m": 272,
+        "c": 268,
+        "j": 275,
+        "s": 269,
+        "n": 297
+      },
+      "baselineMs": 338.77788000000874,
+      "allMs": 1044.4503440000117,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/metadata/2",
+      "family": "metadata",
+      "kind": "c",
+      "baseline": "c",
+      "best": "m",
+      "baselineChars": 396,
+      "bestChars": 393,
+      "saved": 3,
+      "priorChars": {
+        "m": 358,
+        "c": 361,
+        "j": 360,
+        "s": 363,
+        "n": 389
+      },
+      "baselineMs": 355.9970379999868,
+      "allMs": 1102.4658219999837,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/metadata/3",
+      "family": "metadata",
+      "kind": "c",
+      "baseline": "c",
+      "best": "c",
+      "baselineChars": 579,
+      "bestChars": 579,
+      "saved": 0,
+      "priorChars": {
+        "m": 548,
+        "c": 544,
+        "j": 544,
+        "s": 547,
+        "n": 560
+      },
+      "baselineMs": 432.0395650000137,
+      "allMs": 1283.0316860000166,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/whitespace/0",
+      "family": "whitespace",
+      "kind": "c",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 263,
+      "bestChars": 263,
+      "saved": 0,
+      "priorChars": {
+        "m": 265,
+        "c": 261,
+        "j": 266,
+        "s": 245,
+        "n": 228
+      },
+      "baselineMs": 388.9553440000018,
+      "allMs": 1122.4682549999998,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/whitespace/1",
+      "family": "whitespace",
+      "kind": "c",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 492,
+      "bestChars": 492,
+      "saved": 0,
+      "priorChars": {
+        "m": 547,
+        "c": 543,
+        "j": 542,
+        "s": 497,
+        "n": 457
+      },
+      "baselineMs": 360.2720910000062,
+      "allMs": 1124.012395000027,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/whitespace/2",
+      "family": "whitespace",
+      "kind": "c",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 1138,
+      "bestChars": 1138,
+      "saved": 0,
+      "priorChars": {
+        "m": 1235,
+        "c": 1228,
+        "j": 1227,
+        "s": 1154,
+        "n": 1103
+      },
+      "baselineMs": 448.5342720000044,
+      "allMs": 1325.5757570000133,
+      "roundTrip": true
+    },
+    {
+      "id": "diagnostic/whitespace/3",
+      "family": "whitespace",
+      "kind": "c",
+      "baseline": "n",
+      "best": "n",
+      "baselineChars": 2202,
+      "bestChars": 2202,
+      "saved": 0,
+      "priorChars": {
+        "m": 2332,
+        "c": 2325,
+        "j": 2318,
+        "s": 2226,
+        "n": 2167
+      },
+      "baselineMs": 559.0294269999868,
+      "allMs": 1623.3494269999792,
+      "roundTrip": true
+    }
+  ]
+}

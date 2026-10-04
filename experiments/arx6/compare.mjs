@@ -32,6 +32,7 @@ for (let index = 0; index < args.length; index++) {
 if (!corpusPath || variants.length === 0 || !outputPath) throw new Error('Usage: node experiments/arx6/compare.mjs --corpus corpus.json --variant main=/snapshot/main --variant pr121=/snapshot/pr121 [--prototype] [--variant final=/snapshot/final] --out results.json');
 assert.equal(new Set(variants.map(variant => variant.label)).size, variants.length, 'Variant labels must be unique');
 mkdirSync(path.dirname(outputPath), { recursive: true });
+const corpusSha256 = createHash('sha256').update(readFileSync(corpusPath)).digest('hex');
 
 function evaluate(variant) {
   const loader = path.join(variant.root, 'node_modules/tsx/dist/loader.mjs');
@@ -55,6 +56,7 @@ function evaluate(variant) {
 const measured = [];
 for (const variant of variants) {
   const measurement = await evaluate(variant);
+  assert.equal(measurement.corpusSha256, corpusSha256, 'A variant evaluated different corpus bytes');
   measured.push({ label: variant.label, ...measurement });
   // Save each completed worker immediately so long comparisons are recoverable.
   writeFileSync(`${outputPath}.${variant.label}.json`, `${JSON.stringify(measured.at(-1), null, 2)}\n`);
@@ -104,7 +106,7 @@ function paired(baseline, candidate) {
     hypotheticalExactFallbackSavedPercent: 100 * (1 - fallbackSelectedTotal / baselineTotal), regressions };
 }
 const first = measured[0];
-const corpusSha256 = createHash('sha256').update(readFileSync(corpusPath)).digest('hex');
+assert.equal(createHash('sha256').update(readFileSync(corpusPath)).digest('hex'), corpusSha256, 'Corpus changed during comparison');
 const report = { corpusSha256, baseline: first.label,
   corpusDescription,
   measurement: 'Every character in the complete URL-serialized Markdown link is counted. Only exact normalized-envelope round trips count as successful. codec is transport metadata; all other schema fields and UTF-16 code units are compared.',

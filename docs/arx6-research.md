@@ -1,4 +1,4 @@
-# ARX6 v2: consolidated design and research findings
+# ARX6: consolidated design and research findings
 
 This implementation combines [PR #117](https://github.com/baanish/agent-render/pull/117)
 and [PR #121](https://github.com/baanish/agent-render/pull/121), then addresses their
@@ -12,7 +12,7 @@ WHATWG-serialized fragment length. This gives a per-input URL/Markdown size
 guarantee relative to the available pre-ARX6 pool for the same base URL and label
 in unconstrained/default selection, or when the old candidate meets the same
 requested budget. An explicit policy budget takes priority when only ARX6 fits.
-It is not a per-input size guarantee against #121's original ARX6 format.
+It is not a per-input size guarantee against #121's original ARX6 format or the earlier `g2` consolidation.
 It does not guarantee that ARX6 itself wins on every artifact, that latency
 decreases, or that a benchmark's percentage applies to future traffic.
 
@@ -21,8 +21,8 @@ decreases, or that a benchmark's percentage applies to future traffic.
 | Source | Retained | Changed or excluded |
 | --- | --- | --- |
 | #117, frozen `#g1L` research codec | Original source, source hashes, conformance checks, and qualified historical evidence in `experiments/arx6/`; lossless WTF-8, integrity framing, and causal lexical/class modeling informed v2 | Native binary tuple frame and its separate viewer decoder were not added to the production protocol; the frozen `#g1L` wire remains experimental |
-| #121, raw-container/fraction integration | Raw body exposure, compact tuple trailer, reversible diff-header elision, arithmetic fraction transport, curated prior composition, legacy decode support, and integer context mixing | New emission uses explicit version `2`, canonical WTF-8, checksum and canonicality checks, normal schema/size validation, and the complete old auto pool; the old model remains frozen |
-| Consolidation | Bounded browser Worker, cancellation, immutable asset installation, adversarial tests, exact-revision comparisons, and separate diagnostic/validation cohorts | No new corpus-specific prior, numeric-table reconstruction program, dense-Unicode scoring policy, or claim of universal compression improvement |
+| #121, raw-container/fraction integration | Raw body exposure, compact tuple trailer, reversible diff-header elision, arithmetic fraction transport, curated prior composition, legacy decode support, and integer context mixing | Versioned emission adds canonical WTF-8, checksum and canonicality checks, normal schema/size validation, and the complete old auto pool; the old model remains frozen |
+| Consolidation | Bounded browser Worker, cancellation, immutable asset installation, adversarial tests, exact-revision comparisons, separate diagnostic/validation cohorts, and v3 causal contexts | No new corpus-specific prior, numeric-table reconstruction program, dense-Unicode scoring policy, or claim of universal compression improvement |
 
 PR #121's approximately 14% claim described its own uncommitted 214-artifact
 corpus against ARX5, with different framing and selection behavior. It is not a
@@ -42,9 +42,9 @@ These percentages must not be averaged or presented as a combined improvement.
 | A numeric optional diff `patch` could be mistaken for a body-length placeholder and shift valid old/new bodies | Normalize absent/non-string optional body fields before constructing placeholders |
 | A compact container could fit its own limit while the reconstructed JSON envelope exceeded the application budget | Validate and budget the full normalized envelope, including escaping, metadata, and expanded diff text; retain the typed too-large error |
 | Caller-owned dictionary arrays or curated prior blocks could mutate after successful identity validation | Copy/freeze installed assets and avoid exposing mutable internal prior state |
-| Mutating a context model in place would make existing links undecodable | Freeze the original model and give the new model an explicit `2` wire version |
+| Mutating a context model in place would make existing links undecodable | Freeze the original model and give each new model an explicit wire version (`2`, then `3`) |
 | Async APIs still executed CPU-heavy mixing on the browser main thread | Use a bounded Worker with cancellation, deadlines, serial jobs, and idle release |
-| Unprimed ARX6 could still depend on unrelated assets: legacy `#gn` decode fetched dictionaries, and newer asset versions blocked explicit v2 encoding | Skip asset loading for both unprimed decoders and keep the v2 `n` candidate available when loaded assets fail the frozen pins |
+| Unprimed ARX6 could still depend on unrelated assets: legacy `#gn` decode fetched dictionaries, and newer asset versions blocked explicit v2 encoding | Skip asset loading for all three unprimed decoders and keep the current `n` candidate available when loaded assets fail the frozen pins |
 | Hash navigation could leave creator encoding running until unmount, delaying the destination decode behind obsolete work | Abort creator encoding when navigation starts, before queuing the decode |
 | The complete old portfolio repeatedly converted large integers one digit at a time, making large candidate wires expensive even when never selected | Use balanced radix splits and construct integers from byte hex, preserving every emitted digit |
 
@@ -53,8 +53,11 @@ These percentages must not be averaged or presented as a combined improvement.
 New fragments have the shape:
 
 ```text
-#g2<prior-id><digits>
+#g3<prior-id><digits>
 ```
+
+Here `3` is the ARX6 model version, unrelated to the deprecated ARX3 codec.
+The earlier `#g2` wire remains supported with its frozen model.
 
 The raw container concatenates artifact bodies, then a newline and the canonical
 ARX2 tuple JSON with body-length placeholders. The lengths count UTF-16 code
@@ -77,9 +80,9 @@ using a slightly larger alphabet than base64url. A 66-character alphabet alone
 offers only about 0.7% more bits per character than 64 characters. Gains larger
 than that must come from modeling or framing, not visible-Unicode counts.
 
-V2 embeds the complete 32-bit CRC in the choice of fraction: choose the shortest
+Both versioned formats embed the complete 32-bit CRC in the choice of fraction: choose the shortest
 `n`, then the smallest `N` inside the final coding interval such that
-`N mod 2^32 = CRC32(ASCII("g2" + prior) || canonical-WTF8(container))`. There is
+`N mod 2^32 = CRC32(ASCII("g" + version + prior) || canonical-WTF8(container))`. There is
 no separate checksum suffix. This can recover framing space otherwise wasted by a
 six-character base62 CRC while binding the raw bytes to the version and prior.
 The digit search starts at a rigorous lower bound derived from the decoder's
@@ -88,13 +91,14 @@ fraction. Constructed interval checks cover this edge case separately from corpu
 compression measurements.
 
 A tuple trailer alone is insufficient to detect corruption: an altered arithmetic
-stream can still reconstruct plausible text. V2 checks the embedded checksum and
+stream can still reconstruct plausible text. Versioned decoding checks the embedded checksum and
 requires canonical fraction/length encodings. CRC32 detects accidental corruption,
 not deliberate forgery; schema, resource, and renderer protections still treat
 every payload as untrusted.
 
 Original `#gm`, `#gc`, `#gj`, `#gs`, and `#gn` links decode with the frozen original
-model. They are not reinterpreted as v2. The frozen #117 `#g1L` core remains
+model. Neither those links nor `#g2` links are reinterpreted as v3.
+Explicit `arx6CompressEnvelope(envelope, priorId, 2)` still produces frozen v2 wires. The frozen #117 `#g1L` core remains
 separate research code and is not a supported viewer link.
 
 ## Model changes and rejected alternatives
@@ -107,7 +111,7 @@ can share statistics; the coded source bytes retain their exact case. A
 zero-initialized residual mixer learns corrections conditioned on syntax class
 and the partial byte.
 
-Direct order-0/order-1 context and run tables replace unnecessarily large hash
+In v2, direct order-0/order-1 context and run tables replace unnecessarily large hash
 tables. The new lexical/class tables use 18-bit indexes. Per-model typed arrays
 measure approximately 50.45 MiB versus 53.91 MiB for the original #121 model.
 These counts exclude shared lookup constants, JavaScript objects, transient
@@ -116,11 +120,12 @@ buffers, and peak process memory; they are not browser memory guarantees.
 Diagnostics did not justify four-, five-, or six-byte match discovery, dedicated
 UTF-8 class buckets, an additional first-layer mixer, first-nonwhitespace line
 classification, sparse skip-byte contexts, uncapped hit counts, or changing the
-initial weight normalization. Those variants were excluded. No model tuning uses
-the reserved validation cohorts. Primed-model snapshot caching was also deferred:
-it would retain roughly another 50 MiB per cached v2 model and require carefully
-verified copies of all adaptive state. Current coding replays the chosen prior;
-the Worker improves responsiveness, not the amount of compression work.
+initial weight normalization. Those variants were excluded. Those decisions preceded evaluation of
+the original reserved cohorts. The extra pass treats all original cohorts as
+diagnostic and reserves a newly collected corpus, described below. Snapshot
+caching remains deferred after measuring sparse alternatives; current coding
+replays the chosen prior. The Worker improves responsiveness, not the amount of
+compression work.
 
 ARX6 also compares its available kind prior with no prior (`n`) and keeps the
 shorter complete wire. This tests whether inherited statistics actually help the
@@ -157,7 +162,9 @@ ARX3/ARX4 remain readable but are excluded from automatic selection because
 visible Unicode character counts do not reflect percent-encoded link costs.
 
 Fallback limits per-input compression regressions; it does not establish a
-model's statistical generality. Evaluation separates five cohorts:
+model's statistical generality. The original g2 evaluation separates five cohorts:
+its freeze and reservation statements below describe that study, not the later
+g3 pass. All five become diagnostic data in the extra pass.
 
 | Cohort | Selection and purpose | Limitations |
 | --- | --- | --- |
@@ -197,9 +204,9 @@ without Worker support retain the direct async APIs.
 The Worker and existing dictionaries/priors are static assets under the normal
 base path. No artifact upload, server-side codec, new compression dependency, or
 per-artifact fetch is introduced. A decoder must load the exact prior identified
-by its link or fail. Both legacy `#gn` and v2 `#g2n` links need no dictionaries or
+by its link or fail. Legacy `#gn`, v2 `#g2n`, and v3 `#g3n` links need no dictionaries or
 curated prior assets; decoding them skips those fetches entirely. Explicit
-`{ codec: "arx6" }` encoding can still produce the v2 unprimed candidate when
+`{ codec: "arx6" }` encoding can still produce the v3 unprimed candidate when
 pinned assets are unavailable or newer than supported. Automatic selection
 retains legacy codecs' version checks and can reject newer assets. When only
 curated priors are unavailable, the dictionary-derived `s` prior can compete with
@@ -221,7 +228,7 @@ normalized schema/UTF-16 round trips also remained exact. The conversion changes
 happened after model/representation freeze and are not additional compression
 tuning. The replay itself is correctness evidence, not a latency measurement.
 
-## Current benchmark evidence
+## Original consolidation evidence (frozen g2 results)
 
 The table counts every character in `[View](https://agent-render.com/#...)`
 using real URL serialization and the production Markdown formatter. Old auto is
@@ -240,7 +247,7 @@ metadata, while all other schema fields and UTF-16 code units are checked.
 | [Generated capacity stress](../experiments/arx6/results/consolidated-capacity.json) | 24 | 327,729 | — (13/24 supported) | 312,126 | 303,900 | 7.27% | 22 / 2 / 0 |
 | [External public artifacts](../experiments/arx6/results/consolidated-external.json) | 35 | 86,631 | 79,805 | 74,990 | 72,694 | 16.09% | 35 / 0 / 0 |
 
-Across all 198 final-auto cases, every normalized round trip is exact: 190 links
+Across all 198 g2-auto cases, every normalized round trip is exact: 190 links
 are shorter than old auto and eight retain its wire byte for byte. Excluding the
 52 development diagnostics leaves 146 reserved cases with 141 wins, five exact
 ties, and no losses. These are outcomes on the named cohorts, not a traffic-wide
@@ -288,7 +295,7 @@ encoding results with healthy pinned assets. The frozen benchmark artifacts
 retain their actual evaluated revisions and source hashes; they are not
 retroactively attributed to the later fixes.
 
-### Runtime and memory cost
+### Original g2 runtime and memory cost
 
 The [timing summary](../experiments/arx6/results/timing-summary.json) compares one
 ordered process pass per variant over the same 78 inputs: 52 diagnostics, 24
@@ -326,6 +333,159 @@ keeps the exact old 112-character link while taking 4.89 seconds to encode,
 versus 0.60 seconds under old auto. No optimized encode in this pass exceeded
 the browser's 60-second deadline; that observation does not establish a
 worst-case bound on other devices, queued work, or asset loading.
+
+## Extra pass: frozen g3 and transport pruning
+
+The additional research pass added two causal contexts: the recent four nonword
+bytes excluding ASCII space/tab, combined with the previous byte, and a six-byte
+history with ASCII digits mapped to a common value. Nonword history includes
+newlines, control bytes, and non-ASCII bytes; it is not a language parser.
+The added contexts affect prediction only. Source bytes, raw framing, curated prior bytes,
+probability rounding, and the versioned fraction algorithm remain unchanged.
+The production v3 model source is pinned at SHA-256
+`fcc287ed386fac54a6b5e8d6b2470e5a8c9e5dc9744b3450ebef288fd1c7e903`.
+Its per-instance typed arrays occupy 57,151,656 bytes (54.50 MiB), about 4.05 MiB
+more than v2. These are allocations, not peak process memory.
+
+The 52 development cases fell from 30,813 to 29,779 complete Markdown-link
+characters for standalone kind-prior/unprimed competition: 3.36%, with 41 wins,
+six same-length ties, and five losses (at most four characters). All 52 production
+wires exactly reproduce the frozen experimental candidate's wire hashes.
+Default auto now compares g3 with the complete old portfolio. It does not also
+encode g2: that additional competition saved only nine development characters
+while adding a full model pass. Small regressions versus g2 therefore remain
+possible. The strict old-portfolio replacement guarantee still applies.
+
+### Fresh validation after the freeze
+
+The [fixed collection plan](../experiments/arx6/extra-pass-plan.json) selected 28
+paths from eight previously unused repositories before codec measurement. One
+path returned 404 and was not replaced. The final 27 cases include nine Markdown,
+seven code, four whole JSON, three CSV, and four real commit diffs; Chinese and
+Spanish prose is included. Commit/slice/license/content hashes and anomalies are
+recorded in the [manifest](../experiments/arx6/extra-pass-manifest.json) and
+[quality report](../experiments/arx6/extra-pass-quality.json). Third-party source
+text is reconstructed rather than committed. The corpus SHA-256 is
+`27ae510564905c691477a8d74e88325bc02c1b7b294524af4f2dff5e02e88731`.
+The model, framing, prior policy, and selection policy were frozen before any
+candidate measurement on this corpus; no later tuning used these results.
+
+The [five-lane validation report](../experiments/arx6/results/extra-pass-validation.json)
+counts complete URL-serialized `[View](...)` Markdown links, including every
+header and checksum cost:
+
+| Automatic encoder | Total characters | Wins / same-length ties / losses versus g2 |
+| --- | ---: | ---: |
+| Original main `db19bf5` | 54,101 | — |
+| Earlier consolidation `5d82b9f` (g2) | 45,425 | — |
+| Frozen g3 | 45,006 | 22 / 2 / 3 |
+
+G3 saves 0.92% versus g2 and 16.81% versus original main on this set. All five
+artifact-kind totals improve over g2. The three regressions are Flask README
+(+3 characters), country-codes README (+1), and VIX README (+2). Both versions
+fit 18/27 complete links within 2,000 characters and 27/27 within 8,192. All
+135 lane/input combinations round-trip the normalized schema and exact UTF-16;
+none fail or decline. Same-length ties are not claimed to be identical wires.
+These are a small correlated convenience sample, not a population-wide guarantee.
+Timings in that validation report were collected under contention and are not
+used as latency evidence.
+
+### Integrated production replay
+
+The [227-case integration replay](../experiments/arx6/results/extra-pass-replay.json)
+checks the previous 198 compression samples, two near-limit boundaries, and the
+27 fresh validation samples with the production v3 implementation. All 227
+round trips are exact and all 27 fresh wires match the frozen candidate hashes.
+The previous cohorts are diagnostic in this pass; they are not a second fresh
+holdout. Their complete-link totals are:
+
+| Existing cohort | G2 auto | G3 auto | G3 saving versus original main | G3 saving versus #121 auto |
+| --- | ---: | ---: | ---: | ---: |
+| Generated diagnostics | 30,775 | 29,736 | 17.79% | 7.57% |
+| Generated validation | 30,854 | 29,802 | 17.97% | 7.74% |
+| Dependency snippets | 39,857 | 39,407 | 17.56% | 4.00% |
+| Capacity stress | 303,900 | 300,050 | 8.45% | 3.87% |
+| External public artifacts | 72,694 | 72,132 | 16.74% | 3.81% |
+
+All cohort totals improve over g2 and #121, with individual regressions retained
+in the report. G3 also beats #117's standalone prototype on every comparable
+sample. Its 11 capacity declines remain unavailable rather than being counted
+as zero-cost outputs; no partial-total comparison is claimed. The largest old compression-cohort regression is 54 characters for the
+64k entropy case. The separate near-200k entropy boundary grows 156 characters
+to a 201,440-character complete link, still unshareable. All 227 results are no
+longer than the pre-ARX6 winner; every legacy-relative tie retains that exact wire.
+This integration run overlaps other validation work, so its timings are not
+performance evidence.
+
+### Avoid constructing provably losing transport wires
+
+Legacy auto previously materialized base1k and BMP encodings even when their
+percent-escaped cost could not beat base64url. For an integer with B significant
+bits, their conservative costs are at least `12 + 6*ceil(B/11)` and
+`21 + 6*ceil(B/16)` respectively. When that bound strictly exceeds the actual
+base64url wire length, the losing conversion is omitted. Leading zero bytes are
+excluded when computing B; empty payloads, unsupported prefix widths, and equal
+bounds retain full conversion and the original tie order. All public raw-wire
+APIs and custom-scorer builders still construct all shapes unless explicitly
+using the canonical transport-only path. Explicit ARX3/ARX4 policies are unchanged.
+
+The bounds are tested against 235 bit-width/leading-zero cases, retained wire
+bytes, tied winners, and custom scorers. Isolated conversion measurements saved
+58–64% CPU at 1/8/32 KiB, but that is not a full-encoder speedup claim. End-to-end
+results are reported separately from that microbenchmark.
+
+### Extra-pass runtime and memory
+
+The [quiet timing report](../experiments/arx6/results/extra-pass-timing-summary.json)
+compares one sequential process pass per version over the same 78 inputs as the
+original timing study, after other heavy local jobs stopped. Both lanes use clean
+implementation snapshots: g2 `5d82b9f` and g3 local `7c3ce2e`, published with the
+identical Git tree as `abcd649`. All 78 g2 wire hashes match the original results;
+all 78 g3 hashes match the integration replay. Timing is on the same four-CPU
+Linux/Node host, includes lazy first-use work, and excludes module imports and
+synchronous asset loading. It is not a repeated statistical or mobile benchmark.
+
+| Automatic encoder | Encode P50 | Encode P95 | Maximum encode | Decode P50 | Decode P95 | Peak process RSS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| G2 `5d82b9f` | 489 ms | 3.58 s | 12.97 s | 295 ms | 913 ms | 451.16 MiB |
+| G3 `abcd649` equivalent tree | 537 ms | 3.87 s | 11.89 s | 344 ms | 1.04 s | 493.93 MiB |
+
+The stronger model adds typical CPU cost despite omitted transport conversions;
+this is not an overall speedup. On the paired 67 cases whose fragments fit 8,192
+characters under both versions, encode P50/P95/maximum changes from
+460/1,040/4,880 ms to 497/1,180/5,790 ms. Decode changes from 277/363/505 ms to
+341/480/564 ms. Full-cohort maximum decode is 3.91 s versus 4.12 s.
+Whole-process RSS includes modules, assets, WASM, retained heaps, and garbage
+collection; it is distinct from the 4.05 MiB increase in each model's typed arrays.
+
+The high-entropy boundary takes 11.89 s and remains unshareable at 201,440 complete
+link characters. The repeated-text boundary takes 5.79 s while retaining its
+112-character legacy link. No encode in this pass exceeds 60 s, but that does
+not bound total Worker latency including queueing/asset loads on other devices.
+
+### Additional ideas measured and excluded
+
+- [All-prior search](../experiments/arx6/extra-priors-results.json) saved only
+  48/30,813 diagnostic link characters (0.156%) over kind-prior/unprimed g2 while
+  taking about 2.96 times the standalone encoding CPU in an exploratory,
+  contended run. No new prior search or training was added.
+- [Framing and arithmetic ablations](../experiments/arx6/extra-framing-notes.md)
+  found 0.059% for exact midpoint multiplication, 0.017% for optional-metadata
+  null-to-zero normalization, and 0.826% aggregate for binary metadata-first
+  framing. The last regressed 11/52 cases by up to 49 fragment characters.
+  JSON metadata-first was worse overall. The complexity and new format cost were
+  not justified. These ablations count fragment characters, not full links.
+- [Model ablations](../experiments/arx6/results/extra-model-ablations.json) and
+  [reversible transforms](../experiments/arx6/results/extra-transform-ablations.json)
+  retain positive and negative variants. Higher-order/folded-history variants
+  were negligible or worse; BWT and BWT+MTF expanded complete diagnostic links by
+  roughly 42% and 48%. None were selected after viewing validation results.
+- [Sparse prior checkpoints](../experiments/arx6/extra-checkpoint-notes.md)
+  reproduced exact model states and wires. Compressed snapshots retained about
+  3.3 MiB but made cold encode/preview slower; raw snapshots retained about
+  8.9 MiB and improved CPU with higher memory and additional state-copying
+  complexity. Neither cache was integrated. This is a tradeoff, not a claim
+  that caching can never help.
 
 ## Historical measurements, not new production-baseline results
 
@@ -387,14 +547,17 @@ made here.
 
 ## Verification and remaining limits
 
-The final application validation passed 503 unit tests across 62 files and all
-116 Playwright checks across Chromium and WebKit. Lint, TypeScript, the static
-production root and subpath builds, build-budget checks, and the existing codec benchmark
-also passed; the historical benchmark fixture totals were unchanged.
+The final v3 implementation passed 520 unit tests across 63 files and all
+128 Playwright checks across Chromium and WebKit. Lint, TypeScript, static
+production root and subpath builds, build-budget checks, and the existing codec
+benchmark also passed; the historical benchmark fixture totals were unchanged.
+GitHub Test, Build, CodeQL, and review workflows passed for implementation
+commit `abcd649`, whose tree matches the measured snapshot. The deployed preview
+also passed creator-navigation cancellation checks in both browser engines.
 The strict self-hosted CSP smoke passed with actual ARX6 and ARX2 Worker
 generation/preview, including Brotli WASM, and no CSP violations.
 
-The application tests cover frozen legacy decoding, v2 deterministic vectors,
+The application tests cover frozen legacy decoding, v2/v3 deterministic vectors,
 all UTF-16 code units, corruption/canonicality rejection, prior ownership,
 reconstructed envelope budgets, full-pool fallback, and browser Worker lifecycle.
 Chromium and WebKit checks compare browser output against Node and exercise the

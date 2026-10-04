@@ -55,15 +55,16 @@ The suite is intentionally split by responsibility:
 
 ARX6 has separate compatibility, correctness, and measurement checks:
 
-- `tests/arx6-codec.test.ts` pins original ARX6 decode vectors and v2 encode vectors, exact body/metadata round trips, diff reconstruction, canonical fraction handling, WTF-8 boundaries, and checksum corruption detection.
+- `tests/arx6-codec.test.ts` pins original ARX6 decode vectors and v2 and v3 encode vectors, exact body/metadata round trips, diff reconstruction, canonical fraction handling, WTF-8 boundaries, and checksum corruption detection.
 - `tests/arx6-adversarial.test.ts` checks immutable prior installation, exact UTF-16 boundaries across artifacts, normal schema/active-artifact handling, and reconstructed-envelope size limits even when a malicious sender supplies a valid checksum.
 - `tests/arx6-selection.test.ts` protects the complete old candidate pool and strict replacement rule. A fitting ARX6 candidate must not suppress an ARX5 win, and a tie must keep the old wire byte for byte.
-- `tests/arx6-prior-fetch.test.ts` checks asset-free legacy `#gn` and v2 `#g2n` decoding, exact unprimed fallback for explicit ARX6 encoding with newer dictionary/overlay assets, and required asset loading for primed links.
-- `tests/e2e/arx6-determinism.spec.ts` compares Node and browser v2 output for every prior id, tests exact UTF-16 preservation, and checks truncated-link rejection. Browser coverage includes Chromium and WebKit.
+- `tests/arx6-prior-fetch.test.ts` checks asset-free legacy `#gn`, v2 `#g2n`, and v3 `#g3n` decoding, exact unprimed fallback for explicit ARX6 encoding with newer dictionary/overlay assets, and required asset loading for primed links.
+- `tests/e2e/arx6-determinism.spec.ts` compares Node and browser v2/v3 output for every prior id, tests exact UTF-16 preservation, and checks truncated-link rejection. Browser coverage includes Chromium and WebKit.
 - `tests/arx-radix-equivalence.test.ts` checks the optimized legacy radix encoders against the old integer algorithms and committed wire goldens, including byte-width boundaries, leading zeros, and large inputs.
+- `tests/arx-transport-dominance.test.ts` proves that skipping Unicode wires cannot change the canonical transport winner, including significant-bit boundaries, leading zeros, exact ties, empty bytes, and custom scorers.
 - `tests/arx6-core.test.ts` runs the separately frozen PR #117 experimental core's conformance checks. Passing them does not register its `#g1L` wire in the viewer.
 - `tests/browser-codec.test.ts` protects Worker serialization, queue limits, cancellation, deadlines, failures, and idle termination. `tests/e2e/payload-worker.spec.ts` exercises real Worker encoding/decoding, browser responsiveness, and subpath asset loading in both engines.
-- `tests/components/viewer-shell-creator-navigation.test.tsx` checks that hash navigation aborts pending creator encoding before destination decoding starts. Creator cancellation also preserves any previously completed shareable link.
+- `tests/components/viewer-shell-creator-navigation.test.tsx` checks that hash navigation aborts pending creator encoding before destination decoding starts. `tests/components/link-creator.test.tsx` separately checks preservation of a previously completed shareable link after cancellation.
 
 Run the normal unit, lint, typecheck, build, and exported-app browser checks after a wire or model change. Worker lifecycle tests cover serial execution, queue bounds, abort, deadline, failure, and idle shutdown; browser checks must also exercise the real bundled Worker and base-path asset loading. Never update a frozen legacy golden merely to make a changed model pass.
 

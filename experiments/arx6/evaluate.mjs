@@ -36,6 +36,9 @@ const startDigest = sourceDigest();
 const auxiliaryFiles = ['src/lib/markdown-link.ts', 'src/lib/format.ts', 'node_modules/brotli-wasm/package.json', 'node_modules/brotli-wasm/pkg.web/brotli_wasm_bg.wasm'];
 const auxiliaryHashes = () => Object.fromEntries(auxiliaryFiles.map(file => [file, sha(readFileSync(path.join(root, file)))]));
 const startAuxiliaryHashes = auxiliaryHashes();
+const assetFiles = ['arx-dictionary.json', 'arx2-dictionary.json', 'arx4-priors.json'];
+const assetHashes = () => Object.fromEntries(assetFiles.map(file => [file, sha(readFileSync(path.join(root, 'public', file)))]));
+const startAssetHashes = assetHashes();
 const importSource = relative => import(pathToFileURL(path.join(root, relative)).href);
 const [{ formatMarkdownLink }, { normalizeEnvelope }, fragment, schema, arx, prior] = await Promise.all([
   importSource('src/lib/markdown-link.ts'), importSource('src/lib/payload/envelope.ts'),
@@ -78,7 +81,11 @@ for (const [index, sample] of corpus.entries()) {
     } else {
       const value = encoded.startsWith('#') ? encoded.slice(1) : encoded;
       row.tag = value.charAt(0);
-      if (row.tag === 'g') row.prior = mode === 'prototype' ? value.charAt(3) : value.charAt(1) === '2' ? value.charAt(2) : value.charAt(1);
+      if (row.tag === 'g') {
+        const versioned = /^[0-9]$/.test(value.charAt(1));
+        row.prior = mode === 'prototype' ? value.charAt(3) : versioned ? value.charAt(2) : value.charAt(1);
+        if (mode !== 'prototype') row.arx6Version = versioned ? value.charAt(1) : 'legacy';
+      }
       else if (row.tag === 'f' || row.tag === 'e') row.prior = value.charAt(1);
       row.fragmentChars = value.length;
       row.markdownLinkChars = link(value).length;
@@ -111,12 +118,14 @@ for (const [index, sample] of corpus.entries()) {
 }
 assert.equal(sourceDigest(), startDigest, 'Codec source changed during measurement; rerun against a frozen snapshot');
 assert.deepEqual(auxiliaryHashes(), startAuxiliaryHashes, 'Formatter or Brotli dependency changed during measurement');
+assert.deepEqual(assetHashes(), startAssetHashes, 'Dictionary or prior bytes changed during measurement');
 process.stdout.write(`${JSON.stringify({
   revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+  revisionTree: execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { cwd: root, encoding: 'utf8' }).trim(),
   sourceSha256: startDigest,
   auxiliarySha256: startAuxiliaryHashes,
   brotliWasmVersion: readJson(path.join(root, 'node_modules/brotli-wasm/package.json')).version,
-  assetSha256: Object.fromEntries(['arx-dictionary.json', 'arx2-dictionary.json', 'arx4-priors.json'].map(name => [name, sha(readFileSync(path.join(root, 'public', name)))])),
+  assetSha256: startAssetHashes,
   mode,
   corpusSha256: sha(bytes),
   nodeVersion: process.version,
