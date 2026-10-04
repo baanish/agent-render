@@ -10,7 +10,7 @@ Everything before `#` loads the static app. Everything after `#` is the artifact
 
 ## What the parts mean
 
-- The first character after `#` is a single codec tag. Here `g` means the `arx6` codec. (The tag does not carry a dictionary version; it implies the current dictionary.)
+- The first character after `#` identifies the codec. Here `g` means ARX6. New ARX6 links then carry version `2`, a prior id, and compressed text with an embedded corruption checksum.
 - `<compressed-payload>` is the encoded artifact bundle.
 
 The tag char identifies the codec:
@@ -27,7 +27,7 @@ The tag char identifies the codec:
 #g<payload>   (arx6)
 ```
 
-For `arx`, `arx2`, `arx3`, `arx4`, `arx5`, and `arx6`, the compact tag does not carry a dictionary version; it implies the current dictionary (the build pins the newest supported version and rejects a newer one). Only the legacy header below carries an explicit dictionary version.
+For `arx` through `arx5`, compact tags imply a pinned dictionary/model. ARX6 v2 explicitly carries its version: `#g2<prior><digits>`. Older `#g<prior><fraction>` links still use their original decoder. The experimental `#g1L` research wire is not a viewer link format.
 
 Older links may use the legacy shape, which the viewer still decodes:
 
@@ -39,7 +39,7 @@ where `<codec>` is `plain`, `lz`, or `deflate`, and the ARX-family legacy links 
 
 ## Why arx exists
 
-Artifacts can be bigger than a comfortable URL. The ARX family keeps links shorter by applying agent-render substitution dictionaries, Brotli or the context mixer, tuple envelopes, and binary-to-text encoding. Live links use chat-safe ASCII wires: arx6 links skip the dictionaries and use a base-66 fraction wire over `0-9A-Za-z-._~`; arx5 and older usually use base64url. Older `arx3`/`arx4` links may contain dense Unicode; the viewer still decodes them, but new links do not emit that form because Discord and WhatsApp percent-encode or mangle it.
+Artifacts can be bigger than a comfortable URL. The ARX family shortens them with dictionary substitution, Brotli or adaptive context mixing, and compact envelope framing. ARX6 v2 skips body substitutions, preserves raw text exactly, and uses a mixed-radix fraction over `0-9A-Za-z-._~` with an embedded checksum. Default automatic encoding compares it against every existing live codec and keeps it only when the complete serialized fragment gets shorter. ARX5 and older live codecs usually select base64url. ARX3/ARX4 links may contain dense Unicode; they remain readable, but automatic encoding excludes them because visible character counts hide percent-encoding costs on chat surfaces.
 
 ## Privacy tradeoff
 

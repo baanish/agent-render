@@ -1,0 +1,595 @@
+[
+  {
+    "id": "natural/acorn/README.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/acorn/README.md",
+    "package": "acorn",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "e18b969e9da9d0a547af348f2b3fa0ea29a95861aee38d07ed363fadb2580744",
+    "sampleSha256": "6d902b65dd6aca343f659f08ae66eedb9ab0f4df2b08e8dd768a39a05e14d660",
+    "packageVersion": "8.16.0",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/bidi-js/dist/bidi.js",
+    "kind": "code",
+    "sourcePath": "node_modules/bidi-js/dist/bidi.js",
+    "package": "bidi-js",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "5b58433ed951be70376bee55cb9a98cdce788e00cd2fa5f881cbcb1dcad03102",
+    "sampleSha256": "8b0ee38ee9026ab54ef77919aab75cabd618248c97d2c3a954ced66c613d4815",
+    "packageVersion": "1.0.3",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE.txt"
+    ]
+  },
+  {
+    "id": "natural/chai/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/chai/package.json",
+    "package": "chai",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "b1f1454787c0ebc1a4324822bd6080e12535b1ab379b2c49d4eb467623123476",
+    "sampleSha256": "b1f1454787c0ebc1a4324822bd6080e12535b1ab379b2c49d4eb467623123476",
+    "packageVersion": "6.2.2",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/confbox/README.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/confbox/README.md",
+    "package": "confbox",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "1f4482d1ddff2609c57e28171cc6761dc0c6469331f4debb21953743dadfbd9e",
+    "sampleSha256": "1f4482d1ddff2609c57e28171cc6761dc0c6469331f4debb21953743dadfbd9e",
+    "packageVersion": "0.1.8",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/d3-axis/dist/d3-axis.js",
+    "kind": "code",
+    "sourcePath": "node_modules/d3-axis/dist/d3-axis.js",
+    "package": "d3-axis",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "7fb8f177a47658e4265a5acd19ba25a9abff9944ef70c3703b6ca68eb561b324",
+    "sampleSha256": "7ac76c64a8f7c604bab15421b504b4ce581bd605e87539f2042232732c92d981",
+    "packageVersion": "3.0.0",
+    "license": "ISC",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/d3-geo/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/d3-geo/package.json",
+    "package": "d3-geo",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "7a1f5988dd414fb49fdf6e7ab11854cc3071b507378833a93ec90440ea7c7491",
+    "sampleSha256": "7a1f5988dd414fb49fdf6e7ab11854cc3071b507378833a93ec90440ea7c7491",
+    "packageVersion": "3.1.1",
+    "license": "ISC",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/d3-time-format/README.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/d3-time-format/README.md",
+    "package": "d3-time-format",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "adc683395c793234d4b9eaf1556fbba2407eaabb54998dfb3606c71fb6c9e4de",
+    "sampleSha256": "42bbdf6078caaeb910f1fc84eb7aa510a4ad45405b6954f8dc6fb555db6d98cc",
+    "packageVersion": "4.1.0",
+    "license": "ISC",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/decode-named-character-reference/index.dom.js",
+    "kind": "code",
+    "sourcePath": "node_modules/decode-named-character-reference/index.dom.js",
+    "package": "decode-named-character-reference",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "bbfdff9072ab38fb0669b2fe2fef28e9b36e5cbbeed3592cd13fc29748755dd3",
+    "sampleSha256": "bbfdff9072ab38fb0669b2fe2fef28e9b36e5cbbeed3592cd13fc29748755dd3",
+    "packageVersion": "1.3.0",
+    "license": "MIT",
+    "licenseFiles": [
+      "license"
+    ]
+  },
+  {
+    "id": "natural/dompurify/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/dompurify/package.json",
+    "package": "dompurify",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "6cddc719481cadd9d47ce2603a8f8c40f0a57f3efec4bde1193c73918f3b7c91",
+    "sampleSha256": "6cddc719481cadd9d47ce2603a8f8c40f0a57f3efec4bde1193c73918f3b7c91",
+    "packageVersion": "3.4.2",
+    "license": "(MPL-2.0 OR Apache-2.0)",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/es-shim-unscopables/README.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/es-shim-unscopables/README.md",
+    "package": "es-shim-unscopables",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "1334a4544004dac9cbdb529a7ef7bd729dbde40a43d7a9cc5bfd309fb8314111",
+    "sampleSha256": "1334a4544004dac9cbdb529a7ef7bd729dbde40a43d7a9cc5bfd309fb8314111",
+    "packageVersion": "1.1.0",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/eslint-plugin-react-hooks/index.js",
+    "kind": "code",
+    "sourcePath": "node_modules/eslint-plugin-react-hooks/index.js",
+    "package": "eslint-plugin-react-hooks",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "f8bf8df5ea1838b9a9e51b57a4a1e3448119beafac43f202d83e8d8b15c1dc98",
+    "sampleSha256": "f8bf8df5ea1838b9a9e51b57a4a1e3448119beafac43f202d83e8d8b15c1dc98",
+    "packageVersion": "5.2.0",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/fast-deep-equal/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/fast-deep-equal/package.json",
+    "package": "fast-deep-equal",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "a5c63940db0260739be9e2ac67f3aac268df4db5770420ee4e34e493152f97d2",
+    "sampleSha256": "a5c63940db0260739be9e2ac67f3aac268df4db5770420ee4e34e493152f97d2",
+    "packageVersion": "3.1.3",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/fs-constants/README.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/fs-constants/README.md",
+    "package": "fs-constants",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "389703f7ccc014447721fcbfdbd041a9dd70e6efc734b009a13b9778c232d5c7",
+    "sampleSha256": "389703f7ccc014447721fcbfdbd041a9dd70e6efc734b009a13b9778c232d5c7",
+    "packageVersion": "1.0.0",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/ini/ini.js",
+    "kind": "code",
+    "sourcePath": "node_modules/ini/ini.js",
+    "package": "ini",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "54ab2a07998e9efc1f79667ee52650479f22e6d6f2bd3bb9c629b1426f5b1906",
+    "sampleSha256": "54ab2a07998e9efc1f79667ee52650479f22e6d6f2bd3bb9c629b1426f5b1906",
+    "packageVersion": "1.3.8",
+    "license": "ISC",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/is-data-view/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/is-data-view/package.json",
+    "package": "is-data-view",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "f85851eb278449e6d5b06943c4d48f97a10cad78977955e3591b76788103b19b",
+    "sampleSha256": "f85851eb278449e6d5b06943c4d48f97a10cad78977955e3591b76788103b19b",
+    "packageVersion": "1.0.2",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/is-potential-custom-element-name/README.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/is-potential-custom-element-name/README.md",
+    "package": "is-potential-custom-element-name",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "53dbb0a56acce8197c84f946c1816dec00b4758808951c0bb3e391a3994e3593",
+    "sampleSha256": "53dbb0a56acce8197c84f946c1816dec00b4758808951c0bb3e391a3994e3593",
+    "packageVersion": "1.0.1",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE-MIT.txt"
+    ]
+  },
+  {
+    "id": "natural/jiti/lib/jiti-cli.mjs",
+    "kind": "code",
+    "sourcePath": "node_modules/jiti/lib/jiti-cli.mjs",
+    "package": "jiti",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "8829aad7e953f97ef9e25782c99eafa013efa0c36db7c2ffebcc140bd8eeaf54",
+    "sampleSha256": "8829aad7e953f97ef9e25782c99eafa013efa0c36db7c2ffebcc140bd8eeaf54",
+    "packageVersion": "2.6.1",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/language-tags/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/language-tags/package.json",
+    "package": "language-tags",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "24c81125ee2c65b548fe4642fa14aae3e1b8fc548bc64c88d2ae6b94be738e36",
+    "sampleSha256": "24c81125ee2c65b548fe4642fa14aae3e1b8fc548bc64c88d2ae6b94be738e36",
+    "packageVersion": "1.0.9",
+    "license": "MIT",
+    "licenseFiles": []
+  },
+  {
+    "id": "natural/lucide-react/README.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/lucide-react/README.md",
+    "package": "lucide-react",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "f736ad6ff2f7718ce80fae906a1632896ca7d40658628ba302fefd79a44c6c7d",
+    "sampleSha256": "f736ad6ff2f7718ce80fae906a1632896ca7d40658628ba302fefd79a44c6c7d",
+    "packageVersion": "1.26.0",
+    "license": "ISC",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/micromark-extension-gfm/index.js",
+    "kind": "code",
+    "sourcePath": "node_modules/micromark-extension-gfm/index.js",
+    "package": "micromark-extension-gfm",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "66b05551c6efe3d6a1c75bca914c192139bc3c998fdb2b0d0784ab6685934bbc",
+    "sampleSha256": "66b05551c6efe3d6a1c75bca914c192139bc3c998fdb2b0d0784ab6685934bbc",
+    "packageVersion": "3.0.0",
+    "license": "MIT",
+    "licenseFiles": [
+      "license"
+    ]
+  },
+  {
+    "id": "natural/micromark-util-chunked/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/micromark-util-chunked/package.json",
+    "package": "micromark-util-chunked",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "20e4e68a94fb62188c9139721be97740ec32f77464b23c40677a89aee72584f6",
+    "sampleSha256": "20e4e68a94fb62188c9139721be97740ec32f77464b23c40677a89aee72584f6",
+    "packageVersion": "2.0.1",
+    "license": "MIT",
+    "licenseFiles": [
+      "license"
+    ]
+  },
+  {
+    "id": "natural/micromatch/README.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/micromatch/README.md",
+    "package": "micromatch",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "d687a4b9ff64755f2a6e2f735cbcc804570a60a72fce20ed24f49a6b8915692f",
+    "sampleSha256": "ff6848aa24499212879d8ec27cc65a03a5d947c18ffd99c9e45f4e1dde50af10",
+    "packageVersion": "4.0.8",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/node-abi/index.js",
+    "kind": "code",
+    "sourcePath": "node_modules/node-abi/index.js",
+    "package": "node-abi",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "e2039f88b4ebda3d74f595f3b633d8c1422493a2656ee5b40dd6f243552b2b4a",
+    "sampleSha256": "97c91bb3230a08d71c40009b1157df7bbeb680331be3f6e83d232af5ede3da50",
+    "packageVersion": "3.89.0",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/oniguruma-to-es/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/oniguruma-to-es/package.json",
+    "package": "oniguruma-to-es",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "eeae5d6810e67ab54855e297969912a157570a16af8a1d5d734313fb8653a05b",
+    "sampleSha256": "eeae5d6810e67ab54855e297969912a157570a16af8a1d5d734313fb8653a05b",
+    "packageVersion": "4.3.6",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/path-parse/README.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/path-parse/README.md",
+    "package": "path-parse",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "d092ef6a3cb3d63789cc44c5508bfe4fabf63bc0a2eec8100f51701e39f9b08f",
+    "sampleSha256": "d092ef6a3cb3d63789cc44c5508bfe4fabf63bc0a2eec8100f51701e39f9b08f",
+    "packageVersion": "1.0.7",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/prebuild-install/asset.js",
+    "kind": "code",
+    "sourcePath": "node_modules/prebuild-install/asset.js",
+    "package": "prebuild-install",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "7d45fb08fb0829581dd00268f1d98f147b659d1cdd8b293d0ddd26fbda941a25",
+    "sampleSha256": "7d45fb08fb0829581dd00268f1d98f147b659d1cdd8b293d0ddd26fbda941a25",
+    "packageVersion": "7.1.3",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/readable-stream/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/readable-stream/package.json",
+    "package": "readable-stream",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "469ea81f64037d1f179bcd46412217903a2924dd2e7d7d9b728659b6f12c3e69",
+    "sampleSha256": "469ea81f64037d1f179bcd46412217903a2924dd2e7d7d9b728659b6f12c3e69",
+    "packageVersion": "3.6.2",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/safer-buffer/Readme.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/safer-buffer/Readme.md",
+    "package": "safer-buffer",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "d4331b7c5af9c02161150daf9451ee6bc7a73ece3ec0312603fae09f46a817d8",
+    "sampleSha256": "c9e29fc44f6ed354a4ae1d85a56f2d8c4cc2fafbaaf34883236d29f48c808c2a",
+    "packageVersion": "2.1.2",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/side-channel-map/index.js",
+    "kind": "code",
+    "sourcePath": "node_modules/side-channel-map/index.js",
+    "package": "side-channel-map",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "0d3a0ec34cd376a23fa4a2a159913f527f990b5541fbd513212615e910ae2ba7",
+    "sampleSha256": "0d3a0ec34cd376a23fa4a2a159913f527f990b5541fbd513212615e910ae2ba7",
+    "packageVersion": "1.0.1",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/string.prototype.repeat/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/string.prototype.repeat/package.json",
+    "package": "string.prototype.repeat",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "467a661c81a7884d73f52abbe7bdbf1295f355c9ed017459b64ca09ce10f0ed8",
+    "sampleSha256": "467a661c81a7884d73f52abbe7bdbf1295f355c9ed017459b64ca09ce10f0ed8",
+    "packageVersion": "1.0.0",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE-MIT.txt"
+    ]
+  },
+  {
+    "id": "natural/supports-color/readme.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/supports-color/readme.md",
+    "package": "supports-color",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "baf9e8e934c7d2de2bb02516c8c75f23f7c23f7b5af794a96bccc0a14eb1c2c6",
+    "sampleSha256": "baf9e8e934c7d2de2bb02516c8c75f23f7c23f7b5af794a96bccc0a14eb1c2c6",
+    "packageVersion": "7.2.0",
+    "license": "MIT",
+    "licenseFiles": [
+      "license"
+    ]
+  },
+  {
+    "id": "natural/to-regex-range/index.js",
+    "kind": "code",
+    "sourcePath": "node_modules/to-regex-range/index.js",
+    "package": "to-regex-range",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "e32199271f92372a2deb70a3a57f7c0f7f558d04152a905eb97104867870c404",
+    "sampleSha256": "2584ff309536e01d4fda3c9b9f5ff38f9f87b2fc7a7aa930a07308861c3dff8c",
+    "packageVersion": "5.0.1",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/typed-array-byte-length/package.json",
+    "kind": "json",
+    "sourcePath": "node_modules/typed-array-byte-length/package.json",
+    "package": "typed-array-byte-length",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "43b754cc1b28510d905f2190cd1120ec779cfc71989907e05e70ca08943ef63a",
+    "sampleSha256": "43b754cc1b28510d905f2190cd1120ec779cfc71989907e05e70ca08943ef63a",
+    "packageVersion": "1.0.3",
+    "license": "MIT",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "id": "natural/unist-util-visit-parents/readme.md",
+    "kind": "markdown",
+    "sourcePath": "node_modules/unist-util-visit-parents/readme.md",
+    "package": "unist-util-visit-parents",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "018886a3389f28b0c2d30bf30c795bc5e5feda0b497ae05748aa227f78f46c1b",
+    "sampleSha256": "9ebf5d643dab049ad4000df0bb3bada8433dda27ffef279797c514abdc9ee30d",
+    "packageVersion": "6.0.2",
+    "license": "MIT",
+    "licenseFiles": [
+      "license"
+    ]
+  },
+  {
+    "id": "natural/which/which.js",
+    "kind": "code",
+    "sourcePath": "node_modules/which/which.js",
+    "package": "which",
+    "slice": [
+      0,
+      6000
+    ],
+    "sha256": "76845e1fe7851267fb7ee72b18f2d916996d330150e31e48f4657a79e9b46b5b",
+    "sampleSha256": "76845e1fe7851267fb7ee72b18f2d916996d330150e31e48f4657a79e9b46b5b",
+    "packageVersion": "2.0.2",
+    "license": "ISC",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  }
+]

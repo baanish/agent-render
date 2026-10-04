@@ -1,0 +1,888 @@
+{
+  "version": 1,
+  "frozenAt": "2026-10-03T23:25:43.756Z",
+  "planSha256": "bf240d6699b1bfcad545e8992c7af2765a187d4db4e28fa68209960cb218ca1f",
+  "corpusSha256": "208b2271ae3d04577a5df4f435d6ec054a819e6a40b2529bdaeee1c1ec6c4e27",
+  "phase": "Frozen before any compression measurement; model development is complete.",
+  "scope": "Convenience validation sample, not actual agent traffic. Source files within a repository are correlated. No compression-based inclusion or model changes are permitted from this set.",
+  "repositories": [
+    {
+      "repository": "python/cpython",
+      "commit": "880696af1aff6f4170fbacdfb8aa73a84be73da5",
+      "commitDate": "2026-10-03T22:15:45Z",
+      "parents": [
+        "6e7738bb5e6a294d888f8af6f409f52508194249"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": {
+        "key": "other",
+        "name": "Other",
+        "spdx_id": "NOASSERTION",
+        "url": null,
+        "node_id": "MDc6TGljZW5zZTA="
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/python/cpython/tree/880696af1aff6f4170fbacdfb8aa73a84be73da5"
+    },
+    {
+      "repository": "rust-lang/rust",
+      "commit": "db8f076d2619ce2585b0380dda06e8da25a40da4",
+      "commitDate": "2026-10-03T11:31:41Z",
+      "parents": [
+        "d6b6dc7982ef5d9117d96d018dfd83098d0471a1",
+        "7e68f55b93b5b56fac1802b2478630a90d8f0a46"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/rust-lang/rust/tree/db8f076d2619ce2585b0380dda06e8da25a40da4"
+    },
+    {
+      "repository": "golang/go",
+      "commit": "6f5c275ebdc454197fff5f1496521c8f81e20eef",
+      "commitDate": "2026-10-02T21:55:20Z",
+      "parents": [
+        "bfc1e31771a8e106538cb4d2d115688791a752db"
+      ],
+      "defaultBranch": "master",
+      "repositoryLicense": {
+        "key": "bsd-3-clause",
+        "name": "BSD 3-Clause \"New\" or \"Revised\" License",
+        "spdx_id": "BSD-3-Clause",
+        "url": "https://api.github.com/licenses/bsd-3-clause",
+        "node_id": "MDc6TGljZW5zZTU="
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/golang/go/tree/6f5c275ebdc454197fff5f1496521c8f81e20eef"
+    },
+    {
+      "repository": "redis/redis",
+      "commit": "b540ca49cba815f3fbe634363c3df68d4f4f127a",
+      "commitDate": "2026-09-30T12:02:11Z",
+      "parents": [
+        "8bc1c4e147761e7c9d6ff1bb92248b9d4dda43ab"
+      ],
+      "defaultBranch": "unstable",
+      "repositoryLicense": {
+        "key": "other",
+        "name": "Other",
+        "spdx_id": "NOASSERTION",
+        "url": null,
+        "node_id": "MDc6TGljZW5zZTA="
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/redis/redis/tree/b540ca49cba815f3fbe634363c3df68d4f4f127a"
+    },
+    {
+      "repository": "webpack/webpack",
+      "commit": "089b4c064fc63ea7830c4b1b06ef3dd0cadf864e",
+      "commitDate": "2026-10-03T19:48:52Z",
+      "parents": [
+        "e930051d720e68e540a435d8e18370018588f03b"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/webpack/webpack/tree/089b4c064fc63ea7830c4b1b06ef3dd0cadf864e"
+    },
+    {
+      "repository": "microsoft/TypeScript",
+      "commit": "50d70a3f5f453a79a4323b263165da51f656a4e3",
+      "commitDate": "2026-10-03T17:37:01Z",
+      "parents": [
+        "f9f8d01292562242b6e7c7142e46ed7e470926f9"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/microsoft/TypeScript/tree/50d70a3f5f453a79a4323b263165da51f656a4e3"
+    },
+    {
+      "repository": "datasets/co2-ppm",
+      "commit": "8c4097238570147adf6fa97ad357315528dac4c5",
+      "commitDate": "2026-10-01T02:50:42Z",
+      "parents": [
+        "c38f24fd57d35d6ca2da6156d552dd4e1c8b8e96"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": null,
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/datasets/co2-ppm/tree/8c4097238570147adf6fa97ad357315528dac4c5"
+    },
+    {
+      "repository": "datasets/global-temp",
+      "commit": "44571fe8c15e228c156bb19308e5ccc1e31cf9f7",
+      "commitDate": "2026-10-01T02:32:21Z",
+      "parents": [
+        "c3fd761372fa831fe3acd43a6aa874e820790fb4"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": {
+        "key": "unlicense",
+        "name": "The Unlicense",
+        "spdx_id": "Unlicense",
+        "url": "https://api.github.com/licenses/unlicense",
+        "node_id": "MDc6TGljZW5zZTE1"
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/datasets/global-temp/tree/44571fe8c15e228c156bb19308e5ccc1e31cf9f7"
+    },
+    {
+      "repository": "ruanyf/es6tutorial",
+      "commit": "d27a751258f25cb4d27de70161d3bcd7fe19251e",
+      "commitDate": "2026-09-24T14:20:22Z",
+      "parents": [
+        "4cdb61012061d38d2b50af9a93d2c11b225ed3c6"
+      ],
+      "defaultBranch": "gh-pages",
+      "repositoryLicense": {
+        "key": "other",
+        "name": "Other",
+        "spdx_id": "NOASSERTION",
+        "url": null,
+        "node_id": "MDc6TGljZW5zZTA="
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/ruanyf/es6tutorial/tree/d27a751258f25cb4d27de70161d3bcd7fe19251e"
+    },
+    {
+      "repository": "rust-lang-ja/book-ja",
+      "commit": "5092e5395bf32a65b277c3b1cc1a81ba288c7d46",
+      "commitDate": "2026-02-15T13:00:05Z",
+      "parents": [
+        "ea990ae0e28f9f6d15b2af888fd7c3acd68a531e"
+      ],
+      "defaultBranch": "master-ja",
+      "repositoryLicense": {
+        "key": "other",
+        "name": "Other",
+        "spdx_id": "NOASSERTION",
+        "url": null,
+        "node_id": "MDc6TGljZW5zZTA="
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/rust-lang-ja/book-ja/tree/5092e5395bf32a65b277c3b1cc1a81ba288c7d46"
+    }
+  ],
+  "sources": [
+    {
+      "id": "python--cpython--1",
+      "repository": "python/cpython",
+      "commit": "880696af1aff6f4170fbacdfb8aa73a84be73da5",
+      "path": "README.rst",
+      "kind": "markdown",
+      "language": "en",
+      "sourceUrl": "https://raw.githubusercontent.com/python/cpython/880696af1aff6f4170fbacdfb8aa73a84be73da5/README.rst",
+      "sourceSha256": "10e00b4e0bbd30b7eef0c65f492347e8d976ef8cbdfc85635492a840ff4ccf8f",
+      "sourceBytes": 8912,
+      "sourceUtf16Chars": 8907,
+      "sampleSha256": "82b9c6e0b31be022284eda1bb96e35b05f738deaadd59be9f0e288413caee773",
+      "sliceUtf16": [
+        0,
+        7985
+      ],
+      "sampleUtf16Chars": 7985,
+      "sampleBytes": 7986
+    },
+    {
+      "id": "python--cpython--2",
+      "repository": "python/cpython",
+      "commit": "880696af1aff6f4170fbacdfb8aa73a84be73da5",
+      "path": "Lib/statistics.py",
+      "kind": "code",
+      "language": "python",
+      "sourceUrl": "https://raw.githubusercontent.com/python/cpython/880696af1aff6f4170fbacdfb8aa73a84be73da5/Lib/statistics.py",
+      "sourceSha256": "fe1ea3be7039600a50aaa0d0af94d3f7fe1b0b3cd26c0622e9638a5bf097ebd2",
+      "sourceBytes": 62217,
+      "sourceUtf16Chars": 62213,
+      "sampleSha256": "506798cdd31b3050b9268caafbaadd3557815b229114c4ef8e6755b80b0e7248",
+      "sliceUtf16": [
+        0,
+        7967
+      ],
+      "sampleUtf16Chars": 7967,
+      "sampleBytes": 7967
+    },
+    {
+      "id": "python--cpython--3",
+      "repository": "python/cpython",
+      "commit": "880696af1aff6f4170fbacdfb8aa73a84be73da5",
+      "path": "Lib/json/decoder.py",
+      "kind": "code",
+      "language": "python",
+      "sourceUrl": "https://raw.githubusercontent.com/python/cpython/880696af1aff6f4170fbacdfb8aa73a84be73da5/Lib/json/decoder.py",
+      "sourceSha256": "613ee26089a431ed2324210ce059f42d375dc30c46fcf96ae5275cb9108204ea",
+      "sourceBytes": 13584,
+      "sourceUtf16Chars": 13584,
+      "sampleSha256": "728b161dbb3407ef54338a0d39bbd920a3954b7f13549037d6190276c9ff894e",
+      "sliceUtf16": [
+        0,
+        7994
+      ],
+      "sampleUtf16Chars": 7994,
+      "sampleBytes": 7994
+    },
+    {
+      "id": "python--cpython--4",
+      "repository": "python/cpython",
+      "commit": "880696af1aff6f4170fbacdfb8aa73a84be73da5",
+      "commitDiff": true,
+      "kind": "diff",
+      "language": "diff",
+      "sourceUrl": "https://github.com/python/cpython/commit/880696af1aff6f4170fbacdfb8aa73a84be73da5.diff",
+      "sourceSha256": "db5b2f27cf0122434e1832aa47ba86f7f6be1909bb060194903e4b309938e998",
+      "sourceBytes": 5025,
+      "sourceUtf16Chars": 5025,
+      "sampleSha256": "db5b2f27cf0122434e1832aa47ba86f7f6be1909bb060194903e4b309938e998",
+      "sliceUtf16": [
+        0,
+        5025
+      ],
+      "sampleUtf16Chars": 5025,
+      "sampleBytes": 5025
+    },
+    {
+      "id": "rust-lang--rust--1",
+      "repository": "rust-lang/rust",
+      "commit": "db8f076d2619ce2585b0380dda06e8da25a40da4",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "en",
+      "sourceUrl": "https://raw.githubusercontent.com/rust-lang/rust/db8f076d2619ce2585b0380dda06e8da25a40da4/README.md",
+      "sourceSha256": "b3f6ef2fef88b98cb9ec013a5c86213095e53e40eb228679574e4d06517f33c8",
+      "sourceBytes": 3304,
+      "sourceUtf16Chars": 3304,
+      "sampleSha256": "b3f6ef2fef88b98cb9ec013a5c86213095e53e40eb228679574e4d06517f33c8",
+      "sliceUtf16": [
+        0,
+        3304
+      ],
+      "sampleUtf16Chars": 3304,
+      "sampleBytes": 3304
+    },
+    {
+      "id": "rust-lang--rust--2",
+      "repository": "rust-lang/rust",
+      "commit": "db8f076d2619ce2585b0380dda06e8da25a40da4",
+      "path": "library/core/src/option.rs",
+      "kind": "code",
+      "language": "rust",
+      "sourceUrl": "https://raw.githubusercontent.com/rust-lang/rust/db8f076d2619ce2585b0380dda06e8da25a40da4/library/core/src/option.rs",
+      "sourceSha256": "693df7245cf3e669b2c442b62c96c76c43ad1f9cfe79f6bf4306e71c32fa9f5d",
+      "sourceBytes": 102820,
+      "sourceUtf16Chars": 102820,
+      "sampleSha256": "488bc8bb2e224f8b6eea25688af9db728c9dc0eff9971b08262151b8b3e57126",
+      "sliceUtf16": [
+        0,
+        7959
+      ],
+      "sampleUtf16Chars": 7959,
+      "sampleBytes": 7959
+    },
+    {
+      "id": "rust-lang--rust--3",
+      "repository": "rust-lang/rust",
+      "commit": "db8f076d2619ce2585b0380dda06e8da25a40da4",
+      "commitDiff": true,
+      "kind": "diff",
+      "language": "diff",
+      "sourceUrl": "https://github.com/rust-lang/rust/commit/db8f076d2619ce2585b0380dda06e8da25a40da4.diff",
+      "sourceSha256": "a6c2b004c7e53fdb92781739158af475946ec42e37304e0822b6a2a926b2c72d",
+      "sourceBytes": 254173,
+      "sourceUtf16Chars": 254171,
+      "sampleSha256": "7cfbc8b6d24119b91a60408cac8564e9cadb9dda47125127c77cfc5c84f1f492",
+      "sliceUtf16": [
+        0,
+        7982
+      ],
+      "sampleUtf16Chars": 7982,
+      "sampleBytes": 7984
+    },
+    {
+      "id": "golang--go--1",
+      "repository": "golang/go",
+      "commit": "6f5c275ebdc454197fff5f1496521c8f81e20eef",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "en",
+      "sourceUrl": "https://raw.githubusercontent.com/golang/go/6f5c275ebdc454197fff5f1496521c8f81e20eef/README.md",
+      "sourceSha256": "8247b7c5de1e74854aac1a08aa5894444d1d33b4045c70d5cc3367ad0e25c3f3",
+      "sourceBytes": 1454,
+      "sourceUtf16Chars": 1454,
+      "sampleSha256": "8247b7c5de1e74854aac1a08aa5894444d1d33b4045c70d5cc3367ad0e25c3f3",
+      "sliceUtf16": [
+        0,
+        1454
+      ],
+      "sampleUtf16Chars": 1454,
+      "sampleBytes": 1454
+    },
+    {
+      "id": "golang--go--2",
+      "repository": "golang/go",
+      "commit": "6f5c275ebdc454197fff5f1496521c8f81e20eef",
+      "path": "src/encoding/json/encode.go",
+      "kind": "code",
+      "language": "go",
+      "sourceUrl": "https://raw.githubusercontent.com/golang/go/6f5c275ebdc454197fff5f1496521c8f81e20eef/src/encoding/json/encode.go",
+      "sourceSha256": "8203ffe95480b9d79b113b081a5eefba136436cde810a96f37c39141907f90da",
+      "sourceBytes": 39765,
+      "sourceUtf16Chars": 39765,
+      "sampleSha256": "c1b5b2358af1ba702761d641cecfb03f28562789ab7b8d39787d54448cb96cf2",
+      "sliceUtf16": [
+        0,
+        7963
+      ],
+      "sampleUtf16Chars": 7963,
+      "sampleBytes": 7963
+    },
+    {
+      "id": "golang--go--3",
+      "repository": "golang/go",
+      "commit": "6f5c275ebdc454197fff5f1496521c8f81e20eef",
+      "path": "src/net/http/request.go",
+      "kind": "code",
+      "language": "go",
+      "sourceUrl": "https://raw.githubusercontent.com/golang/go/6f5c275ebdc454197fff5f1496521c8f81e20eef/src/net/http/request.go",
+      "sourceSha256": "35a303d408f1e785838af82540ef4f4b71dac6f9532fb19e111c411a2d46f155",
+      "sourceBytes": 51177,
+      "sourceUtf16Chars": 51177,
+      "sampleSha256": "622e3e05a5ddffa87545b98aa1e7238bc9b339de5215f50d620ddfe0bd745d0e",
+      "sliceUtf16": [
+        0,
+        7945
+      ],
+      "sampleUtf16Chars": 7945,
+      "sampleBytes": 7945
+    },
+    {
+      "id": "golang--go--4",
+      "repository": "golang/go",
+      "commit": "6f5c275ebdc454197fff5f1496521c8f81e20eef",
+      "commitDiff": true,
+      "kind": "diff",
+      "language": "diff",
+      "sourceUrl": "https://github.com/golang/go/commit/6f5c275ebdc454197fff5f1496521c8f81e20eef.diff",
+      "sourceSha256": "3cdfad31c8acb080477e4732232912698f83d9d352d8573a11f3c9b0474febca",
+      "sourceBytes": 1010,
+      "sourceUtf16Chars": 1010,
+      "sampleSha256": "3cdfad31c8acb080477e4732232912698f83d9d352d8573a11f3c9b0474febca",
+      "sliceUtf16": [
+        0,
+        1010
+      ],
+      "sampleUtf16Chars": 1010,
+      "sampleBytes": 1010
+    },
+    {
+      "id": "redis--redis--1",
+      "repository": "redis/redis",
+      "commit": "b540ca49cba815f3fbe634363c3df68d4f4f127a",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "en",
+      "sourceUrl": "https://raw.githubusercontent.com/redis/redis/b540ca49cba815f3fbe634363c3df68d4f4f127a/README.md",
+      "sourceSha256": "947c87732c7ec6382a64ac7c637bea474b6aa478f22dcf3d8091bb6ca8bb531d",
+      "sourceBytes": 31255,
+      "sourceUtf16Chars": 31203,
+      "sampleSha256": "3c7c3a8f5c2daf42c0f4d10974642f3dbe0569200fadf866d347660158ad2688",
+      "sliceUtf16": [
+        0,
+        7958
+      ],
+      "sampleUtf16Chars": 7958,
+      "sampleBytes": 7958
+    },
+    {
+      "id": "redis--redis--2",
+      "repository": "redis/redis",
+      "commit": "b540ca49cba815f3fbe634363c3df68d4f4f127a",
+      "path": "src/sds.c",
+      "kind": "code",
+      "language": "c",
+      "sourceUrl": "https://raw.githubusercontent.com/redis/redis/b540ca49cba815f3fbe634363c3df68d4f4f127a/src/sds.c",
+      "sourceSha256": "ee81ba4c32590967f0abd9be546320c89f179be838d65eb352986cd2090d7273",
+      "sourceBytes": 54530,
+      "sourceUtf16Chars": 54530,
+      "sampleSha256": "e46f736369f210c1a91abc3a9c079a4daf014176b3e1d5c0590bea71d1bf5b94",
+      "sliceUtf16": [
+        0,
+        7984
+      ],
+      "sampleUtf16Chars": 7984,
+      "sampleBytes": 7984
+    },
+    {
+      "id": "redis--redis--3",
+      "repository": "redis/redis",
+      "commit": "b540ca49cba815f3fbe634363c3df68d4f4f127a",
+      "path": "redis.conf",
+      "kind": "code",
+      "language": "ini",
+      "sourceUrl": "https://raw.githubusercontent.com/redis/redis/b540ca49cba815f3fbe634363c3df68d4f4f127a/redis.conf",
+      "sourceSha256": "ffbaaccc98865322871fbd03e8445eb0f64a9ce2e5ed7ceac44d97c22e1516d4",
+      "sourceBytes": 132779,
+      "sourceUtf16Chars": 132777,
+      "sampleSha256": "d777a9f234dd2560cc5b6e8c09717c995ab8811c9a7b73a020485883d0b177b8",
+      "sliceUtf16": [
+        0,
+        7980
+      ],
+      "sampleUtf16Chars": 7980,
+      "sampleBytes": 7980
+    },
+    {
+      "id": "redis--redis--4",
+      "repository": "redis/redis",
+      "commit": "b540ca49cba815f3fbe634363c3df68d4f4f127a",
+      "commitDiff": true,
+      "kind": "diff",
+      "language": "diff",
+      "sourceUrl": "https://github.com/redis/redis/commit/b540ca49cba815f3fbe634363c3df68d4f4f127a.diff",
+      "sourceSha256": "8a820b0ad2b2dd1fc441b7f04270d838fc0d16aed92c7c67129d1c73d79f0faa",
+      "sourceBytes": 2424,
+      "sourceUtf16Chars": 2424,
+      "sampleSha256": "8a820b0ad2b2dd1fc441b7f04270d838fc0d16aed92c7c67129d1c73d79f0faa",
+      "sliceUtf16": [
+        0,
+        2424
+      ],
+      "sampleUtf16Chars": 2424,
+      "sampleBytes": 2424
+    },
+    {
+      "id": "webpack--webpack--1",
+      "repository": "webpack/webpack",
+      "commit": "089b4c064fc63ea7830c4b1b06ef3dd0cadf864e",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "en",
+      "sourceUrl": "https://raw.githubusercontent.com/webpack/webpack/089b4c064fc63ea7830c4b1b06ef3dd0cadf864e/README.md",
+      "sourceSha256": "0b959a147e8b875e42f77fa5804c8d4e70f86b3399d4baba9d90d2f756dd2e0f",
+      "sourceBytes": 79633,
+      "sourceUtf16Chars": 79625,
+      "sampleSha256": "53204e802263afb5808cd6dd7d08f781a6ec2049ffd9b1ade300e9cf05c87eee",
+      "sliceUtf16": [
+        0,
+        7839
+      ],
+      "sampleUtf16Chars": 7839,
+      "sampleBytes": 7843
+    },
+    {
+      "id": "webpack--webpack--2",
+      "repository": "webpack/webpack",
+      "commit": "089b4c064fc63ea7830c4b1b06ef3dd0cadf864e",
+      "path": "lib/Compiler.js",
+      "kind": "code",
+      "language": "javascript",
+      "sourceUrl": "https://raw.githubusercontent.com/webpack/webpack/089b4c064fc63ea7830c4b1b06ef3dd0cadf864e/lib/Compiler.js",
+      "sourceSha256": "5f5829d71664def84797d5a1c9517dc29752498fdd754b084d275817b94abf49",
+      "sourceBytes": 51071,
+      "sourceUtf16Chars": 51064,
+      "sampleSha256": "b0b4ff642399872c4d7cfd1f7c42383c139d9ea8bc4fcc8354a58cc2d5ebba2f",
+      "sliceUtf16": [
+        0,
+        7965
+      ],
+      "sampleUtf16Chars": 7965,
+      "sampleBytes": 7965
+    },
+    {
+      "id": "webpack--webpack--3",
+      "repository": "webpack/webpack",
+      "commit": "089b4c064fc63ea7830c4b1b06ef3dd0cadf864e",
+      "path": "package.json",
+      "kind": "json",
+      "language": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/webpack/webpack/089b4c064fc63ea7830c4b1b06ef3dd0cadf864e/package.json",
+      "sourceSha256": "840151cdfc639b8010bd06a6a215336379d25ccffb0e0d1e7c3e0b5fe0d0455d",
+      "sourceBytes": 14409,
+      "sourceUtf16Chars": 14409,
+      "sampleSha256": "840151cdfc639b8010bd06a6a215336379d25ccffb0e0d1e7c3e0b5fe0d0455d",
+      "sliceUtf16": [
+        0,
+        14409
+      ],
+      "sampleUtf16Chars": 14409,
+      "sampleBytes": 14409
+    },
+    {
+      "id": "webpack--webpack--4",
+      "repository": "webpack/webpack",
+      "commit": "089b4c064fc63ea7830c4b1b06ef3dd0cadf864e",
+      "path": "schemas/plugins/BannerPlugin.json",
+      "kind": "json",
+      "language": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/webpack/webpack/089b4c064fc63ea7830c4b1b06ef3dd0cadf864e/schemas/plugins/BannerPlugin.json",
+      "sourceSha256": "558de9f6c5bdf787cf0eeb7df3146004483f95d204356326e0bbad375041d3a7",
+      "sourceBytes": 2905,
+      "sourceUtf16Chars": 2905,
+      "sampleSha256": "558de9f6c5bdf787cf0eeb7df3146004483f95d204356326e0bbad375041d3a7",
+      "sliceUtf16": [
+        0,
+        2905
+      ],
+      "sampleUtf16Chars": 2905,
+      "sampleBytes": 2905
+    },
+    {
+      "id": "microsoft--TypeScript--1",
+      "repository": "microsoft/TypeScript",
+      "commit": "50d70a3f5f453a79a4323b263165da51f656a4e3",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "en",
+      "sourceUrl": "https://raw.githubusercontent.com/microsoft/TypeScript/50d70a3f5f453a79a4323b263165da51f656a4e3/README.md",
+      "sourceSha256": "b43867a1a978a0a3d881b91e50e9807f1f56e3f1dd54d65cad43f471c84e0036",
+      "sourceBytes": 2741,
+      "sourceUtf16Chars": 2741,
+      "sampleSha256": "b43867a1a978a0a3d881b91e50e9807f1f56e3f1dd54d65cad43f471c84e0036",
+      "sliceUtf16": [
+        0,
+        2741
+      ],
+      "sampleUtf16Chars": 2741,
+      "sampleBytes": 2741
+    },
+    {
+      "id": "microsoft--TypeScript--3",
+      "repository": "microsoft/TypeScript",
+      "commit": "50d70a3f5f453a79a4323b263165da51f656a4e3",
+      "path": "package.json",
+      "kind": "json",
+      "language": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/microsoft/TypeScript/50d70a3f5f453a79a4323b263165da51f656a4e3/package.json",
+      "sourceSha256": "2828c1d269bd9c80d634131ec107ac69f1cfc3bf1f98d24c112c825c8acd7902",
+      "sourceBytes": 1838,
+      "sourceUtf16Chars": 1838,
+      "sampleSha256": "2828c1d269bd9c80d634131ec107ac69f1cfc3bf1f98d24c112c825c8acd7902",
+      "sliceUtf16": [
+        0,
+        1838
+      ],
+      "sampleUtf16Chars": 1838,
+      "sampleBytes": 1838
+    },
+    {
+      "id": "datasets--co2-ppm--1",
+      "repository": "datasets/co2-ppm",
+      "commit": "8c4097238570147adf6fa97ad357315528dac4c5",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "en",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/co2-ppm/8c4097238570147adf6fa97ad357315528dac4c5/README.md",
+      "sourceSha256": "086e085b984eb22ac27dfdf295321aa2381ebe267993ec5b25276cd3487c59d5",
+      "sourceBytes": 2740,
+      "sourceUtf16Chars": 2738,
+      "sampleSha256": "086e085b984eb22ac27dfdf295321aa2381ebe267993ec5b25276cd3487c59d5",
+      "sliceUtf16": [
+        0,
+        2738
+      ],
+      "sampleUtf16Chars": 2738,
+      "sampleBytes": 2740
+    },
+    {
+      "id": "datasets--co2-ppm--2",
+      "repository": "datasets/co2-ppm",
+      "commit": "8c4097238570147adf6fa97ad357315528dac4c5",
+      "path": "data/co2-mm-mlo.csv",
+      "kind": "csv",
+      "language": "csv",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/co2-ppm/8c4097238570147adf6fa97ad357315528dac4c5/data/co2-mm-mlo.csv",
+      "sourceSha256": "5d4c2a520d0c6180bb7dd830bf093c9be4716775ddd03d90c04434d423d81b74",
+      "sourceBytes": 37633,
+      "sourceUtf16Chars": 37633,
+      "sampleSha256": "aec7b4391df220f482d3dace9fb774a580273cfc3c479d207ff7896a9004a1a2",
+      "sliceUtf16": [
+        0,
+        7980
+      ],
+      "sampleUtf16Chars": 7980,
+      "sampleBytes": 7980
+    },
+    {
+      "id": "datasets--co2-ppm--3",
+      "repository": "datasets/co2-ppm",
+      "commit": "8c4097238570147adf6fa97ad357315528dac4c5",
+      "path": "data/co2-annmean-mlo.csv",
+      "kind": "csv",
+      "language": "csv",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/co2-ppm/8c4097238570147adf6fa97ad357315528dac4c5/data/co2-annmean-mlo.csv",
+      "sourceSha256": "b1548ededea6f9b7eecac370753de8d8da6e0afafe1041f749a11db78c2e33c4",
+      "sourceBytes": 1161,
+      "sourceUtf16Chars": 1161,
+      "sampleSha256": "b1548ededea6f9b7eecac370753de8d8da6e0afafe1041f749a11db78c2e33c4",
+      "sliceUtf16": [
+        0,
+        1161
+      ],
+      "sampleUtf16Chars": 1161,
+      "sampleBytes": 1161
+    },
+    {
+      "id": "datasets--co2-ppm--4",
+      "repository": "datasets/co2-ppm",
+      "commit": "8c4097238570147adf6fa97ad357315528dac4c5",
+      "path": "datapackage.json",
+      "kind": "json",
+      "language": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/co2-ppm/8c4097238570147adf6fa97ad357315528dac4c5/datapackage.json",
+      "sourceSha256": "15f9ea5f4656b1e91ea68d8c33ac16a1c6ab651a8356cf12fe53cd72d06e8a1c",
+      "sourceBytes": 10139,
+      "sourceUtf16Chars": 10125,
+      "sampleSha256": "15f9ea5f4656b1e91ea68d8c33ac16a1c6ab651a8356cf12fe53cd72d06e8a1c",
+      "sliceUtf16": [
+        0,
+        10125
+      ],
+      "sampleUtf16Chars": 10125,
+      "sampleBytes": 10139,
+      "declaredDataLicenses": [
+        {
+          "name": "ODC-PDDL-1.0",
+          "path": "http://opendatacommons.org/licenses/pddl/",
+          "title": "Open Data Commons Public Domain Dedication and License v1.0"
+        }
+      ]
+    },
+    {
+      "id": "datasets--global-temp--1",
+      "repository": "datasets/global-temp",
+      "commit": "44571fe8c15e228c156bb19308e5ccc1e31cf9f7",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "en",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/global-temp/44571fe8c15e228c156bb19308e5ccc1e31cf9f7/README.md",
+      "sourceSha256": "eca036817e5a8aeccdaf4c30f3b017426b7721d6a5653e5c1c94b40731bcf452",
+      "sourceBytes": 4976,
+      "sourceUtf16Chars": 4974,
+      "sampleSha256": "eca036817e5a8aeccdaf4c30f3b017426b7721d6a5653e5c1c94b40731bcf452",
+      "sliceUtf16": [
+        0,
+        4974
+      ],
+      "sampleUtf16Chars": 4974,
+      "sampleBytes": 4976
+    },
+    {
+      "id": "datasets--global-temp--2",
+      "repository": "datasets/global-temp",
+      "commit": "44571fe8c15e228c156bb19308e5ccc1e31cf9f7",
+      "path": "data/monthly.csv",
+      "kind": "csv",
+      "language": "csv",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/global-temp/44571fe8c15e228c156bb19308e5ccc1e31cf9f7/data/monthly.csv",
+      "sourceSha256": "d61b268c8f4d1934c0a20297d4036a68f93a06f15442164637d3994c18a15186",
+      "sourceBytes": 81109,
+      "sourceUtf16Chars": 81109,
+      "sampleSha256": "6970bc08f5a31eb32385c21712c3566407fbba353e48598c71ba4e3d98a2409d",
+      "sliceUtf16": [
+        0,
+        7980
+      ],
+      "sampleUtf16Chars": 7980,
+      "sampleBytes": 7980
+    },
+    {
+      "id": "datasets--global-temp--3",
+      "repository": "datasets/global-temp",
+      "commit": "44571fe8c15e228c156bb19308e5ccc1e31cf9f7",
+      "path": "data/annual.csv",
+      "kind": "csv",
+      "language": "csv",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/global-temp/44571fe8c15e228c156bb19308e5ccc1e31cf9f7/data/annual.csv",
+      "sourceSha256": "c9f98d4dfb6a985d9dbbb7a99e9208378d8d693ce951cd69f7983a628c296e20",
+      "sourceBytes": 6074,
+      "sourceUtf16Chars": 6074,
+      "sampleSha256": "c9f98d4dfb6a985d9dbbb7a99e9208378d8d693ce951cd69f7983a628c296e20",
+      "sliceUtf16": [
+        0,
+        6074
+      ],
+      "sampleUtf16Chars": 6074,
+      "sampleBytes": 6074
+    },
+    {
+      "id": "datasets--global-temp--4",
+      "repository": "datasets/global-temp",
+      "commit": "44571fe8c15e228c156bb19308e5ccc1e31cf9f7",
+      "path": "datapackage.json",
+      "kind": "json",
+      "language": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/global-temp/44571fe8c15e228c156bb19308e5ccc1e31cf9f7/datapackage.json",
+      "sourceSha256": "a05addb63c1556a31d8c5406c982e731ddae9b197d70cc88501db48daea18a24",
+      "sourceBytes": 4157,
+      "sourceUtf16Chars": 4155,
+      "sampleSha256": "a05addb63c1556a31d8c5406c982e731ddae9b197d70cc88501db48daea18a24",
+      "sliceUtf16": [
+        0,
+        4155
+      ],
+      "sampleUtf16Chars": 4155,
+      "sampleBytes": 4157,
+      "declaredDataLicenses": [
+        {
+          "name": "CC-BY-4.0",
+          "path": "https://creativecommons.org/licenses/by/4.0/",
+          "title": "Creative Commons Attribution 4.0 International"
+        }
+      ]
+    },
+    {
+      "id": "ruanyf--es6tutorial--1",
+      "repository": "ruanyf/es6tutorial",
+      "commit": "d27a751258f25cb4d27de70161d3bcd7fe19251e",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "zh",
+      "sourceUrl": "https://raw.githubusercontent.com/ruanyf/es6tutorial/d27a751258f25cb4d27de70161d3bcd7fe19251e/README.md",
+      "sourceSha256": "09ca60537d1f32aa5e1847d138a8d632232a03257c6c8728dfb4c84a353f2b4d",
+      "sourceBytes": 1631,
+      "sourceUtf16Chars": 1025,
+      "sampleSha256": "09ca60537d1f32aa5e1847d138a8d632232a03257c6c8728dfb4c84a353f2b4d",
+      "sliceUtf16": [
+        0,
+        1025
+      ],
+      "sampleUtf16Chars": 1025,
+      "sampleBytes": 1631
+    },
+    {
+      "id": "ruanyf--es6tutorial--2",
+      "repository": "ruanyf/es6tutorial",
+      "commit": "d27a751258f25cb4d27de70161d3bcd7fe19251e",
+      "path": "docs/promise.md",
+      "kind": "markdown",
+      "language": "zh",
+      "sourceUrl": "https://raw.githubusercontent.com/ruanyf/es6tutorial/d27a751258f25cb4d27de70161d3bcd7fe19251e/docs/promise.md",
+      "sourceSha256": "8ef3cbd5af400e9bc914fc9edff21bcc8774b9ac7197d63b0f733425d3e0d537",
+      "sourceBytes": 40763,
+      "sourceUtf16Chars": 26824,
+      "sampleSha256": "be51d303f9dd3a4db04300f583a9d7d2b835c3df2ebf92220af93ec6b3525fad",
+      "sliceUtf16": [
+        0,
+        7990
+      ],
+      "sampleUtf16Chars": 7990,
+      "sampleBytes": 12842
+    },
+    {
+      "id": "ruanyf--es6tutorial--3",
+      "repository": "ruanyf/es6tutorial",
+      "commit": "d27a751258f25cb4d27de70161d3bcd7fe19251e",
+      "path": "docs/async.md",
+      "kind": "markdown",
+      "language": "zh",
+      "sourceUrl": "https://raw.githubusercontent.com/ruanyf/es6tutorial/d27a751258f25cb4d27de70161d3bcd7fe19251e/docs/async.md",
+      "sourceSha256": "ba098624e39ae1c938ab8b7c1f4eb2f4adead03561d07c3d994c672c15710a45",
+      "sourceBytes": 26147,
+      "sourceUtf16Chars": 17606,
+      "sampleSha256": "91ffc43b3d22a8106b9ba95df5d06583303cae0b1149f2abd4b678296d52e8ea",
+      "sliceUtf16": [
+        0,
+        7995
+      ],
+      "sampleUtf16Chars": 7995,
+      "sampleBytes": 11527
+    },
+    {
+      "id": "rust-lang-ja--book-ja--1",
+      "repository": "rust-lang-ja/book-ja",
+      "commit": "5092e5395bf32a65b277c3b1cc1a81ba288c7d46",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "ja",
+      "sourceUrl": "https://raw.githubusercontent.com/rust-lang-ja/book-ja/5092e5395bf32a65b277c3b1cc1a81ba288c7d46/README.md",
+      "sourceSha256": "7bc7f80f1ba4b92ad5437cad1c1d3ec5dfe32bdfef44a44d3b9d2fdb4e9e8511",
+      "sourceBytes": 3077,
+      "sourceUtf16Chars": 3077,
+      "sampleSha256": "7bc7f80f1ba4b92ad5437cad1c1d3ec5dfe32bdfef44a44d3b9d2fdb4e9e8511",
+      "sliceUtf16": [
+        0,
+        3077
+      ],
+      "sampleUtf16Chars": 3077,
+      "sampleBytes": 3077
+    },
+    {
+      "id": "rust-lang-ja--book-ja--2",
+      "repository": "rust-lang-ja/book-ja",
+      "commit": "5092e5395bf32a65b277c3b1cc1a81ba288c7d46",
+      "path": "src/ch04-01-what-is-ownership.md",
+      "kind": "markdown",
+      "language": "ja",
+      "sourceUrl": "https://raw.githubusercontent.com/rust-lang-ja/book-ja/5092e5395bf32a65b277c3b1cc1a81ba288c7d46/src/ch04-01-what-is-ownership.md",
+      "sourceSha256": "1c66de044a5aa3a9d724140d958fd535b9b62a8aaae95229fb550db16251381b",
+      "sourceBytes": 55023,
+      "sourceUtf16Chars": 36663,
+      "sampleSha256": "6c2d7cf5bf927e74ba7552015da7f4e79f4fca9098f363fc746cff54be249b82",
+      "sliceUtf16": [
+        0,
+        7973
+      ],
+      "sampleUtf16Chars": 7973,
+      "sampleBytes": 12919
+    },
+    {
+      "id": "rust-lang-ja--book-ja--3",
+      "repository": "rust-lang-ja/book-ja",
+      "commit": "5092e5395bf32a65b277c3b1cc1a81ba288c7d46",
+      "path": "src/ch03-02-data-types.md",
+      "kind": "markdown",
+      "language": "ja",
+      "sourceUrl": "https://raw.githubusercontent.com/rust-lang-ja/book-ja/5092e5395bf32a65b277c3b1cc1a81ba288c7d46/src/ch03-02-data-types.md",
+      "sourceSha256": "5a8f33a6fa6ac28dd1a94d97c28ef2d93129ed15a409be46b3c234154e49584e",
+      "sourceBytes": 37424,
+      "sourceUtf16Chars": 26080,
+      "sampleSha256": "b418d832cd3a01e2504ba479362edcd4fdc049a0df3fb2e8316b2a27bb728758",
+      "sliceUtf16": [
+        0,
+        7961
+      ],
+      "sampleUtf16Chars": 7961,
+      "sampleBytes": 11111
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "microsoft--TypeScript--2",
+      "repository": "microsoft/TypeScript",
+      "commit": "50d70a3f5f453a79a4323b263165da51f656a4e3",
+      "path": "src/compiler/parser.ts",
+      "kind": "code",
+      "language": "typescript",
+      "sourceUrl": "https://raw.githubusercontent.com/microsoft/TypeScript/50d70a3f5f453a79a4323b263165da51f656a4e3/src/compiler/parser.ts",
+      "reason": "Command failed: curl --fail --location --silent --show-error --max-time 45 --max-filesize 8388608 --user-agent agent-render-external-validation https://raw.githubusercontent.com/microsoft/TypeScript/50d70a3f5f453a79a4323b263165da51f656a4e3/src/compiler/parser.ts\ncurl: (22) The requested URL returned error: 404\n"
+    },
+    {
+      "id": "microsoft--TypeScript--4",
+      "repository": "microsoft/TypeScript",
+      "commit": "50d70a3f5f453a79a4323b263165da51f656a4e3",
+      "path": "src/compiler/diagnosticMessages.json",
+      "kind": "json",
+      "language": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/microsoft/TypeScript/50d70a3f5f453a79a4323b263165da51f656a4e3/src/compiler/diagnosticMessages.json",
+      "reason": "Command failed: curl --fail --location --silent --show-error --max-time 45 --max-filesize 8388608 --user-agent agent-render-external-validation https://raw.githubusercontent.com/microsoft/TypeScript/50d70a3f5f453a79a4323b263165da51f656a4e3/src/compiler/diagnosticMessages.json\ncurl: (22) The requested URL returned error: 404\n"
+    }
+  ]
+}

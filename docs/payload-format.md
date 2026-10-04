@@ -20,7 +20,7 @@ Payload contents are untrusted user content. Viewers, agents, and automations sh
 #g<payload>   (arx6)
 ```
 
-The compact fragment is a single codec tag char followed by the payload. The tag encodes the codec so unsupported formats fail cleanly; the compact tag does not carry a dictionary version — arx-family tags imply the build's current dictionary (the build pins the newest supported version and rejects a newer one). The legacy `#agent-render=v1.<codec>.<payload>` form (arx-family carry an extra `<dictVersion>.` segment) still decodes for back-compatibility but is no longer emitted. Fragment URLs can look long because they carry the artifact payload in the browser-only fragment instead of sending it to the host during the page request.
+The compact fragment starts with a single codec tag. ARX through ARX5 compact tags imply their pinned dictionary/model; ARX6 v2 explicitly identifies its model with `#g2<prior><digits>`. Original `#g<prior><fraction>` links remain readable through the frozen legacy decoder. The separate experimental `#g1L` format is not accepted by the viewer. Legacy `#agent-render=v1.<codec>.<payload>` links (ARX through ARX5 carry an extra `<dictVersion>.` segment) remain readable but are no longer emitted. Fragments carry the artifact in the browser instead of sending it to the host with the page request.
 
 Supported codecs:
 
@@ -31,8 +31,10 @@ Supported codecs:
 - `arx2` - tuple-envelope transport + arx2 overlay substitution + the shared arx dictionary + brotli (quality 11) + the same four binary-to-text wire shapes. The compact `b` tag identifies arx2 but does not carry a dictionary version — it implies the current pinned shared arx dictionary and arx2 overlay. Existing `arx` links remain valid; async auto-selection keeps arx2 in the pool as the conservative Brotli tuple codec (needed for some CSV regressions).
 - `arx3` - **deprecated emit.** Same compressed bytes as arx2. The only difference was scoring baseBMP by visible character count instead of serialized URL length, so Unicode won artificially and then Discord markdown / WhatsApp percent-encoding detonated the link. Existing `#c` links still decode. Do not mint new arx3 links.
 - `arx4` - **deprecated emit.** ARX2's tuple/overlay pipeline with Brotli replaced by the deterministic context mixer, plus a prior id char, but it kept arx3's broken visible-length baseBMP policy. Existing `#e` links still decode. Do not mint new arx4 links.
-- `arx5` - ARX 4.5: the sane mixer codec. Same context mixer, priors, and wire shapes as arx4 (`arx4-codec.ts`), scored with ARX2's honest serialized transport length for every wire including baseBMP. The compact `f` tag identifies arx5. The payload still carries one extra leading char, the prior id (`m`, `c`, `j`, `s`, or `n`); `m`/`c`/`j` need `/arx4-priors.json` (pre-compressed `/arx4-priors.json.br` tried first). If the asset is unavailable the encoder falls back to `s`. Auto-selection uses arx5 only for envelopes arx6 declines. It is roughly 100x slower than Brotli, which is why the whole arx family is async-only.
-- `arx6` - the emitted mixer codec. Same prior ids and curated corpora as arx5, with its own context mixer (`arx6-model.ts`: arx5's model plus a line-type context, run and deterministic-slot inputs, a two-layer mixer, and an adaptive probability map chain) coding the raw container described under the tuple fields below instead of substituted tuple JSON. Each curated prior id primes on the dictionary text, the first half of a second curated block (json for `m`, markdown for `c` and `j`), then its own block. The wire reads the fragment digits as one base-66 fraction over `0-9A-Za-z-._~`, so a fragment is `g` + prior id + digits, with no length marker and no `B.` marker; the encoder picks the fewest digits that land inside the arithmetic coder's final interval. The last digit is always alphanumeric, because linkifiers strip a trailing `.`, `~`, `-`, or `_`. About 14% shorter than arx5 on a held-out corpus of 214 real artifacts from the maintainer's repositories (shorter on every artifact in that corpus; the corpus is not committed), at roughly 3x arx5's coding time. Auto-selection skips arx5 once arx6 fits the fragment budget, so for unusual high-entropy text auto can return an arx6 link slightly longer than arx5 would have been. An artifact body holding a lone surrogate cannot survive UTF-8, so arx6 declines that envelope and auto-selection falls back to arx5. Auto-selection prefers arx6, then arx2.
+- `arx5` - ARX 4.5: the ARX4 context mixer and ARX2 tuple/overlay pipeline, scored by serialized transport length for every wire. Compact tag `f` is followed by the prior id (`m`, `c`, `j`, `s`, or `n`). Curated `m`/`c`/`j` priors require `/arx4-priors.json` (pre-compressed `/arx4-priors.json.br` is tried first). An encoder that cannot load the asset uses `s`; a decoder cannot substitute priors. ARX5 remains a candidate on every automatic async encoding, even when ARX6 succeeds.
+- `arx6` - versioned context mixing over the raw container described below. New links use `#g2<prior><digits>` and `arx6-v2-model.ts`; original unversioned links retain `arx6-model.ts`. The prior ids and curated corpora are shared with ARX5, but ARX6 composes each curated prior from the dictionary text, the first half of a second curated block (JSON for `m`, Markdown for `c` and `j`), then its own block. WTF-8 preserves every JavaScript UTF-16 string exactly. The arithmetic fraction uses `0-9A-Za-z-._~` with an alphanumeric last digit; its final position is radix 62 and preceding positions radix 66. The encoder chooses the shortest fraction inside its final interval whose numerator modulo `2^32` equals CRC32 over `g2`, the prior id, and the raw container bytes. The checksum is embedded in this choice of numerator; there is no separate checksum suffix. The checksum detects accidental corruption, not malicious forgery. Decode also rejects noncanonical fractions and length encodings. Default automatic selection adds this candidate only when its complete serialized fragment is strictly shorter than the existing auto winner.
+
+Default ARX6 encoding compares the available kind prior against the unprimed `n` model using complete wire length, retaining the kind prior on a tie. An explicit prior request bypasses that comparison. Priors can help familiar syntax and hurt unfamiliar or high-entropy input; the choice is measured per envelope. `#g2n` decoding needs no dictionary or curated-prior assets and skips their fetches. The unprimed candidate remains encodable when pinned assets are unavailable.
 
 The encoder now also supports a packed wire representation (`p: 1`) that shortens key names before compression. Packed mode is transport-only; decoded envelopes normalize back to the standard shape.
 
@@ -105,7 +107,13 @@ arx6 codes the same tuple as a raw container: the bodies concatenated verbatim i
 
 A diff `patch` may be stored elided: `diff --git a/P b/P` becomes `diff --git P`, the `--- a/P` and `+++ b/P` lines that follow it become `---` and `+++`, and a canonical hunk header whose counts and new start the hunk body and earlier hunks imply becomes `@@ -<oldStart> @@` plus its section text. An elided diff uses kind code `D` instead of `d`. The encoder elides only when restoring gives back the patch exactly, and otherwise keeps `d` and the patch verbatim. The decoder restores a `D` patch within the decoded payload budget and rejects it unless eliding the restored patch reproduces the stored text, so it never renders a patch the encoder could not have written.
 
-The decoder rejects any container whose tuple does not parse, whose kind codes are unknown, or whose lengths do not account for every body exactly. The tuple goes last because a truncated link garbles the end of the container, so truncation breaks the tuple and the link fails to open instead of rendering a body with a garbled tail.
+The decoder rejects any container whose tuple does not parse, whose kind codes are unknown, or whose lengths do not account for every body exactly. The tuple goes last to expose truncation during reconstruction, but syntax alone is not an integrity guarantee: altered arithmetic digits can still decode to valid text. V2 therefore checks both the canonical fraction and the CRC32 before returning an envelope, then applies the normal schema, normalization, and decoded-size limit. The body-length fields count UTF-16 code units; canonical WTF-8 carries the raw container without replacing lone surrogates.
+
+### ARX6 v2 fraction and checksum
+
+For `n` digits, interpret the first `n - 1` digits over `0-9A-Za-z-._~` (radix 66) and the last over `0-9A-Za-z` (radix 62). If the prefix value is `P` and the final digit value is `q`, the numerator is `N = 62P + q` and the denominator is `D = 62 × 66^(n-1)`. The arithmetic code is the fraction `N/D`; this is a mixed-radix representation, not an ordinary base-66 fraction.
+
+Compute `C = CRC32(ASCII("g2" + prior) || canonical-WTF8(container))`. The encoder chooses the shortest digit count, then the smallest numerator in the arithmetic coder's final interval satisfying `N mod 2^32 = C`. The checksum therefore occupies the choice of numerator rather than a separate six-character suffix, avoiding a separate checksum field while still carrying all 32 checksum bits. Decode reconstructs the same final interval in its single model pass, verifies the CRC32, and rejects any digit string other than the canonical shortest choice. The final alphanumeric digit avoids known trailing-punctuation linkifier hazards.
 
 ## Required support
 
@@ -123,7 +131,7 @@ The decoder rejects any container whose tuple does not parse, whose kind codes a
 - Larger payloads should fail with a clear error before rendering
 - Compression is selected automatically across packed/non-packed candidates. Live codecs (`arx`, `arx2`, `arx5`, `arx6`) optimize conservative percent-escaped transport length. Deprecated `arx3`/`arx4` still optimize compact visible length when explicitly requested
 - Default sync codec priority is `deflate -> lz -> plain`
-- Default async codec priority is `arx6 -> arx5 -> arx2 -> arx -> deflate -> lz -> plain`; arx5 only runs when arx6 declines the envelope
+- Default async selection evaluates `arx5 -> arx2 -> arx -> deflate -> lz -> plain`, then replaces that winner with `arx6` only when both the conservative transport score and actual WHATWG-serialized fragment are strictly shorter. Ties, losses, and unavailable ARX6 candidates preserve the old wire exactly when it meets the same requested budget. An explicit policy budget takes priority when only ARX6 fits it. The second check matters because conservative scoring can overcount legacy ASCII punctuation that a browser retains
 - Optional budget-aware encoding can target strict limits and returns the shortest fragment when none fit
 - `createGeneratedArtifactLink` / `createGeneratedArtifactLinkAsync` return `url`, `markdownLink` (ready to paste verbatim in chat), `markdownLinkLength`, and `discordMarkdownLinkWarning` so agents do not need to reconstruct `[label](url)` themselves
 
@@ -144,18 +152,18 @@ The gate fails if arx2 is less than 0.5% smaller overall, if arx3 is less than 3
 
 ### Chat-safe alphabets
 
-Auto-selection measures every live wire with `computeTransportLength` in `fragment.ts`: RFC 3986 unreserved characters plus `=` stay 1, other ASCII punctuation counts as 3 (percent-escaped), and non-ASCII counts as 6/9/12 by UTF-8 width. That is the honest Discord/WhatsApp cost.
+Auto-selection measures every live wire with `computeTransportLength` in `fragment.ts`: RFC 3986 unreserved characters plus `=` stay 1, other ASCII punctuation counts as 3 (percent-escaped), and non-ASCII counts as 6/9/12 by UTF-8 width. This is a conservative scoring policy for shareable URLs, not a guarantee about every chat client or linkifier version.
 
-Researched surface constraints:
+Transport observations motivating the scoring policy (recheck live clients before release):
 
-| Surface | What survives | What detonates |
+| Surface | Expected portable form | Known hazards |
 | --- | --- | --- |
 | Discord markdown `[label](url)` | RFC 3986 unreserved `A-Za-z0-9-._~` and `=`. 2,000-character limit on the whole formatted link. | Unicode is canonicalized and percent-encoded (a BMP char becomes 9 characters). `)` closes the destination. |
 | Discord bare URL | Same unreserved set. Unicode is still percent-encoded in the client. | Dense BMP/base1k fragments explode past the message limit. |
 | WhatsApp | Bare `https://` URLs only; no `[label](url)`. Unreserved ASCII in the path/fragment is typically kept. | `*bold*`, `_italic_`, and `~strike~` are formatting markers if URL detection fails. Unicode is often mangled or dropped from the tappable range. Trailing `.,!)` is stripped by linkifiers. |
 | Browser fragment (WHATWG) | Unreserved plus most sub-delims. Fragment percent-encode set is only C0, space, `"<>\``. | Does not predict chat apps. A browser-safe Unicode fragment is not Discord-safe. |
 
-Largest alphabet that is safe on both Discord markdown and WhatsApp without mangling: **RFC 3986 unreserved `A-Za-z0-9-._~` (66 chars)**. Adding `=` (already treated as chat-safe) makes 67. That is only ~0.7–1.2% denser than base64url's 64-character `A-Za-z0-9-_`.
+The portable alphabet used by ARX6 is **RFC 3986 unreserved `A-Za-z0-9-._~` (66 chars)**. Live paste/click behavior still depends on the chat client. Adding `=` (already treated as chat-safe) makes 67. That is only ~0.7–1.2% denser than base64url's 64-character `A-Za-z0-9-_`.
 
 Why arx5 keeps its per-byte wires instead of a base66/67 one:
 
@@ -163,7 +171,7 @@ Why arx5 keeps its per-byte wires instead of a base66/67 one:
 - base76's extra punctuation (`!$*()',;:@/`) is either fatal (`)`) or 3x after chat escaping, so honest scoring already rejects it
 - base1k/baseBMP look shortest by visible character count and then explode 3–9x when a chat client percent-encodes them
 
-arx5 therefore keeps the existing four wires and lets honest transport length pick. In practice that is base64url (or base76 when its punctuation does not inflate). arx6 is the exception: it has one wire, so its `g` tag names it, and that wire reads all 66 unreserved characters as a single fraction rather than a per-byte radix, which also makes the coder's flush digit-granular. Its last digit stays alphanumeric for the linkifiers above.
+arx5 therefore keeps the existing four wires and lets honest transport length pick. In practice that is base64url (or base76 when its punctuation does not inflate). ARX6 uses a single fraction wire, which permits digit-granular arithmetic-coder flushing instead of byte padding. New `#g2` links add a version and CRC32; the checksum is folded into the fraction numerator, and the last digit stays alphanumeric. The maximum alphabet-only improvement over 64 characters is small; larger gains must come from the model or reversible framing, and must be measured with the complete header and checksum included.
 
 ## Active artifact behavior
 

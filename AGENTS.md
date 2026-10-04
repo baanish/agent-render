@@ -26,7 +26,7 @@ Treat these as core constraints unless the owner explicitly changes the product 
 - Artifact payloads live in the URL fragment, using the compact `#<tag><payload>` form where the single tag char identifies the codec: `p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4, `f` arx5, `g` arx6. Legacy `#agent-render=v1.<codec>.<payload>` links (arx-family carry an extra `<dictVersion>.` segment) still decode but are no longer emitted.
 - The deployed host should not receive artifact contents as part of the initial page request.
 - Supported artifact kinds are `markdown`, `code`, `diff`, `csv`, and `json`.
-- Supported codecs are `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`, `arx5`, and `arx6`. Auto-emit prefers `arx6` and falls back to `arx5` for envelopes `arx6` cannot carry; `arx3` and `arx4` remain decodable and explicitly encodable but are not auto-selected.
+- Supported codecs are `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`, `arx5`, and `arx6`. Default automatic encoding evaluates the complete `arx5/arx2/arx/deflate/lz/plain` pool, then selects `arx6` only when both its conservative transport score and actual WHATWG-serialized fragment length are strictly shorter. Ties, losses, and candidate unavailability retain the exact old wire when that candidate meets the same requested budget. An explicit policy budget takes priority when only ARX6 fits it. `arx3` and `arx4` remain decodable and explicitly encodable but are not auto-selected.
 - The product is zero-retention by host design, not secret-safe in an absolute sense.
 - Links may still leak through browser history, copied URLs, screenshots, and any future client-side analytics.
 
@@ -66,6 +66,7 @@ Describe and preserve what is already true in the repo today.
 - Heavy renderers are dynamically imported so the initial shell stays lighter.
 - The diff stack remains the heaviest deferred renderer and is kept because the UX is worth it.
 - On-demand language loading is preferred over bundling every language path up front.
+- Browser codec work runs in one lazy Worker with serialized jobs, a cap of eight outstanding requests, a 60-second deadline, cancellation by termination, and a 15-second idle shutdown. Worker failures are explicit; do not retry expensive coding on the main thread. Node and runtimes without Worker support keep the direct async API.
 
 ## Security and safety posture
 
@@ -84,12 +85,12 @@ The fragment transport is part of the product surface, not an implementation det
 
 Current rules:
 - fragment key: `agent-render` (legacy decode path only; the compact form has no key)
-- emitted format: compact `#<tag><payload>`, where the single tag char identifies the codec (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4, `f` arx5, `g` arx6); the compact tag does not carry a dictionary version; arx-family tags imply the build's current dictionary (the build pins the newest supported version and refuses to decode a newer one)
+- emitted format: compact `#<tag><payload>`, where the single tag char identifies the codec (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4, `f` arx5, `g` arx6). ARX through ARX5 compact tags imply their pinned dictionary/model. New ARX6 links carry an explicit model version: `#g2<prior><digits>`; original `#g<prior><fraction>` links use the frozen legacy model
 - legacy format (still decodable, no longer emitted): `agent-render=v1.<codec>.<payload>` for `plain|lz|deflate`, `agent-render=v1.arx.<dictVersion>.<payload>` for `arx`, `agent-render=v1.arx2.<dictVersion>.<payload>` for `arx2`, `agent-render=v1.arx3.<dictVersion>.<payload>` for `arx3`, `agent-render=v1.arx4.<dictVersion>.<payload>` for `arx4`, and `agent-render=v1.arx5.<dictVersion>.<payload>` for `arx5`
 - codecs: `plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`, `arx5`, and `arx6`
-- `arx6` is the emitted mixer codec: a stronger context mixer (`arx6-model.ts`) coding a raw container (the artifact bodies verbatim, then a newline and the arx2 tuple JSON with each body replaced by its UTF-16 length, the last by `-1`, with no JSON escaping or substitution), on a fraction wire: the payload digits over `0-9A-Za-z-._~` read as one base-66 fraction landing in the coder's final interval, last digit alphanumeric, no length or `B.` marker. The tuple goes last so a truncated link fails to decode instead of rendering a garbled tail. It declines an envelope with a lone surrogate in a body, which auto-selection then codes as `arx5`
+- `arx6` v2 uses `arx6-v2-model.ts` to code raw artifact bodies followed by the arx2 tuple JSON with body-length placeholders. Canonical WTF-8 preserves all UTF-16 strings, including lone surrogates. Its `#g2<prior><digits>` wire uses `0-9A-Za-z-._~`, a canonical shortest mixed-radix fraction whose numerator embeds CRC32 binding the raw bytes to the version and prior. CRC32 detects accidental corruption; it is not authentication. The original `#gm`/`#gc`/`#gj`/`#gs`/`#gn` decoder and model stay frozen; the separate experimental `#g1L` wire is not a viewer format
 - `arx5` (ARX 4.5) is ARX4's context mixer on ARX2's tuple/overlay pipeline, with every wire scored by honest serialized transport length. `arx3` and `arx4` stay decodable but are no longer auto-emitted because they score dense Unicode by visible character count
-- `arx4`/`arx5`/`arx6` payloads carry one extra leading char after the tag, the prior id (`m`, `c`, `j`, `s`, or `n`), naming the priming corpus the context mixer ran before the payload; `m`/`c`/`j` additionally need `/arx4-priors.json`, and an encoder that cannot load it emits `s` instead
+- `arx4`/`arx5` payloads carry a prior id immediately after the tag; new `arx6` payloads carry it after version `2`. Prior ids are `m`, `c`, `j`, `s`, and `n`. Curated `m`/`c`/`j` priors need `/arx4-priors.json`; when unavailable, `s` supplies the shared-prior candidate. ARX6 default encoding additionally compares the available kind prior against unprimed `n`, choosing `n` only for a strictly shorter complete wire. Unprimed `#g2n` decoding skips dictionary/prior fetches, and its encoder remains available when pinned assets are unavailable. A decoder must load the exact prior named by the link or fail, never substitute another prior
 - fragment size budget: `8192` characters
 - decoded payload budget: `200000` characters
 - Discord markdown link limit: `2000` characters for the full formatted `[label](url)` string; `createGeneratedArtifactLink*` returns `discordMarkdownLinkWarning` when exceeded
@@ -125,10 +126,14 @@ If you change the payload contract, update the code, docs, examples, and the Ope
 - `src/lib/markdown-link.ts` - markdown link formatting and Discord length warnings
 - `src/lib/payload/schema.ts` - type surface, limits, fragment key, supported kinds/codecs
 - `src/lib/payload/fragment.ts` - encode/decode logic and transport behavior
+- `src/lib/payload/browser-codec.ts` - bounded, cancellable browser Worker bridge
+- `src/lib/payload/codec.worker.ts` - static Worker entry point for browser encode/decode
 - `src/lib/payload/arx-codec.ts` - arx/arx2/arx3 codecs: dictionary substitution, tuple overlay, brotli, base76/base1k/baseBMP/base64url encoding
 - `src/lib/payload/arx4-codec.ts` - arx4/arx5 mixer: the arx2 stages with brotli replaced by a deterministic integer context mixer, plus the curated priors it primes on
-- `src/lib/payload/arx6-codec.ts` - arx6: raw container, arithmetic coder, and base-66 fraction wire, primed with the arx4 priors
-- `src/lib/payload/arx6-model.ts` - the arx6 context-mixing model (arx4's model plus line-type, run and deterministic inputs, a two-layer mixer and an APM chain); frozen once `#g` links ship
+- `src/lib/payload/arx6-codec.ts` - arx6: raw container, arithmetic coder, and mixed-radix fraction wire, primed with the arx4 priors
+- `src/lib/payload/arx6-model.ts` - frozen original ARX6 model for existing unversioned `#g` links
+- `src/lib/payload/arx6-v2-model.ts` - versioned ARX6 v2 context mixer; incompatible model changes require a new wire version
+- `src/lib/payload/arx6-bytes.ts` - canonical WTF-8 and CRC32 framing helpers
 - `public/arx4-priors.json` - curated per-kind arx4 priming corpora (and `.br` pre-compressed variant), regenerated by `scripts/build-arx4-priors.mjs`
 - `public/arx-dictionary.json` - shared substitution dictionary for the arx codec (served as a static endpoint)
 - `public/arx-dictionary.json.br` - pre-compressed brotli variant of the dictionary

@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "purpose": "Additional external validation after the ARX6 v2 model was frozen; never development or tuning data.",
+  "selection": "Paths and slicing rules are fixed before downloading or measuring any compression output. One sample per listed source; no ranking, deduplication by compression score, or replacement after evaluation.",
+  "textLimitUtf16": 8000,
+  "jsonLimitUtf16": 16000,
+  "textRule": "Use the entire text if within the limit; otherwise the longest prefix ending at a newline at or before the limit. If no newline fits, use a prefix without splitting a surrogate pair. No whitespace normalization.",
+  "jsonRule": "Keep the complete original JSON text when it parses and fits the JSON limit; otherwise record an exclusion before encoding. Do not reserialize JSON.",
+  "diffRule": "Fetch the actual GitHub commit .diff at the same pinned commit; apply the same complete-line prefix rule. A prefix may end within a hunk and is a text-compression proxy, not a promise of an applicable patch.",
+  "thirdPartyText": "Downloaded source and corpus text stay outside the repository. Source licenses apply; only URLs, commit IDs, metadata, reconstruction code, and hashes are committed.",
+  "repositories": [
+    {
+      "repository": "python/cpython",
+      "sources": [
+        { "path": "README.rst", "kind": "markdown", "language": "en" },
+        { "path": "Lib/statistics.py", "kind": "code", "language": "python" },
+        { "path": "Lib/json/decoder.py", "kind": "code", "language": "python" },
+        { "commitDiff": true, "kind": "diff", "language": "diff" }
+      ]
+    },
+    {
+      "repository": "rust-lang/rust",
+      "sources": [
+        { "path": "README.md", "kind": "markdown", "language": "en" },
+        { "path": "library/core/src/option.rs", "kind": "code", "language": "rust" },
+        { "commitDiff": true, "kind": "diff", "language": "diff" }
+      ]
+    },
+    {
+      "repository": "golang/go",
+      "sources": [
+        { "path": "README.md", "kind": "markdown", "language": "en" },
+        { "path": "src/encoding/json/encode.go", "kind": "code", "language": "go" },
+        { "path": "src/net/http/request.go", "kind": "code", "language": "go" },
+        { "commitDiff": true, "kind": "diff", "language": "diff" }
+      ]
+    },
+    {
+      "repository": "redis/redis",
+      "sources": [
+        { "path": "README.md", "kind": "markdown", "language": "en" },
+        { "path": "src/sds.c", "kind": "code", "language": "c" },
+        { "path": "redis.conf", "kind": "code", "language": "ini" },
+        { "commitDiff": true, "kind": "diff", "language": "diff" }
+      ]
+    },
+    {
+      "repository": "webpack/webpack",
+      "sources": [
+        { "path": "README.md", "kind": "markdown", "language": "en" },
+        { "path": "lib/Compiler.js", "kind": "code", "language": "javascript" },
+        { "path": "package.json", "kind": "json", "language": "json" },
+        { "path": "schemas/plugins/BannerPlugin.json", "kind": "json", "language": "json" }
+      ]
+    },
+    {
+      "repository": "microsoft/TypeScript",
+      "sources": [
+        { "path": "README.md", "kind": "markdown", "language": "en" },
+        { "path": "src/compiler/parser.ts", "kind": "code", "language": "typescript" },
+        { "path": "package.json", "kind": "json", "language": "json" },
+        { "path": "src/compiler/diagnosticMessages.json", "kind": "json", "language": "json" }
+      ]
+    },
+    {
+      "repository": "datasets/co2-ppm",
+      "sources": [
+        { "path": "README.md", "kind": "markdown", "language": "en" },
+        { "path": "data/co2-mm-mlo.csv", "kind": "csv", "language": "csv" },
+        { "path": "data/co2-annmean-mlo.csv", "kind": "csv", "language": "csv" },
+        { "path": "datapackage.json", "kind": "json", "language": "json" }
+      ]
+    },
+    {
+      "repository": "datasets/global-temp",
+      "sources": [
+        { "path": "README.md", "kind": "markdown", "language": "en" },
+        { "path": "data/monthly.csv", "kind": "csv", "language": "csv" },
+        { "path": "data/annual.csv", "kind": "csv", "language": "csv" },
+        { "path": "datapackage.json", "kind": "json", "language": "json" }
+      ]
+    },
+    {
+      "repository": "ruanyf/es6tutorial",
+      "sources": [
+        { "path": "README.md", "kind": "markdown", "language": "zh" },
+        { "path": "docs/promise.md", "kind": "markdown", "language": "zh" },
+        { "path": "docs/async.md", "kind": "markdown", "language": "zh" }
+      ]
+    },
+    {
+      "repository": "rust-lang-ja/book-ja",
+      "sources": [
+        { "path": "README.md", "kind": "markdown", "language": "ja" },
+        { "path": "src/ch04-01-what-is-ownership.md", "kind": "markdown", "language": "ja" },
+        { "path": "src/ch03-02-data-types.md", "kind": "markdown", "language": "ja" }
+      ]
+    }
+  ]
+}
