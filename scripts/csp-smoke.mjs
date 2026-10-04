@@ -128,7 +128,7 @@ try {
   // 3) The real creator and preview execute both context mixing and Brotli WASM in the worker.
   // A trivial main-thread WebAssembly module above cannot catch worker-specific CSP failures.
   const workerCodecs = {};
-  for (const [codec, tag] of [["arx6", "g2"], ["arx2", "b"]]) {
+  for (const [codec, tag] of [["arx6", "g3"], ["arx2", "b"]]) {
     const page = await newPage();
     const workerUrls = [];
     page.on("worker", (worker) => workerUrls.push(worker.url()));

@@ -252,7 +252,7 @@ Encode the envelope using the same codec pipeline as fragment links:
 
 1. Serialize envelope as compact JSON
 2. Encode with a codec (`plain` = base64url, `lz` = lz-string, `deflate` = deflate + base64url, or the async ARX/ARX2 pipelines). Use the app or library for ARX5/ARX6; default automatic selection compares the full live pool and accepts ARX6 only for a strict improvement. ARX3/ARX4 remain decodable but are deprecated for new links.
-3. Prepend the single-character codec tag (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4, `f` arx5, `g` arx6). New ARX6 payloads begin with version `2`, so the complete payload body is `g2<prior><digits>`; let the library construct it.
+3. Prepend the single-character codec tag (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4, `f` arx5, `g` arx6). New ARX6 payloads begin with model version `3`, so the complete payload body is `g3<prior><digits>`; let the library construct it. Existing `g2` and unversioned ARX6 payloads retain their frozen decoders.
 4. POST the resulting string as the `payload` field
 
 For simple cases, `plain` codec is sufficient:

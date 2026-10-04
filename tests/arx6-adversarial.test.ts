@@ -10,7 +10,7 @@ import {
   loadArx2OverlayDictionarySync,
 } from "@/lib/payload/arx-codec";
 import { curatedArx4PriorBlocks, loadArx4PriorsSync } from "@/lib/payload/arx4-codec";
-import { arx6CompressEnvelope, arx6DecompressEnvelope, arx6PriorBytes, decodeArx6V2Wire, encodeArx6V2Wire } from "@/lib/payload/arx6-codec";
+import { arx6CompressEnvelope, arx6DecompressEnvelope, arx6PriorBytes, decodeArx6V2Wire, decodeArx6V3Wire, encodeArx6V2Wire, encodeArx6V3Wire } from "@/lib/payload/arx6-codec";
 import { encodeArx6String } from "@/lib/payload/arx6-bytes";
 import { decodeFragmentAsync, encodeEnvelopeAsync } from "@/lib/payload/fragment";
 import { isPayloadEnvelope, MAX_DECODED_PAYLOAD_LENGTH, type PayloadEnvelope } from "@/lib/payload/schema";
@@ -25,9 +25,10 @@ function installAssets(): void {
   expect(loadArx4PriorsSync(arx4Priors)).toBe(1);
 }
 
-function forgedV2Payload(container: string): string {
+function forgedVersionedPayload(container: string, version: 2 | 3): string {
   const bytes = encodeArx6String(container);
-  return `2n${encodeArx6V2Wire(bytes, null, "g2n")}`;
+  const encode = version === 2 ? encodeArx6V2Wire : encodeArx6V3Wire;
+  return `${version}n${encode(bytes, null, `g${version}n`)}`;
 }
 
 describe("ARX6 independent adversarial checks", () => {
@@ -151,7 +152,8 @@ describe("ARX6 independent adversarial checks", () => {
     }
   });
 
-  it("validates decoded schema and expanded envelope size even with a valid checksum", async () => {
+  it.each([2, 3] as const)("validates v%s schema and expanded envelope size even with a valid checksum", async (version) => {
+    const forgedV2Payload = (container: string) => forgedVersionedPayload(container, version);
     const valid = forgedV2Payload('hello\n[3,["m","a",-1]]');
     expect(arx6DecompressEnvelope(valid).artifacts[0]).toMatchObject({ id: "a", content: "hello" });
 
@@ -176,13 +178,15 @@ describe("ARX6 independent adversarial checks", () => {
     });
   }, 60_000);
 
-  it("rejects alternate numerators even when they retain the same embedded checksum", () => {
+  it.each([2, 3] as const)("rejects alternate v%s numerators even when they retain the same embedded checksum", (version) => {
+    const encode = version === 2 ? encodeArx6V2Wire : encodeArx6V3Wire;
+    const decode = version === 2 ? decodeArx6V2Wire : decodeArx6V3Wire;
     const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._~";
     const modulus = BigInt(1) << BigInt(32);
     let canonicalRejections = 0;
     for (let index = 0; index < 48; index++) {
       const bytes = new TextEncoder().encode(`alias-${index}\n${"repeat x,y,z ".repeat(index % 7)}`);
-      const wire = encodeArx6V2Wire(bytes, null);
+      const wire = encode(bytes, null);
       let numerator = BigInt(0);
       let denominator = BigInt(1);
       for (let position = 0; position < wire.length; position++) {
@@ -202,7 +206,7 @@ describe("ARX6 independent adversarial checks", () => {
           remainder /= radix;
         }
         let failure: unknown;
-        try { decodeArx6V2Wire(digits.join(""), null); }
+        try { decode(digits.join(""), null); }
         catch (error) { failure = error; }
         expect(failure).toBeInstanceOf(Error);
         if (failure instanceof Error && /canonical/.test(failure.message)) canonicalRejections++;

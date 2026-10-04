@@ -36,6 +36,10 @@ export type ArxWirePayloads = {
   base64url: string;
 };
 
+/** Transport selection may omit Unicode wires only when a strict lower bound proves they lose. */
+export type ArxTransportWirePayloads = Pick<ArxWirePayloads, "base76" | "base64url"> &
+  Partial<Pick<ArxWirePayloads, "base1k" | "baseBMP">>;
+
 /**
  * Single-byte control codes used for the first 25 substitution slots.
  * Avoids 0x00 NUL, 0x09 TAB, 0x0A LF, 0x0C FF, 0x0D CR.
@@ -1315,6 +1319,36 @@ export function encodeArxWirePayloads(compressed: Uint8Array): ArxWirePayloads {
 }
 
 /**
+ * Produces the exact same transport winner without materializing provably dominated Unicode wires.
+ * For an integer with B significant bits, radix < 2^k needs at least ceil(B/k) digits. Every digit
+ * in either Unicode alphabet costs at least six transport characters; base1k has two such prefix
+ * characters, and BMP adds a nine-character marker. Base64url's transport length is exact.
+ *
+ * Scan past leading zero bytes: those vanish from the radix integer, so byte count alone is not a
+ * valid bound. Keep empty payloads, out-of-range length prefixes, and equality (earlier wires win
+ * ties). This optimization is valid only for conservative percent-escaped transport scoring.
+ */
+export function encodeArxTransportWirePayloads(compressed: Uint8Array): ArxTransportWirePayloads {
+  let firstNonzero = 0;
+  while (firstNonzero < compressed.length && compressed[firstNonzero] === 0) firstNonzero++;
+  const significantBits = firstNonzero === compressed.length
+    ? 0
+    : 8 * (compressed.length - firstNonzero - 1) + 32 - Math.clz32(compressed[firstNonzero]);
+  const base64url = encodeBase64url(compressed);
+  const payloads: ArxTransportWirePayloads = { base76: encodeBase76(compressed), base64url };
+
+  if (compressed.length === 0 || compressed.length >= UNICODE_ALPHABET.length ** 2 ||
+      12 + 6 * Math.ceil(significantBits / 11) <= base64url.length) {
+    payloads.base1k = encodeBase1k(compressed);
+  }
+  if (compressed.length === 0 || compressed.length >= BMP_ALPHABET.length ** 2 ||
+      21 + 6 * Math.ceil(significantBits / 16) <= base64url.length) {
+    payloads.baseBMP = encodeBaseBMP(compressed);
+  }
+  return payloads;
+}
+
+/**
  * Detects which wire alphabet `encoded` uses and hands the decoded bytes to `decodePayloadBytes`.
  * Shared by the Brotli codecs and arx4's context mixer so the alphabet dispatch is written once.
  *
@@ -1370,6 +1404,11 @@ export async function arxCompress(json: string): Promise<string> {
 export async function arxCompressPayloads(json: string): Promise<ArxWirePayloads> {
   const compressed = await compressArxJson(json);
   return encodeArxWirePayloads(compressed);
+}
+
+/** Same ARX bytes and transport winner as arxCompressPayloads, with dominated Unicode wires omitted. */
+export async function arxCompressTransportPayloads(json: string): Promise<ArxTransportWirePayloads> {
+  return encodeArxTransportWirePayloads(await compressArxJson(json));
 }
 
 /**
@@ -1431,6 +1470,11 @@ async function compressTupleEnvelope(envelope: PayloadEnvelope): Promise<ArxWire
  */
 export async function arx2CompressEnvelope(envelope: PayloadEnvelope): Promise<ArxWirePayloads> {
   return compressTupleEnvelope(envelope);
+}
+
+/** Same ARX2 bytes and transport winner as arx2CompressEnvelope. */
+export async function arx2CompressTransportEnvelope(envelope: PayloadEnvelope): Promise<ArxTransportWirePayloads> {
+  return encodeArxTransportWirePayloads(await compressSubstitutedText(substituteArxTupleText(envelope)));
 }
 
 /**

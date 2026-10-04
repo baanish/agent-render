@@ -29,10 +29,12 @@ import {
   assertArxWireByteLength,
   decodeArxWirePayload,
   encodeArxWirePayloads,
+  encodeArxTransportWirePayloads,
   envelopeFromSubstitutedArxTupleText,
   getArxDictionaryPriorText,
   substituteArxTupleText,
   type ArxWirePayloads,
+  type ArxTransportWirePayloads,
 } from "@/lib/payload/arx-codec";
 import type { ArtifactKind, PayloadEnvelope } from "@/lib/payload/schema";
 import { sha256Hex } from "@/lib/sha256";
@@ -1043,6 +1045,23 @@ export function arx4DecompressEnvelope(encoded: string): PayloadEnvelope {
  */
 export function arx5CompressEnvelope(envelope: PayloadEnvelope, priorId?: Arx4PriorId): ArxWirePayloads {
   return arx4CompressEnvelope(envelope, priorId);
+}
+
+/** Same ARX5 bytes and transport winner, with provably dominated Unicode wires omitted. */
+export function arx5CompressTransportEnvelope(
+  envelope: PayloadEnvelope,
+  priorId?: Arx4PriorId,
+): ArxTransportWirePayloads {
+  const selectedPriorId = encodablePriorId(priorId ?? arx4PriorIdForEnvelope(envelope));
+  const substituted = substituteArxTupleText(envelope);
+  const coded = encodeCm(new TextEncoder().encode(substituted), priorBytesFor(selectedPriorId));
+  const payloads = encodeArxTransportWirePayloads(coded);
+  return {
+    base76: `${selectedPriorId}${payloads.base76}`,
+    base64url: `${selectedPriorId}${payloads.base64url}`,
+    ...(payloads.base1k === undefined ? {} : { base1k: `${selectedPriorId}${payloads.base1k}` }),
+    ...(payloads.baseBMP === undefined ? {} : { baseBMP: `${selectedPriorId}${payloads.baseBMP}` }),
+  };
 }
 
 /**

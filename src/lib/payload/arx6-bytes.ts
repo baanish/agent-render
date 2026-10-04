@@ -1,4 +1,4 @@
-/** Lossless JavaScript string bytes and accidental-corruption checks shared by ARX6 v2. */
+/** Lossless JavaScript string bytes and accidental-corruption checks shared by ARX6 v2 and v3. */
 
 const LONE_SURROGATE_PATTERN = /[\uD800-\uDFFF]/u;
 const CRC_TABLE = Uint32Array.from({ length: 256 }, (_, index) => {

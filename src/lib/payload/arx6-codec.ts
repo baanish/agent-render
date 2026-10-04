@@ -7,10 +7,10 @@
  * are written in, and no overlay or dictionary substitution runs at all. The one rewrite is on diff patches,
  * which drop the paths and hunk counts they state twice (see {@link elideDiffPatch}).
  *
- * Emitted fragment: `g2<priorId><digits>`, with CRC32 packed into the fraction numerator. The original
- * `g<priorId><digits>` format remains decodable with its frozen model and UTF-8 container.
+ * Emitted fragment: `g3<priorId><digits>`, with CRC32 packed into the fraction numerator. The original
+ * `g<priorId><digits>` and `g2<priorId><digits>` formats retain their frozen decoders.
  * Prior ids and curated corpora are arx4's (arx4-codec.ts), composed differently (see ARX6_PRIOR_LAYOUT);
- * arx6-v2-model.ts supplies the new model. Both models expose the same two byte-level methods.
+ * arx6-v3-model.ts supplies the current model. All models expose the same byte-level methods.
  */
 
 import {
@@ -31,11 +31,12 @@ import {
 } from "@/lib/payload/arx4-codec";
 import { Arx6ContextModel } from "@/lib/payload/arx6-model";
 import { Arx6V2ContextModel } from "@/lib/payload/arx6-v2-model";
+import { Arx6V3ContextModel } from "@/lib/payload/arx6-v3-model";
 import { arx6Checksum, decodeArx6String, encodeArx6String } from "@/lib/payload/arx6-bytes";
 import { normalizeEnvelope } from "@/lib/payload/envelope";
 import { isPayloadEnvelope, MAX_DECODED_PAYLOAD_LENGTH, type PayloadEnvelope } from "@/lib/payload/schema";
 
-const ARX6_VERSION = "2";
+const ARX6_VERSION = 3;
 
 // ---------------------------------------------------------------------------
 // Diff patch elision
@@ -740,6 +741,17 @@ export function decodeArx6V2Wire(digits: string, primeBytes: Uint8Array | null, 
   return decodeWire(digits, primeBytes, () => new Arx6V2ContextModel(), checksumHeader);
 }
 
+/** Code bytes with the frozen v3 model and CRC32-protected canonical fraction. */
+export function encodeArx6V3Wire(input: Uint8Array, primeBytes: Uint8Array | null, checksumHeader = ""): string {
+  assertArxWireByteLength(input.length);
+  return encodeWire(input, primeBytes, new Arx6V3ContextModel(), checksumHeader);
+}
+
+/** Decode the v3 wire, checking its checksum and shortest canonical fraction. */
+export function decodeArx6V3Wire(digits: string, primeBytes: Uint8Array | null, checksumHeader = ""): Uint8Array {
+  return decodeWire(digits, primeBytes, () => new Arx6V3ContextModel(), checksumHeader);
+}
+
 // ---------------------------------------------------------------------------
 // Priors
 // ---------------------------------------------------------------------------
@@ -777,17 +789,19 @@ export function arx6PriorBytes(priorId: Arx4PriorId): Uint8Array | null {
 // ---------------------------------------------------------------------------
 
 /**
- * Compress an envelope as `2<priorId><fraction>`, following compact tag `g`.
+ * Compress an envelope as `3<priorId><fraction>`, following compact tag `g`; explicit version 2 preserves v2 encoding.
  * WTF-8 preserves lone surrogates; the checksum binds raw bytes to the version and prior id.
  * Without an explicit prior, compare the kind prior with unprimed coding and keep the shorter wire.
  */
-export function arx6CompressEnvelope(envelope: PayloadEnvelope, priorId?: Arx4PriorId): string {
+export function arx6CompressEnvelope(envelope: PayloadEnvelope, priorId?: Arx4PriorId, version: 2 | 3 = ARX6_VERSION): string {
+  if (version !== 2 && version !== 3) throw new Error("Unsupported arx6 model version.");
   const normalized = normalizeV2Envelope({ ...envelope, codec: "arx6" });
   const bytes = encodeArx6String(envelopeToRawContainer(normalized));
   const selectedPriorId = encodablePriorId(priorId ?? arx4PriorIdForEnvelope(normalized));
   const encodeWithPrior = (id: Arx4PriorId) => {
-    const header = `${ARX6_VERSION}${id}`;
-    return `${header}${encodeArx6V2Wire(bytes, arx6PriorBytes(id), `g${header}`)}`;
+    const header = `${version}${id}`;
+    const encode = version === 2 ? encodeArx6V2Wire : encodeArx6V3Wire;
+    return `${header}${encode(bytes, arx6PriorBytes(id), `g${header}`)}`;
   };
   const preferred = encodeWithPrior(selectedPriorId);
   if (priorId !== undefined || selectedPriorId === "n") return preferred;
@@ -805,22 +819,24 @@ function normalizeV2Envelope(envelope: unknown): PayloadEnvelope {
   return normalized.envelope;
 }
 
-/** Locate and validate the prior id in either the original ARX6 payload or the versioned v2 payload. */
+/** Locate and validate the prior id in the original ARX6 payload or a versioned v2/v3 payload. */
 export function getArx6PriorId(encoded: string): Arx4PriorId {
-  const priorId = encoded.charAt(encoded.startsWith(ARX6_VERSION) ? 1 : 0);
+  const versioned = encoded.startsWith("2") || encoded.startsWith("3");
+  const priorId = encoded.charAt(versioned ? 1 : 0);
   if (!isArx4PriorId(priorId)) throw new Error(`Unsupported arx6 prior id "${priorId}".`);
   return priorId;
 }
 
 /**
- * Decode original or v2 ARX6 payloads. V2 validates a canonical fraction, CRC32, strict WTF-8,
+ * Decode original, v2 or v3 ARX6 payloads. Versioned formats validate a canonical fraction, CRC32, strict WTF-8,
  * artifact schema and the complete normalized envelope size before exposing artifact contents.
  */
 export function arx6DecompressEnvelope(encoded: string): PayloadEnvelope {
   const priorId = getArx6PriorId(encoded);
-  if (encoded.startsWith(ARX6_VERSION)) {
-    if (encoded.length <= 2) throw new Error("The arx6 v2 payload is truncated.");
-    const bytes = decodeArx6V2Wire(encoded.slice(2), arx6PriorBytes(priorId), `g${encoded.slice(0, 2)}`);
+  if (encoded.startsWith("2") || encoded.startsWith("3")) {
+    if (encoded.length <= 2) throw new Error("The versioned arx6 payload is truncated.");
+    const decode = encoded.startsWith("2") ? decodeArx6V2Wire : decodeArx6V3Wire;
+    const bytes = decode(encoded.slice(2), arx6PriorBytes(priorId), `g${encoded.slice(0, 2)}`);
     return normalizeV2Envelope(rawContainerToEnvelope(decodeArx6String(bytes), true));
   }
 

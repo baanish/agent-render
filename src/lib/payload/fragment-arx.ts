@@ -1,10 +1,12 @@
 import {
   ArxDecodedPayloadTooLargeError,
   arx2CompressEnvelope,
+  arx2CompressTransportEnvelope,
   arx2DecompressEnvelope,
   arx3CompressEnvelope,
   arx3DecompressEnvelope,
   arxCompressPayloads,
+  arxCompressTransportPayloads,
   arxDecompress,
   getActiveArx2OverlayVersion,
   getActiveDictVersion,
@@ -13,11 +15,13 @@ import {
   loadArxDictionary,
   loadArx2OverlayDictionary,
   type ArxWirePayloads,
+  type ArxTransportWirePayloads,
 } from "@/lib/payload/arx-codec";
 import {
   arx4CompressEnvelope,
   arx4DecompressEnvelope,
   arx5CompressEnvelope,
+  arx5CompressTransportEnvelope,
   arx5DecompressEnvelope,
   CURATED_PRIOR_IDS,
   EXPECTED_ARX4_PRIORS_VERSION,
@@ -50,11 +54,11 @@ export type CandidateFragment = {
 
 type TransportLengthCalculator = (value: string) => number;
 
-/** The four wire encodings every arx builder produces, in candidate order. */
+/** Legacy wire order, preserved when transport-only builders omit dominated candidates. */
 const WIRE_ORDER = ["base76", "base1k", "baseBMP", "base64url"] as const satisfies readonly (keyof ArxWirePayloads)[];
 
 /**
- * Turn an arx codec's four wire payloads into tagged candidates. Shared by all three arx builders,
+ * Turn an arx codec's available wire payloads into tagged candidates. Shared by the arx builders,
  * which previously each re-spelled the tag prefix + transport-length + four-candidate list.
  *
  * `bmpUsesVisibleLength` gives the dense baseBMP wire its DEFAULT budget in visible URL characters
@@ -66,12 +70,12 @@ const WIRE_ORDER = ["base76", "base1k", "baseBMP", "base64url"] as const satisfi
 function wirePayloadsToCandidates(
   codec: ArxCodec,
   packed: boolean,
-  payloads: ArxWirePayloads,
+  payloads: ArxTransportWirePayloads,
   computeTransportLength: TransportLengthCalculator,
   bmpUsesVisibleLength = false,
 ): CandidateFragment[] {
   const tag = compactTagForCodec(codec);
-  return WIRE_ORDER.map((wire) => {
+  return WIRE_ORDER.filter((wire) => payloads[wire] !== undefined).map((wire) => {
     const value = `${tag}${payloads[wire]}`;
     const urlSerializedLength = computeTransportLength(value);
     return {
@@ -112,7 +116,7 @@ const EXPECTED_ARX2_OVERLAY_VERSION = 1;
 // predictably; the mixer also primes on the dictionary slot text, so a fragment coded against any
 // other dictionary is one that healthy viewers cannot decode at all. Both sides therefore hold out
 // for the pinned pair: primed encoding leaves the candidate pool, primed decoding refuses.
-// ARX6 v2 can instead use its unprimed `n` model, which has no asset dependency.
+// ARX6 can instead use its unprimed `n` model, which has no asset dependency.
 
 /**
  * Thrown when an arx4 fragment reaches the decoder while the active dictionaries are not the exact
@@ -283,11 +287,13 @@ function normalizeArxDecodeError(error: unknown): Error {
 
 /**
  * Builds deferred `arx` codec fragment candidates so the core fragment module stays light for non-ARX page loads.
+ * `transportOnly` requires the canonical conservative transport scorer; custom scorers keep all wires.
  */
 export async function buildArxCandidates(
   envelope: PayloadEnvelope,
   packed: boolean,
   computeTransportLength: TransportLengthCalculator,
+  transportOnly = false,
 ): Promise<CandidateFragment[]> {
   await ensureArxDictionaryLoaded();
 
@@ -295,21 +301,25 @@ export async function buildArxCandidates(
   const json = JSON.stringify(
     packed ? packEnvelope(payloadEnvelope) : payloadEnvelope,
   );
-  const payloads = await arxCompressPayloads(json);
+  const payloads = await (transportOnly ? arxCompressTransportPayloads(json) : arxCompressPayloads(json));
   return wirePayloadsToCandidates("arx", packed, payloads, computeTransportLength);
 }
 
 /**
  * Builds deferred `arx2` codec fragment candidates so tuple compression is loaded only for async ARX workflows.
+ * `transportOnly` requires the canonical conservative transport scorer; custom scorers keep all wires.
  */
 export async function buildArx2Candidates(
   envelope: PayloadEnvelope,
   computeTransportLength: TransportLengthCalculator,
+  transportOnly = false,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
 
   const payloadEnvelope = { ...envelope, codec: "arx2" as PayloadCodec };
-  const payloads = await arx2CompressEnvelope(payloadEnvelope);
+  const payloads = await (transportOnly
+    ? arx2CompressTransportEnvelope(payloadEnvelope)
+    : arx2CompressEnvelope(payloadEnvelope));
   return wirePayloadsToCandidates("arx2", false, payloads, computeTransportLength);
 }
 
@@ -371,10 +381,12 @@ export async function buildArx4Candidates(
  * serialized transport length. Every wire — including baseBMP — is measured percent-escaped, so
  * Unicode cannot win the pool and then explode in Discord markdown or WhatsApp. Existing `#e`
  * (arx4) links remain decodable; arx2 stays in the auto pool for CSV regressions.
+ * `transportOnly` requires the canonical conservative transport scorer; custom scorers keep all wires.
  */
 export async function buildArx5Candidates(
   envelope: PayloadEnvelope,
   computeTransportLength: TransportLengthCalculator,
+  transportOnly = false,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
   if (!arx4DictionariesMatchPins()) return [];
@@ -382,7 +394,9 @@ export async function buildArx5Candidates(
   await loadArx4PriorsOnce();
 
   const payloadEnvelope = { ...envelope, codec: "arx5" as PayloadCodec };
-  const payloads = arx5CompressEnvelope(payloadEnvelope);
+  const payloads = transportOnly
+    ? arx5CompressTransportEnvelope(payloadEnvelope)
+    : arx5CompressEnvelope(payloadEnvelope);
   return wirePayloadsToCandidates("arx5", false, payloads, computeTransportLength);
 }
 
@@ -439,7 +453,7 @@ export async function decodeArxFragmentPayload(
 
   let lastError: Error | null = null;
 
-  // Only fragments naming a curated prior need the priors asset (ARX6 v2 prefixes its prior with 2); s and n
+  // Only fragments naming a curated prior need the priors asset (versioned ARX6 puts it after 2/3); s and n
   // fragments decode without it, so they must not trigger the fetch. A curated fragment that the
   // fetch cannot serve at the expected version fails in the codec, which is the retryable outcome:
   // decoding it against a skewed corpus would return plausible garbage instead.

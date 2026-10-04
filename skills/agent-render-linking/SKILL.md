@@ -38,8 +38,8 @@ character identifying the codec:
 ```
 
 The single tag identifies the codec. ARX through ARX5 compact links imply their
-pinned dictionary/model. New ARX6 links explicitly carry version `2`:
-`#g2<prior><digits>`. Original `#g<prior><fraction>` links still decode
+pinned dictionary/model. New ARX6 links explicitly carry model version `3`:
+`#g3<prior><digits>`. Existing `#g2<prior><digits>` and original `#g<prior><fraction>` links still decode
 through their frozen model; the experimental `#g1L` research wire is not a viewer
 format. Legacy `#agent-render=v1.<codec>.<payload>` links (ARX through ARX5 carry
 an extra `<dictVersion>.` segment) still decode, but are no longer emitted.
@@ -53,7 +53,7 @@ Supported codecs:
 - `arx3`: **deprecated emit.** Same bytes as arx2, but it scored baseBMP by visible character count. Discord and WhatsApp then percent-encode or mangle those Unicode fragments. Recognize and open `#c` links; do not mint new ones.
 - `arx4`: **deprecated emit.** Context mixer plus the same broken visible-length Unicode policy. Recognize and open `#e` links; do not mint new ones.
 - `arx5`: ARX 4.5, arx4's context mixer on arx2's tuple pipeline, with every wire scored by honest serialized transport length. Compact tag `f`, same prior-id prefix as arx4 (`m`, `c`, `j`, `s`, or `n`). Recognize and open `#f` links; do not hand-roll them. Reproducing a curated-prior wire needs the exact frozen mixer plus `https://agent-render.com/arx4-priors.json`, so an agent encoding on its own should stop at `arx2` (chat-safe ASCII) and let the app or library emit arx6.
-- `arx6`: a versioned context mixer over raw artifact bodies and compact tuple metadata. New `#g2<prior><digits>` links use a URL-safe mixed-radix arithmetic fraction with CRC32 embedded in its numerator, preserving all JavaScript strings including lone surrogates. Recognize `#g2` and legacy `#g<prior>` links; encode them only through the app or library. By default, the app compares ARX6 against the complete existing codec pool and selects it only when the serialized fragment is strictly shorter; ties and losses keep the old wire.
+- `arx6`: a versioned context mixer over raw artifact bodies and compact tuple metadata. New `#g3<prior><digits>` links use a URL-safe mixed-radix arithmetic fraction with CRC32 embedded in its numerator, preserving all JavaScript strings including lone surrogates. Recognize `#g3`, `#g2`, and legacy `#g<prior>` links; encode them only through the app or library. By default, the app compares ARX6 against the complete existing codec pool and selects it only when the serialized fragment is strictly shorter; ties and losses keep the old wire.
 - packed wire mode (`p: 1`) may be used automatically to shorten transport keys
 
 Prefer:
@@ -275,7 +275,7 @@ Then apply substitutions in this order:
 
 Do not encode `arx3` or `arx4`. Those tags remain readable so already-shared links open; their visible-length Unicode wires break on Discord and WhatsApp.
 
-For `arx5` and `arx6`, there is no hand-rollable recipe: the payload uses a context-mixing model whose code and optional priming corpus must match the encoder bit for bit, so encode them only through the app or `encodeEnvelopeAsync`. For `f`, the prior id follows the tag; for new `g2` links, it follows version `2`. Older `g` links carry the prior immediately after the tag. Do not infer the version from the artifact content or use a different prior when the named one is unavailable. When encoding yourself, stop at `arx2` with a transport-scored ASCII wire (usually base64url).
+For `arx5` and `arx6`, there is no hand-rollable recipe: the payload uses a context-mixing model whose code and optional priming corpus must match the encoder bit for bit, so encode them only through the app or `encodeEnvelopeAsync`. For `f`, the prior id follows the tag; for new `g3` links, it follows version `3` (version `2` for existing `g2` links). Older `g` links carry the prior immediately after the tag. Do not infer the version from the artifact content or use a different prior when the named one is unavailable. When encoding yourself, stop at `arx2` with a transport-scored ASCII wire (usually base64url).
 
 ## Practical limits
 

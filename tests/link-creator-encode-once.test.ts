@@ -27,6 +27,10 @@ vi.mock("@/lib/payload/arx4-codec", async (importOriginal) => {
       mixerCompressions(...args);
       return actual.arx5CompressEnvelope(...args);
     },
+    arx5CompressTransportEnvelope: (...args: Parameters<typeof actual.arx5CompressTransportEnvelope>) => {
+      mixerCompressions(...args);
+      return actual.arx5CompressTransportEnvelope(...args);
+    },
   };
 });
 

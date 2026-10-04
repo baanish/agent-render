@@ -13,9 +13,11 @@ import {
   arx6PriorBytes,
   decodeArx6Wire,
   decodeArx6V2Wire,
+  decodeArx6V3Wire,
   elideDiffPatch,
   encodeArx6Wire,
   encodeArx6V2Wire,
+  encodeArx6V3Wire,
   encodeArx6Fraction,
   getArx6PriorId,
   restoreDiffPatch,
@@ -73,7 +75,7 @@ function craftedV2Payload(container: string): string {
 
 function containerOf(envelope: PayloadEnvelope): string {
   const payload = arx6CompressEnvelope(envelope);
-  return decodeArx6String(decodeArx6V2Wire(payload.slice(2), arx6PriorBytes(getArx6PriorId(payload)), `g${payload.slice(0, 2)}`));
+  return decodeArx6String(decodeArx6V3Wire(payload.slice(2), arx6PriorBytes(getArx6PriorId(payload)), `g${payload.slice(0, 2)}`));
 }
 
 /** Deterministic xorshift32 so the fuzz cases are the same on every run. */
@@ -104,6 +106,14 @@ const V2_GOLDEN_PAYLOADS = [
   "2nXY97WQlpJVIcDbYM-Yg_wDaRL1H0q7BZR7~q0CHE85f8PaIB_KIdyl9fNJTqLPwgjMea8QpiuE5F2lo7uv~apAuOJwWmmFxQvvR6JvGG8bbG71Od6KV3IP.wF8vd",
 ];
 
+const V3_GOLDEN_PAYLOADS = [
+  "3mLiu8GKCTZ.ZEv~shcjRHt~pt-ZVpxX8jdfYpU-RaCaa1lsi4VcM1uUNj8jRM5",
+  "3cSNwxLdIyyA7QtGKo65tHgKWcBpS5P6YHoZfhL1qsmTuAjI0YY7fe70arj",
+  "3jKOHDjCa9mGpOLQX1Vh.y1sHTC6Hlv.7W9uxbN_HcLY-DtkJh",
+  "3sBOSToScljxlqi6JM37rgBak2bQp1GFmiGkXxaXO4Vn",
+  "3nXY97WQlpTyIs3Xnb9JoXtl-ljm-xDNdHE~RQs~3axO59ak._c-q7lTFktnB3lDsVEn4W8sIanuEL51zon2ykaUnShjSIcuYSIbiTAKIaMapqzfd80dJl3jkInNF"
+];
+
 describe("arx6 codec", () => {
   beforeAll(() => {
     loadArxDictionarySync(arxDictionaryJson);
@@ -132,7 +142,7 @@ describe("arx6 codec", () => {
     expect(arx6DecompressEnvelope(arx6CompressEnvelope(envelope)!)).toEqual(envelope);
 
     const fragment = await encodeEnvelopeAsync(envelope, { codec: "arx6" });
-    expect(fragment.slice(0, 3)).toMatch(/^g2[mcjsn]$/);
+    expect(fragment.slice(0, 3)).toMatch(/^g3[mcjsn]$/);
     expect(fragment.slice(3)).toMatch(WIRE_PATTERN);
     const parsed = await decodeFragmentAsync(`#${fragment}`);
     expect(parsed.ok).toBe(true);
@@ -204,10 +214,37 @@ describe("arx6 codec", () => {
 
   it("pins the v2 model, checksum fraction and every explicit prior with golden fragments", () => {
     GOLDEN_VECTORS.forEach(([priorId, envelope], index) => {
-      expect(arx6CompressEnvelope(envelope, priorId)).toBe(V2_GOLDEN_PAYLOADS[index]);
+      expect(arx6CompressEnvelope(envelope, priorId, 2)).toBe(V2_GOLDEN_PAYLOADS[index]);
       expect(arx6DecompressEnvelope(V2_GOLDEN_PAYLOADS[index])).toEqual(envelope);
     });
   }, 60_000);
+
+  it("pins the frozen v2 and v3 model sources", () => {
+    expect(createHash("sha256").update(readFileSync("src/lib/payload/arx6-v2-model.ts")).digest("hex"))
+      .toBe("4be96ce00bb36c518c6e2ece06b07ebcdb1a3a22dd8966d2dc0fc3b8228058b5");
+    expect(createHash("sha256").update(readFileSync("src/lib/payload/arx6-v3-model.ts")).digest("hex"))
+      .toBe("fcc287ed386fac54a6b5e8d6b2470e5a8c9e5dc9744b3450ebef288fd1c7e903");
+  });
+
+  it("pins the v3 model, checksum fraction and every explicit prior with golden fragments", () => {
+    GOLDEN_VECTORS.forEach(([priorId, envelope], index) => {
+      expect(arx6CompressEnvelope(envelope, priorId)).toBe(V3_GOLDEN_PAYLOADS[index]);
+      expect(arx6DecompressEnvelope(V3_GOLDEN_PAYLOADS[index])).toEqual(envelope);
+      expect(getArx6PriorId(V3_GOLDEN_PAYLOADS[index])).toBe(priorId);
+    });
+  }, 60_000);
+
+  it("binds both versioned model headers and rejects unsupported versions", () => {
+    const bytes = encodeArx6String('hello\n[3,["m","a",-1]]');
+    const v2 = encodeArx6V2Wire(bytes, null, "g2n");
+    const v3 = encodeArx6V3Wire(bytes, null, "g3n");
+    expect(() => decodeArx6V2Wire(v2, null, "g3n")).toThrow(/checksum/);
+    expect(() => decodeArx6V3Wire(v3, null, "g2n")).toThrow(/checksum/);
+    expect(() => decodeArx6V3Wire(v3, null, "g3s")).toThrow(/checksum/);
+    expect(() => arx6DecompressEnvelope(`3n${v2}`)).toThrow();
+    expect(() => arx6DecompressEnvelope(`2n${v3}`)).toThrow();
+    expect(() => getArx6PriorId(`4n${v3}`)).toThrow(/prior/);
+  });
 
   it("chooses the shorter complete wire between the kind prior and no prior", () => {
     for (const [, envelope] of GOLDEN_VECTORS) {
@@ -224,7 +261,7 @@ describe("arx6 codec", () => {
 
     expect(arx6DecompressEnvelope(arx6CompressEnvelope(envelope))).toEqual(envelope);
     const fragment = await encodeEnvelopeAsync(envelope, { codec: "arx6" });
-    expect(fragment.startsWith(`${ARX6_TAG}2`)).toBe(true);
+    expect(fragment.startsWith(`${ARX6_TAG}3`)).toBe(true);
     const parsed = await decodeFragmentAsync(`#${fragment}`);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
@@ -406,13 +443,15 @@ describe("arx6 codec", () => {
     expect(seenDigits.size).toBe(66);
   }, 60_000);
 
-  it("round-trips canonical v2 fractions across coder boundaries", () => {
+  it.each([2, 3] as const)("round-trips canonical v%s fractions across coder boundaries", (version) => {
+    const encode = version === 2 ? encodeArx6V2Wire : encodeArx6V3Wire;
+    const decode = version === 2 ? decodeArx6V2Wire : decodeArx6V3Wire;
     const random = createRandom(0x92e05373);
     for (const size of [0, 1, 2, 3, 7, 15, 31, 63, 127, 128, 255, 256, 1024, 4097]) {
       const input = Uint8Array.from({ length: size }, () => random() & 0xff);
-      const digits = encodeArx6V2Wire(input, null);
+      const digits = encode(input, null);
       expect(digits).toMatch(WIRE_PATTERN);
-      expect(decodeArx6V2Wire(digits, null)).toEqual(input);
+      expect(decode(digits, null)).toEqual(input);
     }
   }, 60_000);
 
@@ -433,8 +472,8 @@ describe("arx6 codec", () => {
     expect(Number(numerator & BigInt(0xffffffff))).toBe(1229980379);
   });
 
-  it("rejects every single-character mutation, truncation and suffix of a v2 payload", () => {
-    const payload = arx6CompressEnvelope(bundle([{ id: "a", kind: "markdown", content: "hello" }]), "n");
+  it.each([2, 3] as const)("rejects every single-character mutation, truncation and suffix of a v%s payload", (version) => {
+    const payload = arx6CompressEnvelope(bundle([{ id: "a", kind: "markdown", content: "hello" }]), "n", version);
     expect(arx6DecompressEnvelope(payload).artifacts[0]).toMatchObject({ content: "hello" });
     for (let index = 0; index < payload.length; index++) {
       const replacement = payload[index] === "0" ? "1" : "0";
@@ -446,12 +485,14 @@ describe("arx6 codec", () => {
     }
   }, 60_000);
 
-  it("rejects noncanonical aliases even when their decoded bytes and checksum match", () => {
+  it.each([2, 3] as const)("rejects noncanonical v%s aliases even when their decoded bytes and checksum match", (version) => {
+    const encode = version === 2 ? encodeArx6V2Wire : encodeArx6V3Wire;
+    const decode = version === 2 ? decodeArx6V2Wire : decodeArx6V3Wire;
     // Empty bytes have CRC32=0 and code fraction 0, canonically represented by no digits.
     // Arbitrarily many zero digits still have fraction 0 and checksum 0, but are not canonical.
-    expect(encodeArx6V2Wire(new Uint8Array(0), null)).toBe("");
+    expect(encode(new Uint8Array(0), null)).toBe("");
     for (const alias of ["0", "00", "000000"]) {
-      expect(() => decodeArx6V2Wire(alias, null)).toThrow(/canonical/);
+      expect(() => decode(alias, null)).toThrow(/canonical/);
     }
   }, 60_000);
 
@@ -490,7 +531,7 @@ describe("arx6 codec", () => {
     const autoFragment = await encodeEnvelopeAsync(envelope);
     const arx5Fragment = await encodeEnvelopeAsync(envelope, { codec: "arx5" });
 
-    expect(autoFragment.slice(0, 3)).toBe("g2m");
+    expect(autoFragment.slice(0, 3)).toBe("g3m");
     expect(autoFragment.slice(3)).toMatch(WIRE_PATTERN);
     expect(getFragmentTransportLength(autoFragment)).toBe(autoFragment.length);
     expect(getFragmentTransportLength(autoFragment)).toBeLessThan(getFragmentTransportLength(arx5Fragment));
@@ -504,7 +545,7 @@ describe("arx6 codec", () => {
   // Last, because it swaps in a fresh module graph whose priors slot starts cold.
   it("fetches the curated priors before decoding a curated arx6 fragment on a cold page", async () => {
     const fragment = await encodeEnvelopeAsync(bundle([notes]), { codec: "arx6" });
-    expect(fragment.slice(0, 3)).toBe(`${ARX6_TAG}2m`);
+    expect(fragment.slice(0, 3)).toBe(`${ARX6_TAG}3m`);
 
     vi.resetModules();
     const coldArxCodec = await import("@/lib/payload/arx-codec");

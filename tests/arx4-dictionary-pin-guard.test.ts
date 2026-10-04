@@ -48,7 +48,7 @@ describe("arx4 dictionary pin guard", () => {
     expect(getActiveDictVersion()).toBe(0);
     expect(fragment.startsWith(ARX4_TAG)).toBe(false);
     expect(fragment.startsWith(compactTagForCodec("arx5"))).toBe(false);
-    if (fragment.startsWith(compactTagForCodec("arx6"))) expect(fragment.startsWith("g2n")).toBe(true);
+    if (fragment.startsWith(compactTagForCodec("arx6"))) expect(fragment.startsWith("g3n")).toBe(true);
 
     // The rest of the pool still serves the link, and what it emits decodes.
     expect((await decodeFragmentAsync(`#${fragment}`, { skipFragmentBudget: true })).ok).toBe(true);
@@ -57,9 +57,9 @@ describe("arx4 dictionary pin guard", () => {
     // no link is minted that healthy viewers would reject.
     await expect(encodeEnvelopeAsync(envelope, { codec: "arx4" })).rejects.toThrow();
 
-    // ARX6 v2's unprimed model has no dictionary dependency and remains usable offline.
+    // ARX6's unprimed model has no dictionary dependency and remains usable offline.
     const unprimed = await encodeEnvelopeAsync(envelope, { codec: "arx6" });
-    expect(unprimed.startsWith("g2n")).toBe(true);
+    expect(unprimed.startsWith("g3n")).toBe(true);
     expect((await decodeFragmentAsync(`#${unprimed}`)).ok).toBe(true);
   });
 

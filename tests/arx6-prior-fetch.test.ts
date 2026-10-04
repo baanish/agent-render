@@ -21,8 +21,9 @@ describe("ARX6 versioned prior loading", () => {
 
   afterEach(() => vi.unstubAllGlobals());
 
-  it("decodes an unprimed v2 link offline without fetching any codec assets", async () => {
-    const wire = arx6CompressEnvelope(envelope, "n");
+  it.each([2, 3] as const)("decodes an unprimed v%s link offline without fetching any codec assets", async (version) => {
+    const wire = version === 3 ? arx6CompressEnvelope(envelope, "n") : arx6CompressEnvelope(envelope, "n", 2);
+    expect(wire.startsWith(`${version}n`)).toBe(true);
     vi.resetModules();
     const fetch = vi.fn(async () => { throw new Error("offline"); });
     vi.stubGlobal("fetch", fetch);
@@ -54,7 +55,7 @@ describe("ARX6 versioned prior loading", () => {
     { skewed: "overlay", source: "fetched" },
     { skewed: "base", source: "installed" },
     { skewed: "overlay", source: "installed" },
-  ])("emits unprimed v2 with a newer $source $skewed dictionary", async ({ skewed, source }) => {
+  ])("emits default unprimed v3 with a newer $source $skewed dictionary", async ({ skewed, source }) => {
     const expectedWire = `g${arx6CompressEnvelope(envelope, "n")}`;
     const primedWire = arx6CompressEnvelope(envelope, "m");
     vi.resetModules();
@@ -74,7 +75,7 @@ describe("ARX6 versioned prior loading", () => {
 
     const fragment = await encodeEnvelopeAsync(envelope, { codec: "arx6" });
     expect(fragment).toBe(expectedWire);
-    expect(fragment.startsWith("g2n")).toBe(true);
+    expect(fragment.startsWith("g3n")).toBe(true);
     expect(dictionaries.getActiveDictVersion()).toBe(loadedBase.version);
     expect(dictionaries.getActiveArx2OverlayVersion()).toBe(loadedOverlay.version);
     expect(fetch.mock.calls.some(([url]) => String(url).includes("arx4-priors"))).toBe(false);
@@ -89,9 +90,11 @@ describe("ARX6 versioned prior loading", () => {
     await expect(decodeArxFragmentPayload("arx6", primedWire)).rejects.toThrow(/newer than/);
   });
 
-  it.each(["m", "c", "j", "s", "n"] as Arx4PriorId[])("loads only the asset needed by a percent-encoded v2 %s link", async (prior) => {
+  it.each(([2, 3] as const).flatMap(version =>
+    (["m", "c", "j", "s", "n"] as Arx4PriorId[]).map(prior => ({ version, prior })),
+  ))("loads only the asset needed by a percent-encoded v$version $prior link", async ({ version, prior }) => {
     // Produce using the installed assets, then simulate a viewer with a cold module/asset cache.
-    const wire = arx6CompressEnvelope(envelope, prior);
+    const wire = arx6CompressEnvelope(envelope, prior, version);
     vi.resetModules();
     const dictionaries = await import("@/lib/payload/arx-codec");
     dictionaries.loadArxDictionarySync(base);
@@ -101,7 +104,7 @@ describe("ARX6 versioned prior loading", () => {
     const fetch = vi.fn(async () => ({ ok: true, json: async () => priors } as Response));
     vi.stubGlobal("fetch", fetch);
     const { decodeFragmentAsync } = await import("@/lib/payload/fragment");
-    const escapedHeader = `%32%${prior.charCodeAt(0).toString(16)}${wire.slice(2)}`;
+    const escapedHeader = `%${wire.charCodeAt(0).toString(16)}%${prior.charCodeAt(0).toString(16)}${wire.slice(2)}`;
     const parsed = await decodeFragmentAsync(`#g${escapedHeader}`);
     expect(parsed).toMatchObject({ ok: true, envelope });
     expect(fetch.mock.calls.length > 0).toBe(["m", "c", "j"].includes(prior));

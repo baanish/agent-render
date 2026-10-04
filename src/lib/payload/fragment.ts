@@ -269,12 +269,12 @@ function buildCandidates(envelope: PayloadEnvelope, options: EncodeOptions): Can
 
 async function buildArxCandidates(envelope: PayloadEnvelope, packed: boolean): Promise<CandidateFragment[]> {
   const { buildArxCandidates: buildDeferredArxCandidates } = await import("@/lib/payload/fragment-arx");
-  return buildDeferredArxCandidates(envelope, packed, computeTransportLength);
+  return buildDeferredArxCandidates(envelope, packed, computeTransportLength, true);
 }
 
 async function buildArx2Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
   const { buildArx2Candidates: buildDeferredArx2Candidates } = await import("@/lib/payload/fragment-arx");
-  return buildDeferredArx2Candidates(envelope, computeTransportLength);
+  return buildDeferredArx2Candidates(envelope, computeTransportLength, true);
 }
 
 async function buildArx3Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
@@ -289,7 +289,7 @@ async function buildArx4Candidates(envelope: PayloadEnvelope): Promise<Candidate
 
 async function buildArx5Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
   const { buildArx5Candidates: buildDeferredArx5Candidates } = await import("@/lib/payload/fragment-arx");
-  return buildDeferredArx5Candidates(envelope, computeTransportLength);
+  return buildDeferredArx5Candidates(envelope, computeTransportLength, true);
 }
 
 async function buildArx6Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
