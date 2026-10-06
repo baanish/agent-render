@@ -11,6 +11,9 @@ const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const file = name => path.join(directory, `results/${name}.json`);
 const fresh = read(file('extra-pass-validation'));
 const previousReplay = read(file('consolidated-replay'));
+// Frozen union of the original 200 inputs and the separately reserved 27 inputs.
+// IDs and decoded lengths alone do not establish that a replay used the same text.
+const REPLAY_CORPUS_SHA256 = 'aa0eb8e0d3de0591be3da6cd6499a02641b43c235d766ea6c2210f5df80ebf38';
 const [command, ...args] = process.argv.slice(2);
 if (command === 'build') {
   const [previousCorpus, freshCorpus, output = '/tmp/arx6-extra-pass-replay.json'] = args;
@@ -20,13 +23,18 @@ if (command === 'build') {
   const rows = [...read(previousCorpus), ...read(freshCorpus)];
   assert.equal(new Set(rows.map(row => row.id)).size, rows.length);
   const bytes = JSON.stringify(rows);
+  assert.equal(hash(bytes), REPLAY_CORPUS_SHA256, 'Changed frozen 227-input replay corpus');
   writeFileSync(output, bytes);
   process.stdout.write(`${JSON.stringify({ output, samples: rows.length, corpusSha256: hash(bytes) }, null, 2)}\n`);
 } else if (command === 'verify') {
   const [input, output = file('extra-pass-replay')] = args;
   assert.ok(input, 'Usage: node extra-pass-replay.mjs verify measured-report.json [verified-report.json]');
   const measured = read(input);
-  const rows = measured.variants.find(variant => variant.label === 'integrated-g3').rows;
+  assert.equal(measured.corpusSha256, REPLAY_CORPUS_SHA256, 'Report does not use the frozen 227-input replay corpus');
+  const variant = measured.variants.find(variant => variant.label === 'integrated-g3');
+  assert.ok(variant, 'Missing integrated-g3 measurement');
+  assert.equal(variant.corpusSha256, REPLAY_CORPUS_SHA256, 'Variant does not use the frozen 227-input replay corpus');
+  const rows = variant.rows;
   assert.equal(rows.length, 227);
   assert.equal(new Set(rows.map(row => row.id)).size, rows.length);
   assert.ok(rows.every(row => row.roundTrip));

@@ -547,7 +547,7 @@ made here.
 
 ## Verification and remaining limits
 
-The final v3 implementation passed 520 unit tests across 63 files and all
+The final v3 implementation passed 524 unit tests across 64 files and all
 128 Playwright checks across Chromium and WebKit. Lint, TypeScript, static
 production root and subpath builds, build-budget checks, and the existing codec
 benchmark also passed; the historical benchmark fixture totals were unchanged.

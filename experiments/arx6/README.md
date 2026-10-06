@@ -160,21 +160,6 @@ Markdown characters versus 45,425 for g2: 22 shorter links, two equal lengths,
 and three losses of one to three characters. See `results/extra-pass-validation.json`
 and `extra-pass-candidate-freeze.json` for the exact candidate and source records.
 
-`extra-pass-replay.mjs` verifies the integrated g3 implementation reproduces all
-27 candidate wires and checks 227 exact envelope round trips across the prior
-200 inputs plus the fresh set. Earlier cohorts are diagnostic in this pass;
-the replay records g2 regressions, including larger unshareable entropy inputs,
-alongside the exact legacy fallback checks.
-
-```sh
-node experiments/arx6/extra-pass-replay.mjs build \
-  /tmp/arx6-final-replay.json /tmp/arx6-extra-pass-validation.json \
-  /tmp/arx6-extra-pass-replay.json
-node experiments/arx6/compare.mjs --corpus /tmp/arx6-extra-pass-replay.json \
-  --variant integrated-g3="$PWD" --out /tmp/arx6-extra-pass-replay-result.json
-node experiments/arx6/extra-pass-replay.mjs verify /tmp/arx6-extra-pass-replay-result.json
-```
-
 The extra-pass implementation was measured at local commit `7c3ce2e` and
 published as `abcd64922cf6b3825a11cdf27c61b5a23892ea5c`; both name the identical
 Git tree `b4142bd8af3369087d26f1782744c51401865187`. The clean g2 baseline is
@@ -225,6 +210,27 @@ validation and are not performance evidence. `summarize-timing.mjs` verifies the
 separate shareable-fragment and 2,000-character complete-link subsets. The Node
 harness can finish encodes beyond the browser Worker's 60-second deadline;
 the summary explicitly identifies those cases and their shareability.
+
+## Replay the integrated g3 implementation
+
+After the commands above create `/tmp/arx6-final-replay.json`,
+`extra-pass-replay.mjs` verifies the integrated g3 implementation reproduces all
+27 candidate wires and checks 227 exact envelope round trips across the prior
+200 inputs plus the fresh set. Earlier cohorts are diagnostic in this pass;
+the replay records g2 regressions, including larger unshareable entropy inputs,
+alongside the exact legacy fallback checks. Verification checks both the report
+and measured variant against the frozen 227-input corpus digest before comparing
+lengths or writing an output.
+
+```sh
+node experiments/arx6/extra-pass-replay.mjs build \
+  /tmp/arx6-final-replay.json /tmp/arx6-extra-pass-validation.json \
+  /tmp/arx6-extra-pass-replay.json
+node experiments/arx6/compare.mjs --corpus /tmp/arx6-extra-pass-replay.json \
+  --variant integrated-g3="$PWD" --out /tmp/arx6-extra-pass-replay-result.json
+node experiments/arx6/extra-pass-replay.mjs verify /tmp/arx6-extra-pass-replay-result.json \
+  /tmp/arx6-extra-pass-replay-verified.json
+```
 
 ## Additional diagnostic experiments
 
