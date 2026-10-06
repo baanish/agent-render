@@ -1,0 +1,25 @@
+{
+  "purpose": "Performance-only fixed corpus, assembled after model/prior/wire selection. No model, prior, or wire-selection decisions depend on its output. Its measurements motivated an exact-output legacy radix runtime optimization, verified separately against every previously measured final automatic-selection wire. Includes oversize fragments solely for decode correctness with a benchmark budget override.",
+  "sources": [
+    {
+      "file": "diagnostic.json",
+      "sha256": "b1f3e97e337896b90a300ab0e9acf89b4a1ca88951211d38ee2410ca9c3bdabd"
+    },
+    {
+      "file": "capacity-validation.json",
+      "sha256": "73f063fa0e45efba46219505e7a03dcbae116366e9f06aa86e75c84e1114f188"
+    }
+  ],
+  "boundary": {
+    "count": 2,
+    "normalizedJsonCharsEach": 199900,
+    "seed": 2133699400,
+    "families": [
+      "repeat",
+      "entropy"
+    ]
+  },
+  "samples": 78,
+  "corpusSha256": "e5975836125c2b7cf75812280c6e0c01523f0d20e3cb993bec13e8d13b0c4c6e",
+  "generatorSha256": "ca17de921e5a9b04a98f20f5d7889846a474e5546803504462bd9e491d195d53"
+}

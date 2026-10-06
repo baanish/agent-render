@@ -18,7 +18,7 @@ import {
 import type { PayloadEnvelope } from "@/lib/payload/schema";
 
 const BASE_URL = "https://agent-render.com/";
-const LIVE_AUTO_CODECS = new Set(["arx5", "arx2"]);
+const LIVE_AUTO_CODECS = new Set(["arx6", "arx5", "arx2"]);
 
 type FuzzRow = {
   name: string;

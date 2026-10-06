@@ -119,7 +119,7 @@ describe("link creator payloads", () => {
     expect(parsed.ok).toBe(true);
   });
 
-  it("lets the async auto encoder pick ARX5 on honest transport length", async () => {
+  it("lets the async auto encoder pick ARX6 on honest transport length", async () => {
     loadArxDictionarySync(arxDictionaryJson);
     loadArx2OverlayDictionarySync(arx2DictionaryJson);
     loadArx4PriorsSync(arx4PriorsJson);
@@ -137,9 +137,9 @@ describe("link creator payloads", () => {
     const generatedLink = await createGeneratedArtifactLinkAsync(draft, "https://agent-render.com/");
     const parsed = await decodeFragmentAsync(generatedLink.hash);
 
-    expect(generatedLink.codec).toBe("arx5");
-    expect(generatedLink.hash.startsWith(`#${compactTagForCodec("arx5")}`)).toBe(true);
-    expect(generatedLink.url).toContain(`#${compactTagForCodec("arx5")}`);
+    expect(generatedLink.codec).toBe("arx6");
+    expect(generatedLink.hash.startsWith(`#${compactTagForCodec("arx6")}`)).toBe(true);
+    expect(generatedLink.url).toContain(`#${compactTagForCodec("arx6")}`);
     expect(generatedLink.hash.slice(1)).toMatch(/^[A-Za-z0-9._~-]+$/);
     expect(generatedLink.fragmentLength).toBeLessThan(MAX_FRAGMENT_LENGTH);
     expect(parsed.ok).toBe(true);

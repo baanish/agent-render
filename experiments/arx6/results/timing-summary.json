@@ -1,0 +1,331 @@
+{
+  "corpusSha256": "e5975836125c2b7cf75812280c6e0c01523f0d20e3cb993bec13e8d13b0c4c6e",
+  "method": "One ordered process pass per variant on the same fixed corpus, after known heavy validation jobs stopped. Encode/decode call timings include lazy first-use work, but exclude module imports and synchronous asset loading. No repeated statistical experiment or mobile-browser performance guarantee. peak RSS covers each entire process and all cases.",
+  "quantileMethod": "Sort observed values and select index min(n-1, floor(n*q)).",
+  "workload": "52 diagnostic, 24 capacity, and two 199,900-character normalized-envelope boundary cases. The original measurements motivated a wire-preserving runtime optimization; model, prior policy, wire representation, and input bytes stayed frozen.",
+  "exactFinalWireMatches": 78,
+  "sourceReports": [
+    {
+      "file": "consolidated-timing-original.json",
+      "sha256": "c1ea8c586085cd871facb81761a27d00f28a15f1d1ee4ccf6d437237d7d6a916"
+    },
+    {
+      "file": "consolidated-timing-optimized.json",
+      "sha256": "34bea4466a02c9fc8fea2144135a18178f168382132bb9c6df5792d0af59d419"
+    }
+  ],
+  "variants": [
+    {
+      "label": "main",
+      "revision": "db19bf5ad3ae8d5db03386f35c8815c8d99c50ee",
+      "sourceSha256": "7d33a7583460a139bb601061b3826c4bb444cdeaab04100323aada4adf7a889b",
+      "startedAt": "2026-10-03T23:33:49.724Z",
+      "finishedAt": "2026-10-03T23:39:09.109Z",
+      "runtime": {
+        "platform": "linux",
+        "architecture": "x64",
+        "cpuModel": "AMD EPYC 7763 64-Core Processor",
+        "availableParallelism": 4
+      },
+      "peakRssMiB": 466.359375,
+      "all": {
+        "samples": 78,
+        "encodeMs": {
+          "p50": 111.61633799999981,
+          "p95": 6965.020329999999,
+          "max": 244203.492265
+        },
+        "decodeMs": {
+          "p50": 55.70567099999971,
+          "p95": 238.6211829999993,
+          "max": 432.05577999999514
+        },
+        "encodeOver60Seconds": [
+          {
+            "id": "timing-boundary/entropy",
+            "encodeMs": 244203.492265,
+            "fragmentChars": 201877,
+            "markdownLinkChars": 201911,
+            "shareableFragment": false
+          }
+        ]
+      },
+      "shareableFragment8192": {
+        "samples": 66,
+        "encodeMs": {
+          "p50": 101.77919500000007,
+          "p95": 349.63231200000155,
+          "max": 654.1811620000008
+        },
+        "decodeMs": {
+          "p50": 55.70567099999971,
+          "p95": 93.88390499999969,
+          "max": 112.24956799999927
+        },
+        "encodeOver60Seconds": []
+      },
+      "shareableByEveryVariant8192": {
+        "samples": 66,
+        "encodeMs": {
+          "p50": 101.77919500000007,
+          "p95": 349.63231200000155,
+          "max": 654.1811620000008
+        },
+        "decodeMs": {
+          "p50": 55.70567099999971,
+          "p95": 93.88390499999969,
+          "max": 112.24956799999927
+        },
+        "encodeOver60Seconds": []
+      },
+      "completeMarkdown2000": {
+        "samples": 56,
+        "encodeMs": {
+          "p50": 95.82661400000052,
+          "p95": 189.569276,
+          "max": 601.7570069999929
+        },
+        "decodeMs": {
+          "p50": 56.73052000000007,
+          "p95": 93.88390499999969,
+          "max": 111.84202499999992
+        },
+        "encodeOver60Seconds": []
+      },
+      "boundaries": [
+        {
+          "id": "timing-boundary/repeat",
+          "family": "timing-boundary-repeat",
+          "kind": "code",
+          "decodedJsonChars": 199900,
+          "encodeMs": 601.7570069999929,
+          "tag": "b",
+          "fragmentChars": 78,
+          "markdownLinkChars": 112,
+          "fragmentSha256": "bc63e4362b28ddad89d775f9f89dc4685d3397b980971ae6c8b8f96b521a8857",
+          "decodeMs": 27.11925699999847,
+          "roundTrip": true
+        },
+        {
+          "id": "timing-boundary/entropy",
+          "family": "timing-boundary-entropy",
+          "kind": "code",
+          "decodedJsonChars": 199900,
+          "encodeMs": 244203.492265,
+          "tag": "a",
+          "fragmentChars": 201877,
+          "markdownLinkChars": 201911,
+          "fragmentSha256": "e5f9e4ac0b68b2e007f9c7ca3f6427a102234e3f883d9687e6a54d2cde35ba1f",
+          "decodeMs": 17.975926999992225,
+          "roundTrip": true
+        }
+      ]
+    },
+    {
+      "label": "final-before-radix-optimization",
+      "revision": "532ef99eaac0da9e22823f705826032bb8473a22",
+      "sourceSha256": "f645a020a6c15280dc2b69b9d4a392c19ac57d5d3acabb62f18f0346917d3ee6",
+      "startedAt": "2026-10-03T23:39:09.242Z",
+      "finishedAt": "2026-10-03T23:45:45.082Z",
+      "runtime": {
+        "platform": "linux",
+        "architecture": "x64",
+        "cpuModel": "AMD EPYC 7763 64-Core Processor",
+        "availableParallelism": 4
+      },
+      "peakRssMiB": 584.1328125,
+      "all": {
+        "samples": 78,
+        "encodeMs": {
+          "p50": 487.42056199999934,
+          "p95": 10369.527761000005,
+          "max": 251873.678346
+        },
+        "decodeMs": {
+          "p50": 294.59307499999977,
+          "p95": 947.0395790000039,
+          "max": 3817.4616220000316
+        },
+        "encodeOver60Seconds": [
+          {
+            "id": "timing-boundary/entropy",
+            "encodeMs": 251873.678346,
+            "fragmentChars": 201250,
+            "markdownLinkChars": 201284,
+            "shareableFragment": false
+          }
+        ]
+      },
+      "shareableFragment8192": {
+        "samples": 67,
+        "encodeMs": {
+          "p50": 444.11506799999916,
+          "p95": 1048.7951350000003,
+          "max": 4982.197344999993
+        },
+        "decodeMs": {
+          "p50": 278.2624289999985,
+          "p95": 375.03033799999866,
+          "max": 501.5807540000005
+        },
+        "encodeOver60Seconds": []
+      },
+      "shareableByEveryVariant8192": {
+        "samples": 66,
+        "encodeMs": {
+          "p50": 444.11506799999916,
+          "p95": 1005.7198229999995,
+          "max": 4982.197344999993
+        },
+        "decodeMs": {
+          "p50": 278.2624289999985,
+          "p95": 343.86518999999953,
+          "max": 501.5807540000005
+        },
+        "encodeOver60Seconds": []
+      },
+      "completeMarkdown2000": {
+        "samples": 56,
+        "encodeMs": {
+          "p50": 425.3756740000008,
+          "p95": 1005.7198229999995,
+          "max": 4982.197344999993
+        },
+        "decodeMs": {
+          "p50": 287.3067810000002,
+          "p95": 343.86518999999953,
+          "max": 501.5807540000005
+        },
+        "encodeOver60Seconds": []
+      },
+      "boundaries": [
+        {
+          "id": "timing-boundary/repeat",
+          "family": "timing-boundary-repeat",
+          "kind": "code",
+          "decodedJsonChars": 199900,
+          "encodeMs": 4982.197344999993,
+          "tag": "b",
+          "fragmentChars": 78,
+          "markdownLinkChars": 112,
+          "fragmentSha256": "bc63e4362b28ddad89d775f9f89dc4685d3397b980971ae6c8b8f96b521a8857",
+          "decodeMs": 25.87337500002468,
+          "roundTrip": true
+        },
+        {
+          "id": "timing-boundary/entropy",
+          "family": "timing-boundary-entropy",
+          "kind": "code",
+          "decodedJsonChars": 199900,
+          "encodeMs": 251873.678346,
+          "tag": "g",
+          "prior": "n",
+          "fragmentChars": 201250,
+          "markdownLinkChars": 201284,
+          "fragmentSha256": "23c0852245f0d747505277f9346bcf4939f08f6fb32a497ace0225677f3babc7",
+          "decodeMs": 3817.4616220000316,
+          "roundTrip": true
+        }
+      ]
+    },
+    {
+      "label": "optimized",
+      "revision": "da4f5beb37f41228c0aaec249ea9b76a8a41bb92",
+      "sourceSha256": "a1d4501a8d4af441f9811b245c70ce3f3576a68053b9c4e6b2b5749ebf8ae2b8",
+      "startedAt": "2026-10-03T23:55:24.773Z",
+      "finishedAt": "2026-10-03T23:57:09.116Z",
+      "runtime": {
+        "platform": "linux",
+        "architecture": "x64",
+        "cpuModel": "AMD EPYC 7763 64-Core Processor",
+        "availableParallelism": 4
+      },
+      "peakRssMiB": 480.078125,
+      "all": {
+        "samples": 78,
+        "encodeMs": {
+          "p50": 473.67868700000054,
+          "p95": 3676.0777060000037,
+          "max": 12707.124762000007
+        },
+        "decodeMs": {
+          "p50": 294.10909699999866,
+          "p95": 916.737501999989,
+          "max": 3875.9900459999917
+        },
+        "encodeOver60Seconds": []
+      },
+      "shareableFragment8192": {
+        "samples": 67,
+        "encodeMs": {
+          "p50": 445.727221000001,
+          "p95": 1013.9885119999999,
+          "max": 4892.466704999999
+        },
+        "decodeMs": {
+          "p50": 286.55915399999867,
+          "p95": 388.89044399999875,
+          "max": 488.0080880000005
+        },
+        "encodeOver60Seconds": []
+      },
+      "shareableByEveryVariant8192": {
+        "samples": 66,
+        "encodeMs": {
+          "p50": 445.727221000001,
+          "p95": 998.7709070000001,
+          "max": 4892.466704999999
+        },
+        "decodeMs": {
+          "p50": 286.55915399999867,
+          "p95": 353.7817639999994,
+          "max": 488.0080880000005
+        },
+        "encodeOver60Seconds": []
+      },
+      "completeMarkdown2000": {
+        "samples": 56,
+        "encodeMs": {
+          "p50": 423.8931489999959,
+          "p95": 998.7709070000001,
+          "max": 4892.466704999999
+        },
+        "decodeMs": {
+          "p50": 291.82473800000025,
+          "p95": 353.7817639999994,
+          "max": 488.0080880000005
+        },
+        "encodeOver60Seconds": []
+      },
+      "boundaries": [
+        {
+          "id": "timing-boundary/repeat",
+          "family": "timing-boundary-repeat",
+          "kind": "code",
+          "decodedJsonChars": 199900,
+          "encodeMs": 4892.466704999999,
+          "tag": "b",
+          "fragmentChars": 78,
+          "markdownLinkChars": 112,
+          "fragmentSha256": "bc63e4362b28ddad89d775f9f89dc4685d3397b980971ae6c8b8f96b521a8857",
+          "decodeMs": 24.075524999992922,
+          "roundTrip": true
+        },
+        {
+          "id": "timing-boundary/entropy",
+          "family": "timing-boundary-entropy",
+          "kind": "code",
+          "decodedJsonChars": 199900,
+          "encodeMs": 12707.124762000007,
+          "tag": "g",
+          "prior": "n",
+          "fragmentChars": 201250,
+          "markdownLinkChars": 201284,
+          "fragmentSha256": "23c0852245f0d747505277f9346bcf4939f08f6fb32a497ace0225677f3babc7",
+          "decodeMs": 3875.9900459999917,
+          "roundTrip": true
+        }
+      ]
+    }
+  ]
+}

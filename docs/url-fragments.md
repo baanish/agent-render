@@ -3,14 +3,14 @@
 agent-render links carry the artifact in the URL fragment:
 
 ```text
-https://agent-render.com/#f<compressed-payload>
+https://agent-render.com/#g<compressed-payload>
 ```
 
 Everything before `#` loads the static app. Everything after `#` is the artifact payload the browser decodes locally.
 
 ## What the parts mean
 
-- The first character after `#` is a single codec tag. Here `f` means the `arx5` codec. (The tag does not carry a dictionary version; it implies the current dictionary.)
+- The first character after `#` identifies the codec. Here `g` means ARX6. New ARX6 links then carry model version `3`, a prior id, and compressed text with an embedded corruption checksum.
 - `<compressed-payload>` is the encoded artifact bundle.
 
 The tag char identifies the codec:
@@ -24,9 +24,10 @@ The tag char identifies the codec:
 #c<payload>   (arx3, deprecated emit)
 #e<payload>   (arx4, deprecated emit)
 #f<payload>   (arx5)
+#g<payload>   (arx6)
 ```
 
-For `arx`, `arx2`, `arx3`, `arx4`, and `arx5`, the compact tag does not carry a dictionary version — it implies the current dictionary (the build pins the newest supported version and rejects a newer one). Only the legacy header below carries an explicit dictionary version.
+For `arx` through `arx5`, compact tags imply a pinned dictionary/model. New ARX6 links explicitly carry model version 3: `#g3<prior><digits>`. Existing `#g2<prior><digits>` and older `#g<prior><fraction>` links still use their frozen decoders. The experimental `#g1L` research wire is not a viewer link format.
 
 Older links may use the legacy shape, which the viewer still decodes:
 
@@ -34,11 +35,11 @@ Older links may use the legacy shape, which the viewer still decodes:
 #agent-render=v1.<codec>.<payload>
 ```
 
-where `<codec>` is `plain`, `lz`, or `deflate`, and the ARX-family legacy links include the dictionary version (`#agent-render=v1.arx.<dictVersion>.<payload>`, `arx2`, `arx3`, `arx4`, `arx5`). These legacy links are no longer emitted.
+where `<codec>` is `plain`, `lz`, or `deflate`, and the ARX-family legacy links include the dictionary version (`#agent-render=v1.arx.<dictVersion>.<payload>`, `arx2`, `arx3`, `arx4`, `arx5`). These legacy links are no longer emitted; `arx6` never used this form.
 
 ## Why arx exists
 
-Artifacts can be bigger than a comfortable URL. The ARX family keeps links shorter by applying agent-render substitution dictionaries, Brotli or the context mixer, tuple envelopes, and binary-to-text encoding. Live links use chat-safe ASCII wires (usually base64url). Older `arx3`/`arx4` links may contain dense Unicode; the viewer still decodes them, but new links do not emit that form because Discord and WhatsApp percent-encode or mangle it.
+Artifacts can be bigger than a comfortable URL. The ARX family shortens them with dictionary substitution, Brotli or adaptive context mixing, and compact envelope framing. Versioned ARX6 skips body substitutions, preserves raw text exactly, and uses a mixed-radix fraction over `0-9A-Za-z-._~` with an embedded checksum. Default automatic encoding compares it against every existing live codec and keeps it only when the complete serialized fragment gets shorter. ARX5 and older live codecs usually select base64url. ARX3/ARX4 links may contain dense Unicode; they remain readable, but automatic encoding excludes them because visible character counts hide percent-encoding costs on chat surfaces.
 
 ## Privacy tradeoff
 

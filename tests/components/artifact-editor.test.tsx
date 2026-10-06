@@ -241,6 +241,28 @@ describe("ArtifactEditor", () => {
     expect(onPreviewHash).not.toHaveBeenCalled();
   });
 
+  it("disables a result that finishes after the draft was edited during generation", async () => {
+    const user = userEvent.setup();
+    const onPreviewHash = vi.fn();
+    let resolveGeneration!: (link: GeneratedArtifactLink) => void;
+    generationMock.createGeneratedEnvelopeLinkAsync.mockReturnValue(new Promise((resolve) => {
+      resolveGeneration = resolve;
+    }));
+    render(<ArtifactEditor artifact={markdownArtifact} envelope={envelope} onPreviewHash={onPreviewHash} />);
+
+    await user.click(screen.getByRole("button", { name: "Generate new link" }));
+    await waitFor(() => expect(generationMock.createGeneratedEnvelopeLinkAsync).toHaveBeenCalledOnce());
+    await user.type(screen.getByTestId("artifact-editor-content"), " edited while encoding");
+    await act(async () => resolveGeneration(createGeneratedLink(markdownArtifact.content)));
+
+    expect(screen.getByRole("status")).toHaveTextContent(/draft changed/i);
+    expect(screen.getByRole("button", { name: "Preview here" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Generate new link" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Preview here" }));
+    expect(onPreviewHash).not.toHaveBeenCalled();
+  });
+
   it("surfaces generation errors without offering a preview", async () => {
     const user = userEvent.setup();
     generationMock.createGeneratedEnvelopeLinkAsync.mockRejectedValue(
@@ -415,6 +437,7 @@ index 3333333..4444444 100644
     await user.click(screen.getByRole("button", { name: "Generate new link" }));
     await waitFor(() => expect(generationMock.createGeneratedEnvelopeLinkAsync).toHaveBeenCalledTimes(1));
     await user.click(screen.getByRole("button", { name: "release.patch" }));
+    expect(generationMock.createGeneratedEnvelopeLinkAsync.mock.calls[0][3].aborted).toBe(true);
     await act(async () => {
       resolveGeneration(createGeneratedLink("# stale"));
     });

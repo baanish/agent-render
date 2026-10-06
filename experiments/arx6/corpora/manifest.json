@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "purpose": "Synthetic generality checks, not independently collected real-world holdout data.",
+  "freezeRule": "Both files are generated before candidate-model comparison. Diagnostic may guide design; validation stays unevaluated until the model and representation are frozen.",
+  "generatorSha256": "40ec6eb6edfd136d3a67efabfdf932e62a20b9f0bb10a9bf429ebf7c8d5b581b",
+  "corpora": {
+    "diagnostic": {
+      "file": "diagnostic.json",
+      "seed": 1119944686,
+      "samples": 52,
+      "sha256": "b1f3e97e337896b90a300ab0e9acf89b4a1ca88951211d38ee2410ca9c3bdabd"
+    },
+    "validation": {
+      "file": "validation.json",
+      "seed": 2447445413,
+      "samples": 52,
+      "sha256": "aa6437bd70a7eb446ab01914d483e91fef168e9b77e56d7eead124812a66c599"
+    }
+  }
+}

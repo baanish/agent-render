@@ -10,8 +10,8 @@ import { createGeneratedArtifactLinkAsync, type LinkCreatorDraft } from "@/lib/p
 /**
  * A generated link needs two selections over the same candidates: the copy-paste URL uses each
  * codec's default budget while the markdown destination is measured percent-escaped. Those are two
- * reads of one pool, not two encodes: the context mixer costs ~770 ms per 60 KB artifact, so a
- * second pass would double every link creation's main-thread stall for identical bytes.
+ * reads of one pool, not two encodes. Both mixer candidates are expensive, so re-encoding the
+ * pool for the second surface would double the work for identical bytes.
  */
 const mixerCompressions = vi.fn();
 
@@ -26,6 +26,21 @@ vi.mock("@/lib/payload/arx4-codec", async (importOriginal) => {
     arx5CompressEnvelope: (...args: Parameters<typeof actual.arx5CompressEnvelope>) => {
       mixerCompressions(...args);
       return actual.arx5CompressEnvelope(...args);
+    },
+    arx5CompressTransportEnvelope: (...args: Parameters<typeof actual.arx5CompressTransportEnvelope>) => {
+      mixerCompressions(...args);
+      return actual.arx5CompressTransportEnvelope(...args);
+    },
+  };
+});
+
+vi.mock("@/lib/payload/arx6-codec", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/payload/arx6-codec")>();
+  return {
+    ...actual,
+    arx6CompressEnvelope: (...args: Parameters<typeof actual.arx6CompressEnvelope>) => {
+      mixerCompressions(...args);
+      return actual.arx6CompressEnvelope(...args);
     },
   };
 });
@@ -72,9 +87,10 @@ describe("async link creation", () => {
     }
   });
 
-  it("codes the payload once in auto mode too, where arx5 leads the codec priority", async () => {
+  // Automatic selection evaluates both mixers, but neither is rerun for the Markdown surface.
+  it("codes each mixer candidate once in auto mode", async () => {
     await createGeneratedArtifactLinkAsync({ ...draft, codec: "auto" }, "https://agent-render.com/");
 
-    expect(mixerCompressions).toHaveBeenCalledTimes(1);
+    expect(mixerCompressions).toHaveBeenCalledTimes(2);
   });
 });

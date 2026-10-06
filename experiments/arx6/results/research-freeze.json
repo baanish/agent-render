@@ -1,0 +1,9 @@
+{
+  "note": "These compression model/representation files were frozen before the first holdout benchmark. Decoder-only hardening after holdout must not change encoder output.",
+  "files": {
+    "src/cm6.mjs": "060bfda2b2207edf0ec2b415d2b8591188635b1d09b89f592d7dc36a9aa95e4b",
+    "src/native-frame.mjs": "81074bf2360059c891233bde4034748cbe151958b7a5171c75baa542229c9392",
+    "src/arx6-core.mjs": "6cd1d5b3bed631227adc564b057e23203fe52863399df88a9a15e131da4f5807"
+  },
+  "holdoutSha256": "d3e010666fb5b19f6e8dfacf651d7ea0657230609be04cfaf29b4b84b5185681"
+}

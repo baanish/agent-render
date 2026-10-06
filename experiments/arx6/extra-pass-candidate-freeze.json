@@ -1,0 +1,13 @@
+{
+  "baseRevision": "5d82b9fa23a831986286e8666ca7307c586ef3a1",
+  "policy": "Frozen g3 kind-prior versus n competition, then unchanged complete legacy auto pool; no g2-versus-g3 competition. Candidate model copied byte-for-byte into disposable v2 model slot, and wire/checksum version changed to3 for measurement only. Production integration must preserve the old g2 decoder separately and reproduce these g3 wires.",
+  "candidateModelSha256": "2490dc30ff5c033c799ff84c8c96cc059691273ffe3856fdcbe246721ba1e188",
+  "snapshotFiles": {
+    "arx-codec.ts": "dcb5099294f376784b187fa11000e07f90bd6229c39f6d3205feaf3852beaf79",
+    "arx4-codec.ts": "5952b6a2fe56a3bde6e50ee7de8fefd23d80ec1c4b5bf924125a561f62c0f62e",
+    "fragment-arx.ts": "e001456e60b4ae2f7bbf4ccff9360fdd67b60e16101839ddae36787dc19c7d70",
+    "fragment.ts": "d01907febb8bc145ee916851621f64f094bd2b9eeec52276124d459e365cc603",
+    "arx6-v2-model.ts": "2490dc30ff5c033c799ff84c8c96cc059691273ffe3856fdcbe246721ba1e188",
+    "arx6-codec.ts": "24daca9d1cd5019a495b4ef679d4f96d39e1032413575f02436f07bcaa69a05b"
+  }
+}

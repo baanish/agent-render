@@ -1,10 +1,12 @@
 import {
   ArxDecodedPayloadTooLargeError,
   arx2CompressEnvelope,
+  arx2CompressTransportEnvelope,
   arx2DecompressEnvelope,
   arx3CompressEnvelope,
   arx3DecompressEnvelope,
   arxCompressPayloads,
+  arxCompressTransportPayloads,
   arxDecompress,
   getActiveArx2OverlayVersion,
   getActiveDictVersion,
@@ -13,17 +15,20 @@ import {
   loadArxDictionary,
   loadArx2OverlayDictionary,
   type ArxWirePayloads,
+  type ArxTransportWirePayloads,
 } from "@/lib/payload/arx-codec";
 import {
   arx4CompressEnvelope,
   arx4DecompressEnvelope,
   arx5CompressEnvelope,
+  arx5CompressTransportEnvelope,
   arx5DecompressEnvelope,
   CURATED_PRIOR_IDS,
   EXPECTED_ARX4_PRIORS_VERSION,
   getActiveArx4PriorsVersion,
   loadArx4Priors,
 } from "@/lib/payload/arx4-codec";
+import { arx6CompressEnvelope, arx6DecompressEnvelope, getArx6PriorId } from "@/lib/payload/arx6-codec";
 import { packEnvelope } from "@/lib/payload/wire-format";
 import {
   compactTagForCodec,
@@ -49,11 +54,11 @@ export type CandidateFragment = {
 
 type TransportLengthCalculator = (value: string) => number;
 
-/** The four wire encodings every arx builder produces, in candidate order. */
+/** Legacy wire order, preserved when transport-only builders omit dominated candidates. */
 const WIRE_ORDER = ["base76", "base1k", "baseBMP", "base64url"] as const satisfies readonly (keyof ArxWirePayloads)[];
 
 /**
- * Turn an arx codec's four wire payloads into tagged candidates. Shared by all three arx builders,
+ * Turn an arx codec's available wire payloads into tagged candidates. Shared by the arx builders,
  * which previously each re-spelled the tag prefix + transport-length + four-candidate list.
  *
  * `bmpUsesVisibleLength` gives the dense baseBMP wire its DEFAULT budget in visible URL characters
@@ -65,12 +70,12 @@ const WIRE_ORDER = ["base76", "base1k", "baseBMP", "base64url"] as const satisfi
 function wirePayloadsToCandidates(
   codec: ArxCodec,
   packed: boolean,
-  payloads: ArxWirePayloads,
+  payloads: ArxTransportWirePayloads,
   computeTransportLength: TransportLengthCalculator,
   bmpUsesVisibleLength = false,
 ): CandidateFragment[] {
   const tag = compactTagForCodec(codec);
-  return WIRE_ORDER.map((wire) => {
+  return WIRE_ORDER.filter((wire) => payloads[wire] !== undefined).map((wire) => {
     const value = `${tag}${payloads[wire]}`;
     const urlSerializedLength = computeTransportLength(value);
     return {
@@ -88,7 +93,7 @@ let arxDictionaryLoadPromise: Promise<void> | null = null;
 let arx2OverlayDictionaryLoadPromise: Promise<void> | null = null;
 let arx4PriorsLoadPromise: Promise<void> | null = null;
 
-// Compact ARX fragments (tags `a`/`b`/`c`/`e`/`f`) do NOT carry a dictionary version — the tag implies
+// Compact ARX fragments (tags `a`/`b`/`c`/`e`/`f`/`g`) do NOT carry a dictionary version; the tag implies
 // the CURRENT dictionary, which keeps links short. The safety cost is that a build must not decode
 // with a dictionary NEWER than it was built for (a CDN/asset split serving a future dictionary, or a
 // version bump), because it would lack the new slots and could produce a structurally-valid-but-
@@ -97,7 +102,8 @@ let arx4PriorsLoadPromise: Promise<void> | null = null;
 // dictionary (version 1) are both <= this and remain usable. Bumping a dictionary version is
 // therefore a wire change that also requires new compact tags and updating
 // tests/arx-dictionary-pin.test.ts. arx4/arx5 depend on the same pin twice over, since the context-mixer
-// prior is derived from the dictionary slot text as well as its substitution stage.
+// prior is derived from the dictionary slot text as well as its substitution stage; arx6 skips
+// substitution but primes on that same prior, so it depends on the pin once.
 const EXPECTED_ARX_DICTIONARY_VERSION = 1;
 const EXPECTED_ARX2_OVERLAY_VERSION = 1;
 // The arx4 priors asset is pinned the same way and for the same reason, except that it tolerates no
@@ -105,11 +111,12 @@ const EXPECTED_ARX2_OVERLAY_VERSION = 1;
 // corpus this build's fragments were never coded against. That pin lives on the codec that codes with
 // it (EXPECTED_ARX4_PRIORS_VERSION in arx4-codec.ts); this module only drives the loader toward it.
 //
-// arx4/arx5 hold their DICTIONARIES to that same exact standard, which is where they part ways with
+// arx4/arx5/arx6 hold their DICTIONARIES to that same exact standard, which is where they part ways with
 // arx/arx2/arx3. They tolerate the built-in fallback (version 0) because substitution alone degrades
 // predictably; the mixer also primes on the dictionary slot text, so a fragment coded against any
 // other dictionary is one that healthy viewers cannot decode at all. Both sides therefore hold out
-// for the pinned pair: encode leaves the candidate pool, decode refuses.
+// for the pinned pair: primed encoding leaves the candidate pool, primed decoding refuses.
+// ARX6 can instead use its unprimed `n` model, which has no asset dependency.
 
 /**
  * Thrown when an arx4 fragment reaches the decoder while the active dictionaries are not the exact
@@ -152,7 +159,7 @@ function assertArx2OverlayNotNewerThanExpected(): void {
   }
 }
 
-async function ensureArxDictionaryLoaded(): Promise<void> {
+async function ensureArxDictionaryLoaded(requireSupportedVersion = true): Promise<void> {
   if (!isExternalDictionaryLoaded()) {
     arxDictionaryLoadPromise ??= loadArxDictionary()
       .then((version) => {
@@ -170,13 +177,13 @@ async function ensureArxDictionaryLoaded(): Promise<void> {
     await arxDictionaryLoadPromise;
   }
 
-  // Runs for both fetched and injected (sync) dictionaries so a forward-incompatible skew can't slip
-  // through whichever way the dictionary was loaded.
-  assertArxDictionaryNotNewerThanExpected();
+  // Check fetched and injected dictionaries alike. ARX6 encoding can defer this check until it
+  // selects an exact-pinned prior or the model that uses no assets.
+  if (requireSupportedVersion) assertArxDictionaryNotNewerThanExpected();
 }
 
-async function ensureArx2DictionariesLoaded(): Promise<void> {
-  await ensureArxDictionaryLoaded();
+async function ensureArx2DictionariesLoaded(requireSupportedVersion = true): Promise<void> {
+  await ensureArxDictionaryLoaded(requireSupportedVersion);
 
   if (!isExternalArx2OverlayDictionaryLoaded()) {
     // Same retry-on-failure contract as the base dictionary (loadArx2OverlayDictionary also resolves
@@ -194,7 +201,7 @@ async function ensureArx2DictionariesLoaded(): Promise<void> {
     await arx2OverlayDictionaryLoadPromise;
   }
 
-  assertArx2OverlayNotNewerThanExpected();
+  if (requireSupportedVersion) assertArx2OverlayNotNewerThanExpected();
 }
 
 /**
@@ -261,6 +268,8 @@ async function decodeArxAttempt(
       return arx4DecompressEnvelope(encodedPayload);
     case "arx5":
       return arx5DecompressEnvelope(encodedPayload);
+    case "arx6":
+      return arx6DecompressEnvelope(encodedPayload);
     default: {
       const _exhaustive: never = codec;
       throw new Error(`Unsupported arx codec: ${_exhaustive}`);
@@ -278,11 +287,13 @@ function normalizeArxDecodeError(error: unknown): Error {
 
 /**
  * Builds deferred `arx` codec fragment candidates so the core fragment module stays light for non-ARX page loads.
+ * `transportOnly` requires the canonical conservative transport scorer; custom scorers keep all wires.
  */
 export async function buildArxCandidates(
   envelope: PayloadEnvelope,
   packed: boolean,
   computeTransportLength: TransportLengthCalculator,
+  transportOnly = false,
 ): Promise<CandidateFragment[]> {
   await ensureArxDictionaryLoaded();
 
@@ -290,21 +301,25 @@ export async function buildArxCandidates(
   const json = JSON.stringify(
     packed ? packEnvelope(payloadEnvelope) : payloadEnvelope,
   );
-  const payloads = await arxCompressPayloads(json);
+  const payloads = await (transportOnly ? arxCompressTransportPayloads(json) : arxCompressPayloads(json));
   return wirePayloadsToCandidates("arx", packed, payloads, computeTransportLength);
 }
 
 /**
  * Builds deferred `arx2` codec fragment candidates so tuple compression is loaded only for async ARX workflows.
+ * `transportOnly` requires the canonical conservative transport scorer; custom scorers keep all wires.
  */
 export async function buildArx2Candidates(
   envelope: PayloadEnvelope,
   computeTransportLength: TransportLengthCalculator,
+  transportOnly = false,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
 
   const payloadEnvelope = { ...envelope, codec: "arx2" as PayloadCodec };
-  const payloads = await arx2CompressEnvelope(payloadEnvelope);
+  const payloads = await (transportOnly
+    ? arx2CompressTransportEnvelope(payloadEnvelope)
+    : arx2CompressEnvelope(payloadEnvelope));
   return wirePayloadsToCandidates("arx2", false, payloads, computeTransportLength);
 }
 
@@ -366,10 +381,12 @@ export async function buildArx4Candidates(
  * serialized transport length. Every wire — including baseBMP — is measured percent-escaped, so
  * Unicode cannot win the pool and then explode in Discord markdown or WhatsApp. Existing `#e`
  * (arx4) links remain decodable; arx2 stays in the auto pool for CSV regressions.
+ * `transportOnly` requires the canonical conservative transport scorer; custom scorers keep all wires.
  */
 export async function buildArx5Candidates(
   envelope: PayloadEnvelope,
   computeTransportLength: TransportLengthCalculator,
+  transportOnly = false,
 ): Promise<CandidateFragment[]> {
   await ensureArx2DictionariesLoaded();
   if (!arx4DictionariesMatchPins()) return [];
@@ -377,8 +394,39 @@ export async function buildArx5Candidates(
   await loadArx4PriorsOnce();
 
   const payloadEnvelope = { ...envelope, codec: "arx5" as PayloadCodec };
-  const payloads = arx5CompressEnvelope(payloadEnvelope);
+  const payloads = transportOnly
+    ? arx5CompressTransportEnvelope(payloadEnvelope)
+    : arx5CompressEnvelope(payloadEnvelope);
   return wirePayloadsToCandidates("arx5", false, payloads, computeTransportLength);
+}
+
+/**
+ * Builds the deferred `arx6` candidate: arx6-codec.ts's mixer over the raw container, on its one
+ * fraction wire. Primed candidates require the same pinned assets as ARX5. The unprimed v2 model
+ * needs no assets and remains available when dictionaries are missing or version-skewed. A candidate outside
+ * ARX6's reconstructed-envelope budget cannot prevent the existing portfolio from being evaluated.
+ */
+export async function buildArx6Candidates(
+  envelope: PayloadEnvelope,
+  computeTransportLength: TransportLengthCalculator,
+): Promise<CandidateFragment[]> {
+  // Inspect the loaded versions before requiring compatibility: unsupported assets select the
+  // self-contained `n` model below, while every primed candidate still requires the exact pins.
+  await ensureArx2DictionariesLoaded(false);
+  const dictionariesPinned = arx4DictionariesMatchPins();
+  if (dictionariesPinned) await loadArx4PriorsOnce();
+
+  let payload: string;
+  try {
+    payload = arx6CompressEnvelope(envelope, dictionariesPinned ? undefined : "n");
+  } catch (error) {
+    if (error instanceof ArxDecodedPayloadTooLargeError) return [];
+    throw error;
+  }
+
+  const value = `${compactTagForCodec("arx6")}${payload}`;
+  const length = computeTransportLength(value);
+  return [{ value, codec: "arx6", packed: false, transportLength: length, urlSerializedLength: length }];
 }
 
 /**
@@ -388,21 +436,24 @@ export async function decodeArxFragmentPayload(
   codec: ArxCodec,
   remainder: string,
 ): Promise<string | PayloadEnvelope> {
-  if (codec === "arx") {
-    await ensureArxDictionaryLoaded();
-  } else {
-    await ensureArx2DictionariesLoaded();
+  const { parsedDictVersion, versionedPayload } = splitArxFragmentRemainder(remainder);
+  const decodedPayload = decodeArxEncodedPayload(versionedPayload);
+  const priorIdChar = codec === "arx6" ? getArx6PriorId(decodedPayload) : decodedPayload.charAt(0);
+  // Both ARX6 versions' unprimed models use only frozen code and the tuple schema. Fetching or
+  // requiring unrelated dictionaries would make an otherwise self-contained link fail offline.
+  const unprimedArx6 = codec === "arx6" && priorIdChar === "n";
+  if (!unprimedArx6) {
+    if (codec === "arx") await ensureArxDictionaryLoaded();
+    else await ensureArx2DictionariesLoaded();
   }
 
-  if (isArxMixerCodec(codec) && !arx4DictionariesMatchPins()) {
+  if (isArxMixerCodec(codec) && !unprimedArx6 && !arx4DictionariesMatchPins()) {
     throw new Arx4DictionarySkewError(getActiveDictVersion(), getActiveArx2OverlayVersion());
   }
 
   let lastError: Error | null = null;
-  const { parsedDictVersion, versionedPayload } = splitArxFragmentRemainder(remainder);
-  const decodedPayload = decodeArxEncodedPayload(versionedPayload);
 
-  // Only fragments naming a curated prior (the first payload char) need the priors asset; s and n
+  // Only fragments naming a curated prior need the priors asset (versioned ARX6 puts it after 2/3); s and n
   // fragments decode without it, so they must not trigger the fetch. A curated fragment that the
   // fetch cannot serve at the expected version fails in the codec, which is the retryable outcome:
   // decoding it against a skewed corpus would return plausible garbage instead.
@@ -410,7 +461,6 @@ export async function decodeArxFragmentPayload(
   // The char is read AFTER percent-decoding, so this routes on what the decoder will really see: a
   // re-encoding proxy or a handcrafted fragment can deliver `%6d` where the app writes `m`, and routing
   // on the raw char would leave that fragment asking for an asset nothing ever fetches.
-  const priorIdChar = decodedPayload.charAt(0);
   if (isArxMixerCodec(codec) && CURATED_PRIOR_IDS.some((priorId) => priorId === priorIdChar)) {
     await loadArx4PriorsOnce();
   }

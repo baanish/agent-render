@@ -1,0 +1,14 @@
+{
+  "purpose": "Larger synthetic coverage added after diagnostic baselines showed too few cases near the 2000-character Markdown limit. Generated before candidate evaluation on these inputs, with no length-based filtering or tuning.",
+  "generatorSha256": "7e8424de7d60057ed6ed0ab84b164e398d4285ab24acd8eb2e23cfc2abd2867d",
+  "corpusSha256": "73f063fa0e45efba46219505e7a03dcbae116366e9f06aa86e75c84e1114f188",
+  "file": "capacity-validation.json",
+  "seed": 1521608173,
+  "samples": 24,
+  "targets": [
+    2000,
+    8000,
+    24000,
+    64000
+  ]
+}

@@ -36,6 +36,10 @@ export type ArxWirePayloads = {
   base64url: string;
 };
 
+/** Transport selection may omit Unicode wires only when a strict lower bound proves they lose. */
+export type ArxTransportWirePayloads = Pick<ArxWirePayloads, "base76" | "base64url"> &
+  Partial<Pick<ArxWirePayloads, "base1k" | "baseBMP">>;
+
 /**
  * Single-byte control codes used for the first 25 substitution slots.
  * Avoids 0x00 NUL, 0x09 TAB, 0x0A LF, 0x0C FF, 0x0D CR.
@@ -353,11 +357,21 @@ async function loadDictSlot(slot: DictSlot, source?: string | ArxDictionary): Pr
 
 /** Load a dictionary slot from a pre-parsed object (synchronous). */
 function loadDictSlotSync(slot: DictSlot, dict: ArxDictionary): number {
-  slot.table = buildSubstitutionTable(slot.buildPairs(dict));
-  slot.dictionary = dict;
-  slot.version = dict.version;
+  // The substitution table and the mixer's prior text must describe the same immutable snapshot.
+  // Keeping the caller's arrays here lets later mutation change only the prior, breaking old links.
+  const installed = {
+    version: dict.version,
+    singleByteSlots: [...dict.singleByteSlots],
+    extendedSlots: [...dict.extendedSlots],
+  };
+  Object.freeze(installed.singleByteSlots);
+  Object.freeze(installed.extendedSlots);
+  Object.freeze(installed);
+  slot.table = buildSubstitutionTable(slot.buildPairs(installed));
+  slot.dictionary = installed;
+  slot.version = installed.version;
   slot.loaded = true;
-  return dict.version;
+  return installed.version;
 }
 
 /**
@@ -507,7 +521,11 @@ function artifactToArx2Tuple(artifact: ArtifactPayload): Arx2ArtifactTuple {
   }
 }
 
-function envelopeToArx2Tuple(envelope: PayloadEnvelope): Arx2EnvelopeTuple {
+/**
+ * The compact tuple every tuple codec starts from. Builds fresh arrays on every call, so callers may
+ * rewrite the result in place (arx6 swaps artifact bodies for their lengths).
+ */
+export function envelopeToArx2Tuple(envelope: PayloadEnvelope): Arx2EnvelopeTuple {
   const artifacts: Arx2ArtifactTuple[] = new Array(envelope.artifacts.length);
   const activeArtifactId = envelope.activeArtifactId;
   let activeIndex = -1;
@@ -604,7 +622,7 @@ function decodeArx2ArtifactTuple(value: unknown): ArtifactPayload {
   }
 }
 
-function envelopeFromArxTuple(value: unknown, codec: Extract<PayloadCodec, "arx2" | "arx3" | "arx4" | "arx5">): PayloadEnvelope {
+function envelopeFromArxTuple(value: unknown, codec: Extract<PayloadCodec, "arx2" | "arx3" | "arx4" | "arx5" | "arx6">): PayloadEnvelope {
   if (!Array.isArray(value)) {
     throw new Error("Invalid arx2 envelope tuple.");
   }
@@ -685,6 +703,54 @@ for (let i = 0; i < ALPHABET.length; i++) {
   CHAR_TO_INDEX[ALPHABET.charCodeAt(i)] = i;
 }
 
+const BYTE_HEX = Array.from({ length: 256 }, (_, byte) => byte.toString(16).padStart(2, "0"));
+const RADIX_LEAF_LEVEL = 4;
+
+/** Parse the same big-endian integer without repeatedly copying an ever-growing BigInt per byte. */
+function bytesToRadixInteger(bytes: Uint8Array): bigint {
+  const hex = new Array<string>(bytes.length);
+  for (let index = 0; index < bytes.length; index++) hex[index] = BYTE_HEX[bytes[index]];
+  return bytes.length === 0 ? BIGINT_0 : BigInt(`0x${hex.join("")}`);
+}
+
+/**
+ * The minimal radix representation, exactly matching repeated remainder/division by the base.
+ * At each split N = q * B^k + r, so concatenating q's digits with exactly k digits for r preserves
+ * the integer. Only the leading branch may omit zeros; low branches must retain their full width.
+ * Balanced splits avoid dividing the entire large integer once per output digit. All powers are
+ * per-call values, and small leaves use the original conversion, with no floating-point estimates.
+ */
+function radixIntegerDigits(value: bigint, alphabet: string | readonly string[]): string {
+  if (value === BIGINT_0) return "";
+  const base = BigInt(alphabet.length);
+  // powers[level] = B^(2^level), an exclusive upper bound for a block at that level.
+  const powers = [base];
+  while (powers[powers.length - 1] <= value) {
+    const previous = powers[powers.length - 1];
+    powers.push(previous * previous);
+  }
+
+  const convert = (number: bigint, level: number, fixedWidth: boolean): string => {
+    if (level <= RADIX_LEAF_LEVEL) {
+      const chars: string[] = [];
+      const width = fixedWidth ? 1 << level : 0;
+      while (number > BIGINT_0 || chars.length < width) {
+        chars.push(alphabet[Number(number % base)]);
+        number /= base;
+      }
+      return chars.reverse().join("");
+    }
+
+    const divisor = powers[level - 1];
+    const high = number / divisor;
+    const low = number % divisor;
+    if (!fixedWidth && high === BIGINT_0) return convert(low, level - 1, false);
+    return convert(high, level - 1, fixedWidth) + convert(low, level - 1, true);
+  };
+
+  return convert(value, powers.length - 1, false);
+}
+
 /** Encodes a non-negative integer as minimal-width big-endian base-77 digits (>= 1 digit). */
 function encodeBase76Length(length: number): string {
   if (length === 0) return ALPHABET[0];
@@ -698,21 +764,8 @@ function encodeBase76Length(length: number): string {
 /** Public API for `encodeBase76`. */
 export function encodeBase76(bytes: Uint8Array): string {
   if (bytes.length === 0) return "";
-
-  let num = BIGINT_0;
-  for (const b of bytes) {
-    num = (num << BIGINT_8) | BigInt(b);
-  }
-
-  const chars: string[] = [];
-  while (num > BIGINT_0) {
-    chars.push(ALPHABET[Number(num % BASE)]);
-    num /= BASE;
-  }
-  chars.reverse();
-
   const lenPrefix = encodeBase76LengthPrefix(bytes.length);
-  return lenPrefix + chars.join("");
+  return lenPrefix + radixIntegerDigits(bytesToRadixInteger(bytes), ALPHABET);
 }
 
 /** Builds the length prefix, choosing the legacy 2-char shape or the extended "=" shape by size. */
@@ -794,22 +847,9 @@ for (let i = 0; i < UNICODE_ALPHABET.length; i++) {
 /** Public API for `encodeBase1k`. */
 export function encodeBase1k(bytes: Uint8Array): string {
   if (bytes.length === 0) return "";
-
-  let num = BIGINT_0;
-  for (const b of bytes) {
-    num = (num << BIGINT_8) | BigInt(b);
-  }
-
-  const chars: string[] = [];
-  while (num > BIGINT_0) {
-    chars.push(UNICODE_ALPHABET[Number(num % UBASE)]);
-    num /= UBASE;
-  }
-  chars.reverse();
-
   const lenHigh = Math.floor(bytes.length / UNICODE_ALPHABET.length);
   const lenLow = bytes.length % UNICODE_ALPHABET.length;
-  return UNICODE_ALPHABET[lenHigh] + UNICODE_ALPHABET[lenLow] + chars.join("");
+  return UNICODE_ALPHABET[lenHigh] + UNICODE_ALPHABET[lenLow] + radixIntegerDigits(bytesToRadixInteger(bytes), UNICODE_ALPHABET);
 }
 
 /** Public API for `decodeBase1k`. */
@@ -1033,22 +1073,9 @@ const BMP_MARKER = "\uFFF0";
 /** Public API for `encodeBaseBMP`. */
 export function encodeBaseBMP(bytes: Uint8Array): string {
   if (bytes.length === 0) return "";
-
-  let num = BIGINT_0;
-  for (const b of bytes) {
-    num = (num << BIGINT_8) | BigInt(b);
-  }
-
-  const chars: string[] = [];
-  while (num > BIGINT_0) {
-    chars.push(BMP_ALPHABET[Number(num % BMPBASE)]);
-    num /= BMPBASE;
-  }
-  chars.reverse();
-
   const lenHigh = Math.floor(bytes.length / BMP_ALPHABET.length);
   const lenLow = bytes.length % BMP_ALPHABET.length;
-  return BMP_MARKER + BMP_ALPHABET[lenHigh] + BMP_ALPHABET[lenLow] + chars.join("");
+  return BMP_MARKER + BMP_ALPHABET[lenHigh] + BMP_ALPHABET[lenLow] + radixIntegerDigits(bytesToRadixInteger(bytes), BMP_ALPHABET);
 }
 
 /** Public API for `decodeBaseBMP`. */
@@ -1292,6 +1319,36 @@ export function encodeArxWirePayloads(compressed: Uint8Array): ArxWirePayloads {
 }
 
 /**
+ * Produces the exact same transport winner without materializing provably dominated Unicode wires.
+ * For an integer with B significant bits, radix < 2^k needs at least ceil(B/k) digits. Every digit
+ * in either Unicode alphabet costs at least six transport characters; base1k has two such prefix
+ * characters, and BMP adds a nine-character marker. Base64url's transport length is exact.
+ *
+ * Scan past leading zero bytes: those vanish from the radix integer, so byte count alone is not a
+ * valid bound. Keep empty payloads, out-of-range length prefixes, and equality (earlier wires win
+ * ties). This optimization is valid only for conservative percent-escaped transport scoring.
+ */
+export function encodeArxTransportWirePayloads(compressed: Uint8Array): ArxTransportWirePayloads {
+  let firstNonzero = 0;
+  while (firstNonzero < compressed.length && compressed[firstNonzero] === 0) firstNonzero++;
+  const significantBits = firstNonzero === compressed.length
+    ? 0
+    : 8 * (compressed.length - firstNonzero - 1) + 32 - Math.clz32(compressed[firstNonzero]);
+  const base64url = encodeBase64url(compressed);
+  const payloads: ArxTransportWirePayloads = { base76: encodeBase76(compressed), base64url };
+
+  if (compressed.length === 0 || compressed.length >= UNICODE_ALPHABET.length ** 2 ||
+      12 + 6 * Math.ceil(significantBits / 11) <= base64url.length) {
+    payloads.base1k = encodeBase1k(compressed);
+  }
+  if (compressed.length === 0 || compressed.length >= BMP_ALPHABET.length ** 2 ||
+      21 + 6 * Math.ceil(significantBits / 16) <= base64url.length) {
+    payloads.baseBMP = encodeBaseBMP(compressed);
+  }
+  return payloads;
+}
+
+/**
  * Detects which wire alphabet `encoded` uses and hands the decoded bytes to `decodePayloadBytes`.
  * Shared by the Brotli codecs and arx4's context mixer so the alphabet dispatch is written once.
  *
@@ -1347,6 +1404,11 @@ export async function arxCompress(json: string): Promise<string> {
 export async function arxCompressPayloads(json: string): Promise<ArxWirePayloads> {
   const compressed = await compressArxJson(json);
   return encodeArxWirePayloads(compressed);
+}
+
+/** Same ARX bytes and transport winner as arxCompressPayloads, with dominated Unicode wires omitted. */
+export async function arxCompressTransportPayloads(json: string): Promise<ArxTransportWirePayloads> {
+  return encodeArxTransportWirePayloads(await compressArxJson(json));
 }
 
 /**
@@ -1410,6 +1472,11 @@ export async function arx2CompressEnvelope(envelope: PayloadEnvelope): Promise<A
   return compressTupleEnvelope(envelope);
 }
 
+/** Same ARX2 bytes and transport winner as arx2CompressEnvelope. */
+export async function arx2CompressTransportEnvelope(envelope: PayloadEnvelope): Promise<ArxTransportWirePayloads> {
+  return encodeArxTransportWirePayloads(await compressSubstitutedText(substituteArxTupleText(envelope)));
+}
+
 /**
  * Compresses a payload envelope with the arx3 compact tuple pipeline.
  * ARX3 intentionally reuses the proven ARX2 tuple/overlay/Brotli bytes; the protocol
@@ -1442,7 +1509,17 @@ export function envelopeFromSubstitutedArxTupleText(
   // DEL bytes to the 6-char  JSON escape, which inflates the tuple ~6x for DEL-heavy content.
   // Re-serializing the parsed tuple collapses each escape back to one character, so a valid
   // sub-limit payload is no longer falsely rejected as decoded-too-large.
-  const tuple = JSON.parse(tupleJson);
+  return envelopeFromParsedArxTuple(JSON.parse(tupleJson), codec);
+}
+
+/**
+ * Rebuilds an envelope from an already-parsed tuple, after budgeting its serialized size against the
+ * decoded-payload limit. arx6 enters here directly, since its raw container skips substitution.
+ */
+export function envelopeFromParsedArxTuple(
+  tuple: unknown,
+  codec: "arx2" | "arx3" | "arx4" | "arx5" | "arx6",
+): PayloadEnvelope {
   assertDecodedTextBudget(JSON.stringify(tuple));
   return envelopeFromArxTuple(tuple, codec);
 }

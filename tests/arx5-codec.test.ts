@@ -54,20 +54,20 @@ describe("arx5 codec", () => {
     });
   });
 
-  it("wins auto selection with an ASCII wire, not visible-length Unicode", async () => {
-    const autoFragment = await encodeEnvelopeAsync(reportEnvelope);
+  it("picks an ASCII wire, not visible-length Unicode", async () => {
+    const arx5Fragment = await encodeEnvelopeAsync(reportEnvelope, { codec: "arx5" });
     const arx2Fragment = await encodeEnvelopeAsync(reportEnvelope, { codec: "arx2" });
     const arx4Visible = await encodeEnvelopeAsync(reportEnvelope, { codec: "arx4" });
 
-    expect(autoFragment.startsWith(ARX5_TAG)).toBe(true);
-    expect(autoFragment).toMatch(/^[\x21-\x7e]+$/);
-    expect(isBaseBMPEncoded(autoFragment.slice(2))).toBe(false);
-    expect(isBase64urlEncoded(autoFragment.slice(2)) || autoFragment.includes("B.")).toBe(true);
+    expect(arx5Fragment.startsWith(ARX5_TAG)).toBe(true);
+    expect(arx5Fragment).toMatch(/^[\x21-\x7e]+$/);
+    expect(isBaseBMPEncoded(arx5Fragment.slice(2))).toBe(false);
+    expect(isBase64urlEncoded(arx5Fragment.slice(2)) || arx5Fragment.includes("B.")).toBe(true);
 
-    expect(getFragmentTransportLength(autoFragment)).toBeLessThan(getFragmentTransportLength(arx2Fragment));
-    expect(getFragmentTransportLength(autoFragment)).toBeLessThan(getFragmentTransportLength(arx4Visible));
+    expect(getFragmentTransportLength(arx5Fragment)).toBeLessThan(getFragmentTransportLength(arx2Fragment));
+    expect(getFragmentTransportLength(arx5Fragment)).toBeLessThan(getFragmentTransportLength(arx4Visible));
 
-    const parsed = await decodeFragmentAsync(`#${autoFragment}`);
+    const parsed = await decodeFragmentAsync(`#${arx5Fragment}`);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.envelope).toEqual({ ...reportEnvelope, codec: "arx5" });
@@ -77,7 +77,7 @@ describe("arx5 codec", () => {
     const fragment = await encodeEnvelopeAsync(reportEnvelope);
     expect(fragment.startsWith(compactTagForCodec("arx3"))).toBe(false);
     expect(fragment.startsWith(compactTagForCodec("arx4"))).toBe(false);
-    expect(fragment.startsWith(ARX5_TAG)).toBe(true);
+    expect(fragment.startsWith(compactTagForCodec("arx6"))).toBe(true);
   });
 
   it("still decodes existing arx4 fragments", async () => {

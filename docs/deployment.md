@@ -16,6 +16,14 @@ Key details:
 - Set `NEXT_PUBLIC_BASE_PATH` only when you need a subpath deployment
 - `.nojekyll` remains harmless for hosts that ignore it
 
+## Codec assets and Worker
+
+Publish the complete export together, including the generated Worker chunks and `/arx-dictionary.json`, `/arx2-dictionary.json`, and `/arx4-priors.json` with their precompressed `.br` variants. The Worker and asset URLs honor `NEXT_PUBLIC_BASE_PATH`. If you add a Content Security Policy, allow same-origin workers (`worker-src 'self'`) and the existing WebAssembly requirements for Brotli. The bundled Worker does not require an application server.
+
+New ARX6 links identify model version 3 as `#g3`; existing `#g2` and unversioned ARX6 links keep their frozen decoders. Do not modify frozen model code or prior bytes under an existing wire version. Curated prior identities are checked when loaded; a viewer with missing or mismatched assets must fail instead of decoding a primed link with a guessed prior. When curated assets are unavailable, the dictionary-derived shared prior can compete with unprimed `n`. Explicit ARX6 encoding can emit the v3 unprimed candidate when dictionary pins are unavailable or asset versions are newer than supported. Automatic selection still applies legacy codecs' version checks and can reject newer assets. Already-shared primed links still require the prior named in their header. Legacy `#gn`, v2 `#g2n`, and v3 `#g3n` links decode without fetching dictionary or curated-prior assets.
+
+Browser codec requests have a 60-second deadline and cancel obsolete work. Hash navigation aborts creator encoding before queuing the destination decode, without waiting for the creator to unmount. A Worker blocked by hosting configuration returns an error rather than retrying compression on the main thread. Test both root and subpath exports after changing asset paths or CSP.
+
 ## Local verification
 
 Before publishing, verify:
@@ -150,7 +158,7 @@ Every response carries baseline hardening headers: `X-Content-Type-Options: nosn
 
 `img-src` and `connect-src` are restricted to same-origin (plus `data:`/`blob:`). This is deliberate: because the server **stores** the payload, an artifact cannot beacon out or load a tracking pixel from a cross-origin URL. The tradeoff is that a legitimately cross-origin image referenced inside an artifact will not render on the self-hosted viewer (it loads fine on the fragment-based static product, which ships no such policy) — widen `img-src` at a reverse proxy if cross-origin images are a use case you need.
 
-`style-src` intentionally keeps `'unsafe-inline'`: the static export and mermaid emit inline styles a strict style policy would break, and styles are a lower-risk surface than scripts — the high-value lockdown is on `script-src`. The script hashes are read from the exact HTML file being served (each exported route — `/`, `/security`, `/url-explainer`, `/404` — ships different inline scripts), so a rebuild updates them automatically on the next restart. The self-hosted unit tests pin the header contract and per-route hashing; because they do not run a browser, re-verify rendering after a dependency or Next.js upgrade with `npm run build && npm run selfhosted:csp-smoke`, which drives the real server in headless chromium and fails on any CSP violation (a future build needing `eval`/`new Function` or injecting runtime inline scripts would surface there). For an even stricter policy (e.g. hashed styles, or a CSP on non-HTML responses), layer one at a reverse proxy.
+`style-src` intentionally keeps `'unsafe-inline'`: the static export and mermaid emit inline styles a strict style policy would break, and styles are a lower-risk surface than scripts — the high-value lockdown is on `script-src`. The script hashes are read from the exact HTML file being served (each exported route — `/`, `/security`, `/url-explainer`, `/404` — ships different inline scripts), so a rebuild updates them automatically on the next restart. The self-hosted unit tests pin the header contract and per-route hashing; because they do not run a browser, re-verify rendering after a dependency or Next.js upgrade with `npm run build && npm run selfhosted:csp-smoke`, which drives the real server in headless Chromium and fails on any CSP violation. It also generates and previews ARX6 and ARX2 links through the bundled Worker, exercising the actual Brotli-WASM path. A future build needing `eval`/`new Function` or injecting runtime inline scripts would surface there. For an even stricter policy (e.g. hashed styles, or a CSP on non-HTML responses), layer one at a reverse proxy.
 
 ### Future encrypted short links
 

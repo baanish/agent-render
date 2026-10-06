@@ -1,0 +1,3988 @@
+{
+  "status": "experiment deferred; no production priming cache",
+  "frozenModelVersion": 2,
+  "modelSha256": "4be96ce00bb36c518c6e2ece06b07ebcdb1a3a22dd8966d2dc0fc3b8228058b5",
+  "method": "Separate Node processes per pair mode, six sequential small-envelope encode/decode pairs. Explicit garbage collection before each pair. Module import and pinned asset loading precede timing. Exact prior bytes and model factory identity key a single checkpoint. Full-state/wire/decode proofs cover m/c/j/s. Times are observations, not performance guarantees.",
+  "initialPerPriorWordScan": {
+    "date": "2026-10-04T01:41:44.554Z",
+    "node": "v24.19.0",
+    "modelSha256": "4be96ce00bb36c518c6e2ece06b07ebcdb1a3a22dd8966d2dc0fc3b8228058b5",
+    "description": "One bounded exact-byte prior cache; sparse runs relative to fresh constructor, cloned scalar state, no model source edits",
+    "priors": [
+      {
+        "id": "m",
+        "primeBytes": 23458,
+        "constructorMs": 0.6512929999999812,
+        "firstPrimeMs": 506.49958899999996,
+        "captureMs": 446.06521,
+        "sparseCaptureMs": 149.66696000000002,
+        "compressMs": 296.39824999999996,
+        "inflatedBytes": 9297788,
+        "firstRestoreMs": 158.128019,
+        "retainedBytes": 3462506,
+        "retainedMiB": 3.302103042602539,
+        "rawBytes": 216,
+        "wireChars": 114,
+        "exactState": true,
+        "exactWire": true,
+        "exactRestoredDecode": true,
+        "exactRegularDecode": true,
+        "runs": [
+          {
+            "baselineMs": 326.0262039999998,
+            "cachedMs": 134.52817300000015
+          },
+          {
+            "baselineMs": 346.4621689999999,
+            "cachedMs": 112.62231900000006
+          },
+          {
+            "baselineMs": 337.7238089999996,
+            "cachedMs": 138.88605099999995
+          },
+          {
+            "baselineMs": 310.2452589999998,
+            "cachedMs": 123.05472199999986
+          },
+          {
+            "baselineMs": 365.8560440000001,
+            "cachedMs": 147.37815899999987
+          },
+          {
+            "baselineMs": 314.72004800000013,
+            "cachedMs": 130.55317999999988
+          },
+          {
+            "baselineMs": 330.3928799999994,
+            "cachedMs": 136.2801069999996
+          }
+        ],
+        "stats": [
+          {
+            "path": "model.tables.0",
+            "type": "Uint32Array",
+            "fullBytes": 1024,
+            "changedCells": 101,
+            "storedCells": 107,
+            "runs": 7,
+            "retainedBytes": 484
+          },
+          {
+            "path": "model.tables.1",
+            "type": "Uint32Array",
+            "fullBytes": 262144,
+            "changedCells": 3371,
+            "storedCells": 4270,
+            "runs": 959,
+            "retainedBytes": 24752
+          },
+          {
+            "path": "model.tables.2",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 19976,
+            "storedCells": 21093,
+            "runs": 18839,
+            "retainedBytes": 235084
+          },
+          {
+            "path": "model.tables.3",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 51476,
+            "storedCells": 58385,
+            "runs": 44305,
+            "retainedBytes": 587980
+          },
+          {
+            "path": "model.tables.4",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 83614,
+            "storedCells": 100769,
+            "runs": 65237,
+            "retainedBytes": 924972
+          },
+          {
+            "path": "model.tables.5",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 123304,
+            "storedCells": 158757,
+            "runs": 84613,
+            "retainedBytes": 1311932
+          },
+          {
+            "path": "model.tables.6",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 45812,
+            "storedCells": 51320,
+            "runs": 40007,
+            "retainedBytes": 525336
+          },
+          {
+            "path": "model.tables.7",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 71919,
+            "storedCells": 85096,
+            "runs": 58079,
+            "retainedBytes": 805016
+          },
+          {
+            "path": "model.tables.8",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 109607,
+            "storedCells": 167225,
+            "runs": 21652,
+            "retainedBytes": 842116
+          },
+          {
+            "path": "model.tables.9",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 118980,
+            "storedCells": 180928,
+            "runs": 19271,
+            "retainedBytes": 877880
+          },
+          {
+            "path": "model.tables.10",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 26256,
+            "storedCells": 33002,
+            "runs": 19146,
+            "retainedBytes": 285176
+          },
+          {
+            "path": "model.weights",
+            "type": "Uint32Array",
+            "fullBytes": 41472,
+            "changedCells": 3398,
+            "storedCells": 3579,
+            "runs": 49,
+            "retainedBytes": 14708
+          },
+          {
+            "path": "model.initializedSets",
+            "type": "Uint32Array",
+            "fullBytes": 288,
+            "changedCells": 34,
+            "storedCells": 35,
+            "runs": 2,
+            "retainedBytes": 156
+          },
+          {
+            "path": "model.mixerOffsets",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.mixerStretches",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.mixerProbabilities",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.finalWeights",
+            "type": "Uint32Array",
+            "fullBytes": 2048,
+            "changedCells": 202,
+            "storedCells": 206,
+            "runs": 9,
+            "retainedBytes": 896
+          },
+          {
+            "path": "model.finalInitialized",
+            "type": "Uint32Array",
+            "fullBytes": 256,
+            "changedCells": 29,
+            "storedCells": 35,
+            "runs": 3,
+            "retainedBytes": 164
+          },
+          {
+            "path": "model.residualWeights",
+            "type": "Uint32Array",
+            "fullBytes": 294912,
+            "changedCells": 10309,
+            "storedCells": 12458,
+            "runs": 866,
+            "retainedBytes": 56760
+          },
+          {
+            "path": "model.activeInputs",
+            "type": "Uint32Array",
+            "fullBytes": 36,
+            "changedCells": 9,
+            "storedCells": 9,
+            "runs": 1,
+            "retainedBytes": 36
+          },
+          {
+            "path": "model.apmOrder1.table",
+            "type": "Uint32Array",
+            "fullBytes": 4325376,
+            "changedCells": 56258,
+            "storedCells": 56261,
+            "runs": 1623,
+            "retainedBytes": 238028
+          },
+          {
+            "path": "model.apmOrder1.rowReady",
+            "type": "Uint32Array",
+            "fullBytes": 65536,
+            "changedCells": 1643,
+            "storedCells": 2141,
+            "runs": 381,
+            "retainedBytes": 11612
+          },
+          {
+            "path": "model.apmOrder2.table",
+            "type": "Uint32Array",
+            "fullBytes": 4325376,
+            "changedCells": 293946,
+            "storedCells": 293946,
+            "runs": 9906,
+            "retainedBytes": 1255032
+          },
+          {
+            "path": "model.apmOrder2.rowReady",
+            "type": "Uint32Array",
+            "fullBytes": 65536,
+            "changedCells": 9350,
+            "storedCells": 12221,
+            "runs": 815,
+            "retainedBytes": 55404
+          },
+          {
+            "path": "model.historyHashes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.matchTable",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 16922,
+            "storedCells": 19812,
+            "runs": 13882,
+            "retainedBytes": 190304
+          },
+          {
+            "path": "model.matchBuffer",
+            "type": "Uint32Array",
+            "fullBytes": 524288,
+            "changedCells": 5865,
+            "storedCells": 5865,
+            "runs": 1,
+            "retainedBytes": 23468
+          },
+          {
+            "path": "model.columnTable",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 10800,
+            "storedCells": 11053,
+            "runs": 10502,
+            "retainedBytes": 128228
+          },
+          {
+            "path": "model.cachedIndexes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 11,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.cachedTags",
+            "type": "Uint8Array",
+            "fullBytes": 11,
+            "changedCells": 11,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 11
+          },
+          {
+            "path": "model.cachedStretches",
+            "type": "Uint32Array",
+            "fullBytes": 72,
+            "changedCells": 8,
+            "storedCells": 13,
+            "runs": 1,
+            "retainedBytes": 60
+          },
+          {
+            "path": "model.runTables.0",
+            "type": "Uint32Array",
+            "fullBytes": 4,
+            "changedCells": 1,
+            "storedCells": 1,
+            "runs": 1,
+            "retainedBytes": 4
+          },
+          {
+            "path": "model.runTables.1",
+            "type": "Uint32Array",
+            "fullBytes": 1028,
+            "changedCells": 92,
+            "storedCells": 96,
+            "runs": 3,
+            "retainedBytes": 408
+          },
+          {
+            "path": "model.runTables.2",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1366,
+            "storedCells": 1378,
+            "runs": 1349,
+            "retainedBytes": 16304
+          },
+          {
+            "path": "model.runTables.3",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 4911,
+            "storedCells": 5186,
+            "runs": 4650,
+            "retainedBytes": 57944
+          },
+          {
+            "path": "model.runTables.4",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 9291,
+            "storedCells": 10266,
+            "runs": 8312,
+            "retainedBytes": 107560
+          },
+          {
+            "path": "model.runTables.5",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 15215,
+            "storedCells": 17561,
+            "runs": 12683,
+            "retainedBytes": 171708
+          },
+          {
+            "path": "model.runTables.6",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 5121,
+            "storedCells": 5434,
+            "runs": 4826,
+            "retainedBytes": 60344
+          },
+          {
+            "path": "model.runTables.7",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 7077,
+            "storedCells": 7603,
+            "runs": 6542,
+            "retainedBytes": 82748
+          },
+          {
+            "path": "model.runTables.8",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 15783,
+            "storedCells": 18414,
+            "runs": 13076,
+            "retainedBytes": 178264
+          },
+          {
+            "path": "model.runTables.9",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 17808,
+            "storedCells": 21013,
+            "runs": 14372,
+            "retainedBytes": 199028
+          },
+          {
+            "path": "model.runTables.10",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 2330,
+            "storedCells": 2390,
+            "runs": 2263,
+            "retainedBytes": 27664
+          },
+          {
+            "path": "model.runIndexes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.runTags",
+            "type": "Uint8Array",
+            "fullBytes": 11,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 11
+          },
+          {
+            "path": "model.runBytes",
+            "type": "Uint16Array",
+            "fullBytes": 22,
+            "changedCells": 6,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 22
+          },
+          {
+            "path": "model.runStrengths",
+            "type": "Int16Array",
+            "fullBytes": 22,
+            "changedCells": 6,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 22
+          }
+        ]
+      },
+      {
+        "id": "c",
+        "primeBytes": 23457,
+        "constructorMs": 3.456898999999794,
+        "firstPrimeMs": 379.3318159999999,
+        "captureMs": 391.94403000000057,
+        "sparseCaptureMs": 156.44266400000015,
+        "compressMs": 235.50136600000042,
+        "inflatedBytes": 9073036,
+        "firstRestoreMs": 135.22165499999937,
+        "retainedBytes": 3392150,
+        "retainedMiB": 3.235006332397461,
+        "rawBytes": 216,
+        "wireChars": 119,
+        "exactState": true,
+        "exactWire": true,
+        "exactRestoredDecode": true,
+        "exactRegularDecode": true,
+        "runs": [
+          {
+            "baselineMs": 322.2271890000002,
+            "cachedMs": 163.88904399999956
+          },
+          {
+            "baselineMs": 360.69133599999986,
+            "cachedMs": 147.46249700000044
+          },
+          {
+            "baselineMs": 312.91508299999987,
+            "cachedMs": 134.11678799999936
+          },
+          {
+            "baselineMs": 353.413149,
+            "cachedMs": 135.1738060000007
+          },
+          {
+            "baselineMs": 313.9454229999992,
+            "cachedMs": 108.12955099999999
+          },
+          {
+            "baselineMs": 326.1993569999995,
+            "cachedMs": 109.62961499999983
+          },
+          {
+            "baselineMs": 299.13147800000115,
+            "cachedMs": 108.47054699999899
+          }
+        ],
+        "stats": [
+          {
+            "path": "model.tables.0",
+            "type": "Uint32Array",
+            "fullBytes": 1024,
+            "changedCells": 101,
+            "storedCells": 107,
+            "runs": 7,
+            "retainedBytes": 484
+          },
+          {
+            "path": "model.tables.1",
+            "type": "Uint32Array",
+            "fullBytes": 262144,
+            "changedCells": 3514,
+            "storedCells": 4528,
+            "runs": 972,
+            "retainedBytes": 25888
+          },
+          {
+            "path": "model.tables.2",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 20930,
+            "storedCells": 22154,
+            "runs": 19695,
+            "retainedBytes": 246176
+          },
+          {
+            "path": "model.tables.3",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 53171,
+            "storedCells": 60691,
+            "runs": 45472,
+            "retainedBytes": 606540
+          },
+          {
+            "path": "model.tables.4",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 82743,
+            "storedCells": 99629,
+            "runs": 64917,
+            "retainedBytes": 917852
+          },
+          {
+            "path": "model.tables.5",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 116819,
+            "storedCells": 149167,
+            "runs": 81861,
+            "retainedBytes": 1251556
+          },
+          {
+            "path": "model.tables.6",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 36246,
+            "storedCells": 39735,
+            "runs": 32687,
+            "retainedBytes": 420436
+          },
+          {
+            "path": "model.tables.7",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 70270,
+            "storedCells": 82885,
+            "runs": 57056,
+            "retainedBytes": 787988
+          },
+          {
+            "path": "model.tables.8",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 99767,
+            "storedCells": 152855,
+            "runs": 23653,
+            "retainedBytes": 800644
+          },
+          {
+            "path": "model.tables.9",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 115806,
+            "storedCells": 176061,
+            "runs": 20063,
+            "retainedBytes": 864748
+          },
+          {
+            "path": "model.tables.10",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 29321,
+            "storedCells": 37516,
+            "runs": 20497,
+            "retainedBytes": 314040
+          },
+          {
+            "path": "model.weights",
+            "type": "Uint32Array",
+            "fullBytes": 41472,
+            "changedCells": 3607,
+            "storedCells": 3756,
+            "runs": 42,
+            "retainedBytes": 15360
+          },
+          {
+            "path": "model.initializedSets",
+            "type": "Uint32Array",
+            "fullBytes": 288,
+            "changedCells": 34,
+            "storedCells": 35,
+            "runs": 2,
+            "retainedBytes": 156
+          },
+          {
+            "path": "model.mixerOffsets",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.mixerStretches",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.mixerProbabilities",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.finalWeights",
+            "type": "Uint32Array",
+            "fullBytes": 2048,
+            "changedCells": 202,
+            "storedCells": 206,
+            "runs": 9,
+            "retainedBytes": 896
+          },
+          {
+            "path": "model.finalInitialized",
+            "type": "Uint32Array",
+            "fullBytes": 256,
+            "changedCells": 29,
+            "storedCells": 35,
+            "runs": 3,
+            "retainedBytes": 164
+          },
+          {
+            "path": "model.residualWeights",
+            "type": "Uint32Array",
+            "fullBytes": 294912,
+            "changedCells": 10775,
+            "storedCells": 12628,
+            "runs": 877,
+            "retainedBytes": 57528
+          },
+          {
+            "path": "model.activeInputs",
+            "type": "Uint32Array",
+            "fullBytes": 36,
+            "changedCells": 9,
+            "storedCells": 9,
+            "runs": 1,
+            "retainedBytes": 36
+          },
+          {
+            "path": "model.apmOrder1.table",
+            "type": "Uint32Array",
+            "fullBytes": 4325376,
+            "changedCells": 58655,
+            "storedCells": 58657,
+            "runs": 1726,
+            "retainedBytes": 248436
+          },
+          {
+            "path": "model.apmOrder1.rowReady",
+            "type": "Uint32Array",
+            "fullBytes": 65536,
+            "changedCells": 1695,
+            "storedCells": 2191,
+            "runs": 393,
+            "retainedBytes": 11908
+          },
+          {
+            "path": "model.apmOrder2.table",
+            "type": "Uint32Array",
+            "fullBytes": 4325376,
+            "changedCells": 307308,
+            "storedCells": 307310,
+            "runs": 10172,
+            "retainedBytes": 1310616
+          },
+          {
+            "path": "model.apmOrder2.rowReady",
+            "type": "Uint32Array",
+            "fullBytes": 65536,
+            "changedCells": 9648,
+            "storedCells": 12531,
+            "runs": 759,
+            "retainedBytes": 56196
+          },
+          {
+            "path": "model.historyHashes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.matchTable",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 15894,
+            "storedCells": 18474,
+            "runs": 13200,
+            "retainedBytes": 179496
+          },
+          {
+            "path": "model.matchBuffer",
+            "type": "Uint32Array",
+            "fullBytes": 524288,
+            "changedCells": 5865,
+            "storedCells": 5865,
+            "runs": 1,
+            "retainedBytes": 23468
+          },
+          {
+            "path": "model.columnTable",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 6472,
+            "storedCells": 6584,
+            "runs": 6357,
+            "retainedBytes": 77192
+          },
+          {
+            "path": "model.cachedIndexes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 11,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.cachedTags",
+            "type": "Uint8Array",
+            "fullBytes": 11,
+            "changedCells": 11,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 11
+          },
+          {
+            "path": "model.cachedStretches",
+            "type": "Uint32Array",
+            "fullBytes": 72,
+            "changedCells": 12,
+            "storedCells": 18,
+            "runs": 1,
+            "retainedBytes": 72
+          },
+          {
+            "path": "model.runTables.0",
+            "type": "Uint32Array",
+            "fullBytes": 4,
+            "changedCells": 1,
+            "storedCells": 1,
+            "runs": 1,
+            "retainedBytes": 4
+          },
+          {
+            "path": "model.runTables.1",
+            "type": "Uint32Array",
+            "fullBytes": 1028,
+            "changedCells": 95,
+            "storedCells": 96,
+            "runs": 3,
+            "retainedBytes": 408
+          },
+          {
+            "path": "model.runTables.2",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1400,
+            "storedCells": 1415,
+            "runs": 1382,
+            "retainedBytes": 16716
+          },
+          {
+            "path": "model.runTables.3",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 5074,
+            "storedCells": 5338,
+            "runs": 4793,
+            "retainedBytes": 59696
+          },
+          {
+            "path": "model.runTables.4",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 9276,
+            "storedCells": 10185,
+            "runs": 8311,
+            "retainedBytes": 107228
+          },
+          {
+            "path": "model.runTables.5",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 14304,
+            "storedCells": 16353,
+            "runs": 12126,
+            "retainedBytes": 162420
+          },
+          {
+            "path": "model.runTables.6",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 3983,
+            "storedCells": 4179,
+            "runs": 3791,
+            "retainedBytes": 47044
+          },
+          {
+            "path": "model.runTables.7",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 6877,
+            "storedCells": 7410,
+            "runs": 6335,
+            "retainedBytes": 80320
+          },
+          {
+            "path": "model.runTables.8",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 14014,
+            "storedCells": 15933,
+            "runs": 11973,
+            "retainedBytes": 159516
+          },
+          {
+            "path": "model.runTables.9",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 17004,
+            "storedCells": 20015,
+            "runs": 13848,
+            "retainedBytes": 190844
+          },
+          {
+            "path": "model.runTables.10",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 2593,
+            "storedCells": 2666,
+            "runs": 2509,
+            "retainedBytes": 30736
+          },
+          {
+            "path": "model.runIndexes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.runTags",
+            "type": "Uint8Array",
+            "fullBytes": 11,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 11
+          },
+          {
+            "path": "model.runBytes",
+            "type": "Uint16Array",
+            "fullBytes": 22,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 22
+          },
+          {
+            "path": "model.runStrengths",
+            "type": "Int16Array",
+            "fullBytes": 22,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 22
+          }
+        ]
+      },
+      {
+        "id": "j",
+        "primeBytes": 23457,
+        "constructorMs": 3.578805999999531,
+        "firstPrimeMs": 291.5387159999991,
+        "captureMs": 321.8032980000007,
+        "sparseCaptureMs": 114.30699800000002,
+        "compressMs": 207.4963000000007,
+        "inflatedBytes": 8823344,
+        "firstRestoreMs": 114.03945899999962,
+        "retainedBytes": 3253350,
+        "retainedMiB": 3.1026363372802734,
+        "rawBytes": 216,
+        "wireChars": 120,
+        "exactState": true,
+        "exactWire": true,
+        "exactRestoredDecode": true,
+        "exactRegularDecode": true,
+        "runs": [
+          {
+            "baselineMs": 295.70590699999957,
+            "cachedMs": 131.44736600000033
+          },
+          {
+            "baselineMs": 296.84332599999834,
+            "cachedMs": 106.00176800000008
+          },
+          {
+            "baselineMs": 296.05869600000005,
+            "cachedMs": 108.3872130000018
+          },
+          {
+            "baselineMs": 302.6112659999999,
+            "cachedMs": 107.08399599999939
+          },
+          {
+            "baselineMs": 310.5041280000005,
+            "cachedMs": 109.62320600000021
+          },
+          {
+            "baselineMs": 300.51759499999935,
+            "cachedMs": 107.29739300000074
+          },
+          {
+            "baselineMs": 305.1844280000005,
+            "cachedMs": 107.812543
+          }
+        ],
+        "stats": [
+          {
+            "path": "model.tables.0",
+            "type": "Uint32Array",
+            "fullBytes": 1024,
+            "changedCells": 102,
+            "storedCells": 108,
+            "runs": 7,
+            "retainedBytes": 488
+          },
+          {
+            "path": "model.tables.1",
+            "type": "Uint32Array",
+            "fullBytes": 262144,
+            "changedCells": 3549,
+            "storedCells": 4503,
+            "runs": 976,
+            "retainedBytes": 25820
+          },
+          {
+            "path": "model.tables.2",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 20823,
+            "storedCells": 22030,
+            "runs": 19566,
+            "retainedBytes": 244648
+          },
+          {
+            "path": "model.tables.3",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 50039,
+            "storedCells": 56577,
+            "runs": 43298,
+            "retainedBytes": 572692
+          },
+          {
+            "path": "model.tables.4",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 75582,
+            "storedCells": 89957,
+            "runs": 60491,
+            "retainedBytes": 843756
+          },
+          {
+            "path": "model.tables.5",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 105968,
+            "storedCells": 132944,
+            "runs": 76935,
+            "retainedBytes": 1147256
+          },
+          {
+            "path": "model.tables.6",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 42410,
+            "storedCells": 47170,
+            "runs": 37427,
+            "retainedBytes": 488096
+          },
+          {
+            "path": "model.tables.7",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 67881,
+            "storedCells": 79631,
+            "runs": 55627,
+            "retainedBytes": 763540
+          },
+          {
+            "path": "model.tables.8",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 98366,
+            "storedCells": 150235,
+            "runs": 23951,
+            "retainedBytes": 792548
+          },
+          {
+            "path": "model.tables.9",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 108189,
+            "storedCells": 165145,
+            "runs": 21935,
+            "retainedBytes": 836060
+          },
+          {
+            "path": "model.tables.10",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 25999,
+            "storedCells": 32658,
+            "runs": 19004,
+            "retainedBytes": 282664
+          },
+          {
+            "path": "model.weights",
+            "type": "Uint32Array",
+            "fullBytes": 41472,
+            "changedCells": 3586,
+            "storedCells": 3712,
+            "runs": 41,
+            "retainedBytes": 15176
+          },
+          {
+            "path": "model.initializedSets",
+            "type": "Uint32Array",
+            "fullBytes": 288,
+            "changedCells": 34,
+            "storedCells": 35,
+            "runs": 2,
+            "retainedBytes": 156
+          },
+          {
+            "path": "model.mixerOffsets",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.mixerStretches",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.mixerProbabilities",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.finalWeights",
+            "type": "Uint32Array",
+            "fullBytes": 2048,
+            "changedCells": 204,
+            "storedCells": 208,
+            "runs": 9,
+            "retainedBytes": 904
+          },
+          {
+            "path": "model.finalInitialized",
+            "type": "Uint32Array",
+            "fullBytes": 256,
+            "changedCells": 29,
+            "storedCells": 35,
+            "runs": 3,
+            "retainedBytes": 164
+          },
+          {
+            "path": "model.residualWeights",
+            "type": "Uint32Array",
+            "fullBytes": 294912,
+            "changedCells": 11091,
+            "storedCells": 13173,
+            "runs": 856,
+            "retainedBytes": 59540
+          },
+          {
+            "path": "model.activeInputs",
+            "type": "Uint32Array",
+            "fullBytes": 36,
+            "changedCells": 9,
+            "storedCells": 9,
+            "runs": 1,
+            "retainedBytes": 36
+          },
+          {
+            "path": "model.apmOrder1.table",
+            "type": "Uint32Array",
+            "fullBytes": 4325376,
+            "changedCells": 59219,
+            "storedCells": 59226,
+            "runs": 1682,
+            "retainedBytes": 250360
+          },
+          {
+            "path": "model.apmOrder1.rowReady",
+            "type": "Uint32Array",
+            "fullBytes": 65536,
+            "changedCells": 1711,
+            "storedCells": 2201,
+            "runs": 386,
+            "retainedBytes": 11892
+          },
+          {
+            "path": "model.apmOrder2.table",
+            "type": "Uint32Array",
+            "fullBytes": 4325376,
+            "changedCells": 304675,
+            "storedCells": 304679,
+            "runs": 10247,
+            "retainedBytes": 1300692
+          },
+          {
+            "path": "model.apmOrder2.rowReady",
+            "type": "Uint32Array",
+            "fullBytes": 65536,
+            "changedCells": 9665,
+            "storedCells": 12584,
+            "runs": 791,
+            "retainedBytes": 56664
+          },
+          {
+            "path": "model.historyHashes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.matchTable",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 14416,
+            "storedCells": 16513,
+            "runs": 12179,
+            "retainedBytes": 163484
+          },
+          {
+            "path": "model.matchBuffer",
+            "type": "Uint32Array",
+            "fullBytes": 524288,
+            "changedCells": 5865,
+            "storedCells": 5865,
+            "runs": 1,
+            "retainedBytes": 23468
+          },
+          {
+            "path": "model.columnTable",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 10628,
+            "storedCells": 10928,
+            "runs": 10330,
+            "retainedBytes": 126352
+          },
+          {
+            "path": "model.cachedIndexes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 11,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.cachedTags",
+            "type": "Uint8Array",
+            "fullBytes": 11,
+            "changedCells": 11,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 11
+          },
+          {
+            "path": "model.cachedStretches",
+            "type": "Uint32Array",
+            "fullBytes": 72,
+            "changedCells": 4,
+            "storedCells": 6,
+            "runs": 2,
+            "retainedBytes": 40
+          },
+          {
+            "path": "model.runTables.0",
+            "type": "Uint32Array",
+            "fullBytes": 4,
+            "changedCells": 1,
+            "storedCells": 1,
+            "runs": 1,
+            "retainedBytes": 4
+          },
+          {
+            "path": "model.runTables.1",
+            "type": "Uint32Array",
+            "fullBytes": 1028,
+            "changedCells": 94,
+            "storedCells": 97,
+            "runs": 3,
+            "retainedBytes": 412
+          },
+          {
+            "path": "model.runTables.2",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1444,
+            "storedCells": 1457,
+            "runs": 1429,
+            "retainedBytes": 17260
+          },
+          {
+            "path": "model.runTables.3",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 4924,
+            "storedCells": 5166,
+            "runs": 4678,
+            "retainedBytes": 58088
+          },
+          {
+            "path": "model.runTables.4",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 8565,
+            "storedCells": 9367,
+            "runs": 7749,
+            "retainedBytes": 99460
+          },
+          {
+            "path": "model.runTables.5",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 12978,
+            "storedCells": 14668,
+            "runs": 11160,
+            "retainedBytes": 147952
+          },
+          {
+            "path": "model.runTables.6",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 4743,
+            "storedCells": 5004,
+            "runs": 4488,
+            "retainedBytes": 55920
+          },
+          {
+            "path": "model.runTables.7",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 6815,
+            "storedCells": 7305,
+            "runs": 6322,
+            "retainedBytes": 79796
+          },
+          {
+            "path": "model.runTables.8",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 13680,
+            "storedCells": 15549,
+            "runs": 11703,
+            "retainedBytes": 155820
+          },
+          {
+            "path": "model.runTables.9",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 15469,
+            "storedCells": 17925,
+            "runs": 12840,
+            "retainedBytes": 174420
+          },
+          {
+            "path": "model.runTables.10",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 2312,
+            "storedCells": 2372,
+            "runs": 2250,
+            "retainedBytes": 27488
+          },
+          {
+            "path": "model.runIndexes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.runTags",
+            "type": "Uint8Array",
+            "fullBytes": 11,
+            "changedCells": 10,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 11
+          },
+          {
+            "path": "model.runBytes",
+            "type": "Uint16Array",
+            "fullBytes": 22,
+            "changedCells": 6,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 22
+          },
+          {
+            "path": "model.runStrengths",
+            "type": "Int16Array",
+            "fullBytes": 22,
+            "changedCells": 6,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 22
+          }
+        ]
+      },
+      {
+        "id": "s",
+        "primeBytes": 2202,
+        "constructorMs": 3.5692179999987275,
+        "firstPrimeMs": 28.476403000000573,
+        "captureMs": 116.99322300000131,
+        "sparseCaptureMs": 68.89950900000076,
+        "compressMs": 48.093714000000546,
+        "inflatedBytes": 1908468,
+        "firstRestoreMs": 45.54612899999847,
+        "retainedBytes": 631357,
+        "retainedMiB": 0.6021089553833008,
+        "rawBytes": 216,
+        "wireChars": 156,
+        "exactState": true,
+        "exactWire": true,
+        "exactRestoredDecode": true,
+        "exactRegularDecode": true,
+        "runs": [
+          {
+            "baselineMs": 29.655448999999862,
+            "cachedMs": 35.33347499999945
+          },
+          {
+            "baselineMs": 32.65406499999881,
+            "cachedMs": 39.016647000000376
+          },
+          {
+            "baselineMs": 30.919614999998885,
+            "cachedMs": 39.253617000000304
+          },
+          {
+            "baselineMs": 32.65265300000101,
+            "cachedMs": 40.46045499999855
+          },
+          {
+            "baselineMs": 31.78729100000055,
+            "cachedMs": 38.955602
+          },
+          {
+            "baselineMs": 32.064195999999356,
+            "cachedMs": 39.16157600000042
+          },
+          {
+            "baselineMs": 31.957507999999507,
+            "cachedMs": 39.0615600000001
+          }
+        ],
+        "stats": [
+          {
+            "path": "model.tables.0",
+            "type": "Uint32Array",
+            "fullBytes": 1024,
+            "changedCells": 88,
+            "storedCells": 104,
+            "runs": 8,
+            "retainedBytes": 480
+          },
+          {
+            "path": "model.tables.1",
+            "type": "Uint32Array",
+            "fullBytes": 262144,
+            "changedCells": 1384,
+            "storedCells": 1731,
+            "runs": 560,
+            "retainedBytes": 11404
+          },
+          {
+            "path": "model.tables.2",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 5631,
+            "storedCells": 5722,
+            "runs": 5545,
+            "retainedBytes": 67248
+          },
+          {
+            "path": "model.tables.3",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 10223,
+            "storedCells": 10570,
+            "runs": 9888,
+            "retainedBytes": 121384
+          },
+          {
+            "path": "model.tables.4",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 12788,
+            "storedCells": 13274,
+            "runs": 12319,
+            "retainedBytes": 151648
+          },
+          {
+            "path": "model.tables.5",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 15127,
+            "storedCells": 15758,
+            "runs": 14496,
+            "retainedBytes": 179000
+          },
+          {
+            "path": "model.tables.6",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 9262,
+            "storedCells": 9491,
+            "runs": 9035,
+            "retainedBytes": 110244
+          },
+          {
+            "path": "model.tables.7",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 10256,
+            "storedCells": 10585,
+            "runs": 9939,
+            "retainedBytes": 121852
+          },
+          {
+            "path": "model.tables.8",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 15024,
+            "storedCells": 17360,
+            "runs": 12609,
+            "retainedBytes": 170312
+          },
+          {
+            "path": "model.tables.9",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 15593,
+            "storedCells": 18192,
+            "runs": 12946,
+            "retainedBytes": 176336
+          },
+          {
+            "path": "model.tables.10",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 5229,
+            "storedCells": 5491,
+            "runs": 4928,
+            "retainedBytes": 61388
+          },
+          {
+            "path": "model.weights",
+            "type": "Uint32Array",
+            "fullBytes": 41472,
+            "changedCells": 2129,
+            "storedCells": 2278,
+            "runs": 95,
+            "retainedBytes": 9872
+          },
+          {
+            "path": "model.initializedSets",
+            "type": "Uint32Array",
+            "fullBytes": 288,
+            "changedCells": 32,
+            "storedCells": 35,
+            "runs": 2,
+            "retainedBytes": 156
+          },
+          {
+            "path": "model.mixerOffsets",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.mixerStretches",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.mixerProbabilities",
+            "type": "Uint32Array",
+            "fullBytes": 8,
+            "changedCells": 2,
+            "storedCells": 2,
+            "runs": 1,
+            "retainedBytes": 8
+          },
+          {
+            "path": "model.finalWeights",
+            "type": "Uint32Array",
+            "fullBytes": 2048,
+            "changedCells": 176,
+            "storedCells": 192,
+            "runs": 12,
+            "retainedBytes": 864
+          },
+          {
+            "path": "model.finalInitialized",
+            "type": "Uint32Array",
+            "fullBytes": 256,
+            "changedCells": 29,
+            "storedCells": 35,
+            "runs": 3,
+            "retainedBytes": 164
+          },
+          {
+            "path": "model.residualWeights",
+            "type": "Uint32Array",
+            "fullBytes": 294912,
+            "changedCells": 4532,
+            "storedCells": 5412,
+            "runs": 627,
+            "retainedBytes": 26664
+          },
+          {
+            "path": "model.activeInputs",
+            "type": "Uint32Array",
+            "fullBytes": 36,
+            "changedCells": 9,
+            "storedCells": 9,
+            "runs": 1,
+            "retainedBytes": 36
+          },
+          {
+            "path": "model.apmOrder1.table",
+            "type": "Uint32Array",
+            "fullBytes": 4325376,
+            "changedCells": 23198,
+            "storedCells": 23198,
+            "runs": 816,
+            "retainedBytes": 99320
+          },
+          {
+            "path": "model.apmOrder1.rowReady",
+            "type": "Uint32Array",
+            "fullBytes": 65536,
+            "changedCells": 789,
+            "storedCells": 1025,
+            "runs": 289,
+            "retainedBytes": 6412
+          },
+          {
+            "path": "model.apmOrder2.table",
+            "type": "Uint32Array",
+            "fullBytes": 4325376,
+            "changedCells": 91268,
+            "storedCells": 91268,
+            "runs": 3972,
+            "retainedBytes": 396848
+          },
+          {
+            "path": "model.apmOrder2.rowReady",
+            "type": "Uint32Array",
+            "fullBytes": 65536,
+            "changedCells": 3636,
+            "storedCells": 4973,
+            "runs": 1042,
+            "retainedBytes": 28228
+          },
+          {
+            "path": "model.historyHashes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 9,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.matchTable",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1942,
+            "storedCells": 1978,
+            "runs": 1898,
+            "retainedBytes": 23096
+          },
+          {
+            "path": "model.matchBuffer",
+            "type": "Uint32Array",
+            "fullBytes": 524288,
+            "changedCells": 551,
+            "storedCells": 551,
+            "runs": 1,
+            "retainedBytes": 2212
+          },
+          {
+            "path": "model.columnTable",
+            "type": "Uint32Array",
+            "fullBytes": 4194304,
+            "changedCells": 671,
+            "storedCells": 671,
+            "runs": 670,
+            "retainedBytes": 8044
+          },
+          {
+            "path": "model.cachedIndexes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 11,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.cachedTags",
+            "type": "Uint8Array",
+            "fullBytes": 11,
+            "changedCells": 11,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 11
+          },
+          {
+            "path": "model.cachedStretches",
+            "type": "Uint32Array",
+            "fullBytes": 72,
+            "changedCells": 5,
+            "storedCells": 9,
+            "runs": 2,
+            "retainedBytes": 52
+          },
+          {
+            "path": "model.runTables.0",
+            "type": "Uint32Array",
+            "fullBytes": 4,
+            "changedCells": 1,
+            "storedCells": 1,
+            "runs": 1,
+            "retainedBytes": 4
+          },
+          {
+            "path": "model.runTables.1",
+            "type": "Uint32Array",
+            "fullBytes": 1028,
+            "changedCells": 66,
+            "storedCells": 75,
+            "runs": 8,
+            "retainedBytes": 364
+          },
+          {
+            "path": "model.runTables.2",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 460,
+            "storedCells": 460,
+            "runs": 458,
+            "retainedBytes": 5504
+          },
+          {
+            "path": "model.runTables.3",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1117,
+            "storedCells": 1129,
+            "runs": 1105,
+            "retainedBytes": 13356
+          },
+          {
+            "path": "model.runTables.4",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1508,
+            "storedCells": 1536,
+            "runs": 1482,
+            "retainedBytes": 18000
+          },
+          {
+            "path": "model.runTables.5",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1857,
+            "storedCells": 1900,
+            "runs": 1817,
+            "retainedBytes": 22136
+          },
+          {
+            "path": "model.runTables.6",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1089,
+            "storedCells": 1103,
+            "runs": 1077,
+            "retainedBytes": 13028
+          },
+          {
+            "path": "model.runTables.7",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1110,
+            "storedCells": 1122,
+            "runs": 1100,
+            "retainedBytes": 13288
+          },
+          {
+            "path": "model.runTables.8",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1801,
+            "storedCells": 1834,
+            "runs": 1764,
+            "retainedBytes": 21448
+          },
+          {
+            "path": "model.runTables.9",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 1857,
+            "storedCells": 1893,
+            "runs": 1821,
+            "retainedBytes": 22140
+          },
+          {
+            "path": "model.runTables.10",
+            "type": "Uint32Array",
+            "fullBytes": 1048576,
+            "changedCells": 476,
+            "storedCells": 477,
+            "runs": 475,
+            "retainedBytes": 5708
+          },
+          {
+            "path": "model.runIndexes",
+            "type": "Uint32Array",
+            "fullBytes": 44,
+            "changedCells": 9,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 44
+          },
+          {
+            "path": "model.runTags",
+            "type": "Uint8Array",
+            "fullBytes": 11,
+            "changedCells": 9,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 11
+          },
+          {
+            "path": "model.runBytes",
+            "type": "Uint16Array",
+            "fullBytes": 22,
+            "changedCells": 6,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 22
+          },
+          {
+            "path": "model.runStrengths",
+            "type": "Int16Array",
+            "fullBytes": 22,
+            "changedCells": 6,
+            "storedCells": 11,
+            "runs": 1,
+            "retainedBytes": 22
+          }
+        ]
+      }
+    ]
+  },
+  "initialPairMeasurements": [
+    {
+      "mode": "baseline",
+      "rows": [
+        {
+          "i": 0,
+          "encodeMs": 419.677407,
+          "decodeMs": 343.63898399999994,
+          "totalMs": 763.316391,
+          "rssBefore": 58343424,
+          "rssAfter": 157569024,
+          "maxRss": 157569024,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 1,
+          "encodeMs": 404.9681210000001,
+          "decodeMs": 344.647244,
+          "totalMs": 749.6153650000001,
+          "rssBefore": 156721152,
+          "rssAfter": 160100352,
+          "maxRss": 160100352,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 2,
+          "encodeMs": 402.77379299999984,
+          "decodeMs": 348.4141480000003,
+          "totalMs": 751.1879410000001,
+          "rssBefore": 159932416,
+          "rssAfter": 159772672,
+          "maxRss": 160231424,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 3,
+          "encodeMs": 418.1804109999998,
+          "decodeMs": 335.44573200000013,
+          "totalMs": 753.626143,
+          "rssBefore": 158625792,
+          "rssAfter": 160124928,
+          "maxRss": 160231424,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 4,
+          "encodeMs": 413.3561850000001,
+          "decodeMs": 352.54329000000007,
+          "totalMs": 765.8994750000002,
+          "rssBefore": 160124928,
+          "rssAfter": 158072832,
+          "maxRss": 160231424,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 5,
+          "encodeMs": 435.0475980000001,
+          "decodeMs": 346.41105399999924,
+          "totalMs": 781.4586519999993,
+          "rssBefore": 157925376,
+          "rssAfter": 159870976,
+          "maxRss": 160231424,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        }
+      ],
+      "retainedBytes": 0
+    },
+    {
+      "mode": "cached",
+      "rows": [
+        {
+          "i": 0,
+          "encodeMs": 822.733163,
+          "decodeMs": 148.71882000000005,
+          "totalMs": 971.451983,
+          "rssBefore": 57659392,
+          "rssAfter": 147533824,
+          "maxRss": 149368832,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 1,
+          "encodeMs": 131.69776100000013,
+          "decodeMs": 129.70785499999988,
+          "totalMs": 261.405616,
+          "rssBefore": 147533824,
+          "rssAfter": 206548992,
+          "maxRss": 206548992,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 2,
+          "encodeMs": 125.76801300000011,
+          "decodeMs": 119.60989500000005,
+          "totalMs": 245.37790800000016,
+          "rssBefore": 206548992,
+          "rssAfter": 222408704,
+          "maxRss": 222408704,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 3,
+          "encodeMs": 121.8729699999999,
+          "decodeMs": 120.01416800000015,
+          "totalMs": 241.88713800000005,
+          "rssBefore": 222408704,
+          "rssAfter": 222408704,
+          "maxRss": 222408704,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 4,
+          "encodeMs": 172.16602799999987,
+          "decodeMs": 122.06876600000032,
+          "totalMs": 294.2347940000002,
+          "rssBefore": 222408704,
+          "rssAfter": 222408704,
+          "maxRss": 222408704,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 5,
+          "encodeMs": 117.28208899999981,
+          "decodeMs": 115.83094600000004,
+          "totalMs": 233.11303499999985,
+          "rssBefore": 222408704,
+          "rssAfter": 222408704,
+          "maxRss": 222408704,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        }
+      ],
+      "retainedBytes": 3462506
+    },
+    {
+      "mode": "uncompressed",
+      "rows": [
+        {
+          "i": 0,
+          "encodeMs": 548.211951,
+          "decodeMs": 55.009896000000026,
+          "totalMs": 603.221847,
+          "rssBefore": 56373248,
+          "rssAfter": 124514304,
+          "maxRss": 129744896,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 1,
+          "encodeMs": 54.08257900000001,
+          "decodeMs": 45.16859499999998,
+          "totalMs": 99.25117399999999,
+          "rssBefore": 124497920,
+          "rssAfter": 174559232,
+          "maxRss": 174559232,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 2,
+          "encodeMs": 66.95889399999999,
+          "decodeMs": 52.476879000000054,
+          "totalMs": 119.43577300000004,
+          "rssBefore": 174559232,
+          "rssAfter": 171294720,
+          "maxRss": 174559232,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 3,
+          "encodeMs": 54.40382700000009,
+          "decodeMs": 45.441773999999896,
+          "totalMs": 99.84560099999999,
+          "rssBefore": 171003904,
+          "rssAfter": 149733376,
+          "maxRss": 174559232,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 4,
+          "encodeMs": 63.650420999999824,
+          "decodeMs": 51.824253,
+          "totalMs": 115.47467399999982,
+          "rssBefore": 149733376,
+          "rssAfter": 169562112,
+          "maxRss": 174559232,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        },
+        {
+          "i": 5,
+          "encodeMs": 53.30220600000007,
+          "decodeMs": 48.15936600000009,
+          "totalMs": 101.46157200000016,
+          "rssBefore": 169177088,
+          "rssAfter": 173858816,
+          "maxRss": 174559232,
+          "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+        }
+      ],
+      "retainedBytes": 9322329
+    }
+  ],
+  "portableReproduction": {
+    "date": "2026-10-04T01:45:28.825Z",
+    "node": "v24.19.0",
+    "modelSha256": "4be96ce00bb36c518c6e2ece06b07ebcdb1a3a22dd8966d2dc0fc3b8228058b5",
+    "measurements": [
+      {
+        "mode": "baseline",
+        "rows": [
+          {
+            "i": 0,
+            "encodeMs": 489.040307,
+            "decodeMs": 411.8719970000001,
+            "totalMs": 900.9123040000001,
+            "rssBefore": 53940224,
+            "rssAfter": 152944640,
+            "maxRss": 152944640,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 1,
+            "encodeMs": 562.384626,
+            "decodeMs": 414.3454549999999,
+            "totalMs": 976.7300809999999,
+            "rssBefore": 152944640,
+            "rssAfter": 157048832,
+            "maxRss": 157048832,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 2,
+            "encodeMs": 520.5472110000001,
+            "decodeMs": 448.2815129999999,
+            "totalMs": 968.828724,
+            "rssBefore": 58884096,
+            "rssAfter": 157581312,
+            "maxRss": 157581312,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 3,
+            "encodeMs": 495.02061300000014,
+            "decodeMs": 406.7393689999999,
+            "totalMs": 901.759982,
+            "rssBefore": 61489152,
+            "rssAfter": 159924224,
+            "maxRss": 159924224,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 4,
+            "encodeMs": 528.2740140000001,
+            "decodeMs": 435.77715999999964,
+            "totalMs": 964.0511739999997,
+            "rssBefore": 159924224,
+            "rssAfter": 159969280,
+            "maxRss": 159969280,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 5,
+            "encodeMs": 530.8074729999998,
+            "decodeMs": 455.01551500000005,
+            "totalMs": 985.8229879999999,
+            "rssBefore": 61833216,
+            "rssAfter": 163020800,
+            "maxRss": 163020800,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          }
+        ],
+        "retainedBytes": 0
+      },
+      {
+        "mode": "cached",
+        "rows": [
+          {
+            "i": 0,
+            "encodeMs": 1005.238784,
+            "decodeMs": 184.9735700000001,
+            "totalMs": 1190.2123540000002,
+            "rssBefore": 57454592,
+            "rssAfter": 194756608,
+            "maxRss": 194756608,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 1,
+            "encodeMs": 221.98911900000007,
+            "decodeMs": 164.28341,
+            "totalMs": 386.2725290000001,
+            "rssBefore": 194756608,
+            "rssAfter": 198447104,
+            "maxRss": 198479872,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 2,
+            "encodeMs": 220.26986499999998,
+            "decodeMs": 150.2912570000001,
+            "totalMs": 370.56112200000007,
+            "rssBefore": 198447104,
+            "rssAfter": 211849216,
+            "maxRss": 211849216,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 3,
+            "encodeMs": 120.68679299999985,
+            "decodeMs": 128.15182800000002,
+            "totalMs": 248.83862099999988,
+            "rssBefore": 211849216,
+            "rssAfter": 211939328,
+            "maxRss": 211939328,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 4,
+            "encodeMs": 140.02518400000008,
+            "decodeMs": 137.5029059999997,
+            "totalMs": 277.5280899999998,
+            "rssBefore": 211939328,
+            "rssAfter": 211955712,
+            "maxRss": 211955712,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 5,
+            "encodeMs": 124.27140000000009,
+            "decodeMs": 133.36894600000005,
+            "totalMs": 257.64034600000014,
+            "rssBefore": 211955712,
+            "rssAfter": 212013056,
+            "maxRss": 212013056,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          }
+        ],
+        "retainedBytes": 3462506
+      },
+      {
+        "mode": "uncompressed",
+        "rows": [
+          {
+            "i": 0,
+            "encodeMs": 578.461729,
+            "decodeMs": 60.52887599999997,
+            "totalMs": 638.990605,
+            "rssBefore": 54820864,
+            "rssAfter": 124272640,
+            "maxRss": 130113536,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 1,
+            "encodeMs": 56.404836000000046,
+            "decodeMs": 52.10979499999996,
+            "totalMs": 108.51463100000001,
+            "rssBefore": 124272640,
+            "rssAfter": 174338048,
+            "maxRss": 174338048,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 2,
+            "encodeMs": 60.480046000000016,
+            "decodeMs": 46.89093300000013,
+            "totalMs": 107.37097900000015,
+            "rssBefore": 173867008,
+            "rssAfter": 175050752,
+            "maxRss": 175050752,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 3,
+            "encodeMs": 62.97561400000018,
+            "decodeMs": 49.68409600000018,
+            "totalMs": 112.65971000000036,
+            "rssBefore": 175050752,
+            "rssAfter": 175104000,
+            "maxRss": 175104000,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 4,
+            "encodeMs": 72.41300299999989,
+            "decodeMs": 50.93505899999991,
+            "totalMs": 123.3480619999998,
+            "rssBefore": 174407680,
+            "rssAfter": 176533504,
+            "maxRss": 176533504,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          },
+          {
+            "i": 5,
+            "encodeMs": 65.01236799999992,
+            "decodeMs": 54.01773900000012,
+            "totalMs": 119.03010700000004,
+            "rssBefore": 175906816,
+            "rssAfter": 176545792,
+            "maxRss": 176545792,
+            "wire": "gqh.qhx4k62onh2tP55DVZuo9jDbinKd-2L17vtjs3yO_fzmsejzvu5z~UZ7CcQUnb.I4KUuOH93D_tVal9M5mc"
+          }
+        ],
+        "retainedBytes": 9322329
+      },
+      {
+        "mode": "proof",
+        "proofs": [
+          {
+            "id": "m",
+            "primeBytes": 23458,
+            "retainedCompressedBytes": 3462506,
+            "retainedUncompressedBytes": 9322329,
+            "exactState": true,
+            "exactWire": true,
+            "exactRestoredDecode": true,
+            "exactRegularDecode": true,
+            "stats": [
+              {
+                "path": "model.tables.0",
+                "type": "Uint32Array",
+                "fullBytes": 1024,
+                "changedCells": 101,
+                "storedCells": 107,
+                "runs": 7,
+                "retainedBytes": 484
+              },
+              {
+                "path": "model.tables.1",
+                "type": "Uint32Array",
+                "fullBytes": 262144,
+                "changedCells": 3371,
+                "storedCells": 4270,
+                "runs": 959,
+                "retainedBytes": 24752
+              },
+              {
+                "path": "model.tables.2",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 19976,
+                "storedCells": 21093,
+                "runs": 18839,
+                "retainedBytes": 235084
+              },
+              {
+                "path": "model.tables.3",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 51476,
+                "storedCells": 58385,
+                "runs": 44305,
+                "retainedBytes": 587980
+              },
+              {
+                "path": "model.tables.4",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 83614,
+                "storedCells": 100769,
+                "runs": 65237,
+                "retainedBytes": 924972
+              },
+              {
+                "path": "model.tables.5",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 123304,
+                "storedCells": 158757,
+                "runs": 84613,
+                "retainedBytes": 1311932
+              },
+              {
+                "path": "model.tables.6",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 45812,
+                "storedCells": 51320,
+                "runs": 40007,
+                "retainedBytes": 525336
+              },
+              {
+                "path": "model.tables.7",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 71919,
+                "storedCells": 85096,
+                "runs": 58079,
+                "retainedBytes": 805016
+              },
+              {
+                "path": "model.tables.8",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 109607,
+                "storedCells": 167225,
+                "runs": 21652,
+                "retainedBytes": 842116
+              },
+              {
+                "path": "model.tables.9",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 118980,
+                "storedCells": 180928,
+                "runs": 19271,
+                "retainedBytes": 877880
+              },
+              {
+                "path": "model.tables.10",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 26256,
+                "storedCells": 33002,
+                "runs": 19146,
+                "retainedBytes": 285176
+              },
+              {
+                "path": "model.weights",
+                "type": "Uint32Array",
+                "fullBytes": 41472,
+                "changedCells": 3398,
+                "storedCells": 3579,
+                "runs": 49,
+                "retainedBytes": 14708
+              },
+              {
+                "path": "model.initializedSets",
+                "type": "Uint32Array",
+                "fullBytes": 288,
+                "changedCells": 34,
+                "storedCells": 35,
+                "runs": 2,
+                "retainedBytes": 156
+              },
+              {
+                "path": "model.mixerOffsets",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.mixerStretches",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.mixerProbabilities",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.finalWeights",
+                "type": "Uint32Array",
+                "fullBytes": 2048,
+                "changedCells": 202,
+                "storedCells": 206,
+                "runs": 9,
+                "retainedBytes": 896
+              },
+              {
+                "path": "model.finalInitialized",
+                "type": "Uint32Array",
+                "fullBytes": 256,
+                "changedCells": 29,
+                "storedCells": 35,
+                "runs": 3,
+                "retainedBytes": 164
+              },
+              {
+                "path": "model.residualWeights",
+                "type": "Uint32Array",
+                "fullBytes": 294912,
+                "changedCells": 10309,
+                "storedCells": 12458,
+                "runs": 866,
+                "retainedBytes": 56760
+              },
+              {
+                "path": "model.activeInputs",
+                "type": "Uint32Array",
+                "fullBytes": 36,
+                "changedCells": 9,
+                "storedCells": 9,
+                "runs": 1,
+                "retainedBytes": 36
+              },
+              {
+                "path": "model.apmOrder1.table",
+                "type": "Uint32Array",
+                "fullBytes": 4325376,
+                "changedCells": 56258,
+                "storedCells": 56261,
+                "runs": 1623,
+                "retainedBytes": 238028
+              },
+              {
+                "path": "model.apmOrder1.rowReady",
+                "type": "Uint32Array",
+                "fullBytes": 65536,
+                "changedCells": 1643,
+                "storedCells": 2141,
+                "runs": 381,
+                "retainedBytes": 11612
+              },
+              {
+                "path": "model.apmOrder2.table",
+                "type": "Uint32Array",
+                "fullBytes": 4325376,
+                "changedCells": 293946,
+                "storedCells": 293946,
+                "runs": 9906,
+                "retainedBytes": 1255032
+              },
+              {
+                "path": "model.apmOrder2.rowReady",
+                "type": "Uint32Array",
+                "fullBytes": 65536,
+                "changedCells": 9350,
+                "storedCells": 12221,
+                "runs": 815,
+                "retainedBytes": 55404
+              },
+              {
+                "path": "model.historyHashes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.matchTable",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 16922,
+                "storedCells": 19812,
+                "runs": 13882,
+                "retainedBytes": 190304
+              },
+              {
+                "path": "model.matchBuffer",
+                "type": "Uint32Array",
+                "fullBytes": 524288,
+                "changedCells": 5865,
+                "storedCells": 5865,
+                "runs": 1,
+                "retainedBytes": 23468
+              },
+              {
+                "path": "model.columnTable",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 10800,
+                "storedCells": 11053,
+                "runs": 10502,
+                "retainedBytes": 128228
+              },
+              {
+                "path": "model.cachedIndexes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 11,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.cachedTags",
+                "type": "Uint8Array",
+                "fullBytes": 11,
+                "changedCells": 11,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 11
+              },
+              {
+                "path": "model.cachedStretches",
+                "type": "Uint32Array",
+                "fullBytes": 72,
+                "changedCells": 8,
+                "storedCells": 13,
+                "runs": 1,
+                "retainedBytes": 60
+              },
+              {
+                "path": "model.runTables.0",
+                "type": "Uint32Array",
+                "fullBytes": 4,
+                "changedCells": 1,
+                "storedCells": 1,
+                "runs": 1,
+                "retainedBytes": 4
+              },
+              {
+                "path": "model.runTables.1",
+                "type": "Uint32Array",
+                "fullBytes": 1028,
+                "changedCells": 92,
+                "storedCells": 96,
+                "runs": 3,
+                "retainedBytes": 408
+              },
+              {
+                "path": "model.runTables.2",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1366,
+                "storedCells": 1378,
+                "runs": 1349,
+                "retainedBytes": 16304
+              },
+              {
+                "path": "model.runTables.3",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 4911,
+                "storedCells": 5186,
+                "runs": 4650,
+                "retainedBytes": 57944
+              },
+              {
+                "path": "model.runTables.4",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 9291,
+                "storedCells": 10266,
+                "runs": 8312,
+                "retainedBytes": 107560
+              },
+              {
+                "path": "model.runTables.5",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 15215,
+                "storedCells": 17561,
+                "runs": 12683,
+                "retainedBytes": 171708
+              },
+              {
+                "path": "model.runTables.6",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 5121,
+                "storedCells": 5434,
+                "runs": 4826,
+                "retainedBytes": 60344
+              },
+              {
+                "path": "model.runTables.7",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 7077,
+                "storedCells": 7603,
+                "runs": 6542,
+                "retainedBytes": 82748
+              },
+              {
+                "path": "model.runTables.8",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 15783,
+                "storedCells": 18414,
+                "runs": 13076,
+                "retainedBytes": 178264
+              },
+              {
+                "path": "model.runTables.9",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 17808,
+                "storedCells": 21013,
+                "runs": 14372,
+                "retainedBytes": 199028
+              },
+              {
+                "path": "model.runTables.10",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 2330,
+                "storedCells": 2390,
+                "runs": 2263,
+                "retainedBytes": 27664
+              },
+              {
+                "path": "model.runIndexes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.runTags",
+                "type": "Uint8Array",
+                "fullBytes": 11,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 11
+              },
+              {
+                "path": "model.runBytes",
+                "type": "Uint16Array",
+                "fullBytes": 22,
+                "changedCells": 6,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 22
+              },
+              {
+                "path": "model.runStrengths",
+                "type": "Int16Array",
+                "fullBytes": 22,
+                "changedCells": 6,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 22
+              }
+            ]
+          },
+          {
+            "id": "c",
+            "primeBytes": 23457,
+            "retainedCompressedBytes": 3392150,
+            "retainedUncompressedBytes": 9097776,
+            "exactState": true,
+            "exactWire": true,
+            "exactRestoredDecode": true,
+            "exactRegularDecode": true,
+            "stats": [
+              {
+                "path": "model.tables.0",
+                "type": "Uint32Array",
+                "fullBytes": 1024,
+                "changedCells": 101,
+                "storedCells": 107,
+                "runs": 7,
+                "retainedBytes": 484
+              },
+              {
+                "path": "model.tables.1",
+                "type": "Uint32Array",
+                "fullBytes": 262144,
+                "changedCells": 3514,
+                "storedCells": 4528,
+                "runs": 972,
+                "retainedBytes": 25888
+              },
+              {
+                "path": "model.tables.2",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 20930,
+                "storedCells": 22154,
+                "runs": 19695,
+                "retainedBytes": 246176
+              },
+              {
+                "path": "model.tables.3",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 53171,
+                "storedCells": 60691,
+                "runs": 45472,
+                "retainedBytes": 606540
+              },
+              {
+                "path": "model.tables.4",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 82743,
+                "storedCells": 99629,
+                "runs": 64917,
+                "retainedBytes": 917852
+              },
+              {
+                "path": "model.tables.5",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 116819,
+                "storedCells": 149167,
+                "runs": 81861,
+                "retainedBytes": 1251556
+              },
+              {
+                "path": "model.tables.6",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 36246,
+                "storedCells": 39735,
+                "runs": 32687,
+                "retainedBytes": 420436
+              },
+              {
+                "path": "model.tables.7",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 70270,
+                "storedCells": 82885,
+                "runs": 57056,
+                "retainedBytes": 787988
+              },
+              {
+                "path": "model.tables.8",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 99767,
+                "storedCells": 152855,
+                "runs": 23653,
+                "retainedBytes": 800644
+              },
+              {
+                "path": "model.tables.9",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 115806,
+                "storedCells": 176061,
+                "runs": 20063,
+                "retainedBytes": 864748
+              },
+              {
+                "path": "model.tables.10",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 29321,
+                "storedCells": 37516,
+                "runs": 20497,
+                "retainedBytes": 314040
+              },
+              {
+                "path": "model.weights",
+                "type": "Uint32Array",
+                "fullBytes": 41472,
+                "changedCells": 3607,
+                "storedCells": 3756,
+                "runs": 42,
+                "retainedBytes": 15360
+              },
+              {
+                "path": "model.initializedSets",
+                "type": "Uint32Array",
+                "fullBytes": 288,
+                "changedCells": 34,
+                "storedCells": 35,
+                "runs": 2,
+                "retainedBytes": 156
+              },
+              {
+                "path": "model.mixerOffsets",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.mixerStretches",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.mixerProbabilities",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.finalWeights",
+                "type": "Uint32Array",
+                "fullBytes": 2048,
+                "changedCells": 202,
+                "storedCells": 206,
+                "runs": 9,
+                "retainedBytes": 896
+              },
+              {
+                "path": "model.finalInitialized",
+                "type": "Uint32Array",
+                "fullBytes": 256,
+                "changedCells": 29,
+                "storedCells": 35,
+                "runs": 3,
+                "retainedBytes": 164
+              },
+              {
+                "path": "model.residualWeights",
+                "type": "Uint32Array",
+                "fullBytes": 294912,
+                "changedCells": 10775,
+                "storedCells": 12628,
+                "runs": 877,
+                "retainedBytes": 57528
+              },
+              {
+                "path": "model.activeInputs",
+                "type": "Uint32Array",
+                "fullBytes": 36,
+                "changedCells": 9,
+                "storedCells": 9,
+                "runs": 1,
+                "retainedBytes": 36
+              },
+              {
+                "path": "model.apmOrder1.table",
+                "type": "Uint32Array",
+                "fullBytes": 4325376,
+                "changedCells": 58655,
+                "storedCells": 58657,
+                "runs": 1726,
+                "retainedBytes": 248436
+              },
+              {
+                "path": "model.apmOrder1.rowReady",
+                "type": "Uint32Array",
+                "fullBytes": 65536,
+                "changedCells": 1695,
+                "storedCells": 2191,
+                "runs": 393,
+                "retainedBytes": 11908
+              },
+              {
+                "path": "model.apmOrder2.table",
+                "type": "Uint32Array",
+                "fullBytes": 4325376,
+                "changedCells": 307308,
+                "storedCells": 307310,
+                "runs": 10172,
+                "retainedBytes": 1310616
+              },
+              {
+                "path": "model.apmOrder2.rowReady",
+                "type": "Uint32Array",
+                "fullBytes": 65536,
+                "changedCells": 9648,
+                "storedCells": 12531,
+                "runs": 759,
+                "retainedBytes": 56196
+              },
+              {
+                "path": "model.historyHashes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.matchTable",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 15894,
+                "storedCells": 18474,
+                "runs": 13200,
+                "retainedBytes": 179496
+              },
+              {
+                "path": "model.matchBuffer",
+                "type": "Uint32Array",
+                "fullBytes": 524288,
+                "changedCells": 5865,
+                "storedCells": 5865,
+                "runs": 1,
+                "retainedBytes": 23468
+              },
+              {
+                "path": "model.columnTable",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 6472,
+                "storedCells": 6584,
+                "runs": 6357,
+                "retainedBytes": 77192
+              },
+              {
+                "path": "model.cachedIndexes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 11,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.cachedTags",
+                "type": "Uint8Array",
+                "fullBytes": 11,
+                "changedCells": 11,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 11
+              },
+              {
+                "path": "model.cachedStretches",
+                "type": "Uint32Array",
+                "fullBytes": 72,
+                "changedCells": 12,
+                "storedCells": 18,
+                "runs": 1,
+                "retainedBytes": 72
+              },
+              {
+                "path": "model.runTables.0",
+                "type": "Uint32Array",
+                "fullBytes": 4,
+                "changedCells": 1,
+                "storedCells": 1,
+                "runs": 1,
+                "retainedBytes": 4
+              },
+              {
+                "path": "model.runTables.1",
+                "type": "Uint32Array",
+                "fullBytes": 1028,
+                "changedCells": 95,
+                "storedCells": 96,
+                "runs": 3,
+                "retainedBytes": 408
+              },
+              {
+                "path": "model.runTables.2",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1400,
+                "storedCells": 1415,
+                "runs": 1382,
+                "retainedBytes": 16716
+              },
+              {
+                "path": "model.runTables.3",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 5074,
+                "storedCells": 5338,
+                "runs": 4793,
+                "retainedBytes": 59696
+              },
+              {
+                "path": "model.runTables.4",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 9276,
+                "storedCells": 10185,
+                "runs": 8311,
+                "retainedBytes": 107228
+              },
+              {
+                "path": "model.runTables.5",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 14304,
+                "storedCells": 16353,
+                "runs": 12126,
+                "retainedBytes": 162420
+              },
+              {
+                "path": "model.runTables.6",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 3983,
+                "storedCells": 4179,
+                "runs": 3791,
+                "retainedBytes": 47044
+              },
+              {
+                "path": "model.runTables.7",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 6877,
+                "storedCells": 7410,
+                "runs": 6335,
+                "retainedBytes": 80320
+              },
+              {
+                "path": "model.runTables.8",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 14014,
+                "storedCells": 15933,
+                "runs": 11973,
+                "retainedBytes": 159516
+              },
+              {
+                "path": "model.runTables.9",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 17004,
+                "storedCells": 20015,
+                "runs": 13848,
+                "retainedBytes": 190844
+              },
+              {
+                "path": "model.runTables.10",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 2593,
+                "storedCells": 2666,
+                "runs": 2509,
+                "retainedBytes": 30736
+              },
+              {
+                "path": "model.runIndexes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.runTags",
+                "type": "Uint8Array",
+                "fullBytes": 11,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 11
+              },
+              {
+                "path": "model.runBytes",
+                "type": "Uint16Array",
+                "fullBytes": 22,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 22
+              },
+              {
+                "path": "model.runStrengths",
+                "type": "Int16Array",
+                "fullBytes": 22,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 22
+              }
+            ]
+          },
+          {
+            "id": "j",
+            "primeBytes": 23457,
+            "retainedCompressedBytes": 3253350,
+            "retainedUncompressedBytes": 8848104,
+            "exactState": true,
+            "exactWire": true,
+            "exactRestoredDecode": true,
+            "exactRegularDecode": true,
+            "stats": [
+              {
+                "path": "model.tables.0",
+                "type": "Uint32Array",
+                "fullBytes": 1024,
+                "changedCells": 102,
+                "storedCells": 108,
+                "runs": 7,
+                "retainedBytes": 488
+              },
+              {
+                "path": "model.tables.1",
+                "type": "Uint32Array",
+                "fullBytes": 262144,
+                "changedCells": 3549,
+                "storedCells": 4503,
+                "runs": 976,
+                "retainedBytes": 25820
+              },
+              {
+                "path": "model.tables.2",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 20823,
+                "storedCells": 22030,
+                "runs": 19566,
+                "retainedBytes": 244648
+              },
+              {
+                "path": "model.tables.3",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 50039,
+                "storedCells": 56577,
+                "runs": 43298,
+                "retainedBytes": 572692
+              },
+              {
+                "path": "model.tables.4",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 75582,
+                "storedCells": 89957,
+                "runs": 60491,
+                "retainedBytes": 843756
+              },
+              {
+                "path": "model.tables.5",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 105968,
+                "storedCells": 132944,
+                "runs": 76935,
+                "retainedBytes": 1147256
+              },
+              {
+                "path": "model.tables.6",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 42410,
+                "storedCells": 47170,
+                "runs": 37427,
+                "retainedBytes": 488096
+              },
+              {
+                "path": "model.tables.7",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 67881,
+                "storedCells": 79631,
+                "runs": 55627,
+                "retainedBytes": 763540
+              },
+              {
+                "path": "model.tables.8",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 98366,
+                "storedCells": 150235,
+                "runs": 23951,
+                "retainedBytes": 792548
+              },
+              {
+                "path": "model.tables.9",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 108189,
+                "storedCells": 165145,
+                "runs": 21935,
+                "retainedBytes": 836060
+              },
+              {
+                "path": "model.tables.10",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 25999,
+                "storedCells": 32658,
+                "runs": 19004,
+                "retainedBytes": 282664
+              },
+              {
+                "path": "model.weights",
+                "type": "Uint32Array",
+                "fullBytes": 41472,
+                "changedCells": 3586,
+                "storedCells": 3712,
+                "runs": 41,
+                "retainedBytes": 15176
+              },
+              {
+                "path": "model.initializedSets",
+                "type": "Uint32Array",
+                "fullBytes": 288,
+                "changedCells": 34,
+                "storedCells": 35,
+                "runs": 2,
+                "retainedBytes": 156
+              },
+              {
+                "path": "model.mixerOffsets",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.mixerStretches",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.mixerProbabilities",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.finalWeights",
+                "type": "Uint32Array",
+                "fullBytes": 2048,
+                "changedCells": 204,
+                "storedCells": 208,
+                "runs": 9,
+                "retainedBytes": 904
+              },
+              {
+                "path": "model.finalInitialized",
+                "type": "Uint32Array",
+                "fullBytes": 256,
+                "changedCells": 29,
+                "storedCells": 35,
+                "runs": 3,
+                "retainedBytes": 164
+              },
+              {
+                "path": "model.residualWeights",
+                "type": "Uint32Array",
+                "fullBytes": 294912,
+                "changedCells": 11091,
+                "storedCells": 13173,
+                "runs": 856,
+                "retainedBytes": 59540
+              },
+              {
+                "path": "model.activeInputs",
+                "type": "Uint32Array",
+                "fullBytes": 36,
+                "changedCells": 9,
+                "storedCells": 9,
+                "runs": 1,
+                "retainedBytes": 36
+              },
+              {
+                "path": "model.apmOrder1.table",
+                "type": "Uint32Array",
+                "fullBytes": 4325376,
+                "changedCells": 59219,
+                "storedCells": 59226,
+                "runs": 1682,
+                "retainedBytes": 250360
+              },
+              {
+                "path": "model.apmOrder1.rowReady",
+                "type": "Uint32Array",
+                "fullBytes": 65536,
+                "changedCells": 1711,
+                "storedCells": 2201,
+                "runs": 386,
+                "retainedBytes": 11892
+              },
+              {
+                "path": "model.apmOrder2.table",
+                "type": "Uint32Array",
+                "fullBytes": 4325376,
+                "changedCells": 304675,
+                "storedCells": 304679,
+                "runs": 10247,
+                "retainedBytes": 1300692
+              },
+              {
+                "path": "model.apmOrder2.rowReady",
+                "type": "Uint32Array",
+                "fullBytes": 65536,
+                "changedCells": 9665,
+                "storedCells": 12584,
+                "runs": 791,
+                "retainedBytes": 56664
+              },
+              {
+                "path": "model.historyHashes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.matchTable",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 14416,
+                "storedCells": 16513,
+                "runs": 12179,
+                "retainedBytes": 163484
+              },
+              {
+                "path": "model.matchBuffer",
+                "type": "Uint32Array",
+                "fullBytes": 524288,
+                "changedCells": 5865,
+                "storedCells": 5865,
+                "runs": 1,
+                "retainedBytes": 23468
+              },
+              {
+                "path": "model.columnTable",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 10628,
+                "storedCells": 10928,
+                "runs": 10330,
+                "retainedBytes": 126352
+              },
+              {
+                "path": "model.cachedIndexes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 11,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.cachedTags",
+                "type": "Uint8Array",
+                "fullBytes": 11,
+                "changedCells": 11,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 11
+              },
+              {
+                "path": "model.cachedStretches",
+                "type": "Uint32Array",
+                "fullBytes": 72,
+                "changedCells": 4,
+                "storedCells": 6,
+                "runs": 2,
+                "retainedBytes": 40
+              },
+              {
+                "path": "model.runTables.0",
+                "type": "Uint32Array",
+                "fullBytes": 4,
+                "changedCells": 1,
+                "storedCells": 1,
+                "runs": 1,
+                "retainedBytes": 4
+              },
+              {
+                "path": "model.runTables.1",
+                "type": "Uint32Array",
+                "fullBytes": 1028,
+                "changedCells": 94,
+                "storedCells": 97,
+                "runs": 3,
+                "retainedBytes": 412
+              },
+              {
+                "path": "model.runTables.2",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1444,
+                "storedCells": 1457,
+                "runs": 1429,
+                "retainedBytes": 17260
+              },
+              {
+                "path": "model.runTables.3",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 4924,
+                "storedCells": 5166,
+                "runs": 4678,
+                "retainedBytes": 58088
+              },
+              {
+                "path": "model.runTables.4",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 8565,
+                "storedCells": 9367,
+                "runs": 7749,
+                "retainedBytes": 99460
+              },
+              {
+                "path": "model.runTables.5",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 12978,
+                "storedCells": 14668,
+                "runs": 11160,
+                "retainedBytes": 147952
+              },
+              {
+                "path": "model.runTables.6",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 4743,
+                "storedCells": 5004,
+                "runs": 4488,
+                "retainedBytes": 55920
+              },
+              {
+                "path": "model.runTables.7",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 6815,
+                "storedCells": 7305,
+                "runs": 6322,
+                "retainedBytes": 79796
+              },
+              {
+                "path": "model.runTables.8",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 13680,
+                "storedCells": 15549,
+                "runs": 11703,
+                "retainedBytes": 155820
+              },
+              {
+                "path": "model.runTables.9",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 15469,
+                "storedCells": 17925,
+                "runs": 12840,
+                "retainedBytes": 174420
+              },
+              {
+                "path": "model.runTables.10",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 2312,
+                "storedCells": 2372,
+                "runs": 2250,
+                "retainedBytes": 27488
+              },
+              {
+                "path": "model.runIndexes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.runTags",
+                "type": "Uint8Array",
+                "fullBytes": 11,
+                "changedCells": 10,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 11
+              },
+              {
+                "path": "model.runBytes",
+                "type": "Uint16Array",
+                "fullBytes": 22,
+                "changedCells": 6,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 22
+              },
+              {
+                "path": "model.runStrengths",
+                "type": "Int16Array",
+                "fullBytes": 22,
+                "changedCells": 6,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 22
+              }
+            ]
+          },
+          {
+            "id": "s",
+            "primeBytes": 2202,
+            "retainedCompressedBytes": 631357,
+            "retainedUncompressedBytes": 1911696,
+            "exactState": true,
+            "exactWire": true,
+            "exactRestoredDecode": true,
+            "exactRegularDecode": true,
+            "stats": [
+              {
+                "path": "model.tables.0",
+                "type": "Uint32Array",
+                "fullBytes": 1024,
+                "changedCells": 88,
+                "storedCells": 104,
+                "runs": 8,
+                "retainedBytes": 480
+              },
+              {
+                "path": "model.tables.1",
+                "type": "Uint32Array",
+                "fullBytes": 262144,
+                "changedCells": 1384,
+                "storedCells": 1731,
+                "runs": 560,
+                "retainedBytes": 11404
+              },
+              {
+                "path": "model.tables.2",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 5631,
+                "storedCells": 5722,
+                "runs": 5545,
+                "retainedBytes": 67248
+              },
+              {
+                "path": "model.tables.3",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 10223,
+                "storedCells": 10570,
+                "runs": 9888,
+                "retainedBytes": 121384
+              },
+              {
+                "path": "model.tables.4",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 12788,
+                "storedCells": 13274,
+                "runs": 12319,
+                "retainedBytes": 151648
+              },
+              {
+                "path": "model.tables.5",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 15127,
+                "storedCells": 15758,
+                "runs": 14496,
+                "retainedBytes": 179000
+              },
+              {
+                "path": "model.tables.6",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 9262,
+                "storedCells": 9491,
+                "runs": 9035,
+                "retainedBytes": 110244
+              },
+              {
+                "path": "model.tables.7",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 10256,
+                "storedCells": 10585,
+                "runs": 9939,
+                "retainedBytes": 121852
+              },
+              {
+                "path": "model.tables.8",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 15024,
+                "storedCells": 17360,
+                "runs": 12609,
+                "retainedBytes": 170312
+              },
+              {
+                "path": "model.tables.9",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 15593,
+                "storedCells": 18192,
+                "runs": 12946,
+                "retainedBytes": 176336
+              },
+              {
+                "path": "model.tables.10",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 5229,
+                "storedCells": 5491,
+                "runs": 4928,
+                "retainedBytes": 61388
+              },
+              {
+                "path": "model.weights",
+                "type": "Uint32Array",
+                "fullBytes": 41472,
+                "changedCells": 2129,
+                "storedCells": 2278,
+                "runs": 95,
+                "retainedBytes": 9872
+              },
+              {
+                "path": "model.initializedSets",
+                "type": "Uint32Array",
+                "fullBytes": 288,
+                "changedCells": 32,
+                "storedCells": 35,
+                "runs": 2,
+                "retainedBytes": 156
+              },
+              {
+                "path": "model.mixerOffsets",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.mixerStretches",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.mixerProbabilities",
+                "type": "Uint32Array",
+                "fullBytes": 8,
+                "changedCells": 2,
+                "storedCells": 2,
+                "runs": 1,
+                "retainedBytes": 8
+              },
+              {
+                "path": "model.finalWeights",
+                "type": "Uint32Array",
+                "fullBytes": 2048,
+                "changedCells": 176,
+                "storedCells": 192,
+                "runs": 12,
+                "retainedBytes": 864
+              },
+              {
+                "path": "model.finalInitialized",
+                "type": "Uint32Array",
+                "fullBytes": 256,
+                "changedCells": 29,
+                "storedCells": 35,
+                "runs": 3,
+                "retainedBytes": 164
+              },
+              {
+                "path": "model.residualWeights",
+                "type": "Uint32Array",
+                "fullBytes": 294912,
+                "changedCells": 4532,
+                "storedCells": 5412,
+                "runs": 627,
+                "retainedBytes": 26664
+              },
+              {
+                "path": "model.activeInputs",
+                "type": "Uint32Array",
+                "fullBytes": 36,
+                "changedCells": 9,
+                "storedCells": 9,
+                "runs": 1,
+                "retainedBytes": 36
+              },
+              {
+                "path": "model.apmOrder1.table",
+                "type": "Uint32Array",
+                "fullBytes": 4325376,
+                "changedCells": 23198,
+                "storedCells": 23198,
+                "runs": 816,
+                "retainedBytes": 99320
+              },
+              {
+                "path": "model.apmOrder1.rowReady",
+                "type": "Uint32Array",
+                "fullBytes": 65536,
+                "changedCells": 789,
+                "storedCells": 1025,
+                "runs": 289,
+                "retainedBytes": 6412
+              },
+              {
+                "path": "model.apmOrder2.table",
+                "type": "Uint32Array",
+                "fullBytes": 4325376,
+                "changedCells": 91268,
+                "storedCells": 91268,
+                "runs": 3972,
+                "retainedBytes": 396848
+              },
+              {
+                "path": "model.apmOrder2.rowReady",
+                "type": "Uint32Array",
+                "fullBytes": 65536,
+                "changedCells": 3636,
+                "storedCells": 4973,
+                "runs": 1042,
+                "retainedBytes": 28228
+              },
+              {
+                "path": "model.historyHashes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 9,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.matchTable",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1942,
+                "storedCells": 1978,
+                "runs": 1898,
+                "retainedBytes": 23096
+              },
+              {
+                "path": "model.matchBuffer",
+                "type": "Uint32Array",
+                "fullBytes": 524288,
+                "changedCells": 551,
+                "storedCells": 551,
+                "runs": 1,
+                "retainedBytes": 2212
+              },
+              {
+                "path": "model.columnTable",
+                "type": "Uint32Array",
+                "fullBytes": 4194304,
+                "changedCells": 671,
+                "storedCells": 671,
+                "runs": 670,
+                "retainedBytes": 8044
+              },
+              {
+                "path": "model.cachedIndexes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 11,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.cachedTags",
+                "type": "Uint8Array",
+                "fullBytes": 11,
+                "changedCells": 11,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 11
+              },
+              {
+                "path": "model.cachedStretches",
+                "type": "Uint32Array",
+                "fullBytes": 72,
+                "changedCells": 5,
+                "storedCells": 9,
+                "runs": 2,
+                "retainedBytes": 52
+              },
+              {
+                "path": "model.runTables.0",
+                "type": "Uint32Array",
+                "fullBytes": 4,
+                "changedCells": 1,
+                "storedCells": 1,
+                "runs": 1,
+                "retainedBytes": 4
+              },
+              {
+                "path": "model.runTables.1",
+                "type": "Uint32Array",
+                "fullBytes": 1028,
+                "changedCells": 66,
+                "storedCells": 75,
+                "runs": 8,
+                "retainedBytes": 364
+              },
+              {
+                "path": "model.runTables.2",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 460,
+                "storedCells": 460,
+                "runs": 458,
+                "retainedBytes": 5504
+              },
+              {
+                "path": "model.runTables.3",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1117,
+                "storedCells": 1129,
+                "runs": 1105,
+                "retainedBytes": 13356
+              },
+              {
+                "path": "model.runTables.4",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1508,
+                "storedCells": 1536,
+                "runs": 1482,
+                "retainedBytes": 18000
+              },
+              {
+                "path": "model.runTables.5",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1857,
+                "storedCells": 1900,
+                "runs": 1817,
+                "retainedBytes": 22136
+              },
+              {
+                "path": "model.runTables.6",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1089,
+                "storedCells": 1103,
+                "runs": 1077,
+                "retainedBytes": 13028
+              },
+              {
+                "path": "model.runTables.7",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1110,
+                "storedCells": 1122,
+                "runs": 1100,
+                "retainedBytes": 13288
+              },
+              {
+                "path": "model.runTables.8",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1801,
+                "storedCells": 1834,
+                "runs": 1764,
+                "retainedBytes": 21448
+              },
+              {
+                "path": "model.runTables.9",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 1857,
+                "storedCells": 1893,
+                "runs": 1821,
+                "retainedBytes": 22140
+              },
+              {
+                "path": "model.runTables.10",
+                "type": "Uint32Array",
+                "fullBytes": 1048576,
+                "changedCells": 476,
+                "storedCells": 477,
+                "runs": 475,
+                "retainedBytes": 5708
+              },
+              {
+                "path": "model.runIndexes",
+                "type": "Uint32Array",
+                "fullBytes": 44,
+                "changedCells": 9,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 44
+              },
+              {
+                "path": "model.runTags",
+                "type": "Uint8Array",
+                "fullBytes": 11,
+                "changedCells": 9,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 11
+              },
+              {
+                "path": "model.runBytes",
+                "type": "Uint16Array",
+                "fullBytes": 22,
+                "changedCells": 6,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 22
+              },
+              {
+                "path": "model.runStrengths",
+                "type": "Int16Array",
+                "fullBytes": 22,
+                "changedCells": 6,
+                "storedCells": 11,
+                "runs": 1,
+                "retainedBytes": 22
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

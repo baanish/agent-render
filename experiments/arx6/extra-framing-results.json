@@ -1,0 +1,1999 @@
+{
+  "baselineCommit": "5d82b9f",
+  "sourceSha256": "3d3293a41da972297814824c91ca20c4a2abb83e9645bf4e25ff983448dff687",
+  "rows": [
+    {
+      "id": "diagnostic/prose/0",
+      "family": "prose",
+      "raw": 179,
+      "variants": {
+        "base": {
+          "chars": 117,
+          "priorId": "m",
+          "ms": 510.47451599999994,
+          "bytes": 179
+        },
+        "midpoint": {
+          "chars": 117,
+          "priorId": "m",
+          "ms": 412.2288229999999,
+          "bytes": 179
+        },
+        "tuple-first": {
+          "chars": 117,
+          "priorId": "m",
+          "ms": 331.243829,
+          "bytes": 179
+        },
+        "binary-first": {
+          "chars": 112,
+          "priorId": "m",
+          "ms": 349.0621070000002,
+          "bytes": 166
+        },
+        "zero-null": {
+          "chars": 117,
+          "priorId": "m",
+          "ms": 551.0534480000001,
+          "bytes": 179
+        }
+      }
+    },
+    {
+      "id": "diagnostic/prose/1",
+      "family": "prose",
+      "raw": 434,
+      "variants": {
+        "base": {
+          "chars": 212,
+          "priorId": "m",
+          "ms": 335.43250100000023,
+          "bytes": 434
+        },
+        "midpoint": {
+          "chars": 213,
+          "priorId": "m",
+          "ms": 336.82237299999997,
+          "bytes": 434
+        },
+        "tuple-first": {
+          "chars": 213,
+          "priorId": "m",
+          "ms": 355.10333400000036,
+          "bytes": 434
+        },
+        "binary-first": {
+          "chars": 208,
+          "priorId": "m",
+          "ms": 355.20111499999985,
+          "bytes": 421
+        },
+        "zero-null": {
+          "chars": 212,
+          "priorId": "m",
+          "ms": 355.79032099999995,
+          "bytes": 434
+        }
+      }
+    },
+    {
+      "id": "diagnostic/prose/2",
+      "family": "prose",
+      "raw": 1221,
+      "variants": {
+        "base": {
+          "chars": 318,
+          "priorId": "m",
+          "ms": 346.55780700000014,
+          "bytes": 1221
+        },
+        "midpoint": {
+          "chars": 318,
+          "priorId": "m",
+          "ms": 364.0934529999995,
+          "bytes": 1221
+        },
+        "tuple-first": {
+          "chars": 317,
+          "priorId": "m",
+          "ms": 408.0374749999992,
+          "bytes": 1221
+        },
+        "binary-first": {
+          "chars": 310,
+          "priorId": "m",
+          "ms": 337.83767199999966,
+          "bytes": 1208
+        },
+        "zero-null": {
+          "chars": 318,
+          "priorId": "m",
+          "ms": 381.6770590000001,
+          "bytes": 1221
+        }
+      }
+    },
+    {
+      "id": "diagnostic/prose/3",
+      "family": "prose",
+      "raw": 3215,
+      "variants": {
+        "base": {
+          "chars": 485,
+          "priorId": "n",
+          "ms": 64.43812199999957,
+          "bytes": 3215
+        },
+        "midpoint": {
+          "chars": 485,
+          "priorId": "n",
+          "ms": 47.56567600000017,
+          "bytes": 3215
+        },
+        "tuple-first": {
+          "chars": 483,
+          "priorId": "n",
+          "ms": 53.94743300000118,
+          "bytes": 3215
+        },
+        "binary-first": {
+          "chars": 468,
+          "priorId": "n",
+          "ms": 51.006585000000996,
+          "bytes": 3202
+        },
+        "zero-null": {
+          "chars": 485,
+          "priorId": "n",
+          "ms": 67.51653299999998,
+          "bytes": 3215
+        }
+      }
+    },
+    {
+      "id": "diagnostic/code/0",
+      "family": "code",
+      "raw": 217,
+      "variants": {
+        "base": {
+          "chars": 106,
+          "priorId": "c",
+          "ms": 324.35204800000065,
+          "bytes": 217
+        },
+        "midpoint": {
+          "chars": 106,
+          "priorId": "c",
+          "ms": 370.7893219999987,
+          "bytes": 217
+        },
+        "tuple-first": {
+          "chars": 108,
+          "priorId": "c",
+          "ms": 327.7691640000012,
+          "bytes": 217
+        },
+        "binary-first": {
+          "chars": 106,
+          "priorId": "c",
+          "ms": 343.97263399999974,
+          "bytes": 204
+        },
+        "zero-null": {
+          "chars": 106,
+          "priorId": "c",
+          "ms": 320.8201220000001,
+          "bytes": 217
+        }
+      }
+    },
+    {
+      "id": "diagnostic/code/1",
+      "family": "code",
+      "raw": 406,
+      "variants": {
+        "base": {
+          "chars": 160,
+          "priorId": "c",
+          "ms": 360.51466600000094,
+          "bytes": 406
+        },
+        "midpoint": {
+          "chars": 161,
+          "priorId": "c",
+          "ms": 358.5596970000006,
+          "bytes": 406
+        },
+        "tuple-first": {
+          "chars": 159,
+          "priorId": "c",
+          "ms": 331.70457800000077,
+          "bytes": 406
+        },
+        "binary-first": {
+          "chars": 158,
+          "priorId": "c",
+          "ms": 336.4270920000017,
+          "bytes": 393
+        },
+        "zero-null": {
+          "chars": 160,
+          "priorId": "c",
+          "ms": 327.4950750000007,
+          "bytes": 406
+        }
+      }
+    },
+    {
+      "id": "diagnostic/code/2",
+      "family": "code",
+      "raw": 1306,
+      "variants": {
+        "base": {
+          "chars": 194,
+          "priorId": "c",
+          "ms": 346.50521200000003,
+          "bytes": 1306
+        },
+        "midpoint": {
+          "chars": 194,
+          "priorId": "c",
+          "ms": 406.1350119999988,
+          "bytes": 1306
+        },
+        "tuple-first": {
+          "chars": 191,
+          "priorId": "c",
+          "ms": 343.0105040000017,
+          "bytes": 1306
+        },
+        "binary-first": {
+          "chars": 192,
+          "priorId": "c",
+          "ms": 354.7641760000006,
+          "bytes": 1293
+        },
+        "zero-null": {
+          "chars": 194,
+          "priorId": "c",
+          "ms": 348.7912040000001,
+          "bytes": 1306
+        }
+      }
+    },
+    {
+      "id": "diagnostic/code/3",
+      "family": "code",
+      "raw": 3422,
+      "variants": {
+        "base": {
+          "chars": 355,
+          "priorId": "c",
+          "ms": 394.6936199999982,
+          "bytes": 3422
+        },
+        "midpoint": {
+          "chars": 354,
+          "priorId": "c",
+          "ms": 479.43440799999735,
+          "bytes": 3422
+        },
+        "tuple-first": {
+          "chars": 348,
+          "priorId": "c",
+          "ms": 378.6217429999997,
+          "bytes": 3422
+        },
+        "binary-first": {
+          "chars": 349,
+          "priorId": "c",
+          "ms": 403.1962370000001,
+          "bytes": 3409
+        },
+        "zero-null": {
+          "chars": 355,
+          "priorId": "c",
+          "ms": 374.2836790000001,
+          "bytes": 3422
+        }
+      }
+    },
+    {
+      "id": "diagnostic/markdown/0",
+      "family": "markdown",
+      "raw": 289,
+      "variants": {
+        "base": {
+          "chars": 205,
+          "priorId": "m",
+          "ms": 349.4234890000007,
+          "bytes": 289
+        },
+        "midpoint": {
+          "chars": 205,
+          "priorId": "m",
+          "ms": 329.72125099999903,
+          "bytes": 289
+        },
+        "tuple-first": {
+          "chars": 207,
+          "priorId": "m",
+          "ms": 331.56681899999967,
+          "bytes": 289
+        },
+        "binary-first": {
+          "chars": 200,
+          "priorId": "m",
+          "ms": 342.8761149999991,
+          "bytes": 278
+        },
+        "zero-null": {
+          "chars": 205,
+          "priorId": "m",
+          "ms": 316.00176699999975,
+          "bytes": 289
+        }
+      }
+    },
+    {
+      "id": "diagnostic/markdown/1",
+      "family": "markdown",
+      "raw": 796,
+      "variants": {
+        "base": {
+          "chars": 396,
+          "priorId": "n",
+          "ms": 35.587356,
+          "bytes": 796
+        },
+        "midpoint": {
+          "chars": 396,
+          "priorId": "n",
+          "ms": 34.079336999999214,
+          "bytes": 796
+        },
+        "tuple-first": {
+          "chars": 395,
+          "priorId": "n",
+          "ms": 34.317028999998,
+          "bytes": 796
+        },
+        "binary-first": {
+          "chars": 385,
+          "priorId": "n",
+          "ms": 33.930349000002025,
+          "bytes": 785
+        },
+        "zero-null": {
+          "chars": 396,
+          "priorId": "n",
+          "ms": 44.48903000000064,
+          "bytes": 796
+        }
+      }
+    },
+    {
+      "id": "diagnostic/markdown/2",
+      "family": "markdown",
+      "raw": 2373,
+      "variants": {
+        "base": {
+          "chars": 812,
+          "priorId": "n",
+          "ms": 59.478204999999434,
+          "bytes": 2373
+        },
+        "midpoint": {
+          "chars": 812,
+          "priorId": "n",
+          "ms": 62.12574699999823,
+          "bytes": 2373
+        },
+        "tuple-first": {
+          "chars": 806,
+          "priorId": "n",
+          "ms": 61.33270999999513,
+          "bytes": 2373
+        },
+        "binary-first": {
+          "chars": 797,
+          "priorId": "n",
+          "ms": 43.19987499999843,
+          "bytes": 2362
+        },
+        "zero-null": {
+          "chars": 812,
+          "priorId": "n",
+          "ms": 66.0320980000015,
+          "bytes": 2373
+        }
+      }
+    },
+    {
+      "id": "diagnostic/markdown/3",
+      "family": "markdown",
+      "raw": 5160,
+      "variants": {
+        "base": {
+          "chars": 1452,
+          "priorId": "n",
+          "ms": 79.28759200000059,
+          "bytes": 5160
+        },
+        "midpoint": {
+          "chars": 1446,
+          "priorId": "n",
+          "ms": 84.09995299999719,
+          "bytes": 5160
+        },
+        "tuple-first": {
+          "chars": 1440,
+          "priorId": "n",
+          "ms": 78.91529499999888,
+          "bytes": 5160
+        },
+        "binary-first": {
+          "chars": 1430,
+          "priorId": "n",
+          "ms": 77.93341599999985,
+          "bytes": 5149
+        },
+        "zero-null": {
+          "chars": 1452,
+          "priorId": "n",
+          "ms": 100.90876800000115,
+          "bytes": 5160
+        }
+      }
+    },
+    {
+      "id": "diagnostic/json/0",
+      "family": "json",
+      "raw": 961,
+      "variants": {
+        "base": {
+          "chars": 314,
+          "priorId": "j",
+          "ms": 362.1578819999995,
+          "bytes": 961
+        },
+        "midpoint": {
+          "chars": 314,
+          "priorId": "j",
+          "ms": 363.44292600000335,
+          "bytes": 961
+        },
+        "tuple-first": {
+          "chars": 314,
+          "priorId": "j",
+          "ms": 357.0742620000019,
+          "bytes": 961
+        },
+        "binary-first": {
+          "chars": 315,
+          "priorId": "j",
+          "ms": 338.33420399999886,
+          "bytes": 946
+        },
+        "zero-null": {
+          "chars": 314,
+          "priorId": "j",
+          "ms": 345.688897,
+          "bytes": 958
+        }
+      }
+    },
+    {
+      "id": "diagnostic/json/1",
+      "family": "json",
+      "raw": 2801,
+      "variants": {
+        "base": {
+          "chars": 682,
+          "priorId": "j",
+          "ms": 366.03662299999996,
+          "bytes": 2801
+        },
+        "midpoint": {
+          "chars": 682,
+          "priorId": "j",
+          "ms": 361.5004040000058,
+          "bytes": 2801
+        },
+        "tuple-first": {
+          "chars": 681,
+          "priorId": "j",
+          "ms": 370.1862409999958,
+          "bytes": 2801
+        },
+        "binary-first": {
+          "chars": 682,
+          "priorId": "j",
+          "ms": 370.7898639999985,
+          "bytes": 2786
+        },
+        "zero-null": {
+          "chars": 683,
+          "priorId": "j",
+          "ms": 391.59741700000086,
+          "bytes": 2798
+        }
+      }
+    },
+    {
+      "id": "diagnostic/json/2",
+      "family": "json",
+      "raw": 8218,
+      "variants": {
+        "base": {
+          "chars": 979,
+          "priorId": "j",
+          "ms": 427.5119889999987,
+          "bytes": 8218
+        },
+        "midpoint": {
+          "chars": 978,
+          "priorId": "j",
+          "ms": 437.5427750000017,
+          "bytes": 8218
+        },
+        "tuple-first": {
+          "chars": 979,
+          "priorId": "j",
+          "ms": 437.0876470000003,
+          "bytes": 8218
+        },
+        "binary-first": {
+          "chars": 978,
+          "priorId": "j",
+          "ms": 420.77103499999794,
+          "bytes": 8203
+        },
+        "zero-null": {
+          "chars": 979,
+          "priorId": "j",
+          "ms": 553.2391370000005,
+          "bytes": 8215
+        }
+      }
+    },
+    {
+      "id": "diagnostic/json/3",
+      "family": "json",
+      "raw": 18158,
+      "variants": {
+        "base": {
+          "chars": 1388,
+          "priorId": "j",
+          "ms": 562.8187820000021,
+          "bytes": 18158
+        },
+        "midpoint": {
+          "chars": 1387,
+          "priorId": "j",
+          "ms": 571.9252540000016,
+          "bytes": 18158
+        },
+        "tuple-first": {
+          "chars": 1384,
+          "priorId": "j",
+          "ms": 558.624358999994,
+          "bytes": 18158
+        },
+        "binary-first": {
+          "chars": 1387,
+          "priorId": "j",
+          "ms": 556.0299999999988,
+          "bytes": 18143
+        },
+        "zero-null": {
+          "chars": 1388,
+          "priorId": "j",
+          "ms": 672.0710830000007,
+          "bytes": 18155
+        }
+      }
+    },
+    {
+      "id": "diagnostic/csv/0",
+      "family": "csv",
+      "raw": 235,
+      "variants": {
+        "base": {
+          "chars": 149,
+          "priorId": "j",
+          "ms": 325.763460999995,
+          "bytes": 235
+        },
+        "midpoint": {
+          "chars": 149,
+          "priorId": "j",
+          "ms": 312.7867299999998,
+          "bytes": 235
+        },
+        "tuple-first": {
+          "chars": 149,
+          "priorId": "j",
+          "ms": 327.94368499999837,
+          "bytes": 235
+        },
+        "binary-first": {
+          "chars": 148,
+          "priorId": "j",
+          "ms": 328.0595880000037,
+          "bytes": 220
+        },
+        "zero-null": {
+          "chars": 149,
+          "priorId": "j",
+          "ms": 360.67609900000025,
+          "bytes": 232
+        }
+      }
+    },
+    {
+      "id": "diagnostic/csv/1",
+      "family": "csv",
+      "raw": 579,
+      "variants": {
+        "base": {
+          "chars": 260,
+          "priorId": "j",
+          "ms": 353.9558030000044,
+          "bytes": 579
+        },
+        "midpoint": {
+          "chars": 260,
+          "priorId": "j",
+          "ms": 327.83524999999645,
+          "bytes": 579
+        },
+        "tuple-first": {
+          "chars": 259,
+          "priorId": "j",
+          "ms": 324.8236009999964,
+          "bytes": 579
+        },
+        "binary-first": {
+          "chars": 256,
+          "priorId": "j",
+          "ms": 330.9260970000032,
+          "bytes": 564
+        },
+        "zero-null": {
+          "chars": 258,
+          "priorId": "j",
+          "ms": 342.0683489999992,
+          "bytes": 576
+        }
+      }
+    },
+    {
+      "id": "diagnostic/csv/2",
+      "family": "csv",
+      "raw": 1605,
+      "variants": {
+        "base": {
+          "chars": 502,
+          "priorId": "j",
+          "ms": 344.6837929999965,
+          "bytes": 1605
+        },
+        "midpoint": {
+          "chars": 503,
+          "priorId": "j",
+          "ms": 340.9179690000019,
+          "bytes": 1605
+        },
+        "tuple-first": {
+          "chars": 501,
+          "priorId": "j",
+          "ms": 352.0859819999969,
+          "bytes": 1605
+        },
+        "binary-first": {
+          "chars": 498,
+          "priorId": "j",
+          "ms": 401.21048300000257,
+          "bytes": 1590
+        },
+        "zero-null": {
+          "chars": 502,
+          "priorId": "j",
+          "ms": 340.74608699999953,
+          "bytes": 1602
+        }
+      }
+    },
+    {
+      "id": "diagnostic/csv/3",
+      "family": "csv",
+      "raw": 3453,
+      "variants": {
+        "base": {
+          "chars": 823,
+          "priorId": "n",
+          "ms": 54.34689800000342,
+          "bytes": 3453
+        },
+        "midpoint": {
+          "chars": 824,
+          "priorId": "n",
+          "ms": 54.30361800000537,
+          "bytes": 3453
+        },
+        "tuple-first": {
+          "chars": 824,
+          "priorId": "n",
+          "ms": 54.06206799999927,
+          "bytes": 3453
+        },
+        "binary-first": {
+          "chars": 811,
+          "priorId": "n",
+          "ms": 54.37678399999277,
+          "bytes": 3438
+        },
+        "zero-null": {
+          "chars": 819,
+          "priorId": "n",
+          "ms": 55.29360599999927,
+          "bytes": 3450
+        }
+      }
+    },
+    {
+      "id": "diagnostic/patch/0",
+      "family": "patch",
+      "raw": 187,
+      "variants": {
+        "base": {
+          "chars": 102,
+          "priorId": "c",
+          "ms": 320.5179669999925,
+          "bytes": 187
+        },
+        "midpoint": {
+          "chars": 102,
+          "priorId": "c",
+          "ms": 338.8520669999998,
+          "bytes": 187
+        },
+        "tuple-first": {
+          "chars": 102,
+          "priorId": "c",
+          "ms": 326.5435409999918,
+          "bytes": 187
+        },
+        "binary-first": {
+          "chars": 106,
+          "priorId": "c",
+          "ms": 329.42668800000683,
+          "bytes": 166
+        },
+        "zero-null": {
+          "chars": 102,
+          "priorId": "c",
+          "ms": 340.55023900000015,
+          "bytes": 187
+        }
+      }
+    },
+    {
+      "id": "diagnostic/patch/1",
+      "family": "patch",
+      "raw": 444,
+      "variants": {
+        "base": {
+          "chars": 130,
+          "priorId": "c",
+          "ms": 331.9360159999924,
+          "bytes": 444
+        },
+        "midpoint": {
+          "chars": 131,
+          "priorId": "c",
+          "ms": 331.48146900000575,
+          "bytes": 444
+        },
+        "tuple-first": {
+          "chars": 129,
+          "priorId": "c",
+          "ms": 335.5689629999979,
+          "bytes": 444
+        },
+        "binary-first": {
+          "chars": 134,
+          "priorId": "c",
+          "ms": 344.69478099999833,
+          "bytes": 423
+        },
+        "zero-null": {
+          "chars": 130,
+          "priorId": "c",
+          "ms": 361.10863099999915,
+          "bytes": 444
+        }
+      }
+    },
+    {
+      "id": "diagnostic/patch/2",
+      "family": "patch",
+      "raw": 1212,
+      "variants": {
+        "base": {
+          "chars": 199,
+          "priorId": "c",
+          "ms": 347.66817900000024,
+          "bytes": 1212
+        },
+        "midpoint": {
+          "chars": 199,
+          "priorId": "c",
+          "ms": 352.9174369999964,
+          "bytes": 1212
+        },
+        "tuple-first": {
+          "chars": 197,
+          "priorId": "c",
+          "ms": 343.30395000000135,
+          "bytes": 1212
+        },
+        "binary-first": {
+          "chars": 202,
+          "priorId": "c",
+          "ms": 342.27822999999626,
+          "bytes": 1191
+        },
+        "zero-null": {
+          "chars": 199,
+          "priorId": "c",
+          "ms": 371.95445800000016,
+          "bytes": 1212
+        }
+      }
+    },
+    {
+      "id": "diagnostic/patch/3",
+      "family": "patch",
+      "raw": 2638,
+      "variants": {
+        "base": {
+          "chars": 300,
+          "priorId": "c",
+          "ms": 363.05646599999454,
+          "bytes": 2638
+        },
+        "midpoint": {
+          "chars": 299,
+          "priorId": "c",
+          "ms": 364.7302740000014,
+          "bytes": 2638
+        },
+        "tuple-first": {
+          "chars": 295,
+          "priorId": "c",
+          "ms": 360.13684799999464,
+          "bytes": 2638
+        },
+        "binary-first": {
+          "chars": 301,
+          "priorId": "c",
+          "ms": 370.61675800000376,
+          "bytes": 2617
+        },
+        "zero-null": {
+          "chars": 300,
+          "priorId": "c",
+          "ms": 360.53765799999746,
+          "bytes": 2638
+        }
+      }
+    },
+    {
+      "id": "diagnostic/diff-pair/0",
+      "family": "diff-pair",
+      "raw": 470,
+      "variants": {
+        "base": {
+          "chars": 195,
+          "priorId": "c",
+          "ms": 335.08100900000136,
+          "bytes": 470
+        },
+        "midpoint": {
+          "chars": 195,
+          "priorId": "c",
+          "ms": 332.75177099999564,
+          "bytes": 470
+        },
+        "tuple-first": {
+          "chars": 193,
+          "priorId": "c",
+          "ms": 335.2424699999974,
+          "bytes": 470
+        },
+        "binary-first": {
+          "chars": 199,
+          "priorId": "c",
+          "ms": 369.1489440000005,
+          "bytes": 447
+        },
+        "zero-null": {
+          "chars": 195,
+          "priorId": "c",
+          "ms": 352.2344789999988,
+          "bytes": 470
+        }
+      }
+    },
+    {
+      "id": "diagnostic/diff-pair/1",
+      "family": "diff-pair",
+      "raw": 1178,
+      "variants": {
+        "base": {
+          "chars": 345,
+          "priorId": "c",
+          "ms": 393.705833,
+          "bytes": 1178
+        },
+        "midpoint": {
+          "chars": 345,
+          "priorId": "c",
+          "ms": 354.7630449999997,
+          "bytes": 1178
+        },
+        "tuple-first": {
+          "chars": 339,
+          "priorId": "c",
+          "ms": 364.8904670000047,
+          "bytes": 1178
+        },
+        "binary-first": {
+          "chars": 341,
+          "priorId": "n",
+          "ms": 24.506187999999383,
+          "bytes": 1156
+        },
+        "zero-null": {
+          "chars": 345,
+          "priorId": "c",
+          "ms": 369.75485899999694,
+          "bytes": 1178
+        }
+      }
+    },
+    {
+      "id": "diagnostic/diff-pair/2",
+      "family": "diff-pair",
+      "raw": 3409,
+      "variants": {
+        "base": {
+          "chars": 627,
+          "priorId": "n",
+          "ms": 53.71997499999998,
+          "bytes": 3409
+        },
+        "midpoint": {
+          "chars": 627,
+          "priorId": "n",
+          "ms": 56.85360099999525,
+          "bytes": 3409
+        },
+        "tuple-first": {
+          "chars": 626,
+          "priorId": "n",
+          "ms": 56.737724999999045,
+          "bytes": 3409
+        },
+        "binary-first": {
+          "chars": 613,
+          "priorId": "n",
+          "ms": 57.35018599999603,
+          "bytes": 3386
+        },
+        "zero-null": {
+          "chars": 627,
+          "priorId": "n",
+          "ms": 60.575942999999825,
+          "bytes": 3409
+        }
+      }
+    },
+    {
+      "id": "diagnostic/diff-pair/3",
+      "family": "diff-pair",
+      "raw": 7431,
+      "variants": {
+        "base": {
+          "chars": 1050,
+          "priorId": "n",
+          "ms": 114.0167000000074,
+          "bytes": 7431
+        },
+        "midpoint": {
+          "chars": 1050,
+          "priorId": "n",
+          "ms": 114.98618399999395,
+          "bytes": 7431
+        },
+        "tuple-first": {
+          "chars": 1052,
+          "priorId": "n",
+          "ms": 117.35150400000566,
+          "bytes": 7431
+        },
+        "binary-first": {
+          "chars": 1038,
+          "priorId": "n",
+          "ms": 144.66430599999148,
+          "bytes": 7408
+        },
+        "zero-null": {
+          "chars": 1050,
+          "priorId": "n",
+          "ms": 106.79064600000129,
+          "bytes": 7431
+        }
+      }
+    },
+    {
+      "id": "diagnostic/bundle/0",
+      "family": "bundle",
+      "raw": 943,
+      "variants": {
+        "base": {
+          "chars": 247,
+          "priorId": "m",
+          "ms": 440.9654159999918,
+          "bytes": 943
+        },
+        "midpoint": {
+          "chars": 247,
+          "priorId": "m",
+          "ms": 473.26183299999684,
+          "bytes": 943
+        },
+        "tuple-first": {
+          "chars": 249,
+          "priorId": "m",
+          "ms": 442.7774400000053,
+          "bytes": 943
+        },
+        "binary-first": {
+          "chars": 254,
+          "priorId": "m",
+          "ms": 367.58222399999795,
+          "bytes": 896
+        },
+        "zero-null": {
+          "chars": 247,
+          "priorId": "m",
+          "ms": 329.01541799999904,
+          "bytes": 937
+        }
+      }
+    },
+    {
+      "id": "diagnostic/bundle/1",
+      "family": "bundle",
+      "raw": 2379,
+      "variants": {
+        "base": {
+          "chars": 403,
+          "priorId": "m",
+          "ms": 420.40646900000866,
+          "bytes": 2379
+        },
+        "midpoint": {
+          "chars": 403,
+          "priorId": "m",
+          "ms": 399.0558089999977,
+          "bytes": 2379
+        },
+        "tuple-first": {
+          "chars": 403,
+          "priorId": "m",
+          "ms": 440.39823000000615,
+          "bytes": 2379
+        },
+        "binary-first": {
+          "chars": 389,
+          "priorId": "n",
+          "ms": 44.991459999990184,
+          "bytes": 2335
+        },
+        "zero-null": {
+          "chars": 404,
+          "priorId": "m",
+          "ms": 343.0779629999997,
+          "bytes": 2373
+        }
+      }
+    },
+    {
+      "id": "diagnostic/bundle/2",
+      "family": "bundle",
+      "raw": 6658,
+      "variants": {
+        "base": {
+          "chars": 727,
+          "priorId": "n",
+          "ms": 102.41432999999961,
+          "bytes": 6658
+        },
+        "midpoint": {
+          "chars": 724,
+          "priorId": "n",
+          "ms": 103.8975849999988,
+          "bytes": 6658
+        },
+        "tuple-first": {
+          "chars": 726,
+          "priorId": "n",
+          "ms": 100.40764100001252,
+          "bytes": 6658
+        },
+        "binary-first": {
+          "chars": 710,
+          "priorId": "n",
+          "ms": 97.8121519999986,
+          "bytes": 6611
+        },
+        "zero-null": {
+          "chars": 727,
+          "priorId": "n",
+          "ms": 95.04038700000092,
+          "bytes": 6652
+        }
+      }
+    },
+    {
+      "id": "diagnostic/bundle/3",
+      "family": "bundle",
+      "raw": 14631,
+      "variants": {
+        "base": {
+          "chars": 1291,
+          "priorId": "n",
+          "ms": 225.43572200000926,
+          "bytes": 14631
+        },
+        "midpoint": {
+          "chars": 1290,
+          "priorId": "n",
+          "ms": 211.45766600000206,
+          "bytes": 14631
+        },
+        "tuple-first": {
+          "chars": 1290,
+          "priorId": "n",
+          "ms": 258.5496090000088,
+          "bytes": 14631
+        },
+        "binary-first": {
+          "chars": 1276,
+          "priorId": "n",
+          "ms": 226.37355600000592,
+          "bytes": 14584
+        },
+        "zero-null": {
+          "chars": 1290,
+          "priorId": "n",
+          "ms": 230.1604210000005,
+          "bytes": 14625
+        }
+      }
+    },
+    {
+      "id": "diagnostic/entropy/0",
+      "family": "entropy",
+      "raw": 211,
+      "variants": {
+        "base": {
+          "chars": 243,
+          "priorId": "n",
+          "ms": 10.370969999989029,
+          "bytes": 211
+        },
+        "midpoint": {
+          "chars": 243,
+          "priorId": "n",
+          "ms": 7.775464999998803,
+          "bytes": 211
+        },
+        "tuple-first": {
+          "chars": 244,
+          "priorId": "c",
+          "ms": 487.2704369999992,
+          "bytes": 211
+        },
+        "binary-first": {
+          "chars": 236,
+          "priorId": "n",
+          "ms": 15.976951000004192,
+          "bytes": 200
+        },
+        "zero-null": {
+          "chars": 243,
+          "priorId": "n",
+          "ms": 26.79986800000188,
+          "bytes": 211
+        }
+      }
+    },
+    {
+      "id": "diagnostic/entropy/1",
+      "family": "entropy",
+      "raw": 571,
+      "variants": {
+        "base": {
+          "chars": 617,
+          "priorId": "n",
+          "ms": 11.13424899999518,
+          "bytes": 571
+        },
+        "midpoint": {
+          "chars": 617,
+          "priorId": "n",
+          "ms": 20.627766000005067,
+          "bytes": 571
+        },
+        "tuple-first": {
+          "chars": 622,
+          "priorId": "n",
+          "ms": 37.23262100000284,
+          "bytes": 571
+        },
+        "binary-first": {
+          "chars": 610,
+          "priorId": "n",
+          "ms": 40.62291200000618,
+          "bytes": 560
+        },
+        "zero-null": {
+          "chars": 617,
+          "priorId": "n",
+          "ms": 42.18981700000222,
+          "bytes": 571
+        }
+      }
+    },
+    {
+      "id": "diagnostic/entropy/2",
+      "family": "entropy",
+      "raw": 1651,
+      "variants": {
+        "base": {
+          "chars": 1723,
+          "priorId": "n",
+          "ms": 46.76503400001093,
+          "bytes": 1651
+        },
+        "midpoint": {
+          "chars": 1723,
+          "priorId": "n",
+          "ms": 86.04643800000485,
+          "bytes": 1651
+        },
+        "tuple-first": {
+          "chars": 1733,
+          "priorId": "n",
+          "ms": 25.52704200000153,
+          "bytes": 1651
+        },
+        "binary-first": {
+          "chars": 1716,
+          "priorId": "n",
+          "ms": 31.589815999992425,
+          "bytes": 1640
+        },
+        "zero-null": {
+          "chars": 1723,
+          "priorId": "n",
+          "ms": 39.18982999999935,
+          "bytes": 1651
+        }
+      }
+    },
+    {
+      "id": "diagnostic/entropy/3",
+      "family": "entropy",
+      "raw": 3631,
+      "variants": {
+        "base": {
+          "chars": 3726,
+          "priorId": "n",
+          "ms": 66.84286799999245,
+          "bytes": 3631
+        },
+        "midpoint": {
+          "chars": 3726,
+          "priorId": "n",
+          "ms": 62.68742499999644,
+          "bytes": 3631
+        },
+        "tuple-first": {
+          "chars": 3738,
+          "priorId": "n",
+          "ms": 76.63586300000316,
+          "bytes": 3631
+        },
+        "binary-first": {
+          "chars": 3721,
+          "priorId": "n",
+          "ms": 84.7537880000018,
+          "bytes": 3620
+        },
+        "zero-null": {
+          "chars": 3726,
+          "priorId": "n",
+          "ms": 56.735461999996915,
+          "bytes": 3631
+        }
+      }
+    },
+    {
+      "id": "diagnostic/repeat/0",
+      "family": "repeat",
+      "raw": 1472,
+      "variants": {
+        "base": {
+          "chars": 133,
+          "priorId": "n",
+          "ms": 42.794493000008515,
+          "bytes": 1472
+        },
+        "midpoint": {
+          "chars": 133,
+          "priorId": "n",
+          "ms": 35.25570599999628,
+          "bytes": 1472
+        },
+        "tuple-first": {
+          "chars": 131,
+          "priorId": "n",
+          "ms": 24.82764100001077,
+          "bytes": 1472
+        },
+        "binary-first": {
+          "chars": 120,
+          "priorId": "n",
+          "ms": 33.07082699998864,
+          "bytes": 1463
+        },
+        "zero-null": {
+          "chars": 133,
+          "priorId": "n",
+          "ms": 35.784536999999546,
+          "bytes": 1472
+        }
+      }
+    },
+    {
+      "id": "diagnostic/repeat/1",
+      "family": "repeat",
+      "raw": 4680,
+      "variants": {
+        "base": {
+          "chars": 141,
+          "priorId": "n",
+          "ms": 85.74267899998813,
+          "bytes": 4680
+        },
+        "midpoint": {
+          "chars": 141,
+          "priorId": "n",
+          "ms": 95.30228099998203,
+          "bytes": 4680
+        },
+        "tuple-first": {
+          "chars": 139,
+          "priorId": "n",
+          "ms": 78.48654499999247,
+          "bytes": 4680
+        },
+        "binary-first": {
+          "chars": 126,
+          "priorId": "n",
+          "ms": 90.18342900002608,
+          "bytes": 4671
+        },
+        "zero-null": {
+          "chars": 141,
+          "priorId": "n",
+          "ms": 101.47302299999865,
+          "bytes": 4680
+        }
+      }
+    },
+    {
+      "id": "diagnostic/repeat/2",
+      "family": "repeat",
+      "raw": 13200,
+      "variants": {
+        "base": {
+          "chars": 140,
+          "priorId": "n",
+          "ms": 175.82107100001303,
+          "bytes": 13200
+        },
+        "midpoint": {
+          "chars": 139,
+          "priorId": "n",
+          "ms": 177.44178000002285,
+          "bytes": 13200
+        },
+        "tuple-first": {
+          "chars": 138,
+          "priorId": "n",
+          "ms": 182.88793299999088,
+          "bytes": 13200
+        },
+        "binary-first": {
+          "chars": 124,
+          "priorId": "n",
+          "ms": 181.2890400000033,
+          "bytes": 13191
+        },
+        "zero-null": {
+          "chars": 140,
+          "priorId": "n",
+          "ms": 227.02110700000048,
+          "bytes": 13200
+        }
+      }
+    },
+    {
+      "id": "diagnostic/repeat/3",
+      "family": "repeat",
+      "raw": 28344,
+      "variants": {
+        "base": {
+          "chars": 147,
+          "priorId": "n",
+          "ms": 374.45683400001144,
+          "bytes": 28344
+        },
+        "midpoint": {
+          "chars": 143,
+          "priorId": "n",
+          "ms": 378.10571599999093,
+          "bytes": 28344
+        },
+        "tuple-first": {
+          "chars": 144,
+          "priorId": "n",
+          "ms": 381.8514800000121,
+          "bytes": 28344
+        },
+        "binary-first": {
+          "chars": 132,
+          "priorId": "n",
+          "ms": 375.2102780000132,
+          "bytes": 28335
+        },
+        "zero-null": {
+          "chars": 147,
+          "priorId": "n",
+          "ms": 613.2028649999993,
+          "bytes": 28344
+        }
+      }
+    },
+    {
+      "id": "diagnostic/utf16-exact/0",
+      "family": "utf16-exact",
+      "raw": 140,
+      "variants": {
+        "base": {
+          "chars": 145,
+          "priorId": "c",
+          "ms": 338.63398099999176,
+          "bytes": 140
+        },
+        "midpoint": {
+          "chars": 145,
+          "priorId": "c",
+          "ms": 316.38833899999736,
+          "bytes": 140
+        },
+        "tuple-first": {
+          "chars": 145,
+          "priorId": "c",
+          "ms": 318.6946219999809,
+          "bytes": 140
+        },
+        "binary-first": {
+          "chars": 131,
+          "priorId": "c",
+          "ms": 331.9096890000219,
+          "bytes": 114
+        },
+        "zero-null": {
+          "chars": 145,
+          "priorId": "c",
+          "ms": 896.7681709999961,
+          "bytes": 140
+        }
+      }
+    },
+    {
+      "id": "diagnostic/utf16-exact/1",
+      "family": "utf16-exact",
+      "raw": 186,
+      "variants": {
+        "base": {
+          "chars": 202,
+          "priorId": "c",
+          "ms": 322.8431210000126,
+          "bytes": 186
+        },
+        "midpoint": {
+          "chars": 202,
+          "priorId": "c",
+          "ms": 322.8580789999978,
+          "bytes": 186
+        },
+        "tuple-first": {
+          "chars": 203,
+          "priorId": "c",
+          "ms": 336.36615999997593,
+          "bytes": 186
+        },
+        "binary-first": {
+          "chars": 190,
+          "priorId": "c",
+          "ms": 323.48529700000654,
+          "bytes": 160
+        },
+        "zero-null": {
+          "chars": 202,
+          "priorId": "c",
+          "ms": 421.78939099999843,
+          "bytes": 186
+        }
+      }
+    },
+    {
+      "id": "diagnostic/utf16-exact/2",
+      "family": "utf16-exact",
+      "raw": 331,
+      "variants": {
+        "base": {
+          "chars": 354,
+          "priorId": "c",
+          "ms": 329.1068180000002,
+          "bytes": 331
+        },
+        "midpoint": {
+          "chars": 354,
+          "priorId": "c",
+          "ms": 323.9055539999972,
+          "bytes": 331
+        },
+        "tuple-first": {
+          "chars": 355,
+          "priorId": "c",
+          "ms": 333.2456269999966,
+          "bytes": 331
+        },
+        "binary-first": {
+          "chars": 342,
+          "priorId": "c",
+          "ms": 328.4800240000186,
+          "bytes": 305
+        },
+        "zero-null": {
+          "chars": 354,
+          "priorId": "c",
+          "ms": 471.5231039999999,
+          "bytes": 331
+        }
+      }
+    },
+    {
+      "id": "diagnostic/utf16-exact/3",
+      "family": "utf16-exact",
+      "raw": 587,
+      "variants": {
+        "base": {
+          "chars": 630,
+          "priorId": "c",
+          "ms": 332.54297200002475,
+          "bytes": 587
+        },
+        "midpoint": {
+          "chars": 630,
+          "priorId": "c",
+          "ms": 325.16716399998404,
+          "bytes": 587
+        },
+        "tuple-first": {
+          "chars": 632,
+          "priorId": "c",
+          "ms": 330.79345399999875,
+          "bytes": 587
+        },
+        "binary-first": {
+          "chars": 619,
+          "priorId": "c",
+          "ms": 336.95188400000916,
+          "bytes": 561
+        },
+        "zero-null": {
+          "chars": 630,
+          "priorId": "c",
+          "ms": 416.21069900000293,
+          "bytes": 587
+        }
+      }
+    },
+    {
+      "id": "diagnostic/metadata/0",
+      "family": "metadata",
+      "raw": 253,
+      "variants": {
+        "base": {
+          "chars": 184,
+          "priorId": "c",
+          "ms": 335.83581600000616,
+          "bytes": 253
+        },
+        "midpoint": {
+          "chars": 184,
+          "priorId": "c",
+          "ms": 329.332402,
+          "bytes": 253
+        },
+        "tuple-first": {
+          "chars": 187,
+          "priorId": "c",
+          "ms": 341.0496270000003,
+          "bytes": 253
+        },
+        "binary-first": {
+          "chars": 187,
+          "priorId": "c",
+          "ms": 345.2339609999908,
+          "bytes": 238
+        },
+        "zero-null": {
+          "chars": 184,
+          "priorId": "c",
+          "ms": 401.5783669999946,
+          "bytes": 253
+        }
+      }
+    },
+    {
+      "id": "diagnostic/metadata/1",
+      "family": "metadata",
+      "raw": 621,
+      "variants": {
+        "base": {
+          "chars": 269,
+          "priorId": "c",
+          "ms": 338.8970290000143,
+          "bytes": 621
+        },
+        "midpoint": {
+          "chars": 269,
+          "priorId": "c",
+          "ms": 350.2433880000026,
+          "bytes": 621
+        },
+        "tuple-first": {
+          "chars": 275,
+          "priorId": "c",
+          "ms": 330.1421759999939,
+          "bytes": 621
+        },
+        "binary-first": {
+          "chars": 284,
+          "priorId": "c",
+          "ms": 322.61842199999955,
+          "bytes": 585
+        },
+        "zero-null": {
+          "chars": 269,
+          "priorId": "c",
+          "ms": 430.66384599999583,
+          "bytes": 621
+        }
+      }
+    },
+    {
+      "id": "diagnostic/metadata/2",
+      "family": "metadata",
+      "raw": 1745,
+      "variants": {
+        "base": {
+          "chars": 362,
+          "priorId": "c",
+          "ms": 349.20506400000886,
+          "bytes": 1745
+        },
+        "midpoint": {
+          "chars": 362,
+          "priorId": "c",
+          "ms": 351.1076269999903,
+          "bytes": 1745
+        },
+        "tuple-first": {
+          "chars": 372,
+          "priorId": "c",
+          "ms": 343.7099359999993,
+          "bytes": 1745
+        },
+        "binary-first": {
+          "chars": 400,
+          "priorId": "c",
+          "ms": 343.12789400000474,
+          "bytes": 1649
+        },
+        "zero-null": {
+          "chars": 362,
+          "priorId": "c",
+          "ms": 457.48313499999495,
+          "bytes": 1745
+        }
+      }
+    },
+    {
+      "id": "diagnostic/metadata/3",
+      "family": "metadata",
+      "raw": 4352,
+      "variants": {
+        "base": {
+          "chars": 545,
+          "priorId": "c",
+          "ms": 376.6411270000099,
+          "bytes": 4352
+        },
+        "midpoint": {
+          "chars": 545,
+          "priorId": "c",
+          "ms": 394.164557000011,
+          "bytes": 4352
+        },
+        "tuple-first": {
+          "chars": 557,
+          "priorId": "n",
+          "ms": 67.25871399999596,
+          "bytes": 4352
+        },
+        "binary-first": {
+          "chars": 594,
+          "priorId": "n",
+          "ms": 62.315466999978526,
+          "bytes": 4147
+        },
+        "zero-null": {
+          "chars": 545,
+          "priorId": "c",
+          "ms": 526.5797749999983,
+          "bytes": 4352
+        }
+      }
+    },
+    {
+      "id": "diagnostic/whitespace/0",
+      "family": "whitespace",
+      "raw": 475,
+      "variants": {
+        "base": {
+          "chars": 229,
+          "priorId": "n",
+          "ms": 11.228303000010783,
+          "bytes": 475
+        },
+        "midpoint": {
+          "chars": 228,
+          "priorId": "n",
+          "ms": 11.421043000009377,
+          "bytes": 475
+        },
+        "tuple-first": {
+          "chars": 231,
+          "priorId": "n",
+          "ms": 11.89277099998435,
+          "bytes": 475
+        },
+        "binary-first": {
+          "chars": 219,
+          "priorId": "n",
+          "ms": 11.461687999981223,
+          "bytes": 464
+        },
+        "zero-null": {
+          "chars": 229,
+          "priorId": "n",
+          "ms": 10.228575000001001,
+          "bytes": 475
+        }
+      }
+    },
+    {
+      "id": "diagnostic/whitespace/1",
+      "family": "whitespace",
+      "raw": 1398,
+      "variants": {
+        "base": {
+          "chars": 458,
+          "priorId": "n",
+          "ms": 25.19281399997999,
+          "bytes": 1398
+        },
+        "midpoint": {
+          "chars": 458,
+          "priorId": "n",
+          "ms": 23.775173000001814,
+          "bytes": 1398
+        },
+        "tuple-first": {
+          "chars": 458,
+          "priorId": "n",
+          "ms": 34.04544200000237,
+          "bytes": 1398
+        },
+        "binary-first": {
+          "chars": 449,
+          "priorId": "n",
+          "ms": 23.789801000006264,
+          "bytes": 1387
+        },
+        "zero-null": {
+          "chars": 458,
+          "priorId": "n",
+          "ms": 69.94204500000342,
+          "bytes": 1398
+        }
+      }
+    },
+    {
+      "id": "diagnostic/whitespace/2",
+      "family": "whitespace",
+      "raw": 4264,
+      "variants": {
+        "base": {
+          "chars": 1104,
+          "priorId": "n",
+          "ms": 61.64274999999907,
+          "bytes": 4264
+        },
+        "midpoint": {
+          "chars": 1103,
+          "priorId": "n",
+          "ms": 63.677759999991395,
+          "bytes": 4264
+        },
+        "tuple-first": {
+          "chars": 1103,
+          "priorId": "n",
+          "ms": 59.40064299997175,
+          "bytes": 4264
+        },
+        "binary-first": {
+          "chars": 1093,
+          "priorId": "n",
+          "ms": 61.74926899999264,
+          "bytes": 4253
+        },
+        "zero-null": {
+          "chars": 1104,
+          "priorId": "n",
+          "ms": 102.10921799999778,
+          "bytes": 4264
+        }
+      }
+    },
+    {
+      "id": "diagnostic/whitespace/3",
+      "family": "whitespace",
+      "raw": 9354,
+      "variants": {
+        "base": {
+          "chars": 2168,
+          "priorId": "n",
+          "ms": 145.57714300000225,
+          "bytes": 9354
+        },
+        "midpoint": {
+          "chars": 2167,
+          "priorId": "n",
+          "ms": 127.8976520000142,
+          "bytes": 9354
+        },
+        "tuple-first": {
+          "chars": 2169,
+          "priorId": "n",
+          "ms": 129.52909100000397,
+          "bytes": 9354
+        },
+        "binary-first": {
+          "chars": 2159,
+          "priorId": "n",
+          "ms": 126.93731199999456,
+          "bytes": 9343
+        },
+        "zero-null": {
+          "chars": 2168,
+          "priorId": "n",
+          "ms": 164.36002800000279,
+          "bytes": 9354
+        }
+      }
+    }
+  ],
+  "sourceHashes": {
+    "src/lib/payload/arx6-codec.ts": "3d3293a41da972297814824c91ca20c4a2abb83e9645bf4e25ff983448dff687",
+    "src/lib/payload/arx6-v2-model.ts": "4be96ce00bb36c518c6e2ece06b07ebcdb1a3a22dd8966d2dc0fc3b8228058b5",
+    "src/lib/payload/arx6-bytes.ts": "125bc85c7ec1b47473a383afb8b2b267d6e926c059d10d7131771148ac104e4d",
+    "src/lib/payload/arx4-codec.ts": "0464a506835b57c6caaa2027f3e7214c619523524a86e86305e8d758d6e93c53",
+    "src/lib/payload/arx-codec.ts": "d0f4329e28445e649fa3e5194a51fb644767db93a0f7b7af418837248fa006a3",
+    "public/arx-dictionary.json": "16fe3f72dd5d282fd2f0271647a56c38c4b7eebb6e4723da670765f7d90380a9",
+    "public/arx2-dictionary.json": "12d0166fda16ce9697831805d92af0f558b4fad5a882c471ba072118561a74eb",
+    "public/arx4-priors.json": "7cf3adce7295c3133efd4b3b1c75233e63b738e0452257c1e4264fb6634021e1",
+    "tests/arx6-codec.test.ts": "2d131a279f2f39b55df6c304a54f4853ace61a334445f3fd7e19cab1eab692e4",
+    "tests/arx6-adversarial.test.ts": "5ebeed80fb5587ab42b1a69ef43ece89b1a52440f078636da3f940f86f3178cc"
+  },
+  "corpusSha256": "b1f3e97e337896b90a300ab0e9acf89b4a1ca88951211d38ee2410ca9c3bdabd",
+  "scope": "52 diagnostic inputs only. Fragment characters including the three-character header; incompatible candidates use identical framing overhead/checksum salt for comparison and emit no viewer links.",
+  "timingNote": "Non-isolated diagnostic timings collected in parallel passes; not a performance comparison.",
+  "checks": "All candidate arithmetic byte streams round-trip. Separate 52-case checks prove metadata-first inversion and zero-null identical envelope reconstruction.",
+  "decision": "Rejected/deferred; published g2 unchanged. Gains insufficient for a new format or additional full-model encode pass; fresh validation corpus not evaluated.",
+  "summary": {
+    "base": {
+      "characters": 29045,
+      "difference": 0,
+      "percentChange": 0.0,
+      "wins": 0,
+      "ties": 52,
+      "losses": 0,
+      "largestSaving": 0,
+      "largestRegression": 0
+    },
+    "midpoint": {
+      "characters": 29028,
+      "difference": -17,
+      "percentChange": -0.0585298674470649,
+      "wins": 12,
+      "ties": 35,
+      "losses": 5,
+      "largestSaving": 6,
+      "largestRegression": 1
+    },
+    "tuple-first": {
+      "characters": 29052,
+      "difference": 7,
+      "percentChange": 0.02410053365467378,
+      "wins": 25,
+      "ties": 8,
+      "losses": 19,
+      "largestSaving": 12,
+      "largestRegression": 12
+    },
+    "binary-first": {
+      "characters": 28805,
+      "difference": -240,
+      "percentChange": -0.8263040110173868,
+      "wins": 39,
+      "ties": 2,
+      "losses": 11,
+      "largestSaving": 22,
+      "largestRegression": 49
+    },
+    "zero-null": {
+      "characters": 29040,
+      "difference": -5,
+      "percentChange": -0.01721466689619556,
+      "wins": 3,
+      "ties": 47,
+      "losses": 2,
+      "largestSaving": 4,
+      "largestRegression": 1
+    }
+  }
+}

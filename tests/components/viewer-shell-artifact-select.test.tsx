@@ -6,6 +6,7 @@ import type { PayloadEnvelope } from "@/lib/payload/schema";
 
 type DeferredEncode = {
   activeArtifactId: string | undefined;
+  signal?: AbortSignal;
   reject: (error: Error) => void;
   resolve: (encoded: string) => void;
 };
@@ -13,6 +14,7 @@ type DeferredEncode = {
 type DecodeCall = {
   hash: string;
   skipFragmentBudget: boolean;
+  signal?: AbortSignal;
 };
 
 const fragmentMock = vi.hoisted((): { decodes: DecodeCall[]; encodes: DeferredEncode[] } => ({
@@ -106,11 +108,12 @@ function createEnvelope(activeArtifactId: string): PayloadEnvelope {
   };
 }
 
-vi.mock("@/lib/payload/fragment", () => ({
-  decodeFragmentAsync: vi.fn(async (hash: string, options?: { skipFragmentBudget?: boolean }) => {
+vi.mock("@/lib/payload/browser-codec", () => ({
+  decodeFragmentInBrowser: vi.fn(async (hash: string, options?: { skipFragmentBudget?: boolean }, signal?: AbortSignal) => {
     fragmentMock.decodes.push({
       hash,
       skipFragmentBudget: options?.skipFragmentBudget === true,
+      signal,
     });
     const activeArtifactId = hash.includes("three") ? "three" : hash.includes("two") ? "two" : "one";
 
@@ -120,12 +123,13 @@ vi.mock("@/lib/payload/fragment", () => ({
       rawLength: hash.length,
     };
   }),
-  encodeEnvelopeAsync: vi.fn((envelope: PayloadEnvelope) => {
-    return new Promise<string>((resolve, reject) => {
+  encodeEnvelopeInBrowser: vi.fn((envelope: PayloadEnvelope, _options: unknown, signal?: AbortSignal) => {
+    return new Promise<{ fragmentBody: string; transportFragmentBody: string }>((resolve, reject) => {
       fragmentMock.encodes.push({
         activeArtifactId: envelope.activeArtifactId,
+        signal,
         reject,
-        resolve,
+        resolve: (encoded) => resolve({ fragmentBody: encoded, transportFragmentBody: encoded }),
       });
     });
   }),
@@ -166,6 +170,8 @@ describe("ViewerShell artifact selection", () => {
     });
     await waitFor(() => expect(fragmentMock.encodes).toHaveLength(2));
     expect(fragmentMock.encodes[1].activeArtifactId).toBe("three");
+    expect(fragmentMock.encodes[0].signal?.aborted).toBe(true);
+    expect(fragmentMock.encodes[1].signal?.aborted).toBe(false);
     const optimisticRendererKey = screen
       .getByTestId("mock-artifact-stage")
       .getAttribute("data-renderer-key");
@@ -239,5 +245,6 @@ describe("ViewerShell artifact selection", () => {
         skipFragmentBudget: false,
       });
     });
+    expect(fragmentMock.decodes[0].signal?.aborted).toBe(true);
   });
 });

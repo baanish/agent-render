@@ -1,0 +1,666 @@
+{
+  "version": 1,
+  "frozenAt": "2026-10-04T01:36:18.560Z",
+  "planSha256": "277d8b32f313dcbb48bf96a36e3e564a95dfafbbdc273a26134c3bcc98661a8a",
+  "corpusSha256": "27ae510564905c691477a8d74e88325bc02c1b7b294524af4f2dff5e02e88731",
+  "phase": "Frozen before any extra-pass candidate evaluation; candidates must be frozen before this validation corpus is evaluated.",
+  "scope": "Convenience validation sample, not actual agent traffic. Source files within a repository are correlated. No compression-based inclusion or model changes are permitted from this set.",
+  "repositories": [
+    {
+      "repository": "pallets/flask",
+      "commit": "d73fa1cdcbd8b1465c151db8924ba58b1dd14e35",
+      "commitDate": "2026-09-08T16:40:41Z",
+      "parents": [
+        "d318b683471101618febed18996405ad26462110"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": {
+        "key": "bsd-3-clause",
+        "name": "BSD 3-Clause \"New\" or \"Revised\" License",
+        "spdx_id": "BSD-3-Clause",
+        "url": "https://api.github.com/licenses/bsd-3-clause",
+        "node_id": "MDc6TGljZW5zZTU="
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/pallets/flask/tree/d73fa1cdcbd8b1465c151db8924ba58b1dd14e35"
+    },
+    {
+      "repository": "fastapi/fastapi",
+      "commit": "5f9fc5c59a9bb54608aa35376715f3ba9708188e",
+      "commitDate": "2026-10-02T11:36:36Z",
+      "parents": [
+        "9ee8f0012d82013eccf2d4bb03de57963fad77ad"
+      ],
+      "defaultBranch": "master",
+      "repositoryLicense": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/fastapi/fastapi/tree/5f9fc5c59a9bb54608aa35376715f3ba9708188e"
+    },
+    {
+      "repository": "prettier/prettier",
+      "commit": "d62653b04d2b7521870fdcb9c19c7044f0bace9e",
+      "commitDate": "2026-10-03T02:26:53Z",
+      "parents": [
+        "e5b6b2e1b86db61e81b87935ab54259144b642ea"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/prettier/prettier/tree/d62653b04d2b7521870fdcb9c19c7044f0bace9e"
+    },
+    {
+      "repository": "BurntSushi/ripgrep",
+      "commit": "3fce3b5bb0236da2df6d99672afb8a719642eca7",
+      "commitDate": "2026-08-04T14:00:08Z",
+      "parents": [
+        "5055264ae021b5d0e01e55f723622d638ea877f0"
+      ],
+      "defaultBranch": "master",
+      "repositoryLicense": {
+        "key": "unlicense",
+        "name": "The Unlicense",
+        "spdx_id": "Unlicense",
+        "url": "https://api.github.com/licenses/unlicense",
+        "node_id": "MDc6TGljZW5zZTE1"
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/BurntSushi/ripgrep/tree/3fce3b5bb0236da2df6d99672afb8a719642eca7"
+    },
+    {
+      "repository": "datasets/airport-codes",
+      "commit": "0c817c4f59aad37e3f93bceacf52a17cf8ea0c0b",
+      "commitDate": "2026-10-03T03:44:18Z",
+      "parents": [
+        "420d508f4dc2a882108c7c41b4d3b6431c94b4e1"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": null,
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/datasets/airport-codes/tree/0c817c4f59aad37e3f93bceacf52a17cf8ea0c0b"
+    },
+    {
+      "repository": "datasets/country-codes",
+      "commit": "2e9d6498a0456f4afc2f6cf367d1e12a9ed4afe1",
+      "commitDate": "2026-10-01T05:02:54Z",
+      "parents": [
+        "6a595f1a6f10b3d00175fe67375da88f64f7f76b"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": null,
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/datasets/country-codes/tree/2e9d6498a0456f4afc2f6cf367d1e12a9ed4afe1"
+    },
+    {
+      "repository": "datasets/finance-vix",
+      "commit": "3dbea23c70cc2afbeeec8ac232c9ec72ac26ac21",
+      "commitDate": "2026-09-23T18:30:07Z",
+      "parents": [
+        "dcd85e00d5524e40edfbec2b5bf55ab20eaf9108"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": null,
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/datasets/finance-vix/tree/3dbea23c70cc2afbeeec8ac232c9ec72ac26ac21"
+    },
+    {
+      "repository": "vuejs/core",
+      "commit": "4ab865a848a1da3d10fb674f857e5fff13094644",
+      "commitDate": "2026-09-18T02:59:51Z",
+      "parents": [
+        "897924c4ff79175f6a228f341c4ede1bb4938a76"
+      ],
+      "defaultBranch": "main",
+      "repositoryLicense": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      },
+      "licenseNote": "Consult this pinned repository and per-file/data notices; repository metadata does not relicense downloaded samples.",
+      "pinnedTreeUrl": "https://github.com/vuejs/core/tree/4ab865a848a1da3d10fb674f857e5fff13094644"
+    }
+  ],
+  "sources": [
+    {
+      "id": "pallets--flask--1",
+      "repository": "pallets/flask",
+      "commit": "d73fa1cdcbd8b1465c151db8924ba58b1dd14e35",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "English",
+      "sourceUrl": "https://raw.githubusercontent.com/pallets/flask/d73fa1cdcbd8b1465c151db8924ba58b1dd14e35/README.md",
+      "sourceSha256": "1f2de14735b1ee9d3a342fa7c5d5e87b95727276c0a56c8a9d77221f37880602",
+      "sourceBytes": 1639,
+      "sourceUtf16Chars": 1639,
+      "sampleSha256": "1f2de14735b1ee9d3a342fa7c5d5e87b95727276c0a56c8a9d77221f37880602",
+      "sliceUtf16": [
+        0,
+        1639
+      ],
+      "sampleUtf16Chars": 1639,
+      "sampleBytes": 1639
+    },
+    {
+      "id": "pallets--flask--2",
+      "repository": "pallets/flask",
+      "commit": "d73fa1cdcbd8b1465c151db8924ba58b1dd14e35",
+      "path": "src/flask/app.py",
+      "kind": "code",
+      "language": "python",
+      "sourceUrl": "https://raw.githubusercontent.com/pallets/flask/d73fa1cdcbd8b1465c151db8924ba58b1dd14e35/src/flask/app.py",
+      "sourceSha256": "975de70f74626460f7afd2f16e3a513cbc2fe65cbd961f95c2f92eec4f7ecff8",
+      "sourceBytes": 65472,
+      "sourceUtf16Chars": 65472,
+      "sampleSha256": "7f86b949f9eac9ef7c3ae63093be3cc6c4258dce8d470d648ab67cad3780711f",
+      "sliceUtf16": [
+        0,
+        5977
+      ],
+      "sampleUtf16Chars": 5977,
+      "sampleBytes": 5977
+    },
+    {
+      "id": "pallets--flask--3",
+      "repository": "pallets/flask",
+      "commit": "d73fa1cdcbd8b1465c151db8924ba58b1dd14e35",
+      "path": "src/flask/json/provider.py",
+      "kind": "code",
+      "language": "python",
+      "sourceUrl": "https://raw.githubusercontent.com/pallets/flask/d73fa1cdcbd8b1465c151db8924ba58b1dd14e35/src/flask/json/provider.py",
+      "sourceSha256": "cefdd0dfdde6bb6f73e7b853aa789de432e2af52a8c920c1c2af17228235b72c",
+      "sourceBytes": 7644,
+      "sourceUtf16Chars": 7644,
+      "sampleSha256": "2baff83835878ff88c5a2b1280b8f1af89e56833de978dd64fc02cba6962c14f",
+      "sliceUtf16": [
+        0,
+        5959
+      ],
+      "sampleUtf16Chars": 5959,
+      "sampleBytes": 5959
+    },
+    {
+      "id": "pallets--flask--4",
+      "repository": "pallets/flask",
+      "commit": "d73fa1cdcbd8b1465c151db8924ba58b1dd14e35",
+      "commitDiff": true,
+      "kind": "diff",
+      "sourceUrl": "https://github.com/pallets/flask/commit/d73fa1cdcbd8b1465c151db8924ba58b1dd14e35.diff",
+      "sourceSha256": "6952f1c9df36a8c193aa68792f87c5b27afb47116bbfecf7a1b2d9a0ca4d86cb",
+      "sourceBytes": 1432,
+      "sourceUtf16Chars": 1432,
+      "sampleSha256": "6952f1c9df36a8c193aa68792f87c5b27afb47116bbfecf7a1b2d9a0ca4d86cb",
+      "sliceUtf16": [
+        0,
+        1432
+      ],
+      "sampleUtf16Chars": 1432,
+      "sampleBytes": 1432
+    },
+    {
+      "id": "fastapi--fastapi--1",
+      "repository": "fastapi/fastapi",
+      "commit": "5f9fc5c59a9bb54608aa35376715f3ba9708188e",
+      "path": "docs/zh/docs/async.md",
+      "kind": "markdown",
+      "language": "Chinese",
+      "sourceUrl": "https://raw.githubusercontent.com/fastapi/fastapi/5f9fc5c59a9bb54608aa35376715f3ba9708188e/docs/zh/docs/async.md",
+      "sourceSha256": "cabd981a432a158691019caa13a34a4341d47252fc7b931abf933b605a53899e",
+      "sourceBytes": 22380,
+      "sourceUtf16Chars": 11038,
+      "sampleSha256": "5ae2b9d8dca6fdb52551de8306d4959432edf502772243112ec94f218f181b49",
+      "sliceUtf16": [
+        0,
+        5939
+      ],
+      "sampleUtf16Chars": 5939,
+      "sampleBytes": 12051
+    },
+    {
+      "id": "fastapi--fastapi--2",
+      "repository": "fastapi/fastapi",
+      "commit": "5f9fc5c59a9bb54608aa35376715f3ba9708188e",
+      "path": "docs/es/docs/async.md",
+      "kind": "markdown",
+      "language": "Spanish",
+      "sourceUrl": "https://raw.githubusercontent.com/fastapi/fastapi/5f9fc5c59a9bb54608aa35376715f3ba9708188e/docs/es/docs/async.md",
+      "sourceSha256": "61bd26af57324609059e4fd280a21ef6097ce8b72bed53938f8b17e1bd04ee56",
+      "sourceBytes": 25350,
+      "sourceUtf16Chars": 24831,
+      "sampleSha256": "5a1dab35fa0aecf763927a183a7d5f5b18b3c2a5cb1879333fe0cb4670f2edf4",
+      "sliceUtf16": [
+        0,
+        5950
+      ],
+      "sampleUtf16Chars": 5950,
+      "sampleBytes": 6039
+    },
+    {
+      "id": "fastapi--fastapi--3",
+      "repository": "fastapi/fastapi",
+      "commit": "5f9fc5c59a9bb54608aa35376715f3ba9708188e",
+      "path": "fastapi/routing.py",
+      "kind": "code",
+      "language": "python",
+      "sourceUrl": "https://raw.githubusercontent.com/fastapi/fastapi/5f9fc5c59a9bb54608aa35376715f3ba9708188e/fastapi/routing.py",
+      "sourceSha256": "6d8beeb5642f477d7076ec8bf58c57f79f131e2bc8e6bfd5b90224e1ba859ec2",
+      "sourceBytes": 259409,
+      "sourceUtf16Chars": 259355,
+      "sampleSha256": "bf2dad915ef000ae542b54e1176c56170bfbc0e5bc3151dc8cf2261056d11e76",
+      "sliceUtf16": [
+        0,
+        5936
+      ],
+      "sampleUtf16Chars": 5936,
+      "sampleBytes": 5936
+    },
+    {
+      "id": "fastapi--fastapi--4",
+      "repository": "fastapi/fastapi",
+      "commit": "5f9fc5c59a9bb54608aa35376715f3ba9708188e",
+      "path": "pyproject.toml",
+      "kind": "code",
+      "language": "toml",
+      "sourceUrl": "https://raw.githubusercontent.com/fastapi/fastapi/5f9fc5c59a9bb54608aa35376715f3ba9708188e/pyproject.toml",
+      "sourceSha256": "1e1dd3dc00bf7707a9f5fa5ea5296f5b1dd752428339b9717c87d70c6432abdc",
+      "sourceBytes": 12202,
+      "sourceUtf16Chars": 12200,
+      "sampleSha256": "684da5cbe40ed8c355ccdb21845789c85a0aef9b6b3e0e45bd6644979c21675c",
+      "sliceUtf16": [
+        0,
+        5950
+      ],
+      "sampleUtf16Chars": 5950,
+      "sampleBytes": 5952
+    },
+    {
+      "id": "prettier--prettier--1",
+      "repository": "prettier/prettier",
+      "commit": "d62653b04d2b7521870fdcb9c19c7044f0bace9e",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "English",
+      "sourceUrl": "https://raw.githubusercontent.com/prettier/prettier/d62653b04d2b7521870fdcb9c19c7044f0bace9e/README.md",
+      "sourceSha256": "f1f5a86cd0fd0f6a288882527830a9bbbd5851e3238c4d7426b7bbb496165cd1",
+      "sourceBytes": 3396,
+      "sourceUtf16Chars": 3381,
+      "sampleSha256": "f1f5a86cd0fd0f6a288882527830a9bbbd5851e3238c4d7426b7bbb496165cd1",
+      "sliceUtf16": [
+        0,
+        3381
+      ],
+      "sampleUtf16Chars": 3381,
+      "sampleBytes": 3396
+    },
+    {
+      "id": "prettier--prettier--2",
+      "repository": "prettier/prettier",
+      "commit": "d62653b04d2b7521870fdcb9c19c7044f0bace9e",
+      "path": "package.json",
+      "kind": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/prettier/prettier/d62653b04d2b7521870fdcb9c19c7044f0bace9e/package.json",
+      "sourceSha256": "2ae4bf1ec5990a68e75f6b96b49f77c8957a6f5860d6b052e214f49c15081256",
+      "sourceBytes": 9252,
+      "sourceUtf16Chars": 9252,
+      "sampleSha256": "2ae4bf1ec5990a68e75f6b96b49f77c8957a6f5860d6b052e214f49c15081256",
+      "sliceUtf16": [
+        0,
+        9252
+      ],
+      "sampleUtf16Chars": 9252,
+      "sampleBytes": 9252
+    },
+    {
+      "id": "prettier--prettier--3",
+      "repository": "prettier/prettier",
+      "commit": "d62653b04d2b7521870fdcb9c19c7044f0bace9e",
+      "path": "src/index.js",
+      "kind": "code",
+      "language": "javascript",
+      "sourceUrl": "https://raw.githubusercontent.com/prettier/prettier/d62653b04d2b7521870fdcb9c19c7044f0bace9e/src/index.js",
+      "sourceSha256": "7162d74bcfd1305e8b901f4663d1cdbbf0f45887f0252e34b68a86be2324ff11",
+      "sourceBytes": 3949,
+      "sourceUtf16Chars": 3949,
+      "sampleSha256": "7162d74bcfd1305e8b901f4663d1cdbbf0f45887f0252e34b68a86be2324ff11",
+      "sliceUtf16": [
+        0,
+        3949
+      ],
+      "sampleUtf16Chars": 3949,
+      "sampleBytes": 3949
+    },
+    {
+      "id": "prettier--prettier--4",
+      "repository": "prettier/prettier",
+      "commit": "d62653b04d2b7521870fdcb9c19c7044f0bace9e",
+      "commitDiff": true,
+      "kind": "diff",
+      "sourceUrl": "https://github.com/prettier/prettier/commit/d62653b04d2b7521870fdcb9c19c7044f0bace9e.diff",
+      "sourceSha256": "4f089f78d0e482a5a5f95c49e6039a9f563e5787f7ac7ffe363ba6ae5c8db3d5",
+      "sourceBytes": 4311,
+      "sourceUtf16Chars": 4311,
+      "sampleSha256": "4f089f78d0e482a5a5f95c49e6039a9f563e5787f7ac7ffe363ba6ae5c8db3d5",
+      "sliceUtf16": [
+        0,
+        4311
+      ],
+      "sampleUtf16Chars": 4311,
+      "sampleBytes": 4311
+    },
+    {
+      "id": "BurntSushi--ripgrep--1",
+      "repository": "BurntSushi/ripgrep",
+      "commit": "3fce3b5bb0236da2df6d99672afb8a719642eca7",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "English",
+      "sourceUrl": "https://raw.githubusercontent.com/BurntSushi/ripgrep/3fce3b5bb0236da2df6d99672afb8a719642eca7/README.md",
+      "sourceSha256": "945622d974f65e4e141ef9726c948c2640eebd222c5b101afb6445728283921e",
+      "sourceBytes": 21599,
+      "sourceUtf16Chars": 21599,
+      "sampleSha256": "33d1e84e23c1f6f15996d6d0aa118319d8f7aa48f3df74fd541a0bd8af81c79d",
+      "sliceUtf16": [
+        0,
+        5955
+      ],
+      "sampleUtf16Chars": 5955,
+      "sampleBytes": 5955
+    },
+    {
+      "id": "BurntSushi--ripgrep--2",
+      "repository": "BurntSushi/ripgrep",
+      "commit": "3fce3b5bb0236da2df6d99672afb8a719642eca7",
+      "path": "crates/core/main.rs",
+      "kind": "code",
+      "language": "rust",
+      "sourceUrl": "https://raw.githubusercontent.com/BurntSushi/ripgrep/3fce3b5bb0236da2df6d99672afb8a719642eca7/crates/core/main.rs",
+      "sourceSha256": "21c10c3b35114543b90f38f27fd9102703a099bd504db950e1f10d2739b1444c",
+      "sourceBytes": 18681,
+      "sourceUtf16Chars": 18681,
+      "sampleSha256": "e2d162a79a6f9d9205656e615b660bcdb1a97da23146494414428ada94928d4d",
+      "sliceUtf16": [
+        0,
+        5982
+      ],
+      "sampleUtf16Chars": 5982,
+      "sampleBytes": 5982
+    },
+    {
+      "id": "BurntSushi--ripgrep--3",
+      "repository": "BurntSushi/ripgrep",
+      "commit": "3fce3b5bb0236da2df6d99672afb8a719642eca7",
+      "commitDiff": true,
+      "kind": "diff",
+      "sourceUrl": "https://github.com/BurntSushi/ripgrep/commit/3fce3b5bb0236da2df6d99672afb8a719642eca7.diff",
+      "sourceSha256": "1e0a090c6f3e6787913f1ebad6ec899886bc2ee325cb29d7474bc90b8eeb5f68",
+      "sourceBytes": 676,
+      "sourceUtf16Chars": 676,
+      "sampleSha256": "1e0a090c6f3e6787913f1ebad6ec899886bc2ee325cb29d7474bc90b8eeb5f68",
+      "sliceUtf16": [
+        0,
+        676
+      ],
+      "sampleUtf16Chars": 676,
+      "sampleBytes": 676
+    },
+    {
+      "id": "datasets--airport-codes--1",
+      "repository": "datasets/airport-codes",
+      "commit": "0c817c4f59aad37e3f93bceacf52a17cf8ea0c0b",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "English",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/airport-codes/0c817c4f59aad37e3f93bceacf52a17cf8ea0c0b/README.md",
+      "sourceSha256": "21405418a67b125e0e1ef4ff0b9593781dda84c09351e068d9e7a3cd27417876",
+      "sourceBytes": 2264,
+      "sourceUtf16Chars": 2264,
+      "sampleSha256": "21405418a67b125e0e1ef4ff0b9593781dda84c09351e068d9e7a3cd27417876",
+      "sliceUtf16": [
+        0,
+        2264
+      ],
+      "sampleUtf16Chars": 2264,
+      "sampleBytes": 2264
+    },
+    {
+      "id": "datasets--airport-codes--2",
+      "repository": "datasets/airport-codes",
+      "commit": "0c817c4f59aad37e3f93bceacf52a17cf8ea0c0b",
+      "path": "datapackage.json",
+      "kind": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/airport-codes/0c817c4f59aad37e3f93bceacf52a17cf8ea0c0b/datapackage.json",
+      "sourceSha256": "8d5f6c11d350c2be14a35a1f485e8c89a12400e19f57a6d2be3d63b67e88e19b",
+      "sourceBytes": 7694,
+      "sourceUtf16Chars": 7692,
+      "sampleSha256": "8d5f6c11d350c2be14a35a1f485e8c89a12400e19f57a6d2be3d63b67e88e19b",
+      "sliceUtf16": [
+        0,
+        7692
+      ],
+      "sampleUtf16Chars": 7692,
+      "sampleBytes": 7694,
+      "declaredDataLicenses": [
+        {
+          "id": "odc-pddl",
+          "name": "ODC-PDDL-1.0",
+          "path": "https://opendatacommons.org/licenses/pddl/",
+          "title": "Open Data Commons Public Domain Dedication and License v1.0"
+        }
+      ]
+    },
+    {
+      "id": "datasets--airport-codes--3",
+      "repository": "datasets/airport-codes",
+      "commit": "0c817c4f59aad37e3f93bceacf52a17cf8ea0c0b",
+      "path": "data/airport-codes.csv",
+      "kind": "csv",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/airport-codes/0c817c4f59aad37e3f93bceacf52a17cf8ea0c0b/data/airport-codes.csv",
+      "sourceSha256": "789b58121cfb951f02c1510080e0fecaad2d2573f8e6a19cfea25eec8249161e",
+      "sourceBytes": 8812005,
+      "sourceUtf16Chars": 8794046,
+      "sampleSha256": "faed295203d1b958d86f65248887b4ffd020e85bce3c5ba6f838fc46c4146de4",
+      "sliceUtf16": [
+        0,
+        5929
+      ],
+      "sampleUtf16Chars": 5929,
+      "sampleBytes": 5929
+    },
+    {
+      "id": "datasets--country-codes--1",
+      "repository": "datasets/country-codes",
+      "commit": "2e9d6498a0456f4afc2f6cf367d1e12a9ed4afe1",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "English",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/country-codes/2e9d6498a0456f4afc2f6cf367d1e12a9ed4afe1/README.md",
+      "sourceSha256": "241a01590f9c38bad33083c6b2718c5e159db355c0f28fbbf1fe13b1c75cf785",
+      "sourceBytes": 3913,
+      "sourceUtf16Chars": 3913,
+      "sampleSha256": "241a01590f9c38bad33083c6b2718c5e159db355c0f28fbbf1fe13b1c75cf785",
+      "sliceUtf16": [
+        0,
+        3913
+      ],
+      "sampleUtf16Chars": 3913,
+      "sampleBytes": 3913
+    },
+    {
+      "id": "datasets--country-codes--3",
+      "repository": "datasets/country-codes",
+      "commit": "2e9d6498a0456f4afc2f6cf367d1e12a9ed4afe1",
+      "path": "data/country-codes.csv",
+      "kind": "csv",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/country-codes/2e9d6498a0456f4afc2f6cf367d1e12a9ed4afe1/data/country-codes.csv",
+      "sourceSha256": "07918cb63dd8bc43e52110def00d490998634360605e9d8c602865e2260802fd",
+      "sourceBytes": 133966,
+      "sourceUtf16Chars": 111258,
+      "sampleSha256": "03e710fc5b29317624f7e110a3bd3ab77480f511db44ac403af74c3221f2074c",
+      "sliceUtf16": [
+        0,
+        5802
+      ],
+      "sampleUtf16Chars": 5802,
+      "sampleBytes": 6801
+    },
+    {
+      "id": "datasets--finance-vix--1",
+      "repository": "datasets/finance-vix",
+      "commit": "3dbea23c70cc2afbeeec8ac232c9ec72ac26ac21",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "English",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/finance-vix/3dbea23c70cc2afbeeec8ac232c9ec72ac26ac21/README.md",
+      "sourceSha256": "a6803998768a1b636474c6ed1b4041e1d4193e4e019b84741638e23113a07bfd",
+      "sourceBytes": 2834,
+      "sourceUtf16Chars": 2830,
+      "sampleSha256": "a6803998768a1b636474c6ed1b4041e1d4193e4e019b84741638e23113a07bfd",
+      "sliceUtf16": [
+        0,
+        2830
+      ],
+      "sampleUtf16Chars": 2830,
+      "sampleBytes": 2834
+    },
+    {
+      "id": "datasets--finance-vix--2",
+      "repository": "datasets/finance-vix",
+      "commit": "3dbea23c70cc2afbeeec8ac232c9ec72ac26ac21",
+      "path": "datapackage.json",
+      "kind": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/finance-vix/3dbea23c70cc2afbeeec8ac232c9ec72ac26ac21/datapackage.json",
+      "sourceSha256": "d2c56b6586d19762da81fe332650ec949f2a42c4d2a2228c59ad5b397bac1e64",
+      "sourceBytes": 4560,
+      "sourceUtf16Chars": 4556,
+      "sampleSha256": "d2c56b6586d19762da81fe332650ec949f2a42c4d2a2228c59ad5b397bac1e64",
+      "sliceUtf16": [
+        0,
+        4556
+      ],
+      "sampleUtf16Chars": 4556,
+      "sampleBytes": 4560,
+      "declaredDataLicenses": [
+        {
+          "name": "ODC-PDDL-1.0",
+          "path": "http://opendatacommons.org/licenses/pddl/",
+          "title": "Open Data Commons Public Domain Dedication and License v1.0"
+        }
+      ]
+    },
+    {
+      "id": "datasets--finance-vix--3",
+      "repository": "datasets/finance-vix",
+      "commit": "3dbea23c70cc2afbeeec8ac232c9ec72ac26ac21",
+      "path": "data/vix-daily.csv",
+      "kind": "csv",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/finance-vix/3dbea23c70cc2afbeeec8ac232c9ec72ac26ac21/data/vix-daily.csv",
+      "sourceSha256": "570e05630c9a5e7350d0c3dbe3acc58e793cb5248181ab0e949c121cc082fb83",
+      "sourceBytes": 482200,
+      "sourceUtf16Chars": 482200,
+      "sampleSha256": "869283e5d21dea63164fc509c8a74786b80c8485dc2ca717ddd93f1aae4190bb",
+      "sliceUtf16": [
+        0,
+        5954
+      ],
+      "sampleUtf16Chars": 5954,
+      "sampleBytes": 5954
+    },
+    {
+      "id": "vuejs--core--1",
+      "repository": "vuejs/core",
+      "commit": "4ab865a848a1da3d10fb674f857e5fff13094644",
+      "path": "README.md",
+      "kind": "markdown",
+      "language": "English",
+      "sourceUrl": "https://raw.githubusercontent.com/vuejs/core/4ab865a848a1da3d10fb674f857e5fff13094644/README.md",
+      "sourceSha256": "1d5ea6d8b418d429c68d0f749ab07724c007a86beee996c401d2447d667f12c8",
+      "sourceBytes": 2487,
+      "sourceUtf16Chars": 2487,
+      "sampleSha256": "1d5ea6d8b418d429c68d0f749ab07724c007a86beee996c401d2447d667f12c8",
+      "sliceUtf16": [
+        0,
+        2487
+      ],
+      "sampleUtf16Chars": 2487,
+      "sampleBytes": 2487
+    },
+    {
+      "id": "vuejs--core--2",
+      "repository": "vuejs/core",
+      "commit": "4ab865a848a1da3d10fb674f857e5fff13094644",
+      "path": "packages/vue/package.json",
+      "kind": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/vuejs/core/4ab865a848a1da3d10fb674f857e5fff13094644/packages/vue/package.json",
+      "sourceSha256": "56467fcce80da7a7f37a29cd28e320a9ed999e80a946842493288dfd01fac630",
+      "sourceBytes": 2795,
+      "sourceUtf16Chars": 2795,
+      "sampleSha256": "56467fcce80da7a7f37a29cd28e320a9ed999e80a946842493288dfd01fac630",
+      "sliceUtf16": [
+        0,
+        2795
+      ],
+      "sampleUtf16Chars": 2795,
+      "sampleBytes": 2795
+    },
+    {
+      "id": "vuejs--core--3",
+      "repository": "vuejs/core",
+      "commit": "4ab865a848a1da3d10fb674f857e5fff13094644",
+      "path": "packages/reactivity/src/reactive.ts",
+      "kind": "code",
+      "language": "typescript",
+      "sourceUrl": "https://raw.githubusercontent.com/vuejs/core/4ab865a848a1da3d10fb674f857e5fff13094644/packages/reactivity/src/reactive.ts",
+      "sourceSha256": "47280cc495afb2392a8cb59ffd0b940cf9afd54977d961d08917fb57c624eec6",
+      "sourceBytes": 12849,
+      "sourceUtf16Chars": 12849,
+      "sampleSha256": "af881587ff3524d83d54237c0568c5477a90df6572fa2ec0023d07c071dea7d8",
+      "sliceUtf16": [
+        0,
+        5993
+      ],
+      "sampleUtf16Chars": 5993,
+      "sampleBytes": 5993
+    },
+    {
+      "id": "vuejs--core--4",
+      "repository": "vuejs/core",
+      "commit": "4ab865a848a1da3d10fb674f857e5fff13094644",
+      "commitDiff": true,
+      "kind": "diff",
+      "sourceUrl": "https://github.com/vuejs/core/commit/4ab865a848a1da3d10fb674f857e5fff13094644.diff",
+      "sourceSha256": "78ea82e40dc49df8f46a78b2470472347742508f70efe0948465c2e24bb24abf",
+      "sourceBytes": 3257,
+      "sourceUtf16Chars": 3257,
+      "sampleSha256": "78ea82e40dc49df8f46a78b2470472347742508f70efe0948465c2e24bb24abf",
+      "sliceUtf16": [
+        0,
+        3257
+      ],
+      "sampleUtf16Chars": 3257,
+      "sampleBytes": 3257
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "datasets--country-codes--2",
+      "repository": "datasets/country-codes",
+      "commit": "2e9d6498a0456f4afc2f6cf367d1e12a9ed4afe1",
+      "path": "datapackage.json",
+      "kind": "json",
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/country-codes/2e9d6498a0456f4afc2f6cf367d1e12a9ed4afe1/datapackage.json",
+      "reason": "Command failed: curl --fail --location --silent --show-error --max-time 45 --max-filesize 33554432 --user-agent agent-render-extra-pass-validation https://raw.githubusercontent.com/datasets/country-codes/2e9d6498a0456f4afc2f6cf367d1e12a9ed4afe1/datapackage.json\ncurl: (22) The requested URL returned error: 404\n"
+    }
+  ]
+}

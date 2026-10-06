@@ -11,10 +11,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Link creator can load a local text file into the draft (client-side only) instead of requiring a paste.
 - In-viewer edit-and-reshare: open any artifact, correct its content, and generate a new fragment link without leaving the viewer.
 - `arx5` (ARX 4.5): ARX4's context mixer on ARX2's tuple pipeline, scored by honest serialized transport length so Discord and WhatsApp no longer detonate Unicode wires.
+- ARX6 model version 3 (`#g3`): lossless raw-text context mixing, contexts for recent nonword bytes and digit patterns, mixed-radix fraction transport, a corruption checksum, and exact UTF-16 preservation. Existing v2 (`#g2`) and unversioned ARX6 links retain their frozen decoders; explicit v2 encoding remains available. See `docs/arx6-research.md` for the consolidated findings and qualified measurements.
+- Browser codec Worker with serialized jobs, cancellation, queue bounds, a 60-second deadline, and idle shutdown.
+
+### Fixed
+
+- Unprimed legacy `#gn`, v2 `#g2n`, and v3 `#g3n` links decode without dictionary/prior fetches; explicit ARX6 encoding retains its unprimed fallback with newer dictionary/overlay assets.
+- Hash navigation aborts obsolete creator encoding before queuing the destination decode.
 
 ### Changed
 
 - Auto-emit no longer selects `arx3` or `arx4`. Existing `#c` and `#e` links still decode.
+- Legacy radix encoding uses balanced integer conversion while preserving the existing wire bytes, reducing work on large candidate payloads. Transport selection skips materializing Unicode wires only when a strict lower bound proves they cannot win; the logical candidate pool and selected output are unchanged.
+- Default automatic encoding compares ARX6 against the complete existing ARX5/ARX2/ARX/deflate/LZ/plain pool and selects it only for a strict serialized-length improvement. Ties and losses retain the old wire exactly.
 - Highlighting consolidated on `@pierre/diffs` (Shiki) for diffs, standalone code, markdown fences, JSON raw views, and the artifact editor; CodeMirror and `@git-diff-view` are removed.
 
 ## [0.1.0] - 2026-05-05

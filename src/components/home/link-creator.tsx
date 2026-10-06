@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 type LinkCreatorProps = {
   onPreviewHash: (hash: string) => void;
+  navigationHash?: string;
 };
 
 const fieldHints: Record<ArtifactKind, string> = {
@@ -66,9 +67,10 @@ function getBodyFieldLabel(kind: ArtifactKind) {
  * Builds shareable fragment links from pasted or locally loaded artifact content
  * in the home empty state flow. File selection is read in the browser only.
  * Accepts `onPreviewHash` so the parent shell can preview the generated fragment before navigation.
+ * Cancels pending generation when `navigationHash` changes, before the shell starts decoding it.
  * Generates links client-side with validation, and exposes inline copy/error/stale-result states.
  */
-export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
+export function LinkCreator({ onPreviewHash, navigationHash = "" }: LinkCreatorProps) {
   const [{ draft, version: draftVersion }, setDraftState] = useState({
     draft: defaultLinkCreatorDraft,
     version: 0,
@@ -84,6 +86,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
     "idle" | "copied" | "failed"
   >("idle");
   const generationRequestRef = useRef(0);
+  const generationAbortRef = useRef<AbortController | null>(null);
   const markdownCopyTokenRef = useRef(0);
   const generatedLinkRef = useRef<GeneratedArtifactLink | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +111,13 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
     setMarkdownLinkCopyState("idle");
     setError(null);
   }, [draftVersion]);
+
+  // Navigation keeps the creator mounted until decoding finishes. Cancel in layout cleanup so
+  // its obsolete encode releases the shared worker before the shell's passive decode effect.
+  useLayoutEffect(() => () => {
+    generationRequestRef.current += 1;
+    generationAbortRef.current?.abort();
+  }, [navigationHash]);
 
   const updateDraft = <K extends keyof LinkCreatorDraft>(
     field: K,
@@ -235,6 +245,9 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
   const handleGenerate = async () => {
     const requestId = generationRequestRef.current + 1;
     generationRequestRef.current = requestId;
+    generationAbortRef.current?.abort();
+    const abort = new AbortController();
+    generationAbortRef.current = abort;
 
     try {
       const { createGeneratedArtifactLinkAsync } =
@@ -242,6 +255,7 @@ export function LinkCreator({ onPreviewHash }: LinkCreatorProps) {
       const nextGeneratedLink = await createGeneratedArtifactLinkAsync(
         draft,
         getBaseUrl(),
+        abort.signal,
       );
       if (generationRequestRef.current !== requestId) {
         return;

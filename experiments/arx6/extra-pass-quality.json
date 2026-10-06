@@ -1,0 +1,36 @@
+{
+  "corpusSha256": "27ae510564905c691477a8d74e88325bc02c1b7b294524af4f2dff5e02e88731",
+  "checkedBeforeCompression": true,
+  "method": "Read-only CSV parsing with the installed PapaParse version; no samples are altered, excluded, or replaced based on this check. Source/sample hashes and exact slices remain in extra-pass-manifest.json.",
+  "csv": [
+    {
+      "id": "datasets--airport-codes--3",
+      "rows": 55,
+      "headerFields": 13,
+      "distinctRowFieldCounts": [
+        13
+      ],
+      "parserErrors": []
+    },
+    {
+      "id": "datasets--country-codes--3",
+      "rows": 13,
+      "headerFields": 56,
+      "distinctRowFieldCounts": [
+        56
+      ],
+      "parserErrors": []
+    },
+    {
+      "id": "datasets--finance-vix--3",
+      "rows": 115,
+      "headerFields": 5,
+      "distinctRowFieldCounts": [
+        5
+      ],
+      "parserErrors": []
+    }
+  ],
+  "parserVersion": "5.5.4",
+  "rowCountIncludesHeader": true
+}

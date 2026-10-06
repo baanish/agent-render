@@ -38,14 +38,14 @@ describe("homepage sample link data", () => {
     ).toEqual(expectedCards);
   });
 
-  it("uses a real ARX5 fragment for the homepage ARX showcase sample", async () => {
+  it("uses a real ARX6 v3 fragment for the homepage ARX showcase sample", async () => {
     loadArxDictionarySync(arxDictionaryJson);
     loadArx2OverlayDictionarySync(arx2DictionaryJson);
     loadArx4PriorsSync(arx4PriorsJson);
 
     const sample = sampleLinkCards.find((card) => card.title === "arx showcase");
 
-    expect(sample?.hash?.startsWith(`#${compactTagForCodec("arx5")}`)).toBe(true);
+    expect(sample?.hash?.startsWith(`#${compactTagForCodec("arx6")}3`)).toBe(true);
     expect(sample?.hash?.slice(1)).toMatch(/^[A-Za-z0-9._~-]+$/);
     expect(sample?.fragmentLength).toBeLessThan(4000);
 
@@ -58,7 +58,7 @@ describe("homepage sample link data", () => {
       return;
     }
 
-    expect(parsed.envelope).toEqual({ ...source, codec: "arx5" });
+    expect(parsed.envelope).toEqual({ ...source, codec: "arx6" });
     expect(parsed.rawLength).toBe(sample?.fragmentLength);
   });
 });

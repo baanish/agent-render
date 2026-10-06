@@ -1,0 +1,104 @@
+{
+  "corpusSha256": "208b2271ae3d04577a5df4f435d6ec054a819e6a40b2529bdaeee1c1ec6c4e27",
+  "checkedBeforeCompression": true,
+  "samples": 35,
+  "repositoryGroups": 10,
+  "counts": {
+    "markdown": 14,
+    "code": 8,
+    "diff": 4,
+    "json": 5,
+    "csv": 4
+  },
+  "csv": [
+    {
+      "id": "datasets--co2-ppm--2",
+      "rows": 165,
+      "headerColumns": 6,
+      "dataColumnCounts": [
+        7
+      ],
+      "parseErrors": 165,
+      "errorCodes": [
+        "TooManyFields"
+      ]
+    },
+    {
+      "id": "datasets--co2-ppm--3",
+      "rows": 67,
+      "headerColumns": 3,
+      "dataColumnCounts": [
+        3
+      ],
+      "parseErrors": 0,
+      "errorCodes": []
+    },
+    {
+      "id": "datasets--global-temp--2",
+      "rows": 381,
+      "headerColumns": 3,
+      "dataColumnCounts": [
+        3
+      ],
+      "parseErrors": 0,
+      "errorCodes": []
+    },
+    {
+      "id": "datasets--global-temp--3",
+      "rows": 323,
+      "headerColumns": 3,
+      "dataColumnCounts": [
+        3
+      ],
+      "parseErrors": 0,
+      "errorCodes": []
+    }
+  ],
+  "languages": [
+    {
+      "id": "ruanyf--es6tutorial--1",
+      "utf16Chars": 1025,
+      "nonAsciiUtf16Units": 303,
+      "declaredLanguage": "zh"
+    },
+    {
+      "id": "ruanyf--es6tutorial--2",
+      "utf16Chars": 7990,
+      "nonAsciiUtf16Units": 2426,
+      "declaredLanguage": "zh"
+    },
+    {
+      "id": "ruanyf--es6tutorial--3",
+      "utf16Chars": 7995,
+      "nonAsciiUtf16Units": 1766,
+      "declaredLanguage": "zh"
+    },
+    {
+      "id": "rust-lang-ja--book-ja--1",
+      "utf16Chars": 3077,
+      "nonAsciiUtf16Units": 0,
+      "declaredLanguage": "ja",
+      "observedLanguage": "en"
+    },
+    {
+      "id": "rust-lang-ja--book-ja--2",
+      "utf16Chars": 7973,
+      "nonAsciiUtf16Units": 2473,
+      "declaredLanguage": "ja"
+    },
+    {
+      "id": "rust-lang-ja--book-ja--3",
+      "utf16Chars": 7961,
+      "nonAsciiUtf16Units": 1575,
+      "declaredLanguage": "ja"
+    }
+  ],
+  "notes": [
+    "All envelopes satisfy the application schema; all JSON bodies parse without rewriting.",
+    "The upstream co2 monthly file has a six-field header and seven-field data rows. Its original bytes are retained. The other three CSV samples have consistent field counts.",
+    "The four commit-diff samples are actual pinned GitHub diffs; the Rust complete-line prefix ends before the full upstream diff ends. No claim is made that a truncated diff is applicable.",
+    "Samples within one repository are correlated. Carbon dioxide and global-temperature CSVs are both numerical time series; this set does not cover all CSV distributions.",
+    "Missing preset TypeScript source paths are recorded exclusions, not replaced sources. No sample was chosen or removed using compression output.",
+    "The Japanese repository README is English despite its predeclared repository-language label; actual non-English coverage is five inputs: three Chinese and two Japanese. This provenance correction does not alter the frozen source or corpus bytes."
+  ]
+}

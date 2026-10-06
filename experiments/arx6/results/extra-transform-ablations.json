@@ -1,0 +1,3425 @@
+{
+  "scope": "Diagnostic-only reversible raw-container transforms; frozen ARX6 v2 model. No model tuning or evaluation text in priors. Not an auto-codec portfolio benchmark.",
+  "framing": "Plain uses g2<prior>. Transform candidates use research-only g3x<prior>, charging one transform-ID character. Every candidate intentionally uses placeholder x, not a deployed or simultaneous mode registry. CRC binds header and transformed bytes; the arithmetic varint counts transformed bytes. Complete WHATWG-serialized [View](https://agent-render.com/#...) length is counted.",
+  "priorPolicy": "@n is unprimed; @kind uses the existing composed kind prior transformed identically to the payload. Each complete prior and payload resets its transform independently. Both baseline lanes are required to compare against min(kind,n).",
+  "transformPolicy": "BWT has fixed 4096-byte blocks and a two-byte primary index per nonempty block. MTF resets once per complete BWT stream. UTF16 preserves exact code units in LE, BE, or high-plane/low-plane blocks of 4096 code units. No block-size search was performed.",
+  "limitations": [
+    "Synthetic diagnostic families are correlated; these results establish no generalization claim.",
+    "Only UTF16BE received a transformed-curated-prior follow-up. The other transformed lanes were screened unprimed.",
+    "No timings are reported. Adding a fallback lane requires extra work and its small selected gains are not free.",
+    "These inverse helpers validate encoder-produced data only; they are not hardened production decoders."
+  ],
+  "corpusSha256": "b1f3e97e337896b90a300ab0e9acf89b4a1ca88951211d38ee2410ca9c3bdabd",
+  "codecSourceSha256": "3d3293a41da972297814824c91ca20c4a2abb83e9645bf4e25ff983448dff687",
+  "modelSourceSha256": "4be96ce00bb36c518c6e2ece06b07ebcdb1a3a22dd8966d2dc0fc3b8228058b5",
+  "variants": {
+    "plain@n": [
+      {
+        "id": "diagnostic/prose/0",
+        "family": "prose",
+        "rawBytes": 179,
+        "transformBytes": 179,
+        "chars": 198,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/1",
+        "family": "prose",
+        "rawBytes": 434,
+        "transformBytes": 434,
+        "chars": 259,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/2",
+        "family": "prose",
+        "rawBytes": 1221,
+        "transformBytes": 1221,
+        "chars": 360,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/3",
+        "family": "prose",
+        "rawBytes": 3215,
+        "transformBytes": 3215,
+        "chars": 519,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/0",
+        "family": "code",
+        "rawBytes": 217,
+        "transformBytes": 217,
+        "chars": 207,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/1",
+        "family": "code",
+        "rawBytes": 406,
+        "transformBytes": 406,
+        "chars": 231,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/2",
+        "family": "code",
+        "rawBytes": 1306,
+        "transformBytes": 1306,
+        "chars": 316,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/3",
+        "family": "code",
+        "rawBytes": 3422,
+        "transformBytes": 3422,
+        "chars": 423,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/0",
+        "family": "markdown",
+        "rawBytes": 289,
+        "transformBytes": 289,
+        "chars": 257,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/1",
+        "family": "markdown",
+        "rawBytes": 796,
+        "transformBytes": 796,
+        "chars": 430,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/2",
+        "family": "markdown",
+        "rawBytes": 2373,
+        "transformBytes": 2373,
+        "chars": 846,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/3",
+        "family": "markdown",
+        "rawBytes": 5160,
+        "transformBytes": 5160,
+        "chars": 1486,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/0",
+        "family": "json",
+        "rawBytes": 961,
+        "transformBytes": 961,
+        "chars": 481,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/1",
+        "family": "json",
+        "rawBytes": 2801,
+        "transformBytes": 2801,
+        "chars": 842,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/2",
+        "family": "json",
+        "rawBytes": 8218,
+        "transformBytes": 8218,
+        "chars": 1120,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/3",
+        "family": "json",
+        "rawBytes": 18158,
+        "transformBytes": 18158,
+        "chars": 1506,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/0",
+        "family": "csv",
+        "rawBytes": 235,
+        "transformBytes": 235,
+        "chars": 221,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/1",
+        "family": "csv",
+        "rawBytes": 579,
+        "transformBytes": 579,
+        "chars": 326,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/2",
+        "family": "csv",
+        "rawBytes": 1605,
+        "transformBytes": 1605,
+        "chars": 548,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/3",
+        "family": "csv",
+        "rawBytes": 3453,
+        "transformBytes": 3453,
+        "chars": 857,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/0",
+        "family": "patch",
+        "rawBytes": 187,
+        "transformBytes": 187,
+        "chars": 218,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/1",
+        "family": "patch",
+        "rawBytes": 444,
+        "transformBytes": 444,
+        "chars": 249,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/2",
+        "family": "patch",
+        "rawBytes": 1212,
+        "transformBytes": 1212,
+        "chars": 324,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/3",
+        "family": "patch",
+        "rawBytes": 2638,
+        "transformBytes": 2638,
+        "chars": 418,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/0",
+        "family": "diff-pair",
+        "rawBytes": 470,
+        "transformBytes": 470,
+        "chars": 264,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/1",
+        "family": "diff-pair",
+        "rawBytes": 1178,
+        "transformBytes": 1178,
+        "chars": 388,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/2",
+        "family": "diff-pair",
+        "rawBytes": 3409,
+        "transformBytes": 3409,
+        "chars": 661,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/3",
+        "family": "diff-pair",
+        "rawBytes": 7431,
+        "transformBytes": 7431,
+        "chars": 1084,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/0",
+        "family": "bundle",
+        "rawBytes": 943,
+        "transformBytes": 943,
+        "chars": 309,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/1",
+        "family": "bundle",
+        "rawBytes": 2379,
+        "transformBytes": 2379,
+        "chars": 440,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/2",
+        "family": "bundle",
+        "rawBytes": 6658,
+        "transformBytes": 6658,
+        "chars": 761,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/3",
+        "family": "bundle",
+        "rawBytes": 14631,
+        "transformBytes": 14631,
+        "chars": 1325,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/0",
+        "family": "entropy",
+        "rawBytes": 211,
+        "transformBytes": 211,
+        "chars": 277,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/1",
+        "family": "entropy",
+        "rawBytes": 571,
+        "transformBytes": 571,
+        "chars": 651,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/2",
+        "family": "entropy",
+        "rawBytes": 1651,
+        "transformBytes": 1651,
+        "chars": 1757,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/3",
+        "family": "entropy",
+        "rawBytes": 3631,
+        "transformBytes": 3631,
+        "chars": 3760,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/0",
+        "family": "repeat",
+        "rawBytes": 1472,
+        "transformBytes": 1472,
+        "chars": 167,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/1",
+        "family": "repeat",
+        "rawBytes": 4680,
+        "transformBytes": 4680,
+        "chars": 175,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/2",
+        "family": "repeat",
+        "rawBytes": 13200,
+        "transformBytes": 13200,
+        "chars": 174,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/3",
+        "family": "repeat",
+        "rawBytes": 28344,
+        "transformBytes": 28344,
+        "chars": 181,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/0",
+        "family": "utf16-exact",
+        "rawBytes": 140,
+        "transformBytes": 140,
+        "chars": 195,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/1",
+        "family": "utf16-exact",
+        "rawBytes": 186,
+        "transformBytes": 186,
+        "chars": 251,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/2",
+        "family": "utf16-exact",
+        "rawBytes": 331,
+        "transformBytes": 331,
+        "chars": 403,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/3",
+        "family": "utf16-exact",
+        "rawBytes": 587,
+        "transformBytes": 587,
+        "chars": 678,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/0",
+        "family": "metadata",
+        "rawBytes": 253,
+        "transformBytes": 253,
+        "chars": 261,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/1",
+        "family": "metadata",
+        "rawBytes": 621,
+        "transformBytes": 621,
+        "chars": 332,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/2",
+        "family": "metadata",
+        "rawBytes": 1745,
+        "transformBytes": 1745,
+        "chars": 424,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/3",
+        "family": "metadata",
+        "rawBytes": 4352,
+        "transformBytes": 4352,
+        "chars": 595,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/0",
+        "family": "whitespace",
+        "rawBytes": 475,
+        "transformBytes": 475,
+        "chars": 263,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/1",
+        "family": "whitespace",
+        "rawBytes": 1398,
+        "transformBytes": 1398,
+        "chars": 492,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/2",
+        "family": "whitespace",
+        "rawBytes": 4264,
+        "transformBytes": 4264,
+        "chars": 1138,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/3",
+        "family": "whitespace",
+        "rawBytes": 9354,
+        "transformBytes": 9354,
+        "chars": 2202,
+        "roundTrip": true
+      }
+    ],
+    "plain@kind": [
+      {
+        "id": "diagnostic/prose/0",
+        "family": "prose",
+        "rawBytes": 179,
+        "transformBytes": 179,
+        "chars": 151,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/1",
+        "family": "prose",
+        "rawBytes": 434,
+        "transformBytes": 434,
+        "chars": 246,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/2",
+        "family": "prose",
+        "rawBytes": 1221,
+        "transformBytes": 1221,
+        "chars": 352,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/3",
+        "family": "prose",
+        "rawBytes": 3215,
+        "transformBytes": 3215,
+        "chars": 560,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/0",
+        "family": "code",
+        "rawBytes": 217,
+        "transformBytes": 217,
+        "chars": 140,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/1",
+        "family": "code",
+        "rawBytes": 406,
+        "transformBytes": 406,
+        "chars": 194,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/2",
+        "family": "code",
+        "rawBytes": 1306,
+        "transformBytes": 1306,
+        "chars": 228,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/3",
+        "family": "code",
+        "rawBytes": 3422,
+        "transformBytes": 3422,
+        "chars": 389,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/0",
+        "family": "markdown",
+        "rawBytes": 289,
+        "transformBytes": 289,
+        "chars": 239,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/1",
+        "family": "markdown",
+        "rawBytes": 796,
+        "transformBytes": 796,
+        "chars": 451,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/2",
+        "family": "markdown",
+        "rawBytes": 2373,
+        "transformBytes": 2373,
+        "chars": 912,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/3",
+        "family": "markdown",
+        "rawBytes": 5160,
+        "transformBytes": 5160,
+        "chars": 1575,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/0",
+        "family": "json",
+        "rawBytes": 961,
+        "transformBytes": 961,
+        "chars": 348,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/1",
+        "family": "json",
+        "rawBytes": 2801,
+        "transformBytes": 2801,
+        "chars": 716,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/2",
+        "family": "json",
+        "rawBytes": 8218,
+        "transformBytes": 8218,
+        "chars": 1013,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/3",
+        "family": "json",
+        "rawBytes": 18158,
+        "transformBytes": 18158,
+        "chars": 1422,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/0",
+        "family": "csv",
+        "rawBytes": 235,
+        "transformBytes": 235,
+        "chars": 183,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/1",
+        "family": "csv",
+        "rawBytes": 579,
+        "transformBytes": 579,
+        "chars": 294,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/2",
+        "family": "csv",
+        "rawBytes": 1605,
+        "transformBytes": 1605,
+        "chars": 536,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/3",
+        "family": "csv",
+        "rawBytes": 3453,
+        "transformBytes": 3453,
+        "chars": 871,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/0",
+        "family": "patch",
+        "rawBytes": 187,
+        "transformBytes": 187,
+        "chars": 136,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/1",
+        "family": "patch",
+        "rawBytes": 444,
+        "transformBytes": 444,
+        "chars": 164,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/2",
+        "family": "patch",
+        "rawBytes": 1212,
+        "transformBytes": 1212,
+        "chars": 233,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/3",
+        "family": "patch",
+        "rawBytes": 2638,
+        "transformBytes": 2638,
+        "chars": 334,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/0",
+        "family": "diff-pair",
+        "rawBytes": 470,
+        "transformBytes": 470,
+        "chars": 229,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/1",
+        "family": "diff-pair",
+        "rawBytes": 1178,
+        "transformBytes": 1178,
+        "chars": 379,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/2",
+        "family": "diff-pair",
+        "rawBytes": 3409,
+        "transformBytes": 3409,
+        "chars": 676,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/3",
+        "family": "diff-pair",
+        "rawBytes": 7431,
+        "transformBytes": 7431,
+        "chars": 1114,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/0",
+        "family": "bundle",
+        "rawBytes": 943,
+        "transformBytes": 943,
+        "chars": 281,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/1",
+        "family": "bundle",
+        "rawBytes": 2379,
+        "transformBytes": 2379,
+        "chars": 437,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/2",
+        "family": "bundle",
+        "rawBytes": 6658,
+        "transformBytes": 6658,
+        "chars": 776,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/3",
+        "family": "bundle",
+        "rawBytes": 14631,
+        "transformBytes": 14631,
+        "chars": 1353,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/0",
+        "family": "entropy",
+        "rawBytes": 211,
+        "transformBytes": 211,
+        "chars": 280,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/1",
+        "family": "entropy",
+        "rawBytes": 571,
+        "transformBytes": 571,
+        "chars": 673,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/2",
+        "family": "entropy",
+        "rawBytes": 1651,
+        "transformBytes": 1651,
+        "chars": 1814,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/3",
+        "family": "entropy",
+        "rawBytes": 3631,
+        "transformBytes": 3631,
+        "chars": 3842,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/0",
+        "family": "repeat",
+        "rawBytes": 1472,
+        "transformBytes": 1472,
+        "chars": 180,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/1",
+        "family": "repeat",
+        "rawBytes": 4680,
+        "transformBytes": 4680,
+        "chars": 185,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/2",
+        "family": "repeat",
+        "rawBytes": 13200,
+        "transformBytes": 13200,
+        "chars": 188,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/3",
+        "family": "repeat",
+        "rawBytes": 28344,
+        "transformBytes": 28344,
+        "chars": 191,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/0",
+        "family": "utf16-exact",
+        "rawBytes": 140,
+        "transformBytes": 140,
+        "chars": 179,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/1",
+        "family": "utf16-exact",
+        "rawBytes": 186,
+        "transformBytes": 186,
+        "chars": 236,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/2",
+        "family": "utf16-exact",
+        "rawBytes": 331,
+        "transformBytes": 331,
+        "chars": 388,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/3",
+        "family": "utf16-exact",
+        "rawBytes": 587,
+        "transformBytes": 587,
+        "chars": 664,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/0",
+        "family": "metadata",
+        "rawBytes": 253,
+        "transformBytes": 253,
+        "chars": 218,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/1",
+        "family": "metadata",
+        "rawBytes": 621,
+        "transformBytes": 621,
+        "chars": 303,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/2",
+        "family": "metadata",
+        "rawBytes": 1745,
+        "transformBytes": 1745,
+        "chars": 396,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/3",
+        "family": "metadata",
+        "rawBytes": 4352,
+        "transformBytes": 4352,
+        "chars": 579,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/0",
+        "family": "whitespace",
+        "rawBytes": 475,
+        "transformBytes": 475,
+        "chars": 296,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/1",
+        "family": "whitespace",
+        "rawBytes": 1398,
+        "transformBytes": 1398,
+        "chars": 578,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/2",
+        "family": "whitespace",
+        "rawBytes": 4264,
+        "transformBytes": 4264,
+        "chars": 1263,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/3",
+        "family": "whitespace",
+        "rawBytes": 9354,
+        "transformBytes": 9354,
+        "chars": 2360,
+        "roundTrip": true
+      }
+    ],
+    "bwt@n": [
+      {
+        "id": "diagnostic/prose/0",
+        "family": "prose",
+        "rawBytes": 179,
+        "transformBytes": 181,
+        "chars": 212,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/1",
+        "family": "prose",
+        "rawBytes": 434,
+        "transformBytes": 436,
+        "chars": 350,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/2",
+        "family": "prose",
+        "rawBytes": 1221,
+        "transformBytes": 1223,
+        "chars": 500,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/3",
+        "family": "prose",
+        "rawBytes": 3215,
+        "transformBytes": 3217,
+        "chars": 706,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/0",
+        "family": "code",
+        "rawBytes": 217,
+        "transformBytes": 219,
+        "chars": 227,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/1",
+        "family": "code",
+        "rawBytes": 406,
+        "transformBytes": 408,
+        "chars": 333,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/2",
+        "family": "code",
+        "rawBytes": 1306,
+        "transformBytes": 1308,
+        "chars": 485,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/3",
+        "family": "code",
+        "rawBytes": 3422,
+        "transformBytes": 3424,
+        "chars": 623,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/0",
+        "family": "markdown",
+        "rawBytes": 289,
+        "transformBytes": 291,
+        "chars": 284,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/1",
+        "family": "markdown",
+        "rawBytes": 796,
+        "transformBytes": 798,
+        "chars": 504,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/2",
+        "family": "markdown",
+        "rawBytes": 2373,
+        "transformBytes": 2375,
+        "chars": 979,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/3",
+        "family": "markdown",
+        "rawBytes": 5160,
+        "transformBytes": 5164,
+        "chars": 1807,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/0",
+        "family": "json",
+        "rawBytes": 961,
+        "transformBytes": 963,
+        "chars": 565,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/1",
+        "family": "json",
+        "rawBytes": 2801,
+        "transformBytes": 2803,
+        "chars": 1064,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/2",
+        "family": "json",
+        "rawBytes": 8218,
+        "transformBytes": 8224,
+        "chars": 2008,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/3",
+        "family": "json",
+        "rawBytes": 18158,
+        "transformBytes": 18168,
+        "chars": 3449,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/0",
+        "family": "csv",
+        "rawBytes": 235,
+        "transformBytes": 237,
+        "chars": 257,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/1",
+        "family": "csv",
+        "rawBytes": 579,
+        "transformBytes": 581,
+        "chars": 404,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/2",
+        "family": "csv",
+        "rawBytes": 1605,
+        "transformBytes": 1607,
+        "chars": 680,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/3",
+        "family": "csv",
+        "rawBytes": 3453,
+        "transformBytes": 3455,
+        "chars": 1060,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/0",
+        "family": "patch",
+        "rawBytes": 187,
+        "transformBytes": 189,
+        "chars": 236,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/1",
+        "family": "patch",
+        "rawBytes": 444,
+        "transformBytes": 446,
+        "chars": 361,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/2",
+        "family": "patch",
+        "rawBytes": 1212,
+        "transformBytes": 1214,
+        "chars": 485,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/3",
+        "family": "patch",
+        "rawBytes": 2638,
+        "transformBytes": 2640,
+        "chars": 599,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/0",
+        "family": "diff-pair",
+        "rawBytes": 470,
+        "transformBytes": 472,
+        "chars": 341,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/1",
+        "family": "diff-pair",
+        "rawBytes": 1178,
+        "transformBytes": 1180,
+        "chars": 531,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/2",
+        "family": "diff-pair",
+        "rawBytes": 3409,
+        "transformBytes": 3411,
+        "chars": 889,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/3",
+        "family": "diff-pair",
+        "rawBytes": 7431,
+        "transformBytes": 7435,
+        "chars": 1861,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/0",
+        "family": "bundle",
+        "rawBytes": 943,
+        "transformBytes": 945,
+        "chars": 437,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/1",
+        "family": "bundle",
+        "rawBytes": 2379,
+        "transformBytes": 2381,
+        "chars": 640,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/2",
+        "family": "bundle",
+        "rawBytes": 6658,
+        "transformBytes": 6662,
+        "chars": 1727,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/3",
+        "family": "bundle",
+        "rawBytes": 14631,
+        "transformBytes": 14639,
+        "chars": 4164,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/0",
+        "family": "entropy",
+        "rawBytes": 211,
+        "transformBytes": 213,
+        "chars": 285,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/1",
+        "family": "entropy",
+        "rawBytes": 571,
+        "transformBytes": 573,
+        "chars": 668,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/2",
+        "family": "entropy",
+        "rawBytes": 1651,
+        "transformBytes": 1653,
+        "chars": 1767,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/3",
+        "family": "entropy",
+        "rawBytes": 3631,
+        "transformBytes": 3633,
+        "chars": 3782,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/0",
+        "family": "repeat",
+        "rawBytes": 1472,
+        "transformBytes": 1474,
+        "chars": 277,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/1",
+        "family": "repeat",
+        "rawBytes": 4680,
+        "transformBytes": 4684,
+        "chars": 319,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/2",
+        "family": "repeat",
+        "rawBytes": 13200,
+        "transformBytes": 13208,
+        "chars": 567,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/3",
+        "family": "repeat",
+        "rawBytes": 28344,
+        "transformBytes": 28358,
+        "chars": 805,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/0",
+        "family": "utf16-exact",
+        "rawBytes": 140,
+        "transformBytes": 142,
+        "chars": 202,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/1",
+        "family": "utf16-exact",
+        "rawBytes": 186,
+        "transformBytes": 188,
+        "chars": 258,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/2",
+        "family": "utf16-exact",
+        "rawBytes": 331,
+        "transformBytes": 333,
+        "chars": 406,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/3",
+        "family": "utf16-exact",
+        "rawBytes": 587,
+        "transformBytes": 589,
+        "chars": 676,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/0",
+        "family": "metadata",
+        "rawBytes": 253,
+        "transformBytes": 255,
+        "chars": 276,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/1",
+        "family": "metadata",
+        "rawBytes": 621,
+        "transformBytes": 623,
+        "chars": 456,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/2",
+        "family": "metadata",
+        "rawBytes": 1745,
+        "transformBytes": 1747,
+        "chars": 617,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/3",
+        "family": "metadata",
+        "rawBytes": 4352,
+        "transformBytes": 4356,
+        "chars": 977,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/0",
+        "family": "whitespace",
+        "rawBytes": 475,
+        "transformBytes": 477,
+        "chars": 293,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/1",
+        "family": "whitespace",
+        "rawBytes": 1398,
+        "transformBytes": 1400,
+        "chars": 531,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/2",
+        "family": "whitespace",
+        "rawBytes": 4264,
+        "transformBytes": 4268,
+        "chars": 1218,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/3",
+        "family": "whitespace",
+        "rawBytes": 9354,
+        "transformBytes": 9360,
+        "chars": 2473,
+        "roundTrip": true
+      }
+    ],
+    "bwt_mtf@n": [
+      {
+        "id": "diagnostic/prose/0",
+        "family": "prose",
+        "rawBytes": 179,
+        "transformBytes": 181,
+        "chars": 217,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/1",
+        "family": "prose",
+        "rawBytes": 434,
+        "transformBytes": 436,
+        "chars": 328,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/2",
+        "family": "prose",
+        "rawBytes": 1221,
+        "transformBytes": 1223,
+        "chars": 478,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/3",
+        "family": "prose",
+        "rawBytes": 3215,
+        "transformBytes": 3217,
+        "chars": 648,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/0",
+        "family": "code",
+        "rawBytes": 217,
+        "transformBytes": 219,
+        "chars": 231,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/1",
+        "family": "code",
+        "rawBytes": 406,
+        "transformBytes": 408,
+        "chars": 298,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/2",
+        "family": "code",
+        "rawBytes": 1306,
+        "transformBytes": 1308,
+        "chars": 442,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/3",
+        "family": "code",
+        "rawBytes": 3422,
+        "transformBytes": 3424,
+        "chars": 583,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/0",
+        "family": "markdown",
+        "rawBytes": 289,
+        "transformBytes": 291,
+        "chars": 283,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/1",
+        "family": "markdown",
+        "rawBytes": 796,
+        "transformBytes": 798,
+        "chars": 503,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/2",
+        "family": "markdown",
+        "rawBytes": 2373,
+        "transformBytes": 2375,
+        "chars": 979,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/3",
+        "family": "markdown",
+        "rawBytes": 5160,
+        "transformBytes": 5164,
+        "chars": 1883,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/0",
+        "family": "json",
+        "rawBytes": 961,
+        "transformBytes": 963,
+        "chars": 559,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/1",
+        "family": "json",
+        "rawBytes": 2801,
+        "transformBytes": 2803,
+        "chars": 1059,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/2",
+        "family": "json",
+        "rawBytes": 8218,
+        "transformBytes": 8224,
+        "chars": 2226,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/3",
+        "family": "json",
+        "rawBytes": 18158,
+        "transformBytes": 18168,
+        "chars": 4572,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/0",
+        "family": "csv",
+        "rawBytes": 235,
+        "transformBytes": 237,
+        "chars": 254,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/1",
+        "family": "csv",
+        "rawBytes": 579,
+        "transformBytes": 581,
+        "chars": 388,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/2",
+        "family": "csv",
+        "rawBytes": 1605,
+        "transformBytes": 1607,
+        "chars": 659,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/3",
+        "family": "csv",
+        "rawBytes": 3453,
+        "transformBytes": 3455,
+        "chars": 1056,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/0",
+        "family": "patch",
+        "rawBytes": 187,
+        "transformBytes": 189,
+        "chars": 242,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/1",
+        "family": "patch",
+        "rawBytes": 444,
+        "transformBytes": 446,
+        "chars": 327,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/2",
+        "family": "patch",
+        "rawBytes": 1212,
+        "transformBytes": 1214,
+        "chars": 436,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/3",
+        "family": "patch",
+        "rawBytes": 2638,
+        "transformBytes": 2640,
+        "chars": 558,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/0",
+        "family": "diff-pair",
+        "rawBytes": 470,
+        "transformBytes": 472,
+        "chars": 329,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/1",
+        "family": "diff-pair",
+        "rawBytes": 1178,
+        "transformBytes": 1180,
+        "chars": 502,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/2",
+        "family": "diff-pair",
+        "rawBytes": 3409,
+        "transformBytes": 3411,
+        "chars": 850,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/3",
+        "family": "diff-pair",
+        "rawBytes": 7431,
+        "transformBytes": 7435,
+        "chars": 2152,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/0",
+        "family": "bundle",
+        "rawBytes": 943,
+        "transformBytes": 945,
+        "chars": 422,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/1",
+        "family": "bundle",
+        "rawBytes": 2379,
+        "transformBytes": 2381,
+        "chars": 622,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/2",
+        "family": "bundle",
+        "rawBytes": 6658,
+        "transformBytes": 6662,
+        "chars": 1827,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/3",
+        "family": "bundle",
+        "rawBytes": 14631,
+        "transformBytes": 14639,
+        "chars": 4649,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/0",
+        "family": "entropy",
+        "rawBytes": 211,
+        "transformBytes": 213,
+        "chars": 291,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/1",
+        "family": "entropy",
+        "rawBytes": 571,
+        "transformBytes": 573,
+        "chars": 680,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/2",
+        "family": "entropy",
+        "rawBytes": 1651,
+        "transformBytes": 1653,
+        "chars": 1789,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/3",
+        "family": "entropy",
+        "rawBytes": 3631,
+        "transformBytes": 3633,
+        "chars": 3803,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/0",
+        "family": "repeat",
+        "rawBytes": 1472,
+        "transformBytes": 1474,
+        "chars": 253,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/1",
+        "family": "repeat",
+        "rawBytes": 4680,
+        "transformBytes": 4684,
+        "chars": 301,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/2",
+        "family": "repeat",
+        "rawBytes": 13200,
+        "transformBytes": 13208,
+        "chars": 600,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/3",
+        "family": "repeat",
+        "rawBytes": 28344,
+        "transformBytes": 28358,
+        "chars": 896,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/0",
+        "family": "utf16-exact",
+        "rawBytes": 140,
+        "transformBytes": 142,
+        "chars": 207,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/1",
+        "family": "utf16-exact",
+        "rawBytes": 186,
+        "transformBytes": 188,
+        "chars": 269,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/2",
+        "family": "utf16-exact",
+        "rawBytes": 331,
+        "transformBytes": 333,
+        "chars": 439,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/3",
+        "family": "utf16-exact",
+        "rawBytes": 587,
+        "transformBytes": 589,
+        "chars": 732,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/0",
+        "family": "metadata",
+        "rawBytes": 253,
+        "transformBytes": 255,
+        "chars": 287,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/1",
+        "family": "metadata",
+        "rawBytes": 621,
+        "transformBytes": 623,
+        "chars": 418,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/2",
+        "family": "metadata",
+        "rawBytes": 1745,
+        "transformBytes": 1747,
+        "chars": 577,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/3",
+        "family": "metadata",
+        "rawBytes": 4352,
+        "transformBytes": 4356,
+        "chars": 950,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/0",
+        "family": "whitespace",
+        "rawBytes": 475,
+        "transformBytes": 477,
+        "chars": 292,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/1",
+        "family": "whitespace",
+        "rawBytes": 1398,
+        "transformBytes": 1400,
+        "chars": 534,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/2",
+        "family": "whitespace",
+        "rawBytes": 4264,
+        "transformBytes": 4268,
+        "chars": 1271,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/3",
+        "family": "whitespace",
+        "rawBytes": 9354,
+        "transformBytes": 9360,
+        "chars": 2669,
+        "roundTrip": true
+      }
+    ],
+    "utf16le@n": [
+      {
+        "id": "diagnostic/prose/0",
+        "family": "prose",
+        "rawBytes": 179,
+        "transformBytes": 358,
+        "chars": 218,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/1",
+        "family": "prose",
+        "rawBytes": 434,
+        "transformBytes": 838,
+        "chars": 280,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/2",
+        "family": "prose",
+        "rawBytes": 1221,
+        "transformBytes": 2370,
+        "chars": 380,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/3",
+        "family": "prose",
+        "rawBytes": 3215,
+        "transformBytes": 3150,
+        "chars": 514,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/0",
+        "family": "code",
+        "rawBytes": 217,
+        "transformBytes": 434,
+        "chars": 233,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/1",
+        "family": "code",
+        "rawBytes": 406,
+        "transformBytes": 812,
+        "chars": 256,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/2",
+        "family": "code",
+        "rawBytes": 1306,
+        "transformBytes": 2612,
+        "chars": 346,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/3",
+        "family": "code",
+        "rawBytes": 3422,
+        "transformBytes": 6844,
+        "chars": 464,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/0",
+        "family": "markdown",
+        "rawBytes": 289,
+        "transformBytes": 578,
+        "chars": 281,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/1",
+        "family": "markdown",
+        "rawBytes": 796,
+        "transformBytes": 1592,
+        "chars": 454,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/2",
+        "family": "markdown",
+        "rawBytes": 2373,
+        "transformBytes": 4746,
+        "chars": 880,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/3",
+        "family": "markdown",
+        "rawBytes": 5160,
+        "transformBytes": 10320,
+        "chars": 1543,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/0",
+        "family": "json",
+        "rawBytes": 961,
+        "transformBytes": 1914,
+        "chars": 509,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/1",
+        "family": "json",
+        "rawBytes": 2801,
+        "transformBytes": 5122,
+        "chars": 889,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/2",
+        "family": "json",
+        "rawBytes": 8218,
+        "transformBytes": 14988,
+        "chars": 1202,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/3",
+        "family": "json",
+        "rawBytes": 18158,
+        "transformBytes": 32948,
+        "chars": 1712,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/0",
+        "family": "csv",
+        "rawBytes": 235,
+        "transformBytes": 470,
+        "chars": 240,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/1",
+        "family": "csv",
+        "rawBytes": 579,
+        "transformBytes": 1158,
+        "chars": 347,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/2",
+        "family": "csv",
+        "rawBytes": 1605,
+        "transformBytes": 3210,
+        "chars": 582,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/3",
+        "family": "csv",
+        "rawBytes": 3453,
+        "transformBytes": 6906,
+        "chars": 931,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/0",
+        "family": "patch",
+        "rawBytes": 187,
+        "transformBytes": 374,
+        "chars": 245,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/1",
+        "family": "patch",
+        "rawBytes": 444,
+        "transformBytes": 888,
+        "chars": 276,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/2",
+        "family": "patch",
+        "rawBytes": 1212,
+        "transformBytes": 2424,
+        "chars": 351,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/3",
+        "family": "patch",
+        "rawBytes": 2638,
+        "transformBytes": 5276,
+        "chars": 444,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/0",
+        "family": "diff-pair",
+        "rawBytes": 470,
+        "transformBytes": 940,
+        "chars": 294,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/1",
+        "family": "diff-pair",
+        "rawBytes": 1178,
+        "transformBytes": 2356,
+        "chars": 424,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/2",
+        "family": "diff-pair",
+        "rawBytes": 3409,
+        "transformBytes": 6818,
+        "chars": 695,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/3",
+        "family": "diff-pair",
+        "rawBytes": 7431,
+        "transformBytes": 14862,
+        "chars": 1124,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/0",
+        "family": "bundle",
+        "rawBytes": 943,
+        "transformBytes": 1886,
+        "chars": 336,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/1",
+        "family": "bundle",
+        "rawBytes": 2379,
+        "transformBytes": 4758,
+        "chars": 464,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/2",
+        "family": "bundle",
+        "rawBytes": 6658,
+        "transformBytes": 13316,
+        "chars": 782,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/3",
+        "family": "bundle",
+        "rawBytes": 14631,
+        "transformBytes": 29262,
+        "chars": 1362,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/0",
+        "family": "entropy",
+        "rawBytes": 211,
+        "transformBytes": 422,
+        "chars": 308,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/1",
+        "family": "entropy",
+        "rawBytes": 571,
+        "transformBytes": 1142,
+        "chars": 684,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/2",
+        "family": "entropy",
+        "rawBytes": 1651,
+        "transformBytes": 3302,
+        "chars": 1794,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/3",
+        "family": "entropy",
+        "rawBytes": 3631,
+        "transformBytes": 7262,
+        "chars": 3798,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/0",
+        "family": "repeat",
+        "rawBytes": 1472,
+        "transformBytes": 2944,
+        "chars": 187,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/1",
+        "family": "repeat",
+        "rawBytes": 4680,
+        "transformBytes": 9360,
+        "chars": 197,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/2",
+        "family": "repeat",
+        "rawBytes": 13200,
+        "transformBytes": 26400,
+        "chars": 199,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/3",
+        "family": "repeat",
+        "rawBytes": 28344,
+        "transformBytes": 56688,
+        "chars": 212,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/0",
+        "family": "utf16-exact",
+        "rawBytes": 140,
+        "transformBytes": 214,
+        "chars": 200,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/1",
+        "family": "utf16-exact",
+        "rawBytes": 186,
+        "transformBytes": 246,
+        "chars": 247,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/2",
+        "family": "utf16-exact",
+        "rawBytes": 331,
+        "transformBytes": 342,
+        "chars": 379,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/3",
+        "family": "utf16-exact",
+        "rawBytes": 587,
+        "transformBytes": 518,
+        "chars": 617,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/0",
+        "family": "metadata",
+        "rawBytes": 253,
+        "transformBytes": 506,
+        "chars": 281,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/1",
+        "family": "metadata",
+        "rawBytes": 621,
+        "transformBytes": 1212,
+        "chars": 352,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/2",
+        "family": "metadata",
+        "rawBytes": 1745,
+        "transformBytes": 3418,
+        "chars": 453,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/3",
+        "family": "metadata",
+        "rawBytes": 4352,
+        "transformBytes": 5424,
+        "chars": 602,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/0",
+        "family": "whitespace",
+        "rawBytes": 475,
+        "transformBytes": 950,
+        "chars": 289,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/1",
+        "family": "whitespace",
+        "rawBytes": 1398,
+        "transformBytes": 2796,
+        "chars": 528,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/2",
+        "family": "whitespace",
+        "rawBytes": 4264,
+        "transformBytes": 8528,
+        "chars": 1204,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/3",
+        "family": "whitespace",
+        "rawBytes": 9354,
+        "transformBytes": 18708,
+        "chars": 2349,
+        "roundTrip": true
+      }
+    ],
+    "utf16be@n": [
+      {
+        "id": "diagnostic/prose/0",
+        "family": "prose",
+        "rawBytes": 179,
+        "transformBytes": 358,
+        "chars": 218,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/1",
+        "family": "prose",
+        "rawBytes": 434,
+        "transformBytes": 838,
+        "chars": 279,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/2",
+        "family": "prose",
+        "rawBytes": 1221,
+        "transformBytes": 2370,
+        "chars": 381,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/3",
+        "family": "prose",
+        "rawBytes": 3215,
+        "transformBytes": 3150,
+        "chars": 512,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/0",
+        "family": "code",
+        "rawBytes": 217,
+        "transformBytes": 434,
+        "chars": 232,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/1",
+        "family": "code",
+        "rawBytes": 406,
+        "transformBytes": 812,
+        "chars": 255,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/2",
+        "family": "code",
+        "rawBytes": 1306,
+        "transformBytes": 2612,
+        "chars": 344,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/3",
+        "family": "code",
+        "rawBytes": 3422,
+        "transformBytes": 6844,
+        "chars": 461,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/0",
+        "family": "markdown",
+        "rawBytes": 289,
+        "transformBytes": 578,
+        "chars": 280,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/1",
+        "family": "markdown",
+        "rawBytes": 796,
+        "transformBytes": 1592,
+        "chars": 452,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/2",
+        "family": "markdown",
+        "rawBytes": 2373,
+        "transformBytes": 4746,
+        "chars": 880,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/3",
+        "family": "markdown",
+        "rawBytes": 5160,
+        "transformBytes": 10320,
+        "chars": 1541,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/0",
+        "family": "json",
+        "rawBytes": 961,
+        "transformBytes": 1914,
+        "chars": 507,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/1",
+        "family": "json",
+        "rawBytes": 2801,
+        "transformBytes": 5122,
+        "chars": 882,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/2",
+        "family": "json",
+        "rawBytes": 8218,
+        "transformBytes": 14988,
+        "chars": 1194,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/3",
+        "family": "json",
+        "rawBytes": 18158,
+        "transformBytes": 32948,
+        "chars": 1699,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/0",
+        "family": "csv",
+        "rawBytes": 235,
+        "transformBytes": 470,
+        "chars": 240,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/1",
+        "family": "csv",
+        "rawBytes": 579,
+        "transformBytes": 1158,
+        "chars": 347,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/2",
+        "family": "csv",
+        "rawBytes": 1605,
+        "transformBytes": 3210,
+        "chars": 583,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/3",
+        "family": "csv",
+        "rawBytes": 3453,
+        "transformBytes": 6906,
+        "chars": 933,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/0",
+        "family": "patch",
+        "rawBytes": 187,
+        "transformBytes": 374,
+        "chars": 244,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/1",
+        "family": "patch",
+        "rawBytes": 444,
+        "transformBytes": 888,
+        "chars": 274,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/2",
+        "family": "patch",
+        "rawBytes": 1212,
+        "transformBytes": 2424,
+        "chars": 349,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/3",
+        "family": "patch",
+        "rawBytes": 2638,
+        "transformBytes": 5276,
+        "chars": 443,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/0",
+        "family": "diff-pair",
+        "rawBytes": 470,
+        "transformBytes": 940,
+        "chars": 291,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/1",
+        "family": "diff-pair",
+        "rawBytes": 1178,
+        "transformBytes": 2356,
+        "chars": 420,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/2",
+        "family": "diff-pair",
+        "rawBytes": 3409,
+        "transformBytes": 6818,
+        "chars": 693,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/3",
+        "family": "diff-pair",
+        "rawBytes": 7431,
+        "transformBytes": 14862,
+        "chars": 1121,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/0",
+        "family": "bundle",
+        "rawBytes": 943,
+        "transformBytes": 1886,
+        "chars": 336,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/1",
+        "family": "bundle",
+        "rawBytes": 2379,
+        "transformBytes": 4758,
+        "chars": 465,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/2",
+        "family": "bundle",
+        "rawBytes": 6658,
+        "transformBytes": 13316,
+        "chars": 782,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/3",
+        "family": "bundle",
+        "rawBytes": 14631,
+        "transformBytes": 29262,
+        "chars": 1366,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/0",
+        "family": "entropy",
+        "rawBytes": 211,
+        "transformBytes": 422,
+        "chars": 309,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/1",
+        "family": "entropy",
+        "rawBytes": 571,
+        "transformBytes": 1142,
+        "chars": 684,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/2",
+        "family": "entropy",
+        "rawBytes": 1651,
+        "transformBytes": 3302,
+        "chars": 1791,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/3",
+        "family": "entropy",
+        "rawBytes": 3631,
+        "transformBytes": 7262,
+        "chars": 3797,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/0",
+        "family": "repeat",
+        "rawBytes": 1472,
+        "transformBytes": 2944,
+        "chars": 186,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/1",
+        "family": "repeat",
+        "rawBytes": 4680,
+        "transformBytes": 9360,
+        "chars": 196,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/2",
+        "family": "repeat",
+        "rawBytes": 13200,
+        "transformBytes": 26400,
+        "chars": 198,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/3",
+        "family": "repeat",
+        "rawBytes": 28344,
+        "transformBytes": 56688,
+        "chars": 210,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/0",
+        "family": "utf16-exact",
+        "rawBytes": 140,
+        "transformBytes": 214,
+        "chars": 199,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/1",
+        "family": "utf16-exact",
+        "rawBytes": 186,
+        "transformBytes": 246,
+        "chars": 246,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/2",
+        "family": "utf16-exact",
+        "rawBytes": 331,
+        "transformBytes": 342,
+        "chars": 378,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/3",
+        "family": "utf16-exact",
+        "rawBytes": 587,
+        "transformBytes": 518,
+        "chars": 616,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/0",
+        "family": "metadata",
+        "rawBytes": 253,
+        "transformBytes": 506,
+        "chars": 281,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/1",
+        "family": "metadata",
+        "rawBytes": 621,
+        "transformBytes": 1212,
+        "chars": 353,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/2",
+        "family": "metadata",
+        "rawBytes": 1745,
+        "transformBytes": 3418,
+        "chars": 453,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/3",
+        "family": "metadata",
+        "rawBytes": 4352,
+        "transformBytes": 5424,
+        "chars": 602,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/0",
+        "family": "whitespace",
+        "rawBytes": 475,
+        "transformBytes": 950,
+        "chars": 287,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/1",
+        "family": "whitespace",
+        "rawBytes": 1398,
+        "transformBytes": 2796,
+        "chars": 528,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/2",
+        "family": "whitespace",
+        "rawBytes": 4264,
+        "transformBytes": 8528,
+        "chars": 1201,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/3",
+        "family": "whitespace",
+        "rawBytes": 9354,
+        "transformBytes": 18708,
+        "chars": 2347,
+        "roundTrip": true
+      }
+    ],
+    "utf16planes4096@n": [
+      {
+        "id": "diagnostic/prose/0",
+        "family": "prose",
+        "rawBytes": 179,
+        "transformBytes": 358,
+        "chars": 208,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/1",
+        "family": "prose",
+        "rawBytes": 434,
+        "transformBytes": 838,
+        "chars": 263,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/2",
+        "family": "prose",
+        "rawBytes": 1221,
+        "transformBytes": 2370,
+        "chars": 363,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/3",
+        "family": "prose",
+        "rawBytes": 3215,
+        "transformBytes": 3150,
+        "chars": 560,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/0",
+        "family": "code",
+        "rawBytes": 217,
+        "transformBytes": 434,
+        "chars": 215,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/1",
+        "family": "code",
+        "rawBytes": 406,
+        "transformBytes": 812,
+        "chars": 240,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/2",
+        "family": "code",
+        "rawBytes": 1306,
+        "transformBytes": 2612,
+        "chars": 327,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/3",
+        "family": "code",
+        "rawBytes": 3422,
+        "transformBytes": 6844,
+        "chars": 434,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/0",
+        "family": "markdown",
+        "rawBytes": 289,
+        "transformBytes": 578,
+        "chars": 267,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/1",
+        "family": "markdown",
+        "rawBytes": 796,
+        "transformBytes": 1592,
+        "chars": 442,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/2",
+        "family": "markdown",
+        "rawBytes": 2373,
+        "transformBytes": 4746,
+        "chars": 858,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/3",
+        "family": "markdown",
+        "rawBytes": 5160,
+        "transformBytes": 10320,
+        "chars": 1503,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/0",
+        "family": "json",
+        "rawBytes": 961,
+        "transformBytes": 1914,
+        "chars": 485,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/1",
+        "family": "json",
+        "rawBytes": 2801,
+        "transformBytes": 5122,
+        "chars": 848,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/2",
+        "family": "json",
+        "rawBytes": 8218,
+        "transformBytes": 14988,
+        "chars": 1171,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/3",
+        "family": "json",
+        "rawBytes": 18158,
+        "transformBytes": 32948,
+        "chars": 1610,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/0",
+        "family": "csv",
+        "rawBytes": 235,
+        "transformBytes": 470,
+        "chars": 231,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/1",
+        "family": "csv",
+        "rawBytes": 579,
+        "transformBytes": 1158,
+        "chars": 336,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/2",
+        "family": "csv",
+        "rawBytes": 1605,
+        "transformBytes": 3210,
+        "chars": 558,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/3",
+        "family": "csv",
+        "rawBytes": 3453,
+        "transformBytes": 6906,
+        "chars": 871,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/0",
+        "family": "patch",
+        "rawBytes": 187,
+        "transformBytes": 374,
+        "chars": 227,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/1",
+        "family": "patch",
+        "rawBytes": 444,
+        "transformBytes": 888,
+        "chars": 259,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/2",
+        "family": "patch",
+        "rawBytes": 1212,
+        "transformBytes": 2424,
+        "chars": 335,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/3",
+        "family": "patch",
+        "rawBytes": 2638,
+        "transformBytes": 5276,
+        "chars": 431,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/0",
+        "family": "diff-pair",
+        "rawBytes": 470,
+        "transformBytes": 940,
+        "chars": 274,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/1",
+        "family": "diff-pair",
+        "rawBytes": 1178,
+        "transformBytes": 2356,
+        "chars": 397,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/2",
+        "family": "diff-pair",
+        "rawBytes": 3409,
+        "transformBytes": 6818,
+        "chars": 672,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/3",
+        "family": "diff-pair",
+        "rawBytes": 7431,
+        "transformBytes": 14862,
+        "chars": 1111,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/0",
+        "family": "bundle",
+        "rawBytes": 943,
+        "transformBytes": 1886,
+        "chars": 319,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/1",
+        "family": "bundle",
+        "rawBytes": 2379,
+        "transformBytes": 4758,
+        "chars": 449,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/2",
+        "family": "bundle",
+        "rawBytes": 6658,
+        "transformBytes": 13316,
+        "chars": 779,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/3",
+        "family": "bundle",
+        "rawBytes": 14631,
+        "transformBytes": 29262,
+        "chars": 1374,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/0",
+        "family": "entropy",
+        "rawBytes": 211,
+        "transformBytes": 422,
+        "chars": 290,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/1",
+        "family": "entropy",
+        "rawBytes": 571,
+        "transformBytes": 1142,
+        "chars": 668,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/2",
+        "family": "entropy",
+        "rawBytes": 1651,
+        "transformBytes": 3302,
+        "chars": 1775,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/3",
+        "family": "entropy",
+        "rawBytes": 3631,
+        "transformBytes": 7262,
+        "chars": 3782,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/0",
+        "family": "repeat",
+        "rawBytes": 1472,
+        "transformBytes": 2944,
+        "chars": 176,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/1",
+        "family": "repeat",
+        "rawBytes": 4680,
+        "transformBytes": 9360,
+        "chars": 192,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/2",
+        "family": "repeat",
+        "rawBytes": 13200,
+        "transformBytes": 26400,
+        "chars": 220,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/3",
+        "family": "repeat",
+        "rawBytes": 28344,
+        "transformBytes": 56688,
+        "chars": 253,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/0",
+        "family": "utf16-exact",
+        "rawBytes": 140,
+        "transformBytes": 214,
+        "chars": 190,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/1",
+        "family": "utf16-exact",
+        "rawBytes": 186,
+        "transformBytes": 246,
+        "chars": 237,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/2",
+        "family": "utf16-exact",
+        "rawBytes": 331,
+        "transformBytes": 342,
+        "chars": 366,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/3",
+        "family": "utf16-exact",
+        "rawBytes": 587,
+        "transformBytes": 518,
+        "chars": 602,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/0",
+        "family": "metadata",
+        "rawBytes": 253,
+        "transformBytes": 506,
+        "chars": 271,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/1",
+        "family": "metadata",
+        "rawBytes": 621,
+        "transformBytes": 1212,
+        "chars": 335,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/2",
+        "family": "metadata",
+        "rawBytes": 1745,
+        "transformBytes": 3418,
+        "chars": 429,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/3",
+        "family": "metadata",
+        "rawBytes": 4352,
+        "transformBytes": 5424,
+        "chars": 638,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/0",
+        "family": "whitespace",
+        "rawBytes": 475,
+        "transformBytes": 950,
+        "chars": 270,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/1",
+        "family": "whitespace",
+        "rawBytes": 1398,
+        "transformBytes": 2796,
+        "chars": 501,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/2",
+        "family": "whitespace",
+        "rawBytes": 4264,
+        "transformBytes": 8528,
+        "chars": 1155,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/3",
+        "family": "whitespace",
+        "rawBytes": 9354,
+        "transformBytes": 18708,
+        "chars": 2230,
+        "roundTrip": true
+      }
+    ],
+    "utf16be@kind": [
+      {
+        "id": "diagnostic/prose/0",
+        "family": "prose",
+        "rawBytes": 179,
+        "transformBytes": 358,
+        "chars": 153,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/1",
+        "family": "prose",
+        "rawBytes": 434,
+        "transformBytes": 838,
+        "chars": 242,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/2",
+        "family": "prose",
+        "rawBytes": 1221,
+        "transformBytes": 2370,
+        "chars": 355,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/prose/3",
+        "family": "prose",
+        "rawBytes": 3215,
+        "transformBytes": 3150,
+        "chars": 538,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/0",
+        "family": "code",
+        "rawBytes": 217,
+        "transformBytes": 434,
+        "chars": 152,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/1",
+        "family": "code",
+        "rawBytes": 406,
+        "transformBytes": 812,
+        "chars": 204,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/2",
+        "family": "code",
+        "rawBytes": 1306,
+        "transformBytes": 2612,
+        "chars": 238,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/code/3",
+        "family": "code",
+        "rawBytes": 3422,
+        "transformBytes": 6844,
+        "chars": 420,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/0",
+        "family": "markdown",
+        "rawBytes": 289,
+        "transformBytes": 578,
+        "chars": 245,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/1",
+        "family": "markdown",
+        "rawBytes": 796,
+        "transformBytes": 1592,
+        "chars": 444,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/2",
+        "family": "markdown",
+        "rawBytes": 2373,
+        "transformBytes": 4746,
+        "chars": 921,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/markdown/3",
+        "family": "markdown",
+        "rawBytes": 5160,
+        "transformBytes": 10320,
+        "chars": 1632,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/0",
+        "family": "json",
+        "rawBytes": 961,
+        "transformBytes": 1914,
+        "chars": 373,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/1",
+        "family": "json",
+        "rawBytes": 2801,
+        "transformBytes": 5122,
+        "chars": 765,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/2",
+        "family": "json",
+        "rawBytes": 8218,
+        "transformBytes": 14988,
+        "chars": 1120,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/json/3",
+        "family": "json",
+        "rawBytes": 18158,
+        "transformBytes": 32948,
+        "chars": 1675,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/0",
+        "family": "csv",
+        "rawBytes": 235,
+        "transformBytes": 470,
+        "chars": 193,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/1",
+        "family": "csv",
+        "rawBytes": 579,
+        "transformBytes": 1158,
+        "chars": 312,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/2",
+        "family": "csv",
+        "rawBytes": 1605,
+        "transformBytes": 3210,
+        "chars": 579,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/csv/3",
+        "family": "csv",
+        "rawBytes": 3453,
+        "transformBytes": 6906,
+        "chars": 967,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/0",
+        "family": "patch",
+        "rawBytes": 187,
+        "transformBytes": 374,
+        "chars": 144,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/1",
+        "family": "patch",
+        "rawBytes": 444,
+        "transformBytes": 888,
+        "chars": 175,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/2",
+        "family": "patch",
+        "rawBytes": 1212,
+        "transformBytes": 2424,
+        "chars": 254,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/patch/3",
+        "family": "patch",
+        "rawBytes": 2638,
+        "transformBytes": 5276,
+        "chars": 364,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/0",
+        "family": "diff-pair",
+        "rawBytes": 470,
+        "transformBytes": 940,
+        "chars": 239,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/1",
+        "family": "diff-pair",
+        "rawBytes": 1178,
+        "transformBytes": 2356,
+        "chars": 392,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/2",
+        "family": "diff-pair",
+        "rawBytes": 3409,
+        "transformBytes": 6818,
+        "chars": 699,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/diff-pair/3",
+        "family": "diff-pair",
+        "rawBytes": 7431,
+        "transformBytes": 14862,
+        "chars": 1163,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/0",
+        "family": "bundle",
+        "rawBytes": 943,
+        "transformBytes": 1886,
+        "chars": 293,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/1",
+        "family": "bundle",
+        "rawBytes": 2379,
+        "transformBytes": 4758,
+        "chars": 448,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/2",
+        "family": "bundle",
+        "rawBytes": 6658,
+        "transformBytes": 13316,
+        "chars": 799,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/bundle/3",
+        "family": "bundle",
+        "rawBytes": 14631,
+        "transformBytes": 29262,
+        "chars": 1388,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/0",
+        "family": "entropy",
+        "rawBytes": 211,
+        "transformBytes": 422,
+        "chars": 278,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/1",
+        "family": "entropy",
+        "rawBytes": 571,
+        "transformBytes": 1142,
+        "chars": 672,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/2",
+        "family": "entropy",
+        "rawBytes": 1651,
+        "transformBytes": 3302,
+        "chars": 1809,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/entropy/3",
+        "family": "entropy",
+        "rawBytes": 3631,
+        "transformBytes": 7262,
+        "chars": 3838,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/0",
+        "family": "repeat",
+        "rawBytes": 1472,
+        "transformBytes": 2944,
+        "chars": 176,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/1",
+        "family": "repeat",
+        "rawBytes": 4680,
+        "transformBytes": 9360,
+        "chars": 185,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/2",
+        "family": "repeat",
+        "rawBytes": 13200,
+        "transformBytes": 26400,
+        "chars": 194,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/repeat/3",
+        "family": "repeat",
+        "rawBytes": 28344,
+        "transformBytes": 56688,
+        "chars": 203,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/0",
+        "family": "utf16-exact",
+        "rawBytes": 140,
+        "transformBytes": 214,
+        "chars": 175,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/1",
+        "family": "utf16-exact",
+        "rawBytes": 186,
+        "transformBytes": 246,
+        "chars": 222,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/2",
+        "family": "utf16-exact",
+        "rawBytes": 331,
+        "transformBytes": 342,
+        "chars": 355,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/utf16-exact/3",
+        "family": "utf16-exact",
+        "rawBytes": 587,
+        "transformBytes": 518,
+        "chars": 593,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/0",
+        "family": "metadata",
+        "rawBytes": 253,
+        "transformBytes": 506,
+        "chars": 223,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/1",
+        "family": "metadata",
+        "rawBytes": 621,
+        "transformBytes": 1212,
+        "chars": 311,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/2",
+        "family": "metadata",
+        "rawBytes": 1745,
+        "transformBytes": 3418,
+        "chars": 419,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/metadata/3",
+        "family": "metadata",
+        "rawBytes": 4352,
+        "transformBytes": 5424,
+        "chars": 617,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/0",
+        "family": "whitespace",
+        "rawBytes": 475,
+        "transformBytes": 950,
+        "chars": 283,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/1",
+        "family": "whitespace",
+        "rawBytes": 1398,
+        "transformBytes": 2796,
+        "chars": 543,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/2",
+        "family": "whitespace",
+        "rawBytes": 4264,
+        "transformBytes": 8528,
+        "chars": 1244,
+        "roundTrip": true
+      },
+      {
+        "id": "diagnostic/whitespace/3",
+        "family": "whitespace",
+        "rawBytes": 9354,
+        "transformBytes": 18708,
+        "chars": 2401,
+        "roundTrip": true
+      }
+    ]
+  },
+  "comparison": {
+    "baseline": "Per-case minimum of plain@kind and plain@n",
+    "baselineChars": 30813,
+    "candidates": {
+      "plain@n": {
+        "totalChars": 32250,
+        "deltaPct": 4.6636160062311305,
+        "wins": 0,
+        "optionalLaneSavingChars": 0,
+        "optionalLaneSavingPct": 0
+      },
+      "plain@kind": {
+        "totalChars": 31745,
+        "deltaPct": 3.0246973679940226,
+        "wins": 0,
+        "optionalLaneSavingChars": 0,
+        "optionalLaneSavingPct": 0
+      },
+      "bwt@n": {
+        "totalChars": 45621,
+        "deltaPct": 48.05763800993088,
+        "wins": 0,
+        "optionalLaneSavingChars": 0,
+        "optionalLaneSavingPct": 0
+      },
+      "bwt_mtf@n": {
+        "totalChars": 47820,
+        "deltaPct": 55.194236199006916,
+        "wins": 0,
+        "optionalLaneSavingChars": 0,
+        "optionalLaneSavingPct": 0
+      },
+      "utf16le@n": {
+        "totalChars": 33938,
+        "deltaPct": 10.141823256417748,
+        "wins": 3,
+        "optionalLaneSavingChars": 61,
+        "optionalLaneSavingPct": 0.1979683899652751
+      },
+      "utf16be@n": {
+        "totalChars": 33866,
+        "deltaPct": 9.90815564858989,
+        "wins": 3,
+        "optionalLaneSavingChars": 65,
+        "optionalLaneSavingPct": 0.21094992373349442
+      },
+      "utf16planes4096@n": {
+        "totalChars": 32997,
+        "deltaPct": 7.087917437445235,
+        "wins": 2,
+        "optionalLaneSavingChars": 84,
+        "optionalLaneSavingPct": 0.2726122091325056
+      },
+      "utf16be@kind": {
+        "totalChars": 32627,
+        "deltaPct": 5.887125563885376,
+        "wins": 5,
+        "optionalLaneSavingChars": 126,
+        "optionalLaneSavingPct": 0.4089183136987584
+      }
+    }
+  },
+  "recordedSourceRevision": "5d82b9fa23a831986286e8666ca7307c586ef3a1",
+  "archiveValidation": "Full results recorded before g3 integration; after packaging, two existing diagnostic cases replayed under every lane and matched all 16 stored rows exactly. Frozen g2 model hash unchanged. No new corpus text is embedded here."
+}

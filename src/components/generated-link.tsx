@@ -47,7 +47,7 @@ export function CodecPicker({ value, onSelect, label }: CodecPickerProps) {
           aria-pressed={active === option}
           title={
             isDeprecatedEmitCodec(option)
-              ? "Deprecated: Discord and WhatsApp detonate these Unicode wires. Use auto or arx5."
+              ? "Deprecated: Discord and WhatsApp detonate these Unicode wires. Use auto or arx6."
               : undefined
           }
           onClick={() => onSelect(option)}

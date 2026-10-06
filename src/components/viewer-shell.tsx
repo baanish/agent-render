@@ -92,12 +92,12 @@ const ArtifactStage = dynamic(
   },
 );
 
-type FragmentModule = typeof import("@/lib/payload/fragment");
+type FragmentModule = typeof import("@/lib/payload/browser-codec");
 
 let fragmentModulePromise: Promise<FragmentModule> | null = null;
 
 function loadFragmentModule() {
-  fragmentModulePromise ??= import("@/lib/payload/fragment").catch((error) => {
+  fragmentModulePromise ??= import("@/lib/payload/browser-codec").catch((error) => {
     fragmentModulePromise = null;
     throw error;
   });
@@ -150,6 +150,7 @@ export function ViewerShell() {
   const [activeArtifactId, setActiveArtifactId] = useState<string | null>(null);
   const [readyRendererKey, setReadyRendererKey] = useState("");
   const artifactSelectionRequestRef = useRef(0);
+  const artifactSelectionAbortRef = useRef<AbortController | null>(null);
   /** True when the current hash originated from a server-injected payload (self-hosted UUID mode). */
   const injectedPayloadRef = useRef(false);
 
@@ -190,6 +191,10 @@ export function ViewerShell() {
 
   useEffect(() => {
     let cancelled = false;
+    const abort = new AbortController();
+    // A new fragment makes an in-flight bundle-selection encode obsolete too.
+    artifactSelectionAbortRef.current?.abort();
+    artifactSelectionRequestRef.current += 1;
 
     if (!hash) {
       setParsed(getEmptyParsedPayload());
@@ -202,22 +207,26 @@ export function ViewerShell() {
       ? { skipFragmentBudget: true }
       : undefined;
     loadFragmentModule()
-      .then(({ decodeFragmentAsync }) => decodeFragmentAsync(hash, options))
+      .then(({ decodeFragmentInBrowser }) => decodeFragmentInBrowser(hash, options, abort.signal))
       .then((result) => {
         if (!cancelled) setParsed(result);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setParsed({
             ok: false,
             code: "invalid-format",
-            message: "The fragment payload could not be decoded by this browser session.",
+            message: error instanceof Error && error.message.trim()
+              ? error.message
+              : "The fragment payload could not be decoded by this browser session.",
           });
         }
       });
 
     return () => {
       cancelled = true;
+      abort.abort();
+      artifactSelectionAbortRef.current?.abort();
     };
   }, [hash]);
 
@@ -283,20 +292,24 @@ export function ViewerShell() {
       setActiveArtifactId(artifactId);
       const requestId = artifactSelectionRequestRef.current + 1;
       artifactSelectionRequestRef.current = requestId;
+      artifactSelectionAbortRef.current?.abort();
+      const abort = new AbortController();
+      artifactSelectionAbortRef.current = abort;
 
       loadFragmentModule()
-        .then(({ encodeEnvelopeAsync }) =>
-          encodeEnvelopeAsync(
+        .then(({ encodeEnvelopeInBrowser }) =>
+          encodeEnvelopeInBrowser(
             { ...envelope, activeArtifactId: artifactId },
             { codec: envelope.codec },
+            abort.signal,
           ),
         )
-        .then((encoded) => {
+        .then(({ fragmentBody }) => {
           if (artifactSelectionRequestRef.current !== requestId) {
             return;
           }
 
-          setFragmentHash(`#${encoded}`);
+          setFragmentHash(`#${fragmentBody}`);
         })
         .catch(() => {
           if (artifactSelectionRequestRef.current === requestId) {
@@ -376,7 +389,7 @@ export function ViewerShell() {
             ) : null}
 
             <div className="home-workbench">
-              <LinkCreator onPreviewHash={setFragmentHash} />
+              <LinkCreator onPreviewHash={setFragmentHash} navigationHash={hash} />
               <SampleLinks activeHash={hash} />
             </div>
 

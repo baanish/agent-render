@@ -35,7 +35,8 @@ type BudgetPolicy = "default" | "urlSerialized";
 
 const BINARY_STRING_CHUNK_SIZE = 0x8000;
 const DEFAULT_SYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["deflate", "lz", "plain"];
-const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx5", "arx2", "arx", "deflate", "lz", "plain"];
+// Preserve the shipped pool and its tie order. ARX6 replaces its winner only when strictly shorter.
+const DEFAULT_ASYNC_CODEC_PRIORITY: readonly PayloadCodec[] = ["arx5", "arx2", "arx", "deflate", "lz", "plain", "arx6"];
 const PACKED_WIRE_MODES: readonly boolean[] = [true, false];
 const UNPACKED_ONLY_WIRE_MODES: readonly boolean[] = [false];
 const supportedCodecSet = new Set<string>(codecs);
@@ -147,6 +148,7 @@ function encodePayload(json: string, codec: PayloadCodec): string {
     case "arx3":
     case "arx4":
     case "arx5":
+    case "arx6":
       throw new Error("arx codec requires async encoding — use encodeEnvelopeAsync instead.");
     default: {
       const _exhaustive: never = codec;
@@ -188,6 +190,7 @@ function decodePayload(encoded: string, codec: PayloadCodec): string | null {
     case "arx3":
     case "arx4":
     case "arx5":
+    case "arx6":
       throw new Error("arx codec requires async decoding — use decodeFragmentAsync instead.");
     default: {
       const _exhaustive: never = codec;
@@ -266,12 +269,12 @@ function buildCandidates(envelope: PayloadEnvelope, options: EncodeOptions): Can
 
 async function buildArxCandidates(envelope: PayloadEnvelope, packed: boolean): Promise<CandidateFragment[]> {
   const { buildArxCandidates: buildDeferredArxCandidates } = await import("@/lib/payload/fragment-arx");
-  return buildDeferredArxCandidates(envelope, packed, computeTransportLength);
+  return buildDeferredArxCandidates(envelope, packed, computeTransportLength, true);
 }
 
 async function buildArx2Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
   const { buildArx2Candidates: buildDeferredArx2Candidates } = await import("@/lib/payload/fragment-arx");
-  return buildDeferredArx2Candidates(envelope, computeTransportLength);
+  return buildDeferredArx2Candidates(envelope, computeTransportLength, true);
 }
 
 async function buildArx3Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
@@ -286,7 +289,12 @@ async function buildArx4Candidates(envelope: PayloadEnvelope): Promise<Candidate
 
 async function buildArx5Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
   const { buildArx5Candidates: buildDeferredArx5Candidates } = await import("@/lib/payload/fragment-arx");
-  return buildDeferredArx5Candidates(envelope, computeTransportLength);
+  return buildDeferredArx5Candidates(envelope, computeTransportLength, true);
+}
+
+async function buildArx6Candidates(envelope: PayloadEnvelope): Promise<CandidateFragment[]> {
+  const { buildArx6Candidates: buildDeferredArx6Candidates } = await import("@/lib/payload/fragment-arx");
+  return buildDeferredArx6Candidates(envelope, computeTransportLength);
 }
 
 async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOptions): Promise<CandidateFragment[]> {
@@ -295,7 +303,14 @@ async function buildCandidatesAsync(envelope: PayloadEnvelope, options: EncodeOp
   const candidates: CandidateFragment[] = [];
 
   for (const codec of codecsToTry) {
+    if (codec === "arx6") {
+      candidates.push(...await buildArx6Candidates(envelope));
+      continue;
+    }
+
     if (codec === "arx5") {
+      // Fitting a budget is not evidence that ARX6 beats this candidate. Evaluate both on every
+      // input, including short, unfamiliar, and high-entropy artifacts.
       candidates.push(...await buildArx5Candidates(envelope));
       continue;
     }
@@ -359,11 +374,29 @@ function selectCandidate(
     }
   }
 
-  if (typeof budget !== "number") {
-    return shortest;
-  }
+  const selected = shortestInBudget ?? shortest;
+  if (selected.codec !== "arx6") return selected;
 
-  return shortestInBudget ?? shortest;
+  const legacy = candidates.filter((candidate) => candidate.codec !== "arx6");
+  if (legacy.length === 0) return selected;
+  const previous = selectCandidate(legacy, budget, policy);
+  // An explicit transport budget takes precedence over preserving a shorter browser URL:
+  // escape-prone punctuation can put that legacy URL outside the caller's requested limit.
+  if (
+    typeof budget === "number" &&
+    budgetLengthFor(selected, policy) <= budget &&
+    budgetLengthFor(previous, policy) > budget
+  ) return selected;
+  // The conservative chat score escapes more punctuation than WHATWG URL serialization does.
+  // Keep the exact old winner if ARX6 only beats that estimate, not the URL users actually copy.
+  // ARX6 contains no parentheses, so a strictly shorter serialized fragment also cannot grow the
+  // formatted Markdown destination, regardless of whether its base URL needs angle brackets.
+  const serializedLength = (value: string) => {
+    const url = new URL("https://agent-render.invalid/");
+    url.hash = value;
+    return url.hash.length;
+  };
+  return serializedLength(selected.value) < serializedLength(previous.value) ? selected : previous;
 }
 
 /**
@@ -386,7 +419,7 @@ export function encodeEnvelope(envelope: PayloadEnvelope, options: EncodeOptions
  * Async variant of {@link encodeEnvelope} that also supports ARX candidates.
  *
  * Returns the compact fragment body expected after `#`: a single codec tag char followed by the
- * payload (e.g. `f<payload>` for arx5). The legacy `agent-render=v1.<codec>.<payload>` form is still
+ * payload (e.g. `g<payload>` for arx6). The legacy `agent-render=v1.<codec>.<payload>` form is still
  * accepted on decode for back-compat.
  *
  * Like the sync version, candidate encodings are generated across enabled codecs and packed

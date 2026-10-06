@@ -49,7 +49,7 @@ Response (`201`):
 }
 ```
 
-The `payload` field is the same payload string used in fragment links — the compact fragment body after `#` (a single codec tag char followed by the payload). Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`) described in the `agent-render-linking` skill. The legacy `agent-render=v1.<codec>.<payload>` form (arx-family carry an extra `<dictVersion>.` segment) is also accepted for back-compatibility.
+The `payload` field is the same payload string used in fragment links: the compact fragment body after `#` (a single codec tag char followed by the payload). Use the same envelope format and codecs (`plain`, `lz`, `deflate`, `arx`, `arx2`, `arx3`, `arx4`, `arx5`, `arx6`) described in the `agent-render-linking` skill. The legacy `agent-render=v1.<codec>.<payload>` form (arx-family carry an extra `<dictVersion>.` segment) is also accepted for back-compatibility.
 
 ### Read an artifact
 
@@ -251,8 +251,8 @@ A single `patch` string may contain multiple `diff --git` sections.
 Encode the envelope using the same codec pipeline as fragment links:
 
 1. Serialize envelope as compact JSON
-2. Encode with a codec (`plain` = base64url, `lz` = lz-string, `deflate` = deflate + base64url, or the async arx/arx2/arx3 pipelines; `arx4` is emitted by the app only, since its context mixer is not hand-rollable)
-3. Prepend the single-character codec tag (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4)
+2. Encode with a codec (`plain` = base64url, `lz` = lz-string, `deflate` = deflate + base64url, or the async ARX/ARX2 pipelines). Use the app or library for ARX5/ARX6; default automatic selection compares the full live pool and accepts ARX6 only for a strict improvement. ARX3/ARX4 remain decodable but are deprecated for new links.
+3. Prepend the single-character codec tag (`p` plain, `l` lz, `d` deflate, `a` arx, `b` arx2, `c` arx3, `e` arx4, `f` arx5, `g` arx6). New ARX6 payloads begin with model version `3`, so the complete payload body is `g3<prior><digits>`; let the library construct it. Existing `g2` and unversioned ARX6 payloads retain their frozen decoders.
 4. POST the resulting string as the `payload` field
 
 For simple cases, `plain` codec is sufficient:
